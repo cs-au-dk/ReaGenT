@@ -1,0 +1,20 @@
+{
+  "name": "tajscheck",
+  "version": "0.0.1",
+  "description": "A sound checker of TypeScript declaration files",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "JavaScript",
+    "TypeScript",
+    "Declaration",
+    "Check"
+  ],
+  "author": "Erik Krogh Kristensen",
+  "license": "ISC",
+  "dependencies": {
+    "moment": "^2.15.2",
+    "ts-spec-reader": "cs-au-dk/ts-spec-reader#220fd477c7426fe6e0c002dd2458bd5d2f62621c"
+  }
+}

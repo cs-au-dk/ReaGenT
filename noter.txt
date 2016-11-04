@@ -1,0 +1,25 @@
+TODO: Symbolic execution could be used to get the under-approximation to be less of an under-approximation, but we havn't seen use-cases where this would make a big difference.
+
+What we are trying to do:
+    If we want to check correctness of a TypeScript declaration file with respect to an implementation, there is essentially two ways to do it, over-approximation and under-approximation.
+
+    Turns out the two are very related, since we need an application that exercises the library in both cases.
+    For it to be a valid under-approximation, the application must only exercise the library by performing valid operations.
+    And for it to be a valid over-approximation, the application must potentially exercise all valid operations.
+
+    We call this the most general application with respect to the library, and we construct this under the assumption that the TypeScript declaration file describes all possible operations, and only valid operations.
+
+    With this assumption, we can construct an application, which non-deterministically performs every valid operation on the library
+
+    This application exercise all possible ways for which the program can be executed,
+
+
+
+
+Interresting sources:
+    Pex: N. Tillmann and J. de Halleux. Pex - white box test generation for .NET. In TAP’08, Apr 2008
+        Pex supports the generation of test inputs of primitive types as well
+        as (recursive) complex data types, for which Pex automatically
+        computes a factory method which creates an instance
+        of a complex data type by invoking a constructor and a sequence
+        of methods, whose parameters are also determined by Pex.
