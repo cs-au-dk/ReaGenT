@@ -1,3 +1,13 @@
+TODO Section:
+    Feedback-directed random test generation (ICSE 07): (+ citations from that paper)
+    Coverage can measure how well we are doing, make an automatic coverage report after each
+    Type aware concolic testing for JavaScript
+    Typestate (is a general concept, it is basically that an object has a typestate, which is mutable, and can thereby encode that a getter must be called before a setter).
+
+
+
+
+
 TODO: Symbolic execution could be used to get the under-approximation to be less of an under-approximation, but we havn't seen use-cases where this would make a big difference.
 
 What we are trying to do:
@@ -17,6 +27,7 @@ What we are trying to do:
 
 
 Interresting sources:
+
     Pex: N. Tillmann and J. de Halleux. Pex - white box test generation for .NET. In TAP’08, Apr 2008
         Pex supports the generation of test inputs of primitive types as well
         as (recursive) complex data types, for which Pex automatically

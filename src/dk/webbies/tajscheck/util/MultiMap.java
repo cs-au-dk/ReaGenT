@@ -14,4 +14,6 @@ public interface MultiMap <K, T> {
     Collection<T> remove(K key);
 
     Set<K> keySet();
+
+    boolean containsKey(K key);
 }

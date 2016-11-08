@@ -30,7 +30,6 @@
         var failStrings = new Set();
         for (var j = 0; j < failures.length; j++) {
             var failure = failures[j];
-            // TODO: Remove duplicate fails.
 
             var failDescription = "";
             failDescription += "    Here i expected: " + failure.expected + " but instead i got: \n";

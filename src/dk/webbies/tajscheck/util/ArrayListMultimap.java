@@ -40,4 +40,9 @@ public class ArrayListMultimap<K, T> implements MultiMap<K, T> {
     public Set<K> keySet() {
         return map.keySet();
     }
+
+    @Override
+    public boolean containsKey(K key) {
+        return map.containsKey(key);
+    }
 }

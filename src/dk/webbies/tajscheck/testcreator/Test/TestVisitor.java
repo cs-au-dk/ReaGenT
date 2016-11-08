@@ -14,4 +14,6 @@ public interface TestVisitor<T> {
     T visit(ConstructorCallTest test);
 
     T visit(FunctionCallTest test);
+
+    T visit(IsDefinedTest test);
 }

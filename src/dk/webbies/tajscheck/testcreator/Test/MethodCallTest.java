@@ -19,7 +19,7 @@ public class MethodCallTest extends Test {
     private final String path;
 
     public MethodCallTest(InterfaceType object, Type function, String propertyName, List<Type> parameters, Type returnType, String path) {
-        super(Util.concat(Arrays.asList(object, function), parameters), returnType, path + "()");
+        super(Arrays.asList(object, function), parameters, returnType, path + "()");
         this.object = object;
         this.function = function;
         this.propertyName = propertyName;

@@ -92,6 +92,10 @@ public class AstBuilder {
         return new MemberExpression(null, property, expression);
     }
 
+    public static Return Return() {
+        return new Return(null, null);
+    }
+
     public static Return Return(Expression expression) {
         return new Return(null, expression);
     }
@@ -140,7 +144,6 @@ public class AstBuilder {
         return new BreakStatement(null);
     }
 
-    // TODO: continue does the wrong thing in switches, rewrite stuff.
     public static ContinueStatement continueStatement() {
         return new ContinueStatement(null);
     }
@@ -163,5 +166,37 @@ public class AstBuilder {
 
     public static ObjectLiteral object(List<ObjectLiteral.Property> properties) {
         return new ObjectLiteral(null, properties);
+    }
+
+
+
+    public static Expression and(List<Expression> expressions) {
+        return binaryList(expressions, Operator.AND);
+    }
+
+    private static Expression binaryList(List<Expression> expressions, Operator operator) {
+        if (expressions.isEmpty()) {
+            throw new RuntimeException();
+        }
+        if (expressions.size() == 1) {
+            return expressions.iterator().next();
+        }
+        return binary(expressions.iterator().next(), operator, binaryList(expressions.subList(1, expressions.size()), operator));
+    }
+
+    public static Expression and(Expression... expressions) {
+        return and(Arrays.asList(expressions));
+    }
+
+    public static Expression or(List<Expression> expressions) {
+        return binaryList(expressions, Operator.OR);
+    }
+
+    public static Expression or(Expression... expressions) {
+        return or(Arrays.asList(expressions));
+    }
+
+    public static ThrowStatement throwStatement(Expression exp) {
+        return new ThrowStatement(null, exp);
     }
 }

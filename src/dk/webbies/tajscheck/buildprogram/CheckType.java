@@ -6,7 +6,7 @@ import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
 import dk.webbies.tajscheck.paser.AST.*;
-import dk.webbies.tajscheck.paser.ASTUtil;
+import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.Collections;
@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.VARIABLE_NO_VALUE;
 import static dk.webbies.tajscheck.paser.AstBuilder.*;
 
 /**
@@ -29,15 +30,17 @@ public class CheckType {
         this.typeNames = typeNames;
     }
 
-    public IfStatement checkResultingType(Type type, Expression exp, String path) {
+    public Statement checkResultingType(Type type, Expression exp, String path) {
         List<TypeCheck> typeChecks = generateAssertExpressions(type, exp, path);
 
-        List<Expression> assertCalls = typeChecks.stream().map(check -> {
-            // assert(cond, path, expected, actual)
-            return call(identifier("assert"), check.expression, string(path), string(check.expected), exp);
-        }).collect(Collectors.toList());
 
-        return ifThen(unary(Operator.NOT, ASTUtil.and(assertCalls)), continueStatement());
+        return block(
+                typeChecks.stream().map(check -> {
+                    // assert(cond, path, expected, actual)
+                    CallExpression assertCall = call(identifier("assert"), check.expression, string(path), string(check.expected), exp);
+                    return ifThen(unary(Operator.NOT, AstBuilder.and(assertCall)), Return());
+                }).collect(Collectors.toList())
+        );
     }
 
     private static final class TypeCheck {
@@ -99,7 +102,7 @@ public class CheckType {
 
             List<Expression> checkExpressions = elements.stream().map(element -> generateCheckResultingType(element, exp)).collect(Collectors.toList());
 
-            return ASTUtil.or(checkExpressions);
+            return AstBuilder.or(checkExpressions);
         } else if (type instanceof BooleanLiteral) {
             return binary(exp, Operator.EQUAL_EQUAL_EQUAL, bool(((BooleanLiteral) type).getValue()));
         } else if (type instanceof NumberLiteral) {

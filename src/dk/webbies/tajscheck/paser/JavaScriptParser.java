@@ -175,11 +175,7 @@ public class JavaScriptParser {
         if (node instanceof Statement) {
             return (Statement)node;
         } else if (node instanceof FunctionExpression) {
-            SourceRange loc = node.location;
-            FunctionExpression func = (FunctionExpression) node;
-            Identifier name = func.getName();
-            func.name = null; // This way converting "function name() {}", to the equivalent (in top level functions) "var name = function () {}".
-            return new VariableNode(loc, name, func);
+            return new ExpressionStatement(node.location, (FunctionExpression) node);
         } else {
             throw new RuntimeException("Cannot make class into a statement for the top-program: " + node.getClass().getName());
         }

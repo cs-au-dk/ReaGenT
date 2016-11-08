@@ -15,7 +15,7 @@ public class FunctionCallTest extends Test {
     private List<Type> parameters;
 
     public FunctionCallTest(Type function, List<Type> parameters, Type returnType, String path) {
-        super(Util.concat(Collections.singletonList(function), parameters), returnType, path + "()");
+        super(Collections.singletonList(function), parameters, returnType, path + "()");
         this.function = function;
         this.parameters = parameters;
     }

@@ -186,13 +186,50 @@ public class TestCreator {
         }
 
         @Override
-        public Void visit(UnionType t, Arg arg) {
-            if (seen.contains(t) || nativeTypes.contains(t)) {
+        public Void visit(UnionType union, Arg arg) {
+            if (seen.contains(union) || nativeTypes.contains(union)) {
                 return null;
             }
-            seen.add(t);
+            seen.add(union);
 
-            return null; // TODO: If possible, generate N tests, where each test tests if the resulting type is one of the specific type from the union, and in that case saves it.
+            // Filtering out all primitive types, there is not test generated on those anyway.
+            List<Type> elements = union.getElements().stream().filter(type -> {
+                if (type instanceof SimpleType) {
+                    switch (((SimpleType) type).getKind()) {
+                        case String:
+                        case Boolean:
+                        case Number:
+                            return false;
+                        case Undefined:
+                            return true;
+                        default:
+                            throw new RuntimeException("Kind: " + ((SimpleType) type).getKind());
+                    }
+                } else if (type instanceof BooleanLiteral || type instanceof NumberLiteral || type instanceof StringLiteral) {
+                    return false;
+                } else if (type instanceof InterfaceType || type instanceof GenericType ||type instanceof ReferenceType){
+                    return true;
+                } else {
+                    throw new RuntimeException(type.getClass().getName());
+                }
+            }).collect(Collectors.toList());
+
+            if (elements.size() == 0) {
+                return null;
+            }
+
+            // undefined | Type
+            if (elements.size() == 2 && elements.get(0) instanceof SimpleType && ((SimpleType) elements.get(0)).getKind() == SimpleTypeKind.Undefined) {
+                Type type = elements.get(1);
+                assert type instanceof InterfaceType;
+                tests.add(new IsDefinedTest(union, type, arg.path));
+
+                type.accept(this, arg);
+                return null;
+            } else {
+                throw new RuntimeException();
+            }
+
         }
 
         @Override

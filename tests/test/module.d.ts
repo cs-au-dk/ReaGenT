@@ -1,3 +1,7 @@
 export module moment {
-    function func() : number | boolean;
+    function func(): string;
+    var obj : {
+        a: string
+    }
 }
+

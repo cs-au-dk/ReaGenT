@@ -26,8 +26,10 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
 public class TestProgramBuilder {
     public static final String ASSERTION_FAILURES = "assertionFailures";
     public static final String VARIABLE_NO_VALUE = "no_value";
-    public static final String TYPES_VARIABLE_PREFIX = "value_";
+    public static final String VALUE_VARIABLE_PREFIX = "value_";
     public static final String GET_TYPE_PREFIX = "getType_";
+    public static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
+    public static final String TYPE_VALUE_PREFIX = "type_";
 
     private final Benchmark bench;
     private final List<Test> tests;
@@ -52,7 +54,7 @@ public class TestProgramBuilder {
             testToValueMap.put(test, index);
         }
 
-        this.typeCreator = new TypeCreator(valueLocations, this.typeNames);
+        this.typeCreator = new TypeCreator(valueLocations, this.typeNames, nativeTypes);
     }
 
     private void putProducedValueIndex(int index, Type type) {
@@ -71,7 +73,7 @@ public class TestProgramBuilder {
         // Adding all the var variable_X = null;
         for (int i = 0; i < this.numberOfTypes; i++) {
             program.add(
-                    variable(identifier(TYPES_VARIABLE_PREFIX + i), identifier(VARIABLE_NO_VALUE))
+                    variable(identifier(VALUE_VARIABLE_PREFIX + i), identifier(VARIABLE_NO_VALUE))
             );
         }
 
@@ -92,7 +94,12 @@ public class TestProgramBuilder {
                                         buildTestCases()),
                                 catchBlock(
                                         identifier("e"),
-                                        block(/* Empty */)))
+                                        block(
+                                                ifThen(
+                                                        binary(identifier("e"), Operator.INSTANCEOF, identifier("RuntimeError")),
+                                                        throwStatement(identifier("e"))
+                                                )
+                                        )))
                 )));
 
         program.add(parseProgram("dumb.js"));
@@ -116,10 +123,8 @@ public class TestProgramBuilder {
             result.add(new Pair<>(
                     number(i),
                     block(
-                            Util.concat(
-                                    buildTestCase(test),
-                                    Collections.singletonList(breakStatement())
-                            )
+                            expressionStatement(call(function(block(buildTestCase(test))))),
+                            breakStatement()
                     )
             ));
         }
@@ -136,38 +141,48 @@ public class TestProgramBuilder {
          * Store result for use by other tests
          */
         return Util.concat(
-                Collections.singletonList(checkDependencies(test)),
+                getDependencies(test),
                 testCode,
                 Arrays.asList(
                         new CheckType(nativeTypes, typeNames).checkResultingType(test.getProduces(), identifier("result"), test.getPath()),
-                        expressionStatement(binary(identifier(TYPES_VARIABLE_PREFIX + testToValueMap.get(test)), Operator.EQUAL, identifier("result")))
+                        expressionStatement(binary(identifier(VALUE_VARIABLE_PREFIX + testToValueMap.get(test)), Operator.EQUAL, identifier("result")))
                 ));
     }
 
-    private IfStatement checkDependencies(Test test) {
-        List<Type> dependsOn = new ArrayList<>(test.getDependsOn());
+    private Collection<Statement> getDependencies(Test test) {
 
-        return ifThen(buildDependsOnCheck(dependsOn), continueStatement());
-    }
+        List<Statement> result = new ArrayList<>();
 
-    private Expression buildDependsOnCheck(List<Type> dependsOn) {
-        if (dependsOn.isEmpty()) {
-            return bool(false);
-        }
-        Type typeToCheck = dependsOn.iterator().next();
+        test.getTypeToTest().stream().map((type) ->
+                variable(identifier(TYPE_VALUE_PREFIX + typeCreator.getTypeIndex(type)), null)
+        ).forEach(result::add);
 
-        CallExpression resultTypeCall = getTypeCall(typeToCheck);
-        BinaryExpression checkNextType = binary(resultTypeCall, Operator.EQUAL_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE));
+        test.getTypeToTest().stream().map((type) -> {
+            int index = typeCreator.getTypeIndex(type);
+            return ifThen(
+                    binary(
+                            binary(
+                                    identifier(TYPE_VALUE_PREFIX + index),
+                                    Operator.EQUAL,
+                                    call(identifier(GET_TYPE_PREFIX + index))
+                            ),
+                            Operator.EQUAL_EQUAL_EQUAL,
+                            identifier(VARIABLE_NO_VALUE)
+                    ),
+                    Return()
+            );
+        }).forEach(result::add);
 
-        if (dependsOn.size() == 1) {
-            return checkNextType;
-        } else {
-            return binary(checkNextType, Operator.OR, buildDependsOnCheck(dependsOn.subList(1, dependsOn.size())));
-        }
-    }
+        test.getDependsOn().stream().map((type) -> {
+            int index = typeCreator.getTypeIndex(type);
+            return variable(
+                    identifier(TYPE_VALUE_PREFIX + index),
+                    call(identifier(CONSTRUCT_TYPE_PREFIX + index)
+            ));
+        }).forEach(result::add);
 
-    private CallExpression getTypeCall(Type typeToCheck) {
-        return call(identifier(GET_TYPE_PREFIX + typeCreator.getTypeIndex(typeToCheck)));
+
+        return result;
     }
 
     /**
@@ -175,10 +190,14 @@ public class TestProgramBuilder {
      * And the result of the test should be put into a variable "result".
      */
     private class TestBuilderVisitor implements TestVisitor<List<Statement>> {
+        Expression getTypeExpression(Type type) {
+            return identifier(TYPE_VALUE_PREFIX + typeCreator.getTypeIndex(type));
+        }
+
         @Override
         public List<Statement> visit(MemberAccessTest test) {
             return Arrays.asList(
-                    variable(identifier("base"), getTypeCall(test.getBaseType())),
+                    variable(identifier("base"), getTypeExpression(test.getBaseType())),
                     variable(identifier("result"), member(identifier("base"), test.getProperty()))
             );
         }
@@ -197,9 +216,9 @@ public class TestProgramBuilder {
         public List<Statement> visit(MethodCallTest test) {
             List<Statement> result = new ArrayList<>();
 
-            result.add(variable(identifier("base"), getTypeCall(test.getObject())));
+            result.add(variable(identifier("base"), getTypeExpression(test.getObject())));
 
-            List<Expression> parameters = test.getParameters().stream().map(TestProgramBuilder.this::getTypeCall).collect(Collectors.toList());
+            List<Expression> parameters = test.getParameters().stream().map(this::getTypeExpression).collect(Collectors.toList());
             MethodCallExpression methodCall = methodCall(identifier("base"), test.getPropertyName(), parameters);
 
             result.add(variable(identifier("result"), methodCall));
@@ -211,9 +230,9 @@ public class TestProgramBuilder {
         public List<Statement> visit(ConstructorCallTest test) {
             List<Statement> result = new ArrayList<>();
 
-            result.add(variable(identifier("base"), getTypeCall(test.getFunction())));
+            result.add(variable(identifier("base"), getTypeExpression(test.getFunction())));
 
-            List<Expression> parameters = test.getParameters().stream().map(TestProgramBuilder.this::getTypeCall).collect(Collectors.toList());
+            List<Expression> parameters = test.getParameters().stream().map(this::getTypeExpression).collect(Collectors.toList());
             Expression newCall = AstBuilder.newCall(identifier("base"), parameters);
             result.add(variable(identifier("result"), newCall));
 
@@ -224,13 +243,28 @@ public class TestProgramBuilder {
         public List<Statement> visit(FunctionCallTest test) {
             List<Statement> result = new ArrayList<>();
 
-            result.add(variable(identifier("base"), getTypeCall(test.getFunction())));
+            result.add(variable(identifier("base"), getTypeExpression(test.getFunction())));
 
-            List<Expression> parameters = test.getParameters().stream().map(TestProgramBuilder.this::getTypeCall).collect(Collectors.toList());
+            List<Expression> parameters = test.getParameters().stream().map(this::getTypeExpression).collect(Collectors.toList());
             Expression newCall = AstBuilder.call(identifier("base"), parameters);
             result.add(variable(identifier("result"), newCall));
 
             return result;
+        }
+
+        @Override
+        public List<Statement> visit(IsDefinedTest test) {
+            return Arrays.asList(
+                    variable(identifier("result"), getTypeExpression(test.getType())),
+                    ifThen(
+                            binary(
+                                    binary(identifier("result"), Operator.EQUAL_EQUAL_EQUAL, nullLiteral()),
+                                    Operator.OR,
+                                    binary(unary(Operator.TYPEOF, identifier("result")), Operator.EQUAL_EQUAL_EQUAL, string("undefined"))
+                            ),
+                            Return()
+                    )
+            );
         }
     }
 }

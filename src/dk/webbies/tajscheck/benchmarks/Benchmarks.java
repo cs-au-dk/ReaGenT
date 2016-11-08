@@ -8,7 +8,5 @@ import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 public class Benchmarks {
     public static Benchmark test = new Benchmark(ParseDeclaration.Environment.ES5Core, "tests/test/module.js", "tests/test/module.d.ts", "moment");
 
-    // TODO: The require path is redundant, can be calculated from JSPath.
-    // TODO: Calculate the test-path from the jspath.
     public static Benchmark moment = new Benchmark(ParseDeclaration.Environment.ES5Core, "tests/moment/moment.js", "tests/moment/moment.d.ts", "moment");
 }

@@ -2,6 +2,8 @@ package dk.webbies.tajscheck.testcreator.Test;
 
 import dk.au.cs.casa.typescript.types.Type;
 
+import java.util.Collections;
+
 /**
  * Created by erik1 on 02-11-2016.
  */
@@ -10,7 +12,7 @@ public class MemberAccessTest extends Test {
     private final String key;
 
     public MemberAccessTest(Type dependsOn, Type produces, String key, String path) {
-        super(dependsOn, produces, path + "." + key);
+        super(Collections.singletonList(dependsOn), Collections.EMPTY_LIST, produces, path + "." + key);
         this.baseType = dependsOn;
         this.key = key;
     }

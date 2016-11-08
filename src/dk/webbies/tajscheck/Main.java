@@ -6,8 +6,10 @@ import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.Benchmarks;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import dk.webbies.tajscheck.paser.AST.BlockStatement;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.paser.AstToStringVisitor;
+import dk.webbies.tajscheck.paser.JavaScriptParser;
 import dk.webbies.tajscheck.testcreator.Test.Test;
 import dk.webbies.tajscheck.testcreator.Test.LoadModuleTest;
 import dk.webbies.tajscheck.testcreator.TestCreator;
@@ -21,12 +23,11 @@ import java.util.*;
  */
 public class Main {
     public static void main(String[] args) throws IOException {
-        runForBench(Benchmarks.test);
+//        runForBench(Benchmarks.test);
         runForBench(Benchmarks.moment);
     }
 
     private static void runForBench(Benchmark bench) throws IOException {
-        // TODO: Maybe print as part of the path, how the dependencies where created (function arguments and the like).
         SpecReader spec = ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile));
 
         SpecReader emptySpec = ParseDeclaration.getTypeSpecification(bench.environment, new ArrayList<>());
