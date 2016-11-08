@@ -19,6 +19,10 @@ public class AstBuilder {
         return new VariableNode(null, lValue, init);
     }
 
+    public static VariableNode variable(String id, Expression init) {
+        return new VariableNode(null, identifier(id), init);
+    }
+
     public static Identifier identifier(String name) {
         return new Identifier(null, name);
     }

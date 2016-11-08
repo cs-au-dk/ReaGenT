@@ -84,7 +84,7 @@ public class TypeCreator {
                 getValueOrType = identifier(VALUE_VARIABLE_PREFIX + pair.getRight());
             }
             return new Pair<Expression, Statement>(number(pair.getLeft()), block(
-                    variable(identifier("result"), getValueOrType),
+                    variable("result", getValueOrType),
                     ifThen(binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)), Return(identifier("result")))
             ));
         }).collect(Collectors.toList());
@@ -172,10 +172,10 @@ public class TypeCreator {
 
             List<Statement> program = new ArrayList<>();
             if (returnTypes.isEmpty()) {
-                program.add(variable(identifier("result"), object()));
+                program.add(variable("result", object()));
             } else {
                 program.add(
-                        variable(identifier("functionResult"), call(function(returnOneOfTypes(returnTypes, true))))
+                        variable("functionResult", call(function(returnOneOfTypes(returnTypes, true))))
                 );
                 program.add(
                         ifThenElse(
@@ -196,7 +196,7 @@ public class TypeCreator {
             for (int i = 0; i < properties.size(); i++) {
                 Pair<String, Type> property = properties.get(i);
                 program.add(
-                        variable(identifier("objectResult_" + i), call(function(
+                        variable("objectResult_" + i, call(function(
                                 Return(call(identifier(CONSTRUCT_TYPE_PREFIX + getTypeIndex(property.getRight()))))
                         )))
                 );
@@ -276,7 +276,7 @@ public class TypeCreator {
                     function(
                             CONSTRUCT_TYPE_PREFIX + key,
                             block(
-                                    variable(identifier("result"), call(identifier(GET_TYPE_PREFIX + key))),
+                                    variable("result", call(identifier(GET_TYPE_PREFIX + key))),
                                     ifThenElse(
                                             binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
                                             Return(identifier("result")),

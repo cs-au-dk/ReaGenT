@@ -73,7 +73,7 @@ public class TestProgramBuilder {
         // Adding all the var variable_X = null;
         for (int i = 0; i < this.numberOfTypes; i++) {
             program.add(
-                    variable(identifier(VALUE_VARIABLE_PREFIX + i), identifier(VARIABLE_NO_VALUE))
+                    variable(VALUE_VARIABLE_PREFIX + i, identifier(VARIABLE_NO_VALUE))
             );
         }
 
@@ -81,13 +81,15 @@ public class TestProgramBuilder {
 
         program.add(typeCreator.getBlockStatementWithTypeFunctions());
 
+        program.add(variable("testOrderRecording", array()));
+
         // Non-deterministically running all the test-cases.
         program.add(forLoop(
-                variable(identifier("i"), number(0)),
+                variable("i", number(0)),
                 binary(identifier("i"), Operator.LESS_THAN, number(1000)),
                 binary(identifier("i"), Operator.EQUAL, binary(identifier("i"), Operator.PLUS, number(1))),
                 block(
-                        variable(identifier("testNumberToRun"), binary(binary(methodCall(identifier("Math"), "random"), Operator.MULT, number(tests.size())), Operator.BITWISE_OR, number(0))),
+                        variable("testNumberToRun", binary(binary(methodCall(identifier("Math"), "random"), Operator.MULT, number(tests.size())), Operator.BITWISE_OR, number(0))),
                         tryCatch(
                                 AstBuilder.switchCase(
                                         identifier("testNumberToRun"),
@@ -154,7 +156,7 @@ public class TestProgramBuilder {
         List<Statement> result = new ArrayList<>();
 
         test.getTypeToTest().stream().map((type) ->
-                variable(identifier(TYPE_VALUE_PREFIX + typeCreator.getTypeIndex(type)), null)
+                variable(TYPE_VALUE_PREFIX + typeCreator.getTypeIndex(type), null)
         ).forEach(result::add);
 
         test.getTypeToTest().stream().map((type) -> {
@@ -197,8 +199,8 @@ public class TestProgramBuilder {
         @Override
         public List<Statement> visit(MemberAccessTest test) {
             return Arrays.asList(
-                    variable(identifier("base"), getTypeExpression(test.getBaseType())),
-                    variable(identifier("result"), member(identifier("base"), test.getProperty()))
+                    variable("base", getTypeExpression(test.getBaseType())),
+                    variable("result", member(identifier("base"), test.getProperty()))
             );
         }
 
@@ -216,12 +218,12 @@ public class TestProgramBuilder {
         public List<Statement> visit(MethodCallTest test) {
             List<Statement> result = new ArrayList<>();
 
-            result.add(variable(identifier("base"), getTypeExpression(test.getObject())));
+            result.add(variable("base", getTypeExpression(test.getObject())));
 
             List<Expression> parameters = test.getParameters().stream().map(this::getTypeExpression).collect(Collectors.toList());
             MethodCallExpression methodCall = methodCall(identifier("base"), test.getPropertyName(), parameters);
 
-            result.add(variable(identifier("result"), methodCall));
+            result.add(variable("result", methodCall));
 
             return result;
         }
@@ -230,11 +232,11 @@ public class TestProgramBuilder {
         public List<Statement> visit(ConstructorCallTest test) {
             List<Statement> result = new ArrayList<>();
 
-            result.add(variable(identifier("base"), getTypeExpression(test.getFunction())));
+            result.add(variable("base", getTypeExpression(test.getFunction())));
 
             List<Expression> parameters = test.getParameters().stream().map(this::getTypeExpression).collect(Collectors.toList());
             Expression newCall = AstBuilder.newCall(identifier("base"), parameters);
-            result.add(variable(identifier("result"), newCall));
+            result.add(variable("result", newCall));
 
             return result;
         }
@@ -243,11 +245,11 @@ public class TestProgramBuilder {
         public List<Statement> visit(FunctionCallTest test) {
             List<Statement> result = new ArrayList<>();
 
-            result.add(variable(identifier("base"), getTypeExpression(test.getFunction())));
+            result.add(variable("base", getTypeExpression(test.getFunction())));
 
             List<Expression> parameters = test.getParameters().stream().map(this::getTypeExpression).collect(Collectors.toList());
             Expression newCall = AstBuilder.call(identifier("base"), parameters);
-            result.add(variable(identifier("result"), newCall));
+            result.add(variable("result", newCall));
 
             return result;
         }
@@ -255,7 +257,7 @@ public class TestProgramBuilder {
         @Override
         public List<Statement> visit(IsDefinedTest test) {
             return Arrays.asList(
-                    variable(identifier("result"), getTypeExpression(test.getType())),
+                    variable("result", getTypeExpression(test.getType())),
                     ifThen(
                             binary(
                                     binary(identifier("result"), Operator.EQUAL_EQUAL_EQUAL, nullLiteral()),
