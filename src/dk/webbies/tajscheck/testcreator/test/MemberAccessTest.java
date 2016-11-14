@@ -1,7 +1,8 @@
-package dk.webbies.tajscheck.testcreator.Test;
+package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
+import dk.webbies.tajscheck.ParameterMap;
 
 import java.util.Collections;
 import java.util.Map;
@@ -13,7 +14,7 @@ public class MemberAccessTest extends Test {
     private Type baseType;
     private final String key;
 
-    public MemberAccessTest(Type dependsOn, Type produces, String key, String path, Map<TypeParameterType, Type> parameterMap) {
+    public MemberAccessTest(Type dependsOn, Type produces, String key, String path, ParameterMap parameterMap) {
         super(Collections.singletonList(dependsOn), Collections.EMPTY_LIST, produces, path + "." + key, parameterMap);
         this.baseType = dependsOn;
         this.key = key;

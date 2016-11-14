@@ -4,6 +4,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.ExecutionRecording;
+import dk.webbies.tajscheck.ParameterMap;
 import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
@@ -11,7 +12,9 @@ import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.paser.JavaScriptParser;
-import dk.webbies.tajscheck.testcreator.Test.*;
+import dk.webbies.tajscheck.testcreator.test.*;
+import dk.webbies.tajscheck.testcreator.test.check.Check;
+import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
@@ -76,7 +79,7 @@ public class TestProgramBuilder {
         this.typeCreator = new TypeCreator(valueLocations, this.typeNames, nativeTypes, typeParameterIndexer);
     }
 
-    private void putProducedValueIndex(int index, Type type, Map<TypeParameterType, Type> parameterMap) {
+    private void putProducedValueIndex(int index, Type type, ParameterMap parameterMap) {
         valueLocations.put(new TypeWithParameters(type, parameterMap), index);
         if (type instanceof InterfaceType) {
             List<Type> baseTypes = ((InterfaceType) type).getBaseTypes();
@@ -170,6 +173,7 @@ public class TestProgramBuilder {
         List<Test> tests = new ArrayList<>(this.tests);
 
         for (int i = 0; i < tests.size(); i++) {
+            System.out.println(i + " / " + tests.size());
             Test test = tests.get(i);
             result.add(new Pair<>(
                     number(i),
@@ -203,7 +207,7 @@ public class TestProgramBuilder {
     private Collection<Statement> getDependencies(Test test) {
         List<Statement> result = new ArrayList<>();
 
-        Map<TypeParameterType, Type> parameterMap = test.getParameterMap();
+        ParameterMap parameterMap = test.getParameterMap();
 
         test.getTypeToTest().stream()
                 .map((type) -> variable(TYPE_VALUE_PREFIX + typeCreator.getTypeIndex(type, parameterMap), null))
@@ -238,11 +242,11 @@ public class TestProgramBuilder {
     }
 
     /**
-     * For each of these, produce code that expects all the getType calls to succeed.
+     * For each of these, produce code that expects all the getTypeString calls to succeed.
      * And the result of the test should be put into a variable "result".
      */
     private class TestBuilderVisitor implements TestVisitor<List<Statement>> {
-        Expression getTypeExpression(Type type, Map<TypeParameterType, Type> parameterMap) {
+        Expression getTypeExpression(Type type, ParameterMap parameterMap) {
             return identifier(TYPE_VALUE_PREFIX + typeCreator.getTypeIndex(type, parameterMap));
         }
 
@@ -305,24 +309,13 @@ public class TestProgramBuilder {
         }
 
         @Override
-        public List<Statement> visit(IsDefinedTest test) {
+        public List<Statement> visit(FilterTest test) {
             return Arrays.asList(
                     variable("result", getTypeExpression(test.getType(), test.getParameterMap())),
                     ifThen(
-                            binary(
-                                    binary(identifier("result"), Operator.EQUAL_EQUAL_EQUAL, nullLiteral()),
-                                    Operator.OR,
-                                    binary(unary(Operator.TYPEOF, identifier("result")), Operator.EQUAL_EQUAL_EQUAL, string("undefined"))
-                            ),
+                            CheckToExpression.generate(Check.not(test.getCheck()), identifier("result")),
                             Return()
                     )
-            );
-        }
-
-        @Override
-        public List<Statement> visit(IdTest test) {
-            return Collections.singletonList(
-                    variable("result", getTypeExpression(test.getType(), test.getParameterMap()))
             );
         }
 

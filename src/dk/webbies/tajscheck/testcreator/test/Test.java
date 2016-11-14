@@ -1,13 +1,12 @@
-package dk.webbies.tajscheck.testcreator.Test;
+package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
+import dk.webbies.tajscheck.ParameterMap;
 import dk.webbies.tajscheck.TypesUtil;
-import dk.webbies.tajscheck.util.Util;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,9 +17,9 @@ public abstract class Test {
     private final Collection<Type> dependsOn;
     private final Type produces;
     private String path;
-    private final Map<TypeParameterType, Type> parameterMap;
+    private final ParameterMap parameterMap;
 
-    protected Test(Collection<Type> typeToTest, Collection<Type> dependsOn, Type produces, String path, Map<TypeParameterType, Type> parameterMap) {
+    protected Test(Collection<Type> typeToTest, Collection<Type> dependsOn, Type produces, String path, ParameterMap parameterMap) {
         this.typeToTest = typeToTest;
         this.dependsOn = dependsOn;
         this.produces = produces;
@@ -81,7 +80,7 @@ public abstract class Test {
 
     public abstract int hashCodeNoPath();
 
-    public Map<TypeParameterType, Type> getParameterMap() {
+    public ParameterMap getParameterMap() {
         return parameterMap;
     }
 }

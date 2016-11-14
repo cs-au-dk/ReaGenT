@@ -1,25 +1,30 @@
-package dk.webbies.tajscheck.testcreator.Test;
+package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
-import dk.au.cs.casa.typescript.types.TypeParameterType;
+import dk.webbies.tajscheck.ParameterMap;
+import dk.webbies.tajscheck.testcreator.test.check.Check;
 
 import java.util.Collections;
-import java.util.Map;
 
 /**
  * The simplest test there can be, it just loads the type to test, and spits it out the other end.
  */
-public class IdTest extends Test {
+public class FilterTest extends Test {
     private Type type;
+    private Check check;
 
-    // TODO: This and the "IsDefinedTest" into a single FilterTest, which then has a list of filters.
-    public IdTest(Type type, Type produces, String path, Map<TypeParameterType, Type> parameterMap) {
+    public FilterTest(Type type, Type produces, String path, ParameterMap parameterMap, Check check) {
         super(Collections.singletonList(type), Collections.EMPTY_LIST, produces, path, parameterMap);
         this.type = type;
+        this.check = check;
     }
 
     public Type getType() {
         return type;
+    }
+
+    public Check getCheck() {
+        return check;
     }
 
     @Override

@@ -5,6 +5,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
+import dk.webbies.tajscheck.ParameterMap;
 import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.paser.AST.*;
@@ -38,7 +39,7 @@ public class TypeCreator {
         this.typeIndexes = new HashMap<>();
     }
 
-    public Statement getExistingInstanceOfType(Type type, Map<TypeParameterType, Type> parameterMap) {
+    public Statement getExistingInstanceOfType(Type type, ParameterMap parameterMap) {
         // This is filtering the keys, where the type is the same, and where the map contains at least the same key/value pairs.
         Collection<Integer> values = valueLocations.keySet().stream()
                 .filter(candidate -> TypeCreator.canTypeBeUsed(candidate, new TypeWithParameters(type, parameterMap))).map(valueLocations::get)
@@ -56,9 +57,9 @@ public class TypeCreator {
 
     /*
             Collection<Integer> values = valueLocations.keySet().stream()
-                .filter(key ->
-                        key.getType() == type
-                ).filter(key -> {
+                .check(key ->
+                        key.getTypeString() == type
+                ).check(key -> {
                     return parameterMap.entrySet().stream().allMatch(entry -> {
                         return parameterMap.containsKey(entry.getKey()) && parameterMap.get(entry.getKey()) == entry.getValue();
                     });
@@ -81,7 +82,7 @@ public class TypeCreator {
         return true;
     }
 
-    private Statement returnOneOfTypes(List<Type> types, boolean construct, Map<TypeParameterType, Type> parameterMap) {
+    private Statement returnOneOfTypes(List<Type> types, boolean construct, ParameterMap parameterMap) {
         List<Integer> elements = types.stream().distinct().map((type) -> getTypeIndex(type, parameterMap)).collect(Collectors.toList());
 
         return returnOneOfIndexes(elements, true, construct);
@@ -135,7 +136,7 @@ public class TypeCreator {
         );
     }
 
-    private Statement constructNewInstanceOfType(Type type, Map<TypeParameterType, Type> parameterMap) {
+    private Statement constructNewInstanceOfType(Type type, ParameterMap parameterMap) {
         if (type instanceof SimpleType) {
             SimpleType simple = (SimpleType) type;
             if (simple.getKind() == SimpleTypeKind.String) {
@@ -331,17 +332,13 @@ public class TypeCreator {
         return result;
     }
 
-    public int getTypeIndex(Type type, Map<TypeParameterType, Type> parameterMap) {
+    public int getTypeIndex(Type type, ParameterMap parameterMap) {
         TypeWithParameters key = new TypeWithParameters(type, parameterMap);
         if (typeIndexes.containsKey(key)) {
             return typeIndexes.get(key);
         } else {
             int value = typeIndexes.size();
             typeIndexes.put(key, value);
-
-            if (value == 18) {
-                System.out.println();
-            }
 
             ExpressionStatement primaryFunction = expressionStatement(
                     function(

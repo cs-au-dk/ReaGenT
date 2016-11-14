@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  * Created by erik1 on 01-11-2016.
  */
 public class TypesUtil {
-    public static Map<TypeParameterType, Type> generateParameterMap(ReferenceType ref) {
+    public static ParameterMap generateParameterMap(ReferenceType ref) {
         GenericType target = (GenericType) ref.getTarget();
 
         Map<TypeParameterType, Type> parameterMap = new HashMap<>();
@@ -24,13 +24,11 @@ public class TypesUtil {
         for (int i = 0; i < arguments.size(); i++) {
             parameterMap.put(parameters.get(i), arguments.get(i));
         }
-        return parameterMap;
+        return new ParameterMap(parameterMap);
     }
 
-    public static Map<TypeParameterType, Type> generateParameterMap(ReferenceType type, Map<TypeParameterType, Type> parameterMap) {
-        Map<TypeParameterType, Type> result = new HashMap<>(parameterMap);
-        result.putAll(generateParameterMap(type));
-        return result;
+    public static ParameterMap generateParameterMap(ReferenceType type, ParameterMap parameterMap) {
+        return parameterMap.append(generateParameterMap(type).getMap());
     }
 
     static Set<Type> collectNativeTypes(SpecReader spec, SpecReader emptySpec) {
@@ -59,7 +57,7 @@ public class TypesUtil {
         return nativeCollector.getSeen();
     }
 
-    public static Map<TypeParameterType, Type> filterParameterMap(Map<TypeParameterType, Type> parameterMap, Collection<Type> types) {
+    public static ParameterMap filterParameterMap(ParameterMap parameterMap, Collection<Type> types) {
         CollectAllTypesVisitor visitor = new CollectAllTypesVisitor();
         types.forEach(visitor::accept);
         Set<Type> reachable = visitor.getSeen();
@@ -83,7 +81,8 @@ public class TypesUtil {
             return filterParameterMap(parameterMap, reachableTypes);
         } else {
             assert keys.equals(keys2);
-            return keys.stream().collect(Collectors.toMap(Function.identity(), parameterMap::get));
+            Map<TypeParameterType, Type> map = keys.stream().collect(Collectors.toMap(Function.identity(), parameterMap::get));
+            return new ParameterMap(map);
         }
     }
 

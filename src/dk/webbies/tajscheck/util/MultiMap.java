@@ -1,9 +1,6 @@
 package dk.webbies.tajscheck.util;
 
-import dk.webbies.tajscheck.testcreator.Test.Test;
-
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 

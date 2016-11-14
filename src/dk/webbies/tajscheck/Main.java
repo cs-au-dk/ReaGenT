@@ -8,8 +8,8 @@ import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.paser.AstToStringVisitor;
-import dk.webbies.tajscheck.testcreator.Test.Test;
-import dk.webbies.tajscheck.testcreator.Test.LoadModuleTest;
+import dk.webbies.tajscheck.testcreator.test.Test;
+import dk.webbies.tajscheck.testcreator.test.LoadModuleTest;
 import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.util.Util;
 

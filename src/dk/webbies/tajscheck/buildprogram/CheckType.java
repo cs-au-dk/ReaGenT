@@ -1,14 +1,14 @@
 package dk.webbies.tajscheck.buildprogram;
 
-import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
+import dk.webbies.tajscheck.ParameterMap;
+import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.paser.AST.*;
-import dk.webbies.tajscheck.paser.ASTUtil;
-import dk.webbies.tajscheck.paser.AstBuilder;
-import dk.webbies.tajscheck.util.Util;
+import dk.webbies.tajscheck.testcreator.test.check.Check;
+import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,9 +22,9 @@ public class CheckType {
     private final Set<Type> nativeTypes;
     private Map<Type, String> typeNames;
     private TestProgramBuilder.TypeParameterIndexer typeParameterIndexer;
-    private Map<TypeParameterType, Type> parameterMap;
+    private ParameterMap parameterMap;
 
-    public CheckType(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, Map<TypeParameterType, Type> parameterMap) {
+    public CheckType(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, ParameterMap parameterMap) {
         this.nativeTypes = nativeTypes;
         this.typeNames = typeNames;
         this.typeParameterIndexer = typeParameterIndexer;
@@ -32,37 +32,37 @@ public class CheckType {
     }
 
     public Statement checkResultingType(Type type, Expression exp, String path) {
-        List<TypeCheck> typeChecks = generateAssertExpressions(type, exp);
-
+        List<TypeCheck> typeChecks = type.accept(new CreateTypeCheckVisitor(nativeTypes, typeParameterIndexer, typeNames), parameterMap);
 
         return block(
                 typeChecks.stream().map(check -> {
                     // assert(cond, path, expected, actual)
-                    CallExpression assertCall = call(identifier("assert"), check.expression, string(path), string(check.expected), exp);
-                    return ifThen(unary(Operator.NOT, AstBuilder.and(assertCall)), Return());
+                    Expression checkExpression = check.getCheck().accept(new CheckToExpression(), exp);
+                    CallExpression assertCall = call(identifier("assert"), checkExpression, string(path), string(check.getExpected()), exp);
+                    return ifThen(unary(Operator.NOT, assertCall), Return());
                 }).collect(Collectors.toList())
         );
     }
 
     private static final class TypeCheck {
-        private final Expression expression;
+        private final Check check;
         private final String expected;
 
-        private TypeCheck(Expression expression, String expected) {
-            this.expression = expression;
+        private TypeCheck(Check check, String expected) {
+            this.check = check;
             this.expected = expected;
-        }
-
-        public Expression getExpression() {
-            return expression;
         }
 
         public String getExpected() {
             return expected;
         }
+
+        public Check getCheck() {
+            return check;
+        }
     }
 
-    private List<TypeCheck> generateAssertExpressions(Type type, Expression exp) {
+    /*private List<TypeCheck> generateAssertExpressionsOld(Type type, Expression exp) {
         if ("Object".equals(typeNames.get(type))) {
             type = SpecReader.makeEmptySyntheticInterfaceType();
         }
@@ -74,14 +74,14 @@ public class CheckType {
         }
 
         if (type instanceof UnionType) {
-            List<List<TypeCheck>> unionElements = ((UnionType) type).getElements().stream().map(subType -> this.generateAssertExpressions(subType, exp)).collect(Collectors.toList());
+            List<List<TypeCheck>> unionElements = ((UnionType) type).getElements().stream().map(subType -> this.generateAssertExpressionsOld(subType, exp)).collect(Collectors.toList());
 
             return Collections.singletonList(createUnionCheck(unionElements));
         } else if (type instanceof IntersectionType) {
             return ((IntersectionType) type)
                     .getElements()
                     .stream()
-                    .map(subType -> this.generateAssertExpressions(subType, exp))
+                    .map(subType -> this.generateAssertExpressionsOld(subType, exp))
                     .reduce(new ArrayList<>(), Util::reduceList);
         }
 
@@ -102,64 +102,19 @@ public class CheckType {
             );
         }
 
-        if (type instanceof SimpleType) {
-            if (((SimpleType) type).getKind() == SimpleTypeKind.Any) {
-                return Collections.singletonList(
-                        new TypeCheck(bool(true), "[any]")
-                );
-            }
-            String typeof = getTypeOf((SimpleType) type);
-
-            return getTypeOfCheck(exp, typeof);
-        } else if (type instanceof InterfaceType && isEmptyInterface((InterfaceType) type)) {
-            return Collections.singletonList(
-                    new TypeCheck(bool(true), "[any]")
-            );
-        } else if (type instanceof ReferenceType && "Array".equals(typeNames.get(((ReferenceType) type).getTarget()))) {
-            // TODO: Check the index type:
-            BinaryExpression check = binary(string("[object Array]"), Operator.EQUAL_EQUAL_EQUAL, methodCall(member(member(identifier("Object"), "prototype"), "toString"), "call", exp));
-
-            return Arrays.asList(expectNotNull(exp), new TypeCheck(check, "Array"));
-        } else if ("Date".equals(typeNames.get(type))) {
-            BinaryExpression check = binary(member(exp, "__proto__"), Operator.EQUAL_EQUAL_EQUAL, member(identifier("Date"), "prototype"));
-
-            return Arrays.asList(expectNotNull(exp), new TypeCheck(check, "Date"));
-        } else if ("Function".equals(typeNames.get(type))) {
+        if ("Function".equals(typeNames.get(type))) {
             return getTypeOfCheck(exp, "function");
         } else if (nativeTypes.contains(type)) {
             throw new RuntimeException();
-        } else if (type instanceof InterfaceType || type instanceof GenericType || type instanceof ReferenceType) {
-
-            boolean hasFunctions;
-            if (type instanceof ReferenceType) {
-                type = ((ReferenceType) type).getTarget();
-                assert type instanceof GenericType;
-            }
-
-            if (type instanceof InterfaceType) {
-                hasFunctions = !((InterfaceType) type).getDeclaredCallSignatures().isEmpty();
-                hasFunctions |= !((InterfaceType) type).getDeclaredConstructSignatures().isEmpty();
-            } else {
-                hasFunctions = !((GenericType) type).getDeclaredCallSignatures().isEmpty();
-                hasFunctions |= !((GenericType) type).getDeclaredConstructSignatures().isEmpty();
-            }
-
-            if (hasFunctions) {
-                return getTypeOfCheck(exp, "function");
-            } else {
-                return Collections.singletonList(
-                        createUnionCheck(getTypeOfCheck(exp, "function"), getTypeOfCheck(exp, "object"))
-                );
-            }
         } else if (type instanceof TypeParameterType) {
             TypeParameterType parameter = (TypeParameterType) type;
             assert parameter.getTarget() == null;
 
             if (parameterMap.containsKey(type)) {
-                return generateAssertExpressions(parameterMap.get(type), exp);
+                return generateAssertExpressionsOld(parameterMap.get(type), exp);
             }
 
-            List<TypeCheck> checks = new ArrayList<>(generateAssertExpressions(parameter.getConstraint(), exp));
+            List<TypeCheck> checks = new ArrayList<>(generateAssertExpressionsOld(parameter.getConstraint(), exp));
 
             String markerField = typeParameterIndexer.getMarkerField(parameter);
             checks.add(new TypeCheck(
@@ -171,21 +126,176 @@ public class CheckType {
         } else {
             throw new RuntimeException("Unhandled type: " + type.getClass());
         }
+    }*/
+
+
+    private static final class CreateTypeCheckVisitor implements TypeVisitorWithArgument<List<TypeCheck>, ParameterMap> {
+        private final Set<Type> nativeTypes;
+        private final TestProgramBuilder.TypeParameterIndexer typeParameterIndexer;
+        private final Map<Type, String> typeNames;
+
+        private CreateTypeCheckVisitor(Set<Type> nativeTypes, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, Map<Type, String> typeNames) {
+            this.nativeTypes = nativeTypes;
+            this.typeParameterIndexer = typeParameterIndexer;
+            this.typeNames = typeNames;
+        }
+
+        @Override
+        public List<TypeCheck> visit(AnonymousType t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public List<TypeCheck> visit(ClassType t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public List<TypeCheck> visit(GenericType t, ParameterMap parameterMap) {
+            if (nativeTypes.contains(t)) {
+                throw new RuntimeException();
+            }
+            assert t.getTypeParameters().equals(t.getTypeArguments());
+            return t.toInterface().accept(this, parameterMap);
+        }
+
+        @Override
+        public List<TypeCheck> visit(InterfaceType t, ParameterMap parameterMap) {
+            if (isEmptyInterface(t)) {
+                return Collections.singletonList(new TypeCheck(Check.trueCheck(), "[any]"));
+            }
+            if ("Date".equals(typeNames.get(t))) {
+                return Arrays.asList(expectNotNull(), new TypeCheck(Check.instanceOf(identifier("Date")), "Date"));
+            }
+
+            if (nativeTypes.contains(t)) {
+                throw new RuntimeException();
+            }
+
+            if (!t.getDeclaredCallSignatures().isEmpty() || !t.getDeclaredConstructSignatures().isEmpty()) {
+                return Collections.singletonList(
+                        new TypeCheck(
+                                Check.typeOf("function"),
+                                "function"
+                        )
+                );
+            } else {
+                return Collections.singletonList(
+                        new TypeCheck(
+                                Check.or(
+                                        Check.typeOf("function"),
+                                        Check.typeOf("object")
+                                ),
+                                "function or object"
+                        )
+                );
+            }
+        }
+
+        @Override
+        public List<TypeCheck> visit(ReferenceType t, ParameterMap parameterMap) {
+            if ("Array".equals(typeNames.get(t.getTarget()))) {
+                // TODO: Check the index type:
+                return Arrays.asList(expectNotNull(), new TypeCheck(Check.instanceOf(identifier("Array")), "Array"));
+            }
+
+            if (nativeTypes.contains(t)) {
+                throw new RuntimeException();
+            }
+            return t.getTarget().accept(this, parameterMap.append(TypesUtil.generateParameterMap(t)));
+        }
+
+        @Override
+        public List<TypeCheck> visit(SimpleType t, ParameterMap parameterMap) {
+            if (t.getKind() == SimpleTypeKind.Any) {
+                return Collections.singletonList(
+                        new TypeCheck(Check.trueCheck(), "[any]")
+                );
+            }
+            String typeOf = getTypeOf(t);
+            return Collections.singletonList(new TypeCheck(Check.typeOf(typeOf), typeOf));
+        }
+
+        @Override
+        public List<TypeCheck> visit(TupleType t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public List<TypeCheck> visit(UnionType t, ParameterMap parameterMap) {
+            return Collections.singletonList(
+                    createUnionCheck(t.getElements().stream().map(subType -> subType.accept(this, parameterMap)).collect(Collectors.toList()))
+            );
+        }
+
+        @Override
+        public List<TypeCheck> visit(UnresolvedType t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public List<TypeCheck> visit(TypeParameterType parameter, ParameterMap parameterMap) {
+            assert parameter.getTarget() == null;
+
+            if (parameterMap.containsKey(parameter)) {
+                return parameterMap.get(parameter).accept(this, parameterMap);
+            }
+
+            List<TypeCheck> checks = new ArrayList<>(parameter.getConstraint().accept(this, parameterMap));
+
+            String markerField = typeParameterIndexer.getMarkerField(parameter);
+
+            checks.add(expectNotNull());
+            checks.add(new TypeCheck(
+                    Check.field(markerField, Check.equalTo(bool(true))),
+                    "a marker i placed (." + markerField + ") to be present, because this is a generic type, it wasn't! "
+            ));
+
+            return checks;
+        }
+
+        @Override
+        public List<TypeCheck> visit(SymbolType t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public List<TypeCheck> visit(StringLiteral t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public List<TypeCheck> visit(BooleanLiteral t, ParameterMap parameterMap) {
+            return Collections.singletonList(
+                    new TypeCheck(Check.equalTo(bool(t.getValue())), Boolean.toString(t.getValue()))
+            );
+        }
+
+        @Override
+        public List<TypeCheck> visit(NumberLiteral t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public List<TypeCheck> visit(IntersectionType t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
     }
 
+
     @SafeVarargs
-    private final TypeCheck createUnionCheck(List<TypeCheck>... checks) {
+    private static final TypeCheck createUnionCheck(List<TypeCheck>... checks) {
         List<List<TypeCheck>> checksList = Arrays.asList(checks);
         return createUnionCheck(checksList);
     }
 
-    private TypeCheck createUnionCheck(List<List<TypeCheck>> checksLists) {
+    private static TypeCheck createUnionCheck(List<List<TypeCheck>> checksLists) {
         assert !checksLists.isEmpty();
         if (checksLists.size() == 1) {
             return createIntersection(checksLists.iterator().next());
         }
 
-        List<TypeCheck> checks = checksLists.stream().map(this::createIntersection).collect(Collectors.toList());
+        List<TypeCheck> checks = checksLists.stream().map(CheckType::createIntersection).collect(Collectors.toList());
 
         StringBuilder expected = new StringBuilder("(");
         for (int i = 0; i < checks.size(); i++) {
@@ -196,12 +306,12 @@ public class CheckType {
         }
         expected.append(")");
 
-        Expression check = ASTUtil.or(checks.stream().map(TypeCheck::getExpression).collect(Collectors.toList()));
+        Check check = Check.or(checks.stream().map(TypeCheck::getCheck).collect(Collectors.toList()));
 
         return new TypeCheck(check, expected.toString());
     }
 
-    private TypeCheck createIntersection(List<TypeCheck> checks) {
+    private static TypeCheck createIntersection(List<TypeCheck> checks) {
         assert !checks.isEmpty();
         if (checks.size() == 1) {
             return checks.iterator().next();
@@ -215,17 +325,12 @@ public class CheckType {
         }
         expected.append(")");
 
-        Expression check = ASTUtil.and(checks.stream().map(TypeCheck::getExpression).collect(Collectors.toList()));
+        Check check = Check.and(checks.stream().map(TypeCheck::getCheck).collect(Collectors.toList()));
 
         return new TypeCheck(check, expected.toString());
     }
 
-    private List<TypeCheck> getTypeOfCheck(Expression exp, String typeof) {
-        Expression check = binary(unary(Operator.TYPEOF, exp), Operator.EQUAL_EQUAL_EQUAL, string(typeof));
-        return Collections.singletonList(new TypeCheck(check, typeof));
-    }
-
-    private String getTypeOf(SimpleType type) {
+    private static String getTypeOf(SimpleType type) {
         switch (type.getKind()) {
             case String:
                 return "string";
@@ -241,18 +346,17 @@ public class CheckType {
         }
     }
 
-    private TypeCheck expectNotNull(Expression exp) {
+    private static TypeCheck expectNotNull() {
         return new TypeCheck(
-                binary(
-                        binary(exp, Operator.NOT_EQUAL_EQUAL, nullLiteral()),
-                        Operator.AND,
-                        binary(unary(Operator.TYPEOF, exp), Operator.NOT_EQUAL_EQUAL, string("undefined"))
+                Check.and(
+                    Check.not(Check.typeOf("undefined")),
+                    Check.not(Check.equalTo(nullLiteral()))
                 ),
                 "a non null value"
         );
     }
 
-    private boolean isEmptyInterface(InterfaceType type) {
+    private static boolean isEmptyInterface(InterfaceType type) {
         return type.getDeclaredProperties().isEmpty() &&
                 type.getBaseTypes().isEmpty() &&
                 type.getTypeParameters().isEmpty() &&

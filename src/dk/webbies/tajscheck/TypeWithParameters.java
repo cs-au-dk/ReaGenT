@@ -10,9 +10,9 @@ import java.util.Map;
  */
 public class TypeWithParameters {
     private final Type type;
-    private final Map<TypeParameterType, Type> parameterMap;
+    private final ParameterMap parameterMap;
 
-    public TypeWithParameters(Type type, Map<TypeParameterType, Type> parameterMap) {
+    public TypeWithParameters(Type type, ParameterMap parameterMap) {
         this.type = type;
         this.parameterMap = parameterMap;
     }
@@ -21,7 +21,7 @@ public class TypeWithParameters {
         return type;
     }
 
-    public Map<TypeParameterType, Type> getParameterMap() {
+    public ParameterMap getParameterMap() {
         return parameterMap;
     }
 

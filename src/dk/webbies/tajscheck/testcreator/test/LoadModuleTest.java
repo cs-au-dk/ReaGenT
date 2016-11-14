@@ -1,6 +1,7 @@
-package dk.webbies.tajscheck.testcreator.Test;
+package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tajscheck.ParameterMap;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,7 +13,7 @@ public class LoadModuleTest extends Test {
     private final String module;
 
     public LoadModuleTest(String module, Type typeToTest) {
-        super(Collections.EMPTY_LIST, Collections.EMPTY_LIST, typeToTest, "require(\"" + module + "\")", new HashMap<>());
+        super(Collections.EMPTY_LIST, Collections.EMPTY_LIST, typeToTest, "require(\"" + module + "\")", new ParameterMap());
         this.module = module;
     }
 

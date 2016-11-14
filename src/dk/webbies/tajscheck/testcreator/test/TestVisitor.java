@@ -1,4 +1,4 @@
-package dk.webbies.tajscheck.testcreator.Test;
+package dk.webbies.tajscheck.testcreator.test;
 
 /**
  * Created by erik1 on 02-11-2016.
@@ -15,7 +15,5 @@ public interface TestVisitor<T> {
 
     T visit(FunctionCallTest test);
 
-    T visit(IsDefinedTest test);
-
-    T visit(IdTest test);
+    T visit(FilterTest test);
 }

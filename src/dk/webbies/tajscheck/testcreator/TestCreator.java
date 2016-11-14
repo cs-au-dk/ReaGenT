@@ -1,15 +1,20 @@
 package dk.webbies.tajscheck.testcreator;
 
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tajscheck.ParameterMap;
 import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
-import dk.webbies.tajscheck.testcreator.Test.*;
+import dk.webbies.tajscheck.paser.AstBuilder;
+import dk.webbies.tajscheck.testcreator.test.*;
+import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static dk.webbies.tajscheck.testcreator.test.check.Check.*;
 
 /**
  * Created by erik1 on 01-11-2016.
@@ -27,10 +32,10 @@ public class TestCreator {
             for (Signature callSignature : callSignatures) {
                 List<Type> parameters = callSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                 topLevelFunctionTests.add(
-                        new FunctionCallTest(typeToTest, parameters, callSignature.getResolvedReturnType(), module, new HashMap<>())
+                        new FunctionCallTest(typeToTest, parameters, callSignature.getResolvedReturnType(), module, new ParameterMap())
                 );
 
-                callSignature.getResolvedReturnType().accept(visitor, new Arg(module + "()", new HashMap<>()));
+                callSignature.getResolvedReturnType().accept(visitor, new Arg(module + "()", new ParameterMap()));
             }
 
 //            List<Signature> constructSignatures = typeToTest instanceof InterfaceType ? ((InterfaceType) typeToTest).getDeclaredConstructSignatures() : ((GenericType) typeToTest).getDeclaredConstructSignatures();
@@ -38,14 +43,14 @@ public class TestCreator {
             for (Signature constructSignature : constructSignatures) {
                 List<Type> parameters = constructSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                 topLevelFunctionTests.add(
-                        new ConstructorCallTest(typeToTest, parameters, constructSignature.getResolvedReturnType(), module, new HashMap<>())
+                        new ConstructorCallTest(typeToTest, parameters, constructSignature.getResolvedReturnType(), module, new ParameterMap())
                 );
 
-                constructSignature.getResolvedReturnType().accept(visitor, new Arg("new " + module + "()", new HashMap<>()));
+                constructSignature.getResolvedReturnType().accept(visitor, new Arg("new " + module + "()", new ParameterMap()));
             }
         }
 
-        typeToTest.accept(visitor, new Arg(module, new HashMap<>()));
+        typeToTest.accept(visitor, new Arg(module, new ParameterMap()));
 
         return concatDuplicateTests(Util.concat(topLevelFunctionTests, visitor.getTests()));
     }
@@ -100,26 +105,23 @@ public class TestCreator {
 
     private static final class Arg {
         private final String path;
-        private final Map<TypeParameterType, Type> parameterMap;
+        private final ParameterMap parameterMap;
 
-        private Arg(String path, Map<TypeParameterType, Type> parameterMap) {
+        private Arg(String path, ParameterMap parameterMap) {
             this.path = path;
-            this.parameterMap = Collections.unmodifiableMap(parameterMap);
+            this.parameterMap = parameterMap;
         }
 
         private Arg append(String path) {
             return new Arg(this.path + "." + path, parameterMap);
         }
 
-        public Map<TypeParameterType,Type> getParameterMap() {
+        public ParameterMap getParameterMap() {
             return parameterMap;
         }
 
-        private Arg withParameters(Map<TypeParameterType, Type> newParameters) {
-            HashMap<TypeParameterType, Type> map = new HashMap<>();
-            map.putAll(this.parameterMap);
-            map.putAll(newParameters);
-            return new Arg(this.path, map);
+        private Arg withParameters(ParameterMap newParameters) {
+            return new Arg(this.path, this.parameterMap.append(newParameters));
         }
     }
 
@@ -225,7 +227,7 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            Map<TypeParameterType, Type> newParameters = TypesUtil.generateParameterMap(t);
+            ParameterMap newParameters = TypesUtil.generateParameterMap(t);
 
             t.getTarget().accept(this, arg.append("<>").withParameters(newParameters));
 
@@ -292,7 +294,11 @@ public class TestCreator {
             if (elements.size() == 2 && elements.get(0) instanceof SimpleType && ((SimpleType) elements.get(0)).getKind() == SimpleTypeKind.Undefined) {
                 Type type = elements.get(1);
                 assert type instanceof InterfaceType || type instanceof GenericType;
-                tests.add(new IsDefinedTest(union, type, arg.path, arg.getParameterMap()));
+                Check check = not(or(
+                        typeOf("undefined"),
+                        equalTo(AstBuilder.nullLiteral())
+                ));
+                tests.add(new FilterTest(union, type, arg.path, arg.getParameterMap(), check));
 
                 type.accept(this, arg);
                 return null;
@@ -328,7 +334,7 @@ public class TestCreator {
             assert t.getTarget() == null;
 
             if (t.getConstraint() != null) {
-                tests.add(new IdTest(t, t.getConstraint(), arg.path, arg.getParameterMap()));
+                tests.add(new FilterTest(t, t.getConstraint(), arg.path, arg.getParameterMap(), Check.trueCheck()));
             }
 
             return null;
@@ -369,7 +375,7 @@ public class TestCreator {
             seen.add(withParameters);
 
             for (Type subType : t.getElements()) {
-                tests.add(new IdTest(t, subType, arg.path, arg.getParameterMap()));
+                tests.add(new FilterTest(t, subType, arg.path, arg.getParameterMap(), Check.trueCheck()));
                 subType.accept(this, arg);
             }
 
