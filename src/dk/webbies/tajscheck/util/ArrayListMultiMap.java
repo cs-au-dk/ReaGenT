@@ -1,11 +1,12 @@
 package dk.webbies.tajscheck.util;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by erik1 on 19-10-2016.
  */
-public class ArrayListMultimap<K, T> implements MultiMap<K, T> {
+public class ArrayListMultiMap<K, T> implements MultiMap<K, T> {
     private Map<K, List<T>> map = new HashMap<>();
 
     @Override
@@ -44,5 +45,10 @@ public class ArrayListMultimap<K, T> implements MultiMap<K, T> {
     @Override
     public boolean containsKey(K key) {
         return map.containsKey(key);
+    }
+
+    @Override
+    public Map<K, Collection<T>> toMap() {
+        return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

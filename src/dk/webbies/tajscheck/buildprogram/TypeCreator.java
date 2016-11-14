@@ -5,6 +5,8 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
+import dk.webbies.tajscheck.TypeWithParameters;
+import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
@@ -21,21 +23,26 @@ import static dk.webbies.tajscheck.paser.AstBuilder.identifier;
  * Created by erik1 on 03-11-2016.
  */
 public class TypeCreator {
-    private final Map<Type, Integer> typeIndexes;
-    private final MultiMap<Type, Integer> valueLocations;
+    private final Map<TypeWithParameters, Integer> typeIndexes;
+    private final MultiMap<TypeWithParameters, Integer> valueLocations;
     private Map<Type, String> typeNames;
     private Set<Type> nativeTypes;
+    private TypeParameterIndexer typeParameterIndexer;
     private ArrayList<Statement> functions = new ArrayList<>();
 
-    public TypeCreator(MultiMap<Type, Integer> valueLocations, Map<Type, String> typeNames, Set<Type> nativeTypes) {
+    public TypeCreator(MultiMap<TypeWithParameters, Integer> valueLocations, Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer) {
         this.valueLocations = valueLocations;
         this.typeNames = typeNames;
         this.nativeTypes = nativeTypes;
+        this.typeParameterIndexer = typeParameterIndexer;
         this.typeIndexes = new HashMap<>();
     }
 
-    public Statement getExistingInstanceOfType(Type type) {
-        List<Integer> values = new ArrayList<>(valueLocations.get(type));
+    public Statement getExistingInstanceOfType(Type type, Map<TypeParameterType, Type> parameterMap) {
+        // This is filtering the keys, where the type is the same, and where the map contains at least the same key/value pairs.
+        Collection<Integer> values = valueLocations.keySet().stream()
+                .filter(candidate -> TypeCreator.canTypeBeUsed(candidate, new TypeWithParameters(type, parameterMap))).map(valueLocations::get)
+                .reduce(new ArrayList<>(), Util::reduceCollection);
 
         if (values.size() == 1) {
             return Return(identifier(VALUE_VARIABLE_PREFIX + values.iterator().next()));
@@ -47,8 +54,35 @@ public class TypeCreator {
         return returnOneOfIndexes(values, false, false);
     }
 
-    private Statement returnOneOfTypes(List<Type> types, boolean construct) {
-        List<Integer> elements = types.stream().distinct().map(this::getTypeIndex).collect(Collectors.toList());
+    /*
+            Collection<Integer> values = valueLocations.keySet().stream()
+                .filter(key ->
+                        key.getType() == type
+                ).filter(key -> {
+                    return parameterMap.entrySet().stream().allMatch(entry -> {
+                        return parameterMap.containsKey(entry.getKey()) && parameterMap.get(entry.getKey()) == entry.getValue();
+                    });
+                }).map(valueLocations::get)
+     */
+    private static boolean canTypeBeUsed(TypeWithParameters candidate, TypeWithParameters type) {
+        if (candidate.getType() != type.getType()) {
+            return false;
+        }
+        for (Map.Entry<TypeParameterType, Type> entry : type.getParameterMap().entrySet()) {
+            if (!candidate.getParameterMap().containsKey(entry.getKey())) {
+                return false;
+            }
+            Type candidateValue = candidate.getParameterMap().get(entry.getKey());
+            if (candidateValue != entry.getValue()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private Statement returnOneOfTypes(List<Type> types, boolean construct, Map<TypeParameterType, Type> parameterMap) {
+        List<Integer> elements = types.stream().distinct().map((type) -> getTypeIndex(type, parameterMap)).collect(Collectors.toList());
 
         return returnOneOfIndexes(elements, true, construct);
     }
@@ -91,7 +125,7 @@ public class TypeCreator {
 
         return block(
                 switchCase(
-                        binary(binary(methodCall(identifier("Math"), "random"), Operator.MULT, number(elements.size())), Operator.BITWISE_OR, number(0)),
+                        binary(binary(call(identifier("random")), Operator.MULT, number(elements.size())), Operator.BITWISE_OR, number(0)),
                         cases
                 ),
                 // If the switch fails to return, check if anything can be returned.
@@ -101,25 +135,25 @@ public class TypeCreator {
         );
     }
 
-    private Statement constructNewInstanceOfType(Type type) {
+    private Statement constructNewInstanceOfType(Type type, Map<TypeParameterType, Type> parameterMap) {
         if (type instanceof SimpleType) {
             SimpleType simple = (SimpleType) type;
             if (simple.getKind() == SimpleTypeKind.String) {
                 // Math.random().toString(36).substring(Math.random() * 20);
-                MethodCallExpression produceRandomString = methodCall(methodCall(methodCall(identifier("Math"), "random"), "toString", number(26)), "substring",
+                MethodCallExpression produceRandomString = methodCall(methodCall(call(identifier("random")), "toString", number(26)), "substring",
                         binary(
-                                methodCall(identifier("Math"), "random"),
+                                call(identifier("random")),
                                 Operator.MULT,
                                 number(20)
                         ));
                 return Return(produceRandomString);
             } else if (simple.getKind() == SimpleTypeKind.Number) {
-                return Return(methodCall(identifier("Math"), "random"));
+                return Return(call(identifier("random")));
             } else if (simple.getKind() == SimpleTypeKind.Boolean) {
                 // Math.random() > 0.5
                 return Return(
                         binary(
-                                methodCall(identifier("Math"), "random"),
+                                call(identifier("random")),
                                 Operator.LESS_THAN,
                                 number(0.5)
                         )
@@ -128,7 +162,7 @@ public class TypeCreator {
                 return Return(
                         object(new ObjectLiteral.Property("__isAnyMarker", object()))
                 );
-            } else if (simple.getKind() == SimpleTypeKind.Undefined) {
+            } else if (simple.getKind() == SimpleTypeKind.Undefined || simple.getKind() == SimpleTypeKind.Void) {
                 return Return(
                         unary(Operator.VOID, number(0))
                 );
@@ -152,9 +186,19 @@ public class TypeCreator {
                 case "Object":
                     return Return(object());
                 case "Number":
-                    return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.Number));
+                    return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.Number), parameterMap);
                 case "Date":
                     return Return(newCall(identifier("Date")));
+                case "Function":
+                    InterfaceType interfaceWithSimpleFunction = SpecReader.makeEmptySyntheticInterfaceType();
+                    Signature callSignature = new Signature();
+                    callSignature.setParameters(new ArrayList<>());
+                    callSignature.setMinArgumentCount(0);
+                    callSignature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
+                    interfaceWithSimpleFunction.getDeclaredCallSignatures().add(callSignature);
+                    return constructNewInstanceOfType(interfaceWithSimpleFunction, parameterMap);
+                case "Error":
+                    return Return(newCall(identifier("Error")));
                 default:
                     throw new RuntimeException("Unknown: " + name);
             }
@@ -163,7 +207,6 @@ public class TypeCreator {
         if (type instanceof InterfaceType) {
             InterfaceType inter = constructSyntheticInterfaceWithBaseTypes((InterfaceType) type);
             assert inter.getBaseTypes().isEmpty();
-            assert inter.getTypeParameters().isEmpty();
 
             assert inter.getDeclaredStringIndexType() == null;
             assert inter.getDeclaredNumberIndexType() == null;
@@ -174,8 +217,9 @@ public class TypeCreator {
             if (returnTypes.isEmpty()) {
                 program.add(variable("result", object()));
             } else {
+                // TODO: This is wrong, it should actually return the correct type corrosponding to the arguments given. This is complex and should therefore be split into separate method.
                 program.add(
-                        variable("functionResult", call(function(returnOneOfTypes(returnTypes, true))))
+                        variable("functionResult", call(function(returnOneOfTypes(returnTypes, true, parameterMap))))
                 );
                 program.add(
                         ifThenElse(
@@ -197,7 +241,7 @@ public class TypeCreator {
                 Pair<String, Type> property = properties.get(i);
                 program.add(
                         variable("objectResult_" + i, call(function(
-                                Return(call(identifier(CONSTRUCT_TYPE_PREFIX + getTypeIndex(property.getRight()))))
+                                Return(call(identifier(CONSTRUCT_TYPE_PREFIX + getTypeIndex(property.getRight(), parameterMap))))
                         )))
                 );
                 program.add(ifThenElse(
@@ -213,14 +257,43 @@ public class TypeCreator {
         }
 
         if (type instanceof ReferenceType && "Array".equals(typeNames.get(((ReferenceType) type).getTarget()))) {
-            // TODO: This is basically copy-paste, do something about that.
             Type indexType = ((ReferenceType) type).getTypeArguments().iterator().next();
-            Expression constructArrayElement = call(identifier(CONSTRUCT_TYPE_PREFIX + getTypeIndex(indexType)));
+            Expression constructArrayElement = call(identifier(CONSTRUCT_TYPE_PREFIX + getTypeIndex(indexType, parameterMap)));
             return Return(array(constructArrayElement, constructArrayElement, constructArrayElement)); // TODO: An at runtime random number of elements, from 0 to 5.
         }
 
         if (type instanceof UnionType) {
-            return returnOneOfTypes(((UnionType) type).getElements(), true);
+            return returnOneOfTypes(((UnionType) type).getElements(), true, parameterMap);
+        }
+
+        if (type instanceof TypeParameterType) {
+            if (parameterMap.containsKey(type)) {
+                return constructNewInstanceOfType(parameterMap.get(type), parameterMap);
+            }
+            String markerField = typeParameterIndexer.getMarkerField((TypeParameterType) type);
+            return block(
+                    variable("result", call(function(constructNewInstanceOfType(((TypeParameterType) type).getConstraint(), parameterMap)))),
+                    ifThen(
+                            binary(unary(Operator.TYPEOF, identifier("result")), Operator.NOT_EQUAL_EQUAL, string("object")),
+                            throwStatement(newCall(identifier(RUNTIME_ERROR_NAME)))
+                    ),
+                    expressionStatement(
+                            binary(member(identifier("result"), markerField), Operator.EQUAL, bool(true))
+                    ),
+                    Return(identifier("result"))
+            );
+        }
+
+        if (type instanceof ReferenceType) {
+            ReferenceType ref = (ReferenceType) type;
+
+            GenericType target = (GenericType) ref.getTarget();
+
+            return constructNewInstanceOfType(target.toInterface(), TypesUtil.generateParameterMap(ref, parameterMap));
+        }
+
+        if (type instanceof IntersectionType) {
+            return throwStatement(newCall(identifier("RuntimeError"), string("Not implemented yet"))); // TODO:
         }
 
         throw new RuntimeException(type.getClass().toString());
@@ -258,29 +331,38 @@ public class TypeCreator {
         return result;
     }
 
-    public int getTypeIndex(Type type) {
-        if (typeIndexes.containsKey(type)) {
-            return typeIndexes.get(type);
+    public int getTypeIndex(Type type, Map<TypeParameterType, Type> parameterMap) {
+        TypeWithParameters key = new TypeWithParameters(type, parameterMap);
+        if (typeIndexes.containsKey(key)) {
+            return typeIndexes.get(key);
         } else {
-            int key = typeIndexes.size();
-            typeIndexes.put(type, key);
+            int value = typeIndexes.size();
+            typeIndexes.put(key, value);
+
+            if (value == 18) {
+                System.out.println();
+            }
 
             ExpressionStatement primaryFunction = expressionStatement(
                     function(
-                            GET_TYPE_PREFIX + key,
-                            block(this.getExistingInstanceOfType(type))
+                            GET_TYPE_PREFIX + value,
+                            block(this.getExistingInstanceOfType(type, parameterMap))
                     )
             );
 
             ExpressionStatement constructNewInstanceFunction = expressionStatement(
                     function(
-                            CONSTRUCT_TYPE_PREFIX + key,
+                            CONSTRUCT_TYPE_PREFIX + value,
                             block(
-                                    variable("result", call(identifier(GET_TYPE_PREFIX + key))),
+                                    variable("result", call(identifier(GET_TYPE_PREFIX + value))),
                                     ifThenElse(
-                                            binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
+                                            binary(
+                                                    binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
+                                                    Operator.AND,
+                                                    binary(call(identifier("random")), Operator.GREATER_THAN, number(0.8))
+                                            ),
                                             Return(identifier("result")),
-                                            this.constructNewInstanceOfType(type)
+                                            this.constructNewInstanceOfType(type, parameterMap)
                                     )
                             )
                     )
@@ -289,7 +371,7 @@ public class TypeCreator {
             functions.add(primaryFunction);
             functions.add(constructNewInstanceFunction);
 
-            return key;
+            return value;
         }
     }
 

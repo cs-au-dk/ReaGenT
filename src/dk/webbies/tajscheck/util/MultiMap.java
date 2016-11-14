@@ -1,6 +1,10 @@
 package dk.webbies.tajscheck.util;
 
+import dk.webbies.tajscheck.testcreator.Test.Test;
+
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -16,4 +20,6 @@ public interface MultiMap <K, T> {
     Set<K> keySet();
 
     boolean containsKey(K key);
+
+    Map<K, Collection<T>> toMap();
 }

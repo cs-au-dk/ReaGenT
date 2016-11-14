@@ -5,7 +5,12 @@ TODO Section:
     Typestate (is a general concept, it is basically that an object has a typestate, which is mutable, and can thereby encode that a getter must be called before a setter).
 
 
-
+Notes:
+    A crucial thing about generic types, is that it works if it is instantiated with a type A or a Type B.
+    Because the type GenericClass<A> is different from GenericClass<B>.
+    We therefore test the two completely separately, which in some cases causes the test programs to become quite large.
+    So if two methods returns two generic types, with different generic arguments, then those gets treated separately.
+    // TODO: Explicitly try to instantiate unconstrained generic types with a primitive?
 
 
 TODO: Symbolic execution could be used to get the under-approximation to be less of an under-approximation, but we havn't seen use-cases where this would make a big difference.
@@ -34,3 +39,7 @@ Interresting sources:
         computes a factory method which creates an instance
         of a complex data type by invoking a constructor and a sequence
         of methods, whose parameters are also determined by Pex.
+
+
+Requirements:
+    debian package timelimit

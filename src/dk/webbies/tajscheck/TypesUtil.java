@@ -4,14 +4,35 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.util.Util;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Created by erik1 on 01-11-2016.
  */
-public class Types {
+public class TypesUtil {
+    public static Map<TypeParameterType, Type> generateParameterMap(ReferenceType ref) {
+        GenericType target = (GenericType) ref.getTarget();
+
+        Map<TypeParameterType, Type> parameterMap = new HashMap<>();
+        List<Type> arguments = ref.getTypeArguments();
+        assert target.getTypeParameters().equals(target.getTypeArguments());
+        assert target.getTarget() == target;
+        List<TypeParameterType> parameters = Util.cast(TypeParameterType.class, target.getTypeParameters());
+        parameterMap = new HashMap<>(parameterMap);
+        for (int i = 0; i < arguments.size(); i++) {
+            parameterMap.put(parameters.get(i), arguments.get(i));
+        }
+        return parameterMap;
+    }
+
+    public static Map<TypeParameterType, Type> generateParameterMap(ReferenceType type, Map<TypeParameterType, Type> parameterMap) {
+        Map<TypeParameterType, Type> result = new HashMap<>(parameterMap);
+        result.putAll(generateParameterMap(type));
+        return result;
+    }
+
     static Set<Type> collectNativeTypes(SpecReader spec, SpecReader emptySpec) {
         CollectAllTypesVisitor nativeCollector = new CollectAllTypesVisitor();
         Map<String, Type> declaredProperties = ((InterfaceType) spec.getGlobal()).getDeclaredProperties();
@@ -37,6 +58,36 @@ public class Types {
 
         return nativeCollector.getSeen();
     }
+
+    public static Map<TypeParameterType, Type> filterParameterMap(Map<TypeParameterType, Type> parameterMap, Collection<Type> types) {
+        CollectAllTypesVisitor visitor = new CollectAllTypesVisitor();
+        types.forEach(visitor::accept);
+        Set<Type> reachable = visitor.getSeen();
+
+        List<TypeParameterType> reachableTypeParameters = reachable.stream().filter(TypeParameterType.class::isInstance).map(typeparameter -> (TypeParameterType)typeparameter).collect(Collectors.toList());
+
+        List<TypeParameterType> keys = Util.intersection(reachableTypeParameters, parameterMap.keySet());
+
+        keys.stream().map(parameterMap::get).forEach(visitor::accept);
+
+        reachableTypeParameters = reachable.stream().filter(TypeParameterType.class::isInstance).map(typeparameter -> (TypeParameterType)typeparameter).collect(Collectors.toList());
+
+        List<TypeParameterType> keys2 = Util.intersection(reachableTypeParameters, parameterMap.keySet());
+
+        assert keys2.size() >= keys.size();
+
+        if (keys2.size() > keys.size()) {
+            List<Type> reachableTypes = new ArrayList<>();
+            reachableTypes.addAll(types);
+            reachableTypes.addAll(keys2);
+            return filterParameterMap(parameterMap, reachableTypes);
+        } else {
+            assert keys.equals(keys2);
+            return keys.stream().collect(Collectors.toMap(Function.identity(), parameterMap::get));
+        }
+    }
+
+
 
     private static class CollectAllTypesVisitor implements TypeVisitor<Void> {
         private final Set<Type> seen = new HashSet<>();
@@ -138,6 +189,18 @@ public class Types {
 
         @Override
         public Void visit(UnionType t) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+
+            t.getElements().forEach(this::accept);
+
+            return null;
+        }
+
+        @Override
+        public Void visit(IntersectionType t) {
             if (seen.contains(t)) {
                 return null;
             }

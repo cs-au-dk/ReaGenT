@@ -24,15 +24,14 @@
 
     for (var i = 0; i < paths.length; i++) {
         var path = paths[i];
-        print(path+ ":");
 
         var failures = assertionsByPath[path];
         var failStrings = new Set();
         for (var j = 0; j < failures.length; j++) {
             var failure = failures[j];
 
-            var failDescription = "";
-            failDescription += "    Here i expected: " + failure.expected + " but instead i got: \n";
+            var failDescription = path+ ":\n";
+            failDescription += "    Here i expected: " + failure.expected + ", but instead i got: \n";
             var actual = failure.actual;
             failDescription += "        typeof: " + typeof actual + "\n";
             failDescription += "        toString: " + actual + "\n";
@@ -44,6 +43,7 @@
                     failDescription += "        JSON: LONG!\n";
                 }
             } catch (e) { }
+            // failDescription += "        sequence: " + failure.sequence.toString() + "\n";
             failDescription += "\n";
             failStrings.add(failDescription);
         }

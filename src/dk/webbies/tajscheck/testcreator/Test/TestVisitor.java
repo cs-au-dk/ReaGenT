@@ -16,4 +16,6 @@ public interface TestVisitor<T> {
     T visit(FunctionCallTest test);
 
     T visit(IsDefinedTest test);
+
+    T visit(IdTest test);
 }

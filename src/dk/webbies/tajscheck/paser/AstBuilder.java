@@ -1,11 +1,13 @@
 package dk.webbies.tajscheck.paser;
 
+import com.sun.deploy.util.ArrayUtil;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by erik1 on 01-11-2016.
@@ -114,6 +116,10 @@ public class AstBuilder {
 
     public static ArrayLiteral array(Expression... elements) {
         return new ArrayLiteral(null, Arrays.asList(elements));
+    }
+
+    public static ArrayLiteral array(int[] ints) {
+        return new ArrayLiteral(null, Arrays.stream(ints).mapToObj(AstBuilder::number).collect(Collectors.toList()));
     }
 
     public static ForStatement forLoop(Statement initializer, Expression condition, Expression increment, Statement body) {

@@ -575,9 +575,6 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             );
         }
 
-        // for (var key in console) {
-        //    console[key] = function () {};
-        // }
         ident();
 
         write("for (");

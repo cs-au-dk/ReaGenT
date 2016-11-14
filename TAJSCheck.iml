@@ -8,5 +8,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="closure-compiler (2)" level="project" />
+    <orderEntry type="library" name="moment" level="application" />
   </component>
 </module>

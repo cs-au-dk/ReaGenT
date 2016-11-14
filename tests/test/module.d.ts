@@ -1,7 +1,12 @@
+interface Container<T> {
+    value: T,
+    duplicateFlag: boolean
+}
+
+
+
 export module moment {
-    function func(): string;
-    var obj : {
-        a: string
-    }
+    function id1<T extends Date>(f : () => T) : Container<T>;
+    function id2<T extends number[]>(f : () => T) : Container<T>;
 }
 

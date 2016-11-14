@@ -1,6 +1,11 @@
+var id = function (func) {
+    var result = func();
+    return {
+        value: result,
+        duplicateFlag: true
+    };
+};
 module.exports = {
-    func: function (a) {
-        return false;
-    },
-    obj: {locale: {a: "string"}}
+    id1: id,
+    id2: id
 };

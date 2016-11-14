@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "moment": "^2.15.2",
+    "seedrandom": "^2.4.2",
     "ts-spec-reader": "cs-au-dk/ts-spec-reader#220fd477c7426fe6e0c002dd2458bd5d2f62621c"
   }
 }
