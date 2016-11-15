@@ -56,4 +56,21 @@ public class ParameterMap {
     public ParameterMap append(ParameterMap other) {
         return append(other.getMap());
     }
+
+    // TODO: Check when equals is actually used.
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ParameterMap that = (ParameterMap) o;
+
+        return map.equals(that.map);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return map.hashCode();
+    }
 }
