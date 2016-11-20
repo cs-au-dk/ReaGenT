@@ -34,7 +34,11 @@
             failDescription += "    Here i expected: " + failure.expected + ", but instead i got: \n";
             var actual = failure.actual;
             failDescription += "        typeof: " + typeof actual + "\n";
-            failDescription += "        toString: " + actual + "\n";
+            try {
+                failDescription += "        toString: " + actual + "\n";
+            } catch (e) {
+                failDescription += "        toString: [ERROR] \n";
+            }
             try {
                 var json = JSON.stringify(actual);
                 if (json.length < 200) {
