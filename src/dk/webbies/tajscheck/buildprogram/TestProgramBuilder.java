@@ -215,6 +215,7 @@ public class TestProgramBuilder {
                 .map((type) -> variable(TYPE_VALUE_PREFIX + typeCreator.getTypeIndex(type, parameterMap), null))
                 .forEach(result::add);
 
+        // TODO: Make each value independent, instead of each type.
         test.getTypeToTest().stream().map((type) -> {
             int index = typeCreator.getTypeIndex(type, parameterMap);
             return ifThen(
