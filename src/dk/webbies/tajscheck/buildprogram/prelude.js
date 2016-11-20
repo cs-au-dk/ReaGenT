@@ -27,4 +27,8 @@ for (var key in console) {
     console[key] = function () {};
 }
 
-function RuntimeError() { }
+function RuntimeError(message) {
+    this.message = message;
+    Error.call(this, message);
+}
+RuntimeError.prototype = Object.create(Error.prototype);

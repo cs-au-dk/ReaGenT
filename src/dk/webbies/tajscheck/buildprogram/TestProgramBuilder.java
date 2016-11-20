@@ -152,7 +152,10 @@ public class TestProgramBuilder {
 //                                                expressionStatement(call(identifier("print"), identifier("e"))),
                                                 ifThen(
                                                         binary(identifier("e"), Operator.INSTANCEOF, identifier(RUNTIME_ERROR_NAME)),
-                                                        throwStatement(identifier("e"))
+                                                        block(
+                                                                expressionStatement(call(identifier("print"), member(identifier("e"), "message"))),
+                                                                throwStatement(identifier("e"))
+                                                        )
                                                 )
                                         )))
                 )));
