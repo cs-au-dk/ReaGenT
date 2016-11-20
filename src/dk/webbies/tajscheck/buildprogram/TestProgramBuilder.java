@@ -3,10 +3,7 @@ package dk.webbies.tajscheck.buildprogram;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tajscheck.ExecutionRecording;
-import dk.webbies.tajscheck.ParameterMap;
-import dk.webbies.tajscheck.TypeWithParameters;
-import dk.webbies.tajscheck.TypesUtil;
+import dk.webbies.tajscheck.*;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.*;
@@ -201,7 +198,7 @@ public class TestProgramBuilder {
                 getDependencies(test),
                 testCode,
                 Arrays.asList(
-                        new CheckType(nativeTypes, typeNames, typeParameterIndexer, test.getParameterMap()).checkResultingType(test.getProduces(), identifier("result"), test.getPath()),
+                        new CheckType(nativeTypes, typeNames, typeParameterIndexer, test.getParameterMap()).checkResultingType(test.getProduces(), identifier("result"), test.getPath(), Main.CHECK_DEPTH),
                         expressionStatement(binary(identifier(VALUE_VARIABLE_PREFIX + testToValueMap.get(test)), Operator.EQUAL, identifier("result")))
                 ));
     }

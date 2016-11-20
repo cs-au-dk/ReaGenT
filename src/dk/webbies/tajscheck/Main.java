@@ -21,16 +21,16 @@ import java.util.*;
  * Created by erik1 on 01-11-2016.
  */
 public class Main {
-    private static final boolean TO_WSL_PATHS = true;
+    public static final boolean TO_WSL_PATHS = true;
+    public static final int CHECK_DEPTH = 0;
 
+    // TODO: Limit the amount of tests created in underscore.
 	// TODO: Try to make it so only "executeable" tests are attempted. So that ALL checkDependencies calls are successful.
     // TODO; Make sure no constructed object is tested
-    // TODO: Multi-level asserts?
-    // TODO: Look at the output of module.d.ts, there is a test case doing NOTHING!
     public static void main(String[] args) throws IOException {
         long startTime = System.currentTimeMillis();
         try {
-            generateTestProgram(Benchmarks.test);
+//            generateTestProgram(Benchmarks.test);
 
             generateTestProgram(Benchmarks.moment);
 
@@ -39,7 +39,7 @@ public class Main {
                     "0.36510822415053457"
             ));*/
 
-            generateTestProgram(Benchmarks.async);
+//            generateTestProgram(Benchmarks.async);
 //            generateTestProgram(Benchmarks.underscore);
         } finally {
             System.out.println("In: " + (System.currentTimeMillis() - startTime) / 1000.0 + "s");
