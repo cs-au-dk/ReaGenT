@@ -20,10 +20,10 @@ import static dk.webbies.tajscheck.testcreator.test.check.Check.*;
  * Created by erik1 on 01-11-2016.
  */
 public class TestCreator {
-    // TODO: UnderScore, way to many tests are created.
-    // TODO: Try to revert to earlier, where underscore could create tests, and see if an enourmous amount of tests are created.
+
     public static List<Test> createTests(Set<Type> nativeTypes, Type typeToTest, String module) {
-        CreateTestVisitor visitor = new CreateTestVisitor(nativeTypes);
+        PriorityQueue<CreateTestQueueElement> queue = new PriorityQueue<>();
+        CreateTestVisitor visitor = new CreateTestVisitor(nativeTypes, queue);
 
         List<Test> topLevelFunctionTests = new ArrayList<>();
 
@@ -37,7 +37,7 @@ public class TestCreator {
                         new FunctionCallTest(typeToTest, parameters, callSignature.getResolvedReturnType(), module, new ParameterMap())
                 );
 
-                callSignature.getResolvedReturnType().accept(visitor, new Arg(module + "()", new ParameterMap()));
+                queue.add(new CreateTestQueueElement(callSignature.getResolvedReturnType(), new Arg(module + "()", new ParameterMap(), 0)));
             }
 
 //            List<Signature> constructSignatures = typeToTest instanceof InterfaceType ? ((InterfaceType) typeToTest).getDeclaredConstructSignatures() : ((GenericType) typeToTest).getDeclaredConstructSignatures();
@@ -48,11 +48,16 @@ public class TestCreator {
                         new ConstructorCallTest(typeToTest, parameters, constructSignature.getResolvedReturnType(), module, new ParameterMap())
                 );
 
-                constructSignature.getResolvedReturnType().accept(visitor, new Arg("new " + module + "()", new ParameterMap()));
+                queue.add(new CreateTestQueueElement(constructSignature.getResolvedReturnType(), new Arg("new " + module + "()", new ParameterMap(), 0)));
             }
         }
 
-        typeToTest.accept(visitor, new Arg(module, new ParameterMap()));
+        queue.add(new CreateTestQueueElement(typeToTest, new Arg(module, new ParameterMap(), 0)));
+
+        while (!queue.isEmpty()) {
+            CreateTestQueueElement element = queue.poll();
+            element.type.accept(visitor, element.arg);
+        }
 
         return concatDuplicateTests(Util.concat(topLevelFunctionTests, visitor.getTests()));
     }
@@ -108,14 +113,16 @@ public class TestCreator {
     private static final class Arg {
         private final String path;
         private final ParameterMap parameterMap;
+        private final int depth;
 
-        private Arg(String path, ParameterMap parameterMap) {
+        private Arg(String path, ParameterMap parameterMap, int depth) {
             this.path = path;
             this.parameterMap = parameterMap;
+            this.depth = depth;
         }
 
         private Arg append(String path) {
-            return new Arg(this.path + "." + path, parameterMap);
+            return new Arg(this.path + "." + path, parameterMap, depth + 1);
         }
 
         public ParameterMap getParameterMap() {
@@ -123,17 +130,36 @@ public class TestCreator {
         }
 
         private Arg withParameters(ParameterMap newParameters) {
-            return new Arg(this.path, this.parameterMap.append(newParameters));
+            return new Arg(this.path, this.parameterMap.append(newParameters), depth);
         }
     }
+
+    private static final class CreateTestQueueElement implements Comparable<CreateTestQueueElement> {
+        private final Type type;
+        private final Arg arg;
+
+        private CreateTestQueueElement(Type t, Arg arg) {
+            this.type = t;
+            this.arg = arg;
+        }
+
+        @Override
+        public int compareTo(CreateTestQueueElement o) {
+            return Integer.compare(o.arg.depth, o.arg.depth);
+        }
+    }
+
+
 
     private static final class CreateTestVisitor implements TypeVisitorWithArgument<Void, Arg> {
         private final Set<TypeWithParameters> seen = new HashSet<>();
         private final Set<Type> nativeTypes;
         private final List<Test> tests = new ArrayList<>();
+        private final PriorityQueue<CreateTestQueueElement> queue;
 
-        private CreateTestVisitor(Set<Type> nativeTypes) {
+        private CreateTestVisitor(Set<Type> nativeTypes, PriorityQueue<CreateTestQueueElement> queue) {
             this.nativeTypes = nativeTypes;
+            this.queue = queue;
         }
 
         @Override
@@ -168,7 +194,7 @@ public class TestCreator {
 
             InterfaceType result = t.toInterface();
 
-            result.accept(this, arg);
+            recurse(result, arg);
             return null;
         }
 
@@ -181,7 +207,7 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            t.getBaseTypes().forEach(base -> base.accept(this, arg));
+            t.getBaseTypes().forEach(base -> recurse(base, arg));
 
             assert t.getDeclaredStringIndexType() == null;
             assert t.getDeclaredNumberIndexType() == null;
@@ -200,7 +226,7 @@ public class TestCreator {
                         List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                         tests.add(new MethodCallTest(t, type, key, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getParameterMap()));
 
-                        signature.getResolvedReturnType().accept(this, arg.append(key + "()"));
+                        recurse(signature.getResolvedReturnType(), arg.append(key + "()"));
                     }
 
                     List<Signature> constructSignatures = type instanceof InterfaceType ? ((InterfaceType) type).getDeclaredConstructSignatures() : ((GenericType) type).getDeclaredConstructSignatures();
@@ -208,11 +234,11 @@ public class TestCreator {
                         List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                         tests.add(new ConstructorCallTest(type, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getParameterMap()));
 
-                        signature.getResolvedReturnType().accept(this, arg.append(key + "()"));
+                        recurse(signature.getResolvedReturnType(), arg.append(key + "[new]()"));
                     }
                 }
 
-                type.accept(this, arg.append(key));
+                recurse(type, arg.append(key));
             }
 
 
@@ -229,9 +255,13 @@ public class TestCreator {
 
             ParameterMap newParameters = TypesUtil.generateParameterMap(t);
 
-            t.getTarget().accept(this, arg.append("<>").withParameters(newParameters));
+            recurse(t.getTarget(), arg.append("<>").withParameters(newParameters));
 
             return null;
+        }
+
+        private void recurse(Type type, Arg arg) {
+            queue.add(new CreateTestQueueElement(type, arg));
         }
 
         @Override
@@ -300,7 +330,7 @@ public class TestCreator {
                 ));
                 tests.add(new FilterTest(union, type, arg.path, arg.getParameterMap(), check));
 
-                type.accept(this, arg);
+                recurse(type, arg);
                 return null;
             } else {
                 throw new RuntimeException();
@@ -328,7 +358,7 @@ public class TestCreator {
             seen.add(withParameters);
 
             if (arg.getParameterMap().containsKey(t)) {
-                arg.getParameterMap().get(t).accept(this, arg);
+                recurse(arg.getParameterMap().get(t), arg);
             }
 
             assert t.getTarget() == null;
@@ -376,7 +406,7 @@ public class TestCreator {
 
             for (Type subType : t.getElements()) {
                 tests.add(new FilterTest(t, subType, arg.path, arg.getParameterMap(), Check.trueCheck()));
-                subType.accept(this, arg);
+                recurse(subType, arg);
             }
 
             return null;
