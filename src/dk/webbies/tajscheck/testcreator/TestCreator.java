@@ -303,6 +303,7 @@ public class TestCreator {
                         case Number:
                             return false;
                         case Undefined:
+                        case Null:
                             return true;
                         default:
                             throw new RuntimeException("Kind: " + ((SimpleType) type).getKind());
@@ -321,9 +322,9 @@ public class TestCreator {
             }
 
             // undefined | Type
-            if (elements.size() == 2 && elements.get(0) instanceof SimpleType && ((SimpleType) elements.get(0)).getKind() == SimpleTypeKind.Undefined) {
+            if (elements.size() == 2 && elements.get(0) instanceof SimpleType && (((SimpleType) elements.get(0)).getKind() == SimpleTypeKind.Undefined || ((SimpleType) elements.get(0)).getKind() == SimpleTypeKind.Null)) {
                 Type type = elements.get(1);
-                assert type instanceof InterfaceType || type instanceof GenericType;
+                assert type instanceof InterfaceType || type instanceof GenericType || type instanceof ReferenceType;
                 Check check = not(or(
                         typeOf("undefined"),
                         equalTo(AstBuilder.nullLiteral())

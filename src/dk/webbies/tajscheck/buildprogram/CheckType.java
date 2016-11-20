@@ -312,6 +312,8 @@ public class CheckType {
             case Undefined:
             case Void:
                 return "undefined";
+            case Null:
+                return "Null";
             default:
                 throw new RuntimeException(type.getKind().toString());
         }

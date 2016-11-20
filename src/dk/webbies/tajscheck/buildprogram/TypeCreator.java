@@ -253,6 +253,8 @@ public class TypeCreator {
                     return Return(
                             unary(Operator.VOID, number(0))
                     );
+                case Null:
+                    return Return(nullLiteral());
                 default:
                     throw new RuntimeException("Cannot yet produce a simple: " + simple.getKind());
             }
