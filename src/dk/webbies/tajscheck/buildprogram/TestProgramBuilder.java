@@ -50,9 +50,9 @@ public class TestProgramBuilder {
     private TypeCreator typeCreator;
 
 
-    static final class TypeParameterIndexer {
+    public static final class TypeParameterIndexer {
         private final Map<TypeParameterType, Integer> map = new HashMap<>();
-        String getMarkerField(TypeParameterType t) {
+        public String getMarkerField(TypeParameterType t) {
             if (map.containsKey(t)) {
                 return "typeParameterMarker_" + map.get(t);
             } else {
@@ -173,7 +173,6 @@ public class TestProgramBuilder {
         List<Test> tests = new ArrayList<>(this.tests);
 
         for (int i = 0; i < tests.size(); i++) {
-            System.out.println(i + " / " + tests.size());
             Test test = tests.get(i);
             result.add(new Pair<>(
                     number(i),

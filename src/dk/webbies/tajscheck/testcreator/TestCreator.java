@@ -20,6 +20,8 @@ import static dk.webbies.tajscheck.testcreator.test.check.Check.*;
  * Created by erik1 on 01-11-2016.
  */
 public class TestCreator {
+    // TODO: UnderScore, way to many tests are created.
+    // TODO: Try to revert to earlier, where underscore could create tests, and see if an enourmous amount of tests are created.
     public static List<Test> createTests(Set<Type> nativeTypes, Type typeToTest, String module) {
         CreateTestVisitor visitor = new CreateTestVisitor(nativeTypes);
 
@@ -125,8 +127,6 @@ public class TestCreator {
         }
     }
 
-    // TODO: In the Arg, remove any non-relevant Type parameters (the ones that are not reachable).
-    // TODO: Use this to: 1) Insert primitives for generics in some tests and 2) remove duplicated tests.
     private static final class CreateTestVisitor implements TypeVisitorWithArgument<Void, Arg> {
         private final Set<TypeWithParameters> seen = new HashSet<>();
         private final Set<Type> nativeTypes;

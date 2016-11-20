@@ -9,6 +9,7 @@ import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
+import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -77,12 +78,6 @@ public class CheckType {
             List<List<TypeCheck>> unionElements = ((UnionType) type).getElements().stream().map(subType -> this.generateAssertExpressionsOld(subType, exp)).collect(Collectors.toList());
 
             return Collections.singletonList(createUnionCheck(unionElements));
-        } else if (type instanceof IntersectionType) {
-            return ((IntersectionType) type)
-                    .getElements()
-                    .stream()
-                    .map(subType -> this.generateAssertExpressionsOld(subType, exp))
-                    .reduce(new ArrayList<>(), Util::reduceList);
         }
 
         if (type instanceof BooleanLiteral) {
@@ -102,9 +97,7 @@ public class CheckType {
             );
         }
 
-        if ("Function".equals(typeNames.get(type))) {
-            return getTypeOfCheck(exp, "function");
-        } else if (nativeTypes.contains(type)) {
+        if (nativeTypes.contains(type)) {
             throw new RuntimeException();
         } else if (type instanceof TypeParameterType) {
             TypeParameterType parameter = (TypeParameterType) type;
@@ -153,6 +146,15 @@ public class CheckType {
         @Override
         public List<TypeCheck> visit(GenericType t, ParameterMap parameterMap) {
             if (nativeTypes.contains(t)) {
+                if ("RegExp".equals(typeNames.get(t))) {
+                    return Arrays.asList(
+                            expectNotNull(),
+                            new TypeCheck(
+                                    Check.instanceOf(identifier("RegExp")),
+                                    "RegExp"
+                            )
+                    );
+                }
                 throw new RuntimeException();
             }
             assert t.getTypeParameters().equals(t.getTypeArguments());
@@ -161,11 +163,14 @@ public class CheckType {
 
         @Override
         public List<TypeCheck> visit(InterfaceType t, ParameterMap parameterMap) {
-            if (isEmptyInterface(t)) {
+            if (TypesUtil.isEmptyInterface(t)) {
                 return Collections.singletonList(new TypeCheck(Check.trueCheck(), "[any]"));
             }
             if ("Date".equals(typeNames.get(t))) {
                 return Arrays.asList(expectNotNull(), new TypeCheck(Check.instanceOf(identifier("Date")), "Date"));
+            }
+            if ("Function".equals(typeNames.get(t))) {
+                return Collections.singletonList(new TypeCheck(Check.typeOf("function"), "function"));
             }
 
             if (nativeTypes.contains(t)) {
@@ -238,6 +243,15 @@ public class CheckType {
             assert parameter.getTarget() == null;
 
             if (parameterMap.containsKey(parameter)) {
+                if (!TypesUtil.findRecursiveDefinition(parameter, parameterMap, typeParameterIndexer).isEmpty()) {
+                    List<Type> constraints = TypesUtil.findRecursiveDefinition(parameter, parameterMap, typeParameterIndexer);
+                    IntersectionType constraintsIntersection = new IntersectionType();
+                    constraintsIntersection.setElements(constraints);
+                    return constraintsIntersection.accept(this, parameterMap);
+                }
+                if (Thread.currentThread().getStackTrace().length > 1000) {
+                    System.err.println("");
+                }
                 return parameterMap.get(parameter).accept(this, parameterMap);
             }
 
@@ -278,7 +292,10 @@ public class CheckType {
 
         @Override
         public List<TypeCheck> visit(IntersectionType t, ParameterMap parameterMap) {
-            throw new RuntimeException();
+            return t.getElements()
+                    .stream()
+                    .map(subType -> subType.accept(this, parameterMap))
+                    .reduce(new ArrayList<>(), Util::reduceList);
         }
     }
 
@@ -354,15 +371,5 @@ public class CheckType {
                 ),
                 "a non null value"
         );
-    }
-
-    private static boolean isEmptyInterface(InterfaceType type) {
-        return type.getDeclaredProperties().isEmpty() &&
-                type.getBaseTypes().isEmpty() &&
-                type.getTypeParameters().isEmpty() &&
-                type.getDeclaredCallSignatures().isEmpty() &&
-                type.getDeclaredConstructSignatures().isEmpty() &&
-                type.getDeclaredStringIndexType() == null &&
-                type.getDeclaredNumberIndexType() == null;
     }
 }

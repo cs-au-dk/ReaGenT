@@ -26,18 +26,24 @@ public class Main {
 	// TODO: Try to make it so only "executeable" tests are attempted. So that ALL checkDependencies calls are successful.
     // TODO; Make sure no constructed object is tested
     // TODO: Multi-level asserts?
+    // TODO: Look at the output of module.d.ts, there is a test case doing NOTHING!
     public static void main(String[] args) throws IOException {
-//        generateTestProgram(Benchmarks.test);
+        long startTime = System.currentTimeMillis();
+        try {
+//            generateTestProgram(Benchmarks.test);
 
-        generateTestProgram(Benchmarks.moment);
+            generateTestProgram(Benchmarks.moment);
 
-        /*createRecordedProgram(Benchmarks.moment, new ExecutionRecording(
-                new int[]{92,129,7,266,291,59,355,433,35,216,157,163,212,422,155,118,271,148,23,176,234,240,6,268,154,321,145,391,59,386,357,357,386,138,244,197,388,195,155,148,352,379,394,151,328,405,391,322,343},
-                "0.36510822415053457"
-        ));*/
+            /*createRecordedProgram(Benchmarks.moment, new ExecutionRecording(
+                    new int[]{92,129,7,266,291,59,355,433,35,216,157,163,212,422,155,118,271,148,23,176,234,240,6,268,154,321,145,391,59,386,357,357,386,138,244,197,388,195,155,148,352,379,394,151,328,405,391,322,343},
+                    "0.36510822415053457"
+            ));*/
 
-//        generateTestProgram(Benchmarks.async);
-//        generateTestProgram(Benchmarks.underscore);
+//            generateTestProgram(Benchmarks.async);
+//            generateTestProgram(Benchmarks.underscore);
+        } finally {
+            System.out.println("In: " + (System.currentTimeMillis() - startTime) / 1000.0 + "s");
+        }
     }
 
     private static void generateTestProgram(Benchmark bench) throws IOException {
@@ -45,7 +51,7 @@ public class Main {
 
         Util.writeFile(getTestFilePath(bench, "test.js"), programString);
 
-        System.out.println(programString);
+//        System.out.println(programString);
     }
 
     private static String createRecordedProgram(Benchmark bench, ExecutionRecording recording) throws IOException {

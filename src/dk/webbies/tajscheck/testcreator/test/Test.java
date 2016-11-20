@@ -24,8 +24,6 @@ public abstract class Test {
         this.dependsOn = dependsOn;
         this.produces = produces;
         this.path = path;
-        // TODO: Should be able to revert the below, check for getType_18.
-//        this.parameterMap = TypesUtil.filterParameterMap(parameterMap, Util.concat(typeToTest, dependsOn, Collections.singletonList(produces)));
         this.parameterMap = TypesUtil.filterParameterMap(parameterMap, Collections.singletonList(produces));
     }
 

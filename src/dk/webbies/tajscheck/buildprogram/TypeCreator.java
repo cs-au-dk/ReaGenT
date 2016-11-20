@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.buildprogram;
 
+import com.google.common.reflect.TypeParameter;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
@@ -66,20 +67,10 @@ public class TypeCreator {
                 }).map(valueLocations::get)
      */
     private static boolean canTypeBeUsed(TypeWithParameters candidate, TypeWithParameters type) {
-        if (candidate.getType() != type.getType()) {
+        if (!candidate.getType().equals(type.getType())) {
             return false;
         }
-        for (Map.Entry<TypeParameterType, Type> entry : type.getParameterMap().entrySet()) {
-            if (!candidate.getParameterMap().containsKey(entry.getKey())) {
-                return false;
-            }
-            Type candidateValue = candidate.getParameterMap().get(entry.getKey());
-            if (candidateValue != entry.getValue()) {
-                return false;
-            }
-        }
-
-        return true;
+        return type.getParameterMap().isSubSetOf(candidate.getParameterMap());
     }
 
     private Statement returnOneOfTypes(List<Type> types, boolean construct, ParameterMap parameterMap) {
@@ -136,6 +127,7 @@ public class TypeCreator {
         );
     }
 
+    // TODO: This entire thing in a Visitor
     private Statement constructNewInstanceOfType(Type type, ParameterMap parameterMap) {
         if (type instanceof SimpleType) {
             SimpleType simple = (SimpleType) type;
@@ -181,8 +173,17 @@ public class TypeCreator {
             return Return(number(((NumberLiteral) type).getValue()));
         }
 
-        if (typeNames.containsKey(type) && nativeTypes.contains(type)) {
+        if (type instanceof ReferenceType && "Array".equals(typeNames.get(((ReferenceType) type).getTarget()))) {
+            Type indexType = ((ReferenceType) type).getTypeArguments().iterator().next();
+            Expression constructArrayElement = call(identifier(CONSTRUCT_TYPE_PREFIX + getTypeIndex(indexType, parameterMap)));
+            return Return(array(constructArrayElement, constructArrayElement, constructArrayElement)); // TODO: An at runtime random number of elements, from 0 to 5.
+        }
+
+        if (nativeTypes.contains(type) && !(type instanceof InterfaceType && TypesUtil.isEmptyInterface((InterfaceType) type)) && !(type instanceof UnionType)) {
             String name = typeNames.get(type);
+            if (name == null) {
+                throw new NullPointerException();
+            }
             switch (name) {
                 case "Object":
                     return Return(object());
@@ -200,13 +201,23 @@ public class TypeCreator {
                     return constructNewInstanceOfType(interfaceWithSimpleFunction, parameterMap);
                 case "Error":
                     return Return(newCall(identifier("Error")));
+                case "RegExp":
+                    Expression constructString = call(function(constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), new ParameterMap())));
+                    return Return(newCall(identifier("RegExp"), constructString));
                 default:
                     throw new RuntimeException("Unknown: " + name);
             }
         }
 
+        if (type instanceof GenericType) {
+            assert ((GenericType) type).getTypeParameters().equals(((GenericType) type).getTypeArguments());
+            type = ((GenericType) type).toInterface();
+        }
+
         if (type instanceof InterfaceType) {
-            InterfaceType inter = constructSyntheticInterfaceWithBaseTypes((InterfaceType) type);
+            Pair<InterfaceType, ParameterMap> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) type);
+            InterfaceType inter = pair.getLeft();
+            parameterMap = parameterMap.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
 
             assert inter.getDeclaredStringIndexType() == null;
@@ -218,7 +229,7 @@ public class TypeCreator {
             if (returnTypes.isEmpty()) {
                 program.add(variable("result", object()));
             } else {
-                // TODO: This is wrong, it should actually return the correct type corrosponding to the arguments given. This is complex and should therefore be split into separate method.
+                // TODO: This is wrong, it should actually return the correct type corrosponding to the arguments given.
                 program.add(
                         variable("functionResult", call(function(returnOneOfTypes(returnTypes, true, parameterMap))))
                 );
@@ -257,18 +268,22 @@ public class TypeCreator {
             return block(program);
         }
 
-        if (type instanceof ReferenceType && "Array".equals(typeNames.get(((ReferenceType) type).getTarget()))) {
-            Type indexType = ((ReferenceType) type).getTypeArguments().iterator().next();
-            Expression constructArrayElement = call(identifier(CONSTRUCT_TYPE_PREFIX + getTypeIndex(indexType, parameterMap)));
-            return Return(array(constructArrayElement, constructArrayElement, constructArrayElement)); // TODO: An at runtime random number of elements, from 0 to 5.
-        }
-
         if (type instanceof UnionType) {
             return returnOneOfTypes(((UnionType) type).getElements(), true, parameterMap);
         }
 
         if (type instanceof TypeParameterType) {
             if (parameterMap.containsKey(type)) {
+                if (Thread.currentThread().getStackTrace().length > 1000) {
+                    System.out.println();
+                }
+                if (!TypesUtil.findRecursiveDefinition((TypeParameterType) type, parameterMap, typeParameterIndexer).isEmpty()) {
+                    IntersectionType intersection = new IntersectionType();
+                    intersection.setElements(TypesUtil.findRecursiveDefinition((TypeParameterType) type, parameterMap, typeParameterIndexer));
+
+                    return constructNewInstanceOfType(intersection, parameterMap);
+                }
+
                 return constructNewInstanceOfType(parameterMap.get(type), parameterMap);
             }
             String markerField = typeParameterIndexer.getMarkerField((TypeParameterType) type);
@@ -294,20 +309,30 @@ public class TypeCreator {
         }
 
         if (type instanceof IntersectionType) {
-            return throwStatement(newCall(identifier("RuntimeError"), string("Not implemented yet"))); // TODO:
+            return throwStatement(newCall(identifier("RuntimeError"), string("Not implemented yet, intersectionTypes"))); // TODO:
         }
 
         throw new RuntimeException(type.getClass().toString());
     }
 
-    private InterfaceType constructSyntheticInterfaceWithBaseTypes(InterfaceType inter) {
+    private Pair<InterfaceType, ParameterMap> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter) {
         if (inter.getBaseTypes().isEmpty()) {
-            return inter;
+            return new Pair<>(inter, new ParameterMap());
         }
-        assert inter.getTypeParameters().isEmpty();
+//        assert inter.getTypeParameters().isEmpty(); // This should only happen when constructed from a generic/reference type, and in that case we have handled the TypeParameters.
+        Map<TypeParameterType, Type> newParameters = new ParameterMap().getMap();
         InterfaceType result = SpecReader.makeEmptySyntheticInterfaceType();
         inter.getBaseTypes().forEach(subType -> {
-            InterfaceType type = constructSyntheticInterfaceWithBaseTypes((InterfaceType) subType);
+            if (subType instanceof ReferenceType) {
+                newParameters.putAll(TypesUtil.generateParameterMap((ReferenceType) subType).getMap());
+                subType = ((ReferenceType) subType).getTarget();
+            }
+            if (subType instanceof GenericType) {
+                subType = ((GenericType) subType).toInterface();
+            }
+            Pair<InterfaceType, ParameterMap> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) subType);
+            newParameters.putAll(pair.getRight().getMap());
+            InterfaceType type = pair.getLeft();
             result.getDeclaredCallSignatures().addAll((type.getDeclaredCallSignatures()));
             result.getDeclaredConstructSignatures().addAll(type.getDeclaredConstructSignatures());
             if (inter.getDeclaredNumberIndexType() != null) {
@@ -327,18 +352,27 @@ public class TypeCreator {
                 }
                 result.getDeclaredProperties().put(entry.getKey(), entry.getValue());
             }
-            assert type.getTypeParameters().isEmpty();
         });
-        return result;
+        return new Pair<>(result, new ParameterMap().append(newParameters));
     }
 
     public int getTypeIndex(Type type, ParameterMap parameterMap) {
+        /*ParameterMap orgParameterMap = parameterMap;
+        parameterMap = TypesUtil.filterParameterMap(parameterMap, Collections.singletonList(type)); // TODO: I really need to figure out if this thing is sound.
+
+        if (!parameterMap.equals(orgParameterMap)) {
+            System.err.println("Made the parameterMap simpler for getTypeIndex"); // TODO:
+            assert parameterMap.isSubSetOf(orgParameterMap);
+        }*/
+
         TypeWithParameters key = new TypeWithParameters(type, parameterMap);
         if (typeIndexes.containsKey(key)) {
             return typeIndexes.get(key);
         } else {
             int value = typeIndexes.size();
             typeIndexes.put(key, value);
+
+            Map<TypeWithParameters, Integer> sameParameterDifferentMap = typeIndexes.entrySet().stream().filter(entry -> entry.getKey().getType().equals(type)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)); // TODO:
 
             ExpressionStatement primaryFunction = expressionStatement(
                     function(

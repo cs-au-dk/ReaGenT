@@ -2,6 +2,7 @@ package dk.webbies.tajscheck;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
@@ -57,6 +58,7 @@ public class TypesUtil {
         return nativeCollector.getSeen();
     }
 
+    // TODO: Public call with a single type. 
     public static ParameterMap filterParameterMap(ParameterMap parameterMap, Collection<Type> types) {
         CollectAllTypesVisitor visitor = new CollectAllTypesVisitor();
         types.forEach(visitor::accept);
@@ -80,12 +82,58 @@ public class TypesUtil {
             reachableTypes.addAll(keys2);
             return filterParameterMap(parameterMap, reachableTypes);
         } else {
-            assert keys.equals(keys2);
+            assert new HashSet<>(keys).equals(new HashSet<>(keys2));
             Map<TypeParameterType, Type> map = keys.stream().collect(Collectors.toMap(Function.identity(), parameterMap::get));
             return new ParameterMap(map);
         }
     }
 
+    public static boolean isEmptyInterface(InterfaceType type) {
+        return type.getDeclaredProperties().isEmpty() &&
+                type.getBaseTypes().isEmpty() &&
+                type.getTypeParameters().isEmpty() &&
+                type.getDeclaredCallSignatures().isEmpty() &&
+                type.getDeclaredConstructSignatures().isEmpty() &&
+                type.getDeclaredStringIndexType() == null &&
+                type.getDeclaredNumberIndexType() == null;
+    }
+
+    public static List<Type> findRecursiveDefinition(TypeParameterType firstType, ParameterMap parameterMap, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer) {
+        List<Type> constraints = new ArrayList<>();
+
+        constraints.add(firstType.getConstraint());
+
+        {
+            String markerField = typeParameterIndexer.getMarkerField(firstType);
+            InterfaceType markerConstraint = SpecReader.makeEmptySyntheticInterfaceType();
+            markerConstraint.getDeclaredProperties().put(markerField, new BooleanLiteral(true));
+            constraints.add(markerConstraint);
+        }
+
+        Type type = parameterMap.get(firstType);
+
+        Set<Type> seen = new HashSet<>();
+
+        while (type instanceof TypeParameterType && parameterMap.containsKey(type)) {
+            if (type.equals(firstType)) {
+                return constraints; // There is an infinite loop, starting with firstType, return something satisfying the constraints.
+            }
+            if (seen.contains(type)) { // There is some infinite loop, later, it isn't handled now.
+                return new ArrayList<>();
+            }
+            seen.add(type);
+            constraints.add(((TypeParameterType) type).getConstraint());
+            {
+                String markerField = typeParameterIndexer.getMarkerField((TypeParameterType) type);
+                InterfaceType markerConstraint = SpecReader.makeEmptySyntheticInterfaceType();
+                markerConstraint.getDeclaredProperties().put(markerField, new BooleanLiteral(true));
+                constraints.add(markerConstraint);
+            }
+            type = parameterMap.get(type);
+        }
+
+        return new ArrayList<>();
+    }
 
 
     private static class CollectAllTypesVisitor implements TypeVisitor<Void> {

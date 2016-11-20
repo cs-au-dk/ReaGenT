@@ -29,6 +29,9 @@ public class ParameterMap {
 
 
     public boolean containsKey(Type parameter) {
+        if (!(parameter instanceof TypeParameterType)) {
+            System.out.println();
+        }
         assert parameter instanceof TypeParameterType;
         return map.containsKey(parameter);
     }
@@ -57,7 +60,6 @@ public class ParameterMap {
         return append(other.getMap());
     }
 
-    // TODO: Check when equals is actually used.
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -72,5 +74,11 @@ public class ParameterMap {
     @Override
     public int hashCode() {
         return map.hashCode();
+    }
+
+    public boolean isSubSetOf(ParameterMap larger) {
+        return this.map.entrySet().stream().allMatch(entry ->
+                larger.containsKey(entry.getKey()) && larger.get(entry.getKey()).equals(this.get(entry.getKey()))
+        );
     }
 }
