@@ -1,6 +1,5 @@
 
 TODO: Implementation:
-    Remove the big comment bloc in CheckType.
     CreateTestVisitor, breath first search
     // Split each test out into its own named function
     // Insert "phase 1 of TSCheck" (check heap) between each test.

@@ -58,8 +58,11 @@ public class TypesUtil {
         return nativeCollector.getSeen();
     }
 
-    // TODO: Public call with a single type. 
-    public static ParameterMap filterParameterMap(ParameterMap parameterMap, Collection<Type> types) {
+    public static ParameterMap filterParameterMap(ParameterMap parameterMap, Type type) {
+        return filterParameterMap(parameterMap, Collections.singletonList(type));
+    }
+
+    private static ParameterMap filterParameterMap(ParameterMap parameterMap, Collection<Type> types) {
         CollectAllTypesVisitor visitor = new CollectAllTypesVisitor();
         types.forEach(visitor::accept);
         Set<Type> reachable = visitor.getSeen();
@@ -77,10 +80,11 @@ public class TypesUtil {
         assert keys2.size() >= keys.size();
 
         if (keys2.size() > keys.size()) {
-            List<Type> reachableTypes = new ArrayList<>();
+            throw new RuntimeException();
+            /*List<Type> reachableTypes = new ArrayList<>();
             reachableTypes.addAll(types);
             reachableTypes.addAll(keys2);
-            return filterParameterMap(parameterMap, reachableTypes);
+            return filterParameterMap(parameterMap, reachableTypes);*/
         } else {
             assert new HashSet<>(keys).equals(new HashSet<>(keys2));
             Map<TypeParameterType, Type> map = keys.stream().collect(Collectors.toMap(Function.identity(), parameterMap::get));
@@ -114,7 +118,7 @@ public class TypesUtil {
 
         Set<Type> seen = new HashSet<>();
 
-        while (type instanceof TypeParameterType && parameterMap.containsKey(type)) {
+        while (type instanceof TypeParameterType && parameterMap.containsKey((TypeParameterType)type)) {
             if (type.equals(firstType)) {
                 return constraints; // There is an infinite loop, starting with firstType, return something satisfying the constraints.
             }
@@ -129,7 +133,7 @@ public class TypesUtil {
                 markerConstraint.getDeclaredProperties().put(markerField, new BooleanLiteral(true));
                 constraints.add(markerConstraint);
             }
-            type = parameterMap.get(type);
+            type = parameterMap.get((TypeParameterType)type);
         }
 
         return new ArrayList<>();

@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.buildprogram;
 
+import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
@@ -63,65 +64,6 @@ public class CheckType {
         }
     }
 
-    /*private List<TypeCheck> generateAssertExpressionsOld(Type type, Expression exp) {
-        if ("Object".equals(typeNames.get(type))) {
-            type = SpecReader.makeEmptySyntheticInterfaceType();
-        }
-        if ("Number".equals(typeNames.get(type))) {
-            type = new SimpleType(SimpleTypeKind.Number);
-        }
-        if ("String".equals(typeNames.get(type))) {
-            type = new SimpleType(SimpleTypeKind.String);
-        }
-
-        if (type instanceof UnionType) {
-            List<List<TypeCheck>> unionElements = ((UnionType) type).getElements().stream().map(subType -> this.generateAssertExpressionsOld(subType, exp)).collect(Collectors.toList());
-
-            return Collections.singletonList(createUnionCheck(unionElements));
-        }
-
-        if (type instanceof BooleanLiteral) {
-            boolean value = ((BooleanLiteral) type).getValue();
-            return Collections.singletonList(
-                    new TypeCheck(binary(exp, Operator.EQUAL_EQUAL_EQUAL, bool(value)), Boolean.toString(value))
-            );
-        } else if (type instanceof NumberLiteral) {
-            double value = ((NumberLiteral) type).getValue();
-            return Collections.singletonList(
-                    new TypeCheck(binary(exp, Operator.EQUAL_EQUAL_EQUAL, number(value)), Util.toPrettyNumber(value))
-            );
-        } else if (type instanceof StringLiteral) {
-            String value = ((StringLiteral) type).getText();
-            return Collections.singletonList(
-                    new TypeCheck(binary(exp, Operator.EQUAL_EQUAL_EQUAL, string(value)), "\"" + value + "\"")
-            );
-        }
-
-        if (nativeTypes.contains(type)) {
-            throw new RuntimeException();
-        } else if (type instanceof TypeParameterType) {
-            TypeParameterType parameter = (TypeParameterType) type;
-            assert parameter.getTarget() == null;
-
-            if (parameterMap.containsKey(type)) {
-                return generateAssertExpressionsOld(parameterMap.get(type), exp);
-            }
-
-            List<TypeCheck> checks = new ArrayList<>(generateAssertExpressionsOld(parameter.getConstraint(), exp));
-
-            String markerField = typeParameterIndexer.getMarkerField(parameter);
-            checks.add(new TypeCheck(
-                    binary(member(exp, markerField), Operator.EQUAL_EQUAL_EQUAL, bool(true)),
-                    "a marker i placed (." + markerField + ") to be present, because this is a generic type, it wasn't! "
-            ));
-
-            return checks;
-        } else {
-            throw new RuntimeException("Unhandled type: " + type.getClass());
-        }
-    }*/
-
-
     private static final class CreateTypeCheckVisitor implements TypeVisitorWithArgument<List<TypeCheck>, ParameterMap> {
         private final Set<Type> nativeTypes;
         private final TestProgramBuilder.TypeParameterIndexer typeParameterIndexer;
@@ -171,6 +113,17 @@ public class CheckType {
             }
             if ("Function".equals(typeNames.get(t))) {
                 return Collections.singletonList(new TypeCheck(Check.typeOf("function"), "function"));
+            }
+            if ("String".equals(typeNames.get(t))) {
+                return new SimpleType(SimpleTypeKind.String).accept(this, parameterMap);
+            }
+            if ("Number".equals(typeNames.get(t))) {
+                return new SimpleType(SimpleTypeKind.Number).accept(this, parameterMap);
+            }
+            if ("Object".equals(typeNames.get(t))) {
+                return Collections.singletonList(
+                        new TypeCheck(Check.typeOf("object"), "Object")
+                );
             }
 
             if (nativeTypes.contains(t)) {
@@ -249,9 +202,6 @@ public class CheckType {
                     constraintsIntersection.setElements(constraints);
                     return constraintsIntersection.accept(this, parameterMap);
                 }
-                if (Thread.currentThread().getStackTrace().length > 1000) {
-                    System.err.println("");
-                }
                 return parameterMap.get(parameter).accept(this, parameterMap);
             }
 
@@ -275,7 +225,9 @@ public class CheckType {
 
         @Override
         public List<TypeCheck> visit(StringLiteral t, ParameterMap parameterMap) {
-            throw new RuntimeException();
+            return Collections.singletonList(
+                    new TypeCheck(Check.equalTo(string(t.getText())), "\"" + t.getText() + "\"")
+            );
         }
 
         @Override
@@ -287,7 +239,9 @@ public class CheckType {
 
         @Override
         public List<TypeCheck> visit(NumberLiteral t, ParameterMap parameterMap) {
-            throw new RuntimeException();
+            return Collections.singletonList(
+                    new TypeCheck(Check.equalTo(number(t.getValue())), Double.toString(t.getValue()))
+            );
         }
 
         @Override

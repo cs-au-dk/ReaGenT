@@ -30,7 +30,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         long startTime = System.currentTimeMillis();
         try {
-//            generateTestProgram(Benchmarks.test);
+            generateTestProgram(Benchmarks.test);
 
             generateTestProgram(Benchmarks.moment);
 
@@ -39,7 +39,7 @@ public class Main {
                     "0.36510822415053457"
             ));*/
 
-//            generateTestProgram(Benchmarks.async);
+            generateTestProgram(Benchmarks.async);
 //            generateTestProgram(Benchmarks.underscore);
         } finally {
             System.out.println("In: " + (System.currentTimeMillis() - startTime) / 1000.0 + "s");
@@ -47,6 +47,7 @@ public class Main {
     }
 
     private static void generateTestProgram(Benchmark bench) throws IOException {
+        System.out.println("Generating test program for " + bench.dTSFile);
         String programString = generateProgramForBench(bench, null);
 
         Util.writeFile(getTestFilePath(bench, "test.js"), programString);

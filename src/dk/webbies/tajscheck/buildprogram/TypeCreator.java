@@ -127,95 +127,35 @@ public class TypeCreator {
         );
     }
 
-    // TODO: This entire thing in a Visitor
-    private Statement constructNewInstanceOfType(Type type, ParameterMap parameterMap) {
-        if (type instanceof SimpleType) {
-            SimpleType simple = (SimpleType) type;
-            if (simple.getKind() == SimpleTypeKind.String) {
-                // Math.random().toString(36).substring(Math.random() * 20);
-                MethodCallExpression produceRandomString = methodCall(methodCall(call(identifier("random")), "toString", number(26)), "substring",
-                        binary(
-                                call(identifier("random")),
-                                Operator.MULT,
-                                number(20)
-                        ));
-                return Return(produceRandomString);
-            } else if (simple.getKind() == SimpleTypeKind.Number) {
-                return Return(call(identifier("random")));
-            } else if (simple.getKind() == SimpleTypeKind.Boolean) {
-                // Math.random() > 0.5
-                return Return(
-                        binary(
-                                call(identifier("random")),
-                                Operator.LESS_THAN,
-                                number(0.5)
-                        )
-                );
-            } else if (simple.getKind() == SimpleTypeKind.Any) {
-                return Return(
-                        object(new ObjectLiteral.Property("__isAnyMarker", object()))
-                );
-            } else if (simple.getKind() == SimpleTypeKind.Undefined || simple.getKind() == SimpleTypeKind.Void) {
-                return Return(
-                        unary(Operator.VOID, number(0))
-                );
+    private final class ConstructNewInstanceVisitor implements TypeVisitorWithArgument<Statement, ParameterMap> {
+        @Override
+        public Statement visit(AnonymousType t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Statement visit(ClassType t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Statement visit(GenericType type, ParameterMap parameterMap) {
+            assert type.getTypeParameters().equals(type.getTypeArguments());
+            if (nativeTypes.contains(type)) {
+                return constructTypeFromName(typeNames.get(type), parameterMap);
             }
-            throw new RuntimeException("Cannot yet produce a simple: " + simple.getKind());
+
+            return type.toInterface().accept(this, parameterMap);
         }
 
-        if (type instanceof StringLiteral) {
-            return Return(string(((StringLiteral) type).getText()));
-        }
-        if (type instanceof BooleanLiteral) {
-            return Return(bool(((BooleanLiteral) type).getValue()));
-        }
-        if (type instanceof NumberLiteral) {
-            return Return(number(((NumberLiteral) type).getValue()));
-        }
-
-        if (type instanceof ReferenceType && "Array".equals(typeNames.get(((ReferenceType) type).getTarget()))) {
-            Type indexType = ((ReferenceType) type).getTypeArguments().iterator().next();
-            Expression constructArrayElement = call(identifier(CONSTRUCT_TYPE_PREFIX + getTypeIndex(indexType, parameterMap)));
-            return Return(array(constructArrayElement, constructArrayElement, constructArrayElement)); // TODO: An at runtime random number of elements, from 0 to 5.
-        }
-
-        if (nativeTypes.contains(type) && !(type instanceof InterfaceType && TypesUtil.isEmptyInterface((InterfaceType) type)) && !(type instanceof UnionType)) {
-            String name = typeNames.get(type);
-            if (name == null) {
-                throw new NullPointerException();
+        @Override
+        public Statement visit(InterfaceType type, ParameterMap parameterMap) {
+            if (nativeTypes.contains(type) && !TypesUtil.isEmptyInterface(type)) {
+                return constructTypeFromName(typeNames.get(type), parameterMap);
             }
-            switch (name) {
-                case "Object":
-                    return Return(object());
-                case "Number":
-                    return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.Number), parameterMap);
-                case "Date":
-                    return Return(newCall(identifier("Date")));
-                case "Function":
-                    InterfaceType interfaceWithSimpleFunction = SpecReader.makeEmptySyntheticInterfaceType();
-                    Signature callSignature = new Signature();
-                    callSignature.setParameters(new ArrayList<>());
-                    callSignature.setMinArgumentCount(0);
-                    callSignature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
-                    interfaceWithSimpleFunction.getDeclaredCallSignatures().add(callSignature);
-                    return constructNewInstanceOfType(interfaceWithSimpleFunction, parameterMap);
-                case "Error":
-                    return Return(newCall(identifier("Error")));
-                case "RegExp":
-                    Expression constructString = call(function(constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), new ParameterMap())));
-                    return Return(newCall(identifier("RegExp"), constructString));
-                default:
-                    throw new RuntimeException("Unknown: " + name);
-            }
-        }
 
-        if (type instanceof GenericType) {
-            assert ((GenericType) type).getTypeParameters().equals(((GenericType) type).getTypeArguments());
-            type = ((GenericType) type).toInterface();
-        }
 
-        if (type instanceof InterfaceType) {
-            Pair<InterfaceType, ParameterMap> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) type);
+            Pair<InterfaceType, ParameterMap> pair = constructSyntheticInterfaceWithBaseTypes(type);
             InterfaceType inter = pair.getLeft();
             parameterMap = parameterMap.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
@@ -268,27 +208,86 @@ public class TypeCreator {
             return block(program);
         }
 
-        if (type instanceof UnionType) {
-            return returnOneOfTypes(((UnionType) type).getElements(), true, parameterMap);
+        @Override
+        public Statement visit(ReferenceType type, ParameterMap parameterMap) {
+            if ("Array".equals(typeNames.get(type.getTarget()))) {
+                Type indexType = type.getTypeArguments().iterator().next();
+                Expression constructArrayElement = call(identifier(CONSTRUCT_TYPE_PREFIX + getTypeIndex(indexType, parameterMap)));
+                return Return(array(constructArrayElement, constructArrayElement, constructArrayElement)); // TODO: An at runtime random number of elements, from 0 to 5.
+            }
+
+            GenericType target = (GenericType) type.getTarget();
+
+            return constructNewInstanceOfType(target.toInterface(), TypesUtil.generateParameterMap(type, parameterMap));
         }
 
-        if (type instanceof TypeParameterType) {
+        @Override
+        public Statement visit(SimpleType simple, ParameterMap parameterMap) {
+            switch (simple.getKind()) {
+                case String:
+                    // Math.random().toString(36).substring(Math.random() * 20);
+                    MethodCallExpression produceRandomString = methodCall(methodCall(call(identifier("random")), "toString", number(26)), "substring",
+                            binary(
+                                    call(identifier("random")),
+                                    Operator.MULT,
+                                    number(20)
+                            ));
+                    return Return(produceRandomString);
+                case Number:
+                    return Return(call(identifier("random")));
+                case Boolean:
+                    // Math.random() > 0.5
+                    return Return(
+                            binary(
+                                    call(identifier("random")),
+                                    Operator.LESS_THAN,
+                                    number(0.5)
+                            )
+                    );
+                case Any:
+                    return Return(
+                            object(new ObjectLiteral.Property("__isAnyMarker", object()))
+                    );
+                case Undefined:
+                case Void:
+                    return Return(
+                            unary(Operator.VOID, number(0))
+                    );
+                default:
+                    throw new RuntimeException("Cannot yet produce a simple: " + simple.getKind());
+            }
+        }
+
+        @Override
+        public Statement visit(TupleType t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Statement visit(UnionType t, ParameterMap parameterMap) {
+            return returnOneOfTypes(t.getElements(), true, parameterMap);
+        }
+
+        @Override
+        public Statement visit(UnresolvedType t, ParameterMap parameterMap) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Statement visit(TypeParameterType type, ParameterMap parameterMap) {
             if (parameterMap.containsKey(type)) {
-                if (Thread.currentThread().getStackTrace().length > 1000) {
-                    System.out.println();
-                }
-                if (!TypesUtil.findRecursiveDefinition((TypeParameterType) type, parameterMap, typeParameterIndexer).isEmpty()) {
+                if (!TypesUtil.findRecursiveDefinition(type, parameterMap, typeParameterIndexer).isEmpty()) {
                     IntersectionType intersection = new IntersectionType();
-                    intersection.setElements(TypesUtil.findRecursiveDefinition((TypeParameterType) type, parameterMap, typeParameterIndexer));
+                    intersection.setElements(TypesUtil.findRecursiveDefinition(type, parameterMap, typeParameterIndexer));
 
                     return constructNewInstanceOfType(intersection, parameterMap);
                 }
 
                 return constructNewInstanceOfType(parameterMap.get(type), parameterMap);
             }
-            String markerField = typeParameterIndexer.getMarkerField((TypeParameterType) type);
+            String markerField = typeParameterIndexer.getMarkerField(type);
             return block(
-                    variable("result", call(function(constructNewInstanceOfType(((TypeParameterType) type).getConstraint(), parameterMap)))),
+                    variable("result", call(function(constructNewInstanceOfType(type.getConstraint(), parameterMap)))),
                     ifThen(
                             binary(unary(Operator.TYPEOF, identifier("result")), Operator.NOT_EQUAL_EQUAL, string("object")),
                             throwStatement(newCall(identifier(RUNTIME_ERROR_NAME)))
@@ -300,19 +299,66 @@ public class TypeCreator {
             );
         }
 
-        if (type instanceof ReferenceType) {
-            ReferenceType ref = (ReferenceType) type;
-
-            GenericType target = (GenericType) ref.getTarget();
-
-            return constructNewInstanceOfType(target.toInterface(), TypesUtil.generateParameterMap(ref, parameterMap));
+        @Override
+        public Statement visit(SymbolType t, ParameterMap parameterMap) {
+            throw new RuntimeException();
         }
 
-        if (type instanceof IntersectionType) {
+        @Override
+        public Statement visit(StringLiteral str, ParameterMap parameterMap) {
+            return Return(string(str.getText()));
+        }
+
+        @Override
+        public Statement visit(BooleanLiteral t, ParameterMap parameterMap) {
+            return Return(bool(t.getValue()));
+        }
+
+        @Override
+        public Statement visit(NumberLiteral t, ParameterMap parameterMap) {
+            return Return(number(t.getValue()));
+        }
+
+        @Override
+        public Statement visit(IntersectionType t, ParameterMap parameterMap) {
             return throwStatement(newCall(identifier("RuntimeError"), string("Not implemented yet, intersectionTypes"))); // TODO:
         }
+    }
 
-        throw new RuntimeException(type.getClass().toString());
+    private Statement constructTypeFromName(String name, ParameterMap parameterMap) {
+        if (name == null) {
+            throw new NullPointerException();
+        }
+        switch (name) {
+            case "Object":
+                return constructNewInstanceOfType(SpecReader.makeEmptySyntheticInterfaceType(), parameterMap);
+            case "Number":
+                return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.Number), parameterMap);
+            case "Date":
+                return Return(newCall(identifier("Date")));
+            case "Function":
+                InterfaceType interfaceWithSimpleFunction = SpecReader.makeEmptySyntheticInterfaceType();
+                Signature callSignature = new Signature();
+                callSignature.setParameters(new ArrayList<>());
+                callSignature.setMinArgumentCount(0);
+                callSignature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
+                interfaceWithSimpleFunction.getDeclaredCallSignatures().add(callSignature);
+                return constructNewInstanceOfType(interfaceWithSimpleFunction, parameterMap);
+            case "Error":
+                return Return(newCall(identifier("Error")));
+            case "RegExp":
+                Expression constructString = call(function(constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), new ParameterMap())));
+                return Return(newCall(identifier("RegExp"), constructString));
+            case "String":
+                return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), parameterMap);
+            default:
+                throw new RuntimeException("Unknown: " + name);
+        }
+    }
+
+
+    private Statement constructNewInstanceOfType(Type type, ParameterMap parameterMap) {
+        return type.accept(new ConstructNewInstanceVisitor(), parameterMap);
     }
 
     private Pair<InterfaceType, ParameterMap> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter) {
@@ -357,13 +403,7 @@ public class TypeCreator {
     }
 
     public int getTypeIndex(Type type, ParameterMap parameterMap) {
-        /*ParameterMap orgParameterMap = parameterMap;
-        parameterMap = TypesUtil.filterParameterMap(parameterMap, Collections.singletonList(type)); // TODO: I really need to figure out if this thing is sound.
-
-        if (!parameterMap.equals(orgParameterMap)) {
-            System.err.println("Made the parameterMap simpler for getTypeIndex"); // TODO:
-            assert parameterMap.isSubSetOf(orgParameterMap);
-        }*/
+        parameterMap = TypesUtil.filterParameterMap(parameterMap, type);
 
         TypeWithParameters key = new TypeWithParameters(type, parameterMap);
         if (typeIndexes.containsKey(key)) {
@@ -371,8 +411,6 @@ public class TypeCreator {
         } else {
             int value = typeIndexes.size();
             typeIndexes.put(key, value);
-
-            Map<TypeWithParameters, Integer> sameParameterDifferentMap = typeIndexes.entrySet().stream().filter(entry -> entry.getKey().getType().equals(type)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)); // TODO:
 
             ExpressionStatement primaryFunction = expressionStatement(
                     function(

@@ -28,19 +28,11 @@ public class ParameterMap {
     }
 
 
-    public boolean containsKey(Type parameter) {
-        if (!(parameter instanceof TypeParameterType)) {
-            System.out.println();
-        }
-        assert parameter instanceof TypeParameterType;
+    public boolean containsKey(TypeParameterType parameter) {
         return map.containsKey(parameter);
     }
 
-    public Type get(Type parameter) {
-        if (!(parameter instanceof TypeParameterType)) {
-            System.out.println();
-        }
-        assert parameter instanceof TypeParameterType;
+    public Type get(TypeParameterType parameter) {
         return map.get(parameter);
     }
 
