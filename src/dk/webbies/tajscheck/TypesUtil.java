@@ -80,11 +80,10 @@ public class TypesUtil {
         assert keys2.size() >= keys.size();
 
         if (keys2.size() > keys.size()) {
-            throw new RuntimeException();
-            /*List<Type> reachableTypes = new ArrayList<>();
+            List<Type> reachableTypes = new ArrayList<>();
             reachableTypes.addAll(types);
             reachableTypes.addAll(keys2);
-            return filterParameterMap(parameterMap, reachableTypes);*/
+            return filterParameterMap(parameterMap, reachableTypes);
         } else {
             assert new HashSet<>(keys).equals(new HashSet<>(keys2));
             Map<TypeParameterType, Type> map = keys.stream().collect(Collectors.toMap(Function.identity(), parameterMap::get));
