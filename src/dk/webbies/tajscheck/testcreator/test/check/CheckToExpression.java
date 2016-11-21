@@ -12,6 +12,9 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
  * Created by erik1 on 14-11-2016.
  */
 public class CheckToExpression implements CheckVisitorWithArgument<Expression, Expression> {
+    private CheckToExpression() {
+    }
+
     @Override
     public Expression visit(OrCheck check, Expression expression) {
         return AstBuilder.or(

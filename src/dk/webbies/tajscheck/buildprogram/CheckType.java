@@ -38,7 +38,7 @@ public class CheckType {
         return block(
                 typeChecks.stream().map(check -> {
                     // assert(cond, path, expected, actual)
-                    Expression checkExpression = check.getCheck().accept(new CheckToExpression(), exp);
+                    Expression checkExpression = CheckToExpression.generate(check.getCheck(), exp);
                     CallExpression assertCall = call(identifier("assert"), checkExpression, string(path), string(check.getExpected()), exp);
                     return ifThen(unary(Operator.NOT, assertCall), Return());
                 }).collect(Collectors.toList())
