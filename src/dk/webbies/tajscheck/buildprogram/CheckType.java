@@ -6,6 +6,9 @@ import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
 import dk.webbies.tajscheck.ParameterMap;
 import dk.webbies.tajscheck.TypesUtil;
+import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;
+import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
+import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
@@ -36,31 +39,37 @@ public class CheckType {
         List<TypeCheck> typeChecks = type.accept(new CreateTypeCheckVisitor(nativeTypes, typeParameterIndexer, typeNames), new Arg(parameterMap, depth));
 
         return block(
-                typeChecks.stream().map(check -> {
-                    // assert(cond, path, expected, actual)
-                    Expression checkExpression = CheckToExpression.generate(check.getCheck(), exp);
-                    CallExpression assertCall = call(identifier("assert"), checkExpression, string(path), string(check.getExpected()), exp);
-                    return ifThen(unary(Operator.NOT, assertCall), Return());
-                }).collect(Collectors.toList())
+                variable("typeChecked", bool(true)),
+                block(
+                        typeChecks.stream().map(check -> checkToAssertions(check, exp, path)).collect(Collectors.toList())
+                ),
+                ifThen(
+                        unary(Operator.NOT, identifier("typeChecked")),
+                        Return()
+                )
         );
     }
 
-    private static final class TypeCheck {
-        private final Check check;
-        private final String expected;
-
-        private TypeCheck(Check check, String expected) {
-            this.check = check;
-            this.expected = expected;
+    private Statement checkToAssertions(TypeCheck typeCheck, Expression exp, String path) {
+        if (typeCheck instanceof FieldTypeCheck) {
+            FieldTypeCheck fieldTypeCheck = (FieldTypeCheck) typeCheck;
+            String field = fieldTypeCheck.getField();
+            return statement(call(function(block(
+                    fieldTypeCheck.getFieldChecks().stream().map(subCheck -> checkToAssertions(subCheck, member(exp, field), path + "." + field)).collect(Collectors.toList())
+            ))));
         }
 
-        public String getExpected() {
-            return expected;
-        }
-
-        public Check getCheck() {
-            return check;
-        }
+        assert typeCheck instanceof SimpleTypeCheck;
+        // assert(cond, path, expected, actual)
+        Expression checkExpression = CheckToExpression.generate(typeCheck.getCheck(), exp);
+        CallExpression assertCall = call(identifier("assert"), checkExpression, string(path), string(typeCheck.getExpected()), exp);
+        return ifThen(
+                unary(Operator.NOT, assertCall),
+                block(
+                        statement(binary(identifier("typeChecked"),Operator.EQUAL, bool(false))),
+                        Return(bool(false))
+                )
+        );
     }
 
     private static final class Arg {
@@ -108,7 +117,7 @@ public class CheckType {
                 if ("RegExp".equals(typeNames.get(t))) {
                     return Arrays.asList(
                             expectNotNull(),
-                            new TypeCheck(
+                            new SimpleTypeCheck(
                                     Check.instanceOf(identifier("RegExp")),
                                     "RegExp"
                             )
@@ -123,13 +132,13 @@ public class CheckType {
         @Override
         public List<TypeCheck> visit(InterfaceType t, Arg arg) {
             if (TypesUtil.isEmptyInterface(t)) {
-                return Collections.singletonList(new TypeCheck(Check.trueCheck(), "[any]"));
+                return Collections.singletonList(new SimpleTypeCheck(Check.trueCheck(), "[any]"));
             }
             if ("Date".equals(typeNames.get(t))) {
-                return Arrays.asList(expectNotNull(), new TypeCheck(Check.instanceOf(identifier("Date")), "Date"));
+                return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.instanceOf(identifier("Date")), "Date"));
             }
             if ("Function".equals(typeNames.get(t))) {
-                return Collections.singletonList(new TypeCheck(Check.typeOf("function"), "function"));
+                return Collections.singletonList(new SimpleTypeCheck(Check.typeOf("function"), "function"));
             }
             if ("String".equals(typeNames.get(t))) {
                 return new SimpleType(SimpleTypeKind.String).accept(this, arg);
@@ -139,7 +148,7 @@ public class CheckType {
             }
             if ("Object".equals(typeNames.get(t))) {
                 return Collections.singletonList(
-                        new TypeCheck(Check.typeOf("object"), "Object")
+                        new SimpleTypeCheck(Check.typeOf("object"), "Object")
                 );
             }
 
@@ -151,14 +160,14 @@ public class CheckType {
 
             if (!t.getDeclaredCallSignatures().isEmpty() || !t.getDeclaredConstructSignatures().isEmpty()) {
                 result.add(
-                        new TypeCheck(
+                        new SimpleTypeCheck(
                                 Check.typeOf("function"),
                                 "function"
                         )
                 );
             } else {
                 result.add(
-                        new TypeCheck(
+                        new SimpleTypeCheck(
                                 Check.or(
                                         Check.typeOf("function"),
                                         Check.typeOf("object")
@@ -174,13 +183,8 @@ public class CheckType {
             if (arg.depthRemaining > 0) {
                 Arg subArg = arg.decreaseDepth();
                 for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
-                    TypeCheck fieldChecks = createIntersection(entry.getValue().accept(this, subArg));
-                    result.add(
-                            new TypeCheck(
-                                    Check.field(entry.getKey(), fieldChecks.check),
-                                    "field[" + entry.getKey() + "]:(" + fieldChecks.expected + ")"
-                            )
-                    );
+                    List<TypeCheck> fieldChecks = entry.getValue().accept(this, subArg);
+                    result.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
                 }
 
             }
@@ -192,7 +196,7 @@ public class CheckType {
         public List<TypeCheck> visit(ReferenceType t, Arg arg) {
             if ("Array".equals(typeNames.get(t.getTarget()))) {
                 // TODO: Check the index type:
-                return Arrays.asList(expectNotNull(), new TypeCheck(Check.instanceOf(identifier("Array")), "Array"));
+                return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "Array"));
             }
 
             if (nativeTypes.contains(t)) {
@@ -205,11 +209,11 @@ public class CheckType {
         public List<TypeCheck> visit(SimpleType t, Arg arg) {
             if (t.getKind() == SimpleTypeKind.Any) {
                 return Collections.singletonList(
-                        new TypeCheck(Check.trueCheck(), "[any]")
+                        new SimpleTypeCheck(Check.trueCheck(), "[any]")
                 );
             }
             String typeOf = getTypeOf(t);
-            return Collections.singletonList(new TypeCheck(Check.typeOf(typeOf), typeOf));
+            return Collections.singletonList(new SimpleTypeCheck(Check.typeOf(typeOf), typeOf));
         }
 
         @Override
@@ -250,7 +254,7 @@ public class CheckType {
             String markerField = typeParameterIndexer.getMarkerField(parameter);
 
             checks.add(expectNotNull());
-            checks.add(new TypeCheck(
+            checks.add(new SimpleTypeCheck(
                     Check.field(markerField, Check.equalTo(bool(true))),
                     "a generic type marker (." + markerField + ")"
             ));
@@ -266,21 +270,21 @@ public class CheckType {
         @Override
         public List<TypeCheck> visit(StringLiteral t, Arg arg) {
             return Collections.singletonList(
-                    new TypeCheck(Check.equalTo(string(t.getText())), "\"" + t.getText() + "\"")
+                    new SimpleTypeCheck(Check.equalTo(string(t.getText())), "\"" + t.getText() + "\"")
             );
         }
 
         @Override
         public List<TypeCheck> visit(BooleanLiteral t, Arg arg) {
             return Collections.singletonList(
-                    new TypeCheck(Check.equalTo(bool(t.getValue())), Boolean.toString(t.getValue()))
+                    new SimpleTypeCheck(Check.equalTo(bool(t.getValue())), Boolean.toString(t.getValue()))
             );
         }
 
         @Override
         public List<TypeCheck> visit(NumberLiteral t, Arg arg) {
             return Collections.singletonList(
-                    new TypeCheck(Check.equalTo(number(t.getValue())), Double.toString(t.getValue()))
+                    new SimpleTypeCheck(Check.equalTo(number(t.getValue())), Double.toString(t.getValue()))
             );
         }
 
@@ -303,7 +307,7 @@ public class CheckType {
 
         StringBuilder expected = new StringBuilder("(");
         for (int i = 0; i < checks.size(); i++) {
-            expected.append(checks.get(i).expected);
+            expected.append(checks.get(i).getExpected());
             if (i != checks.size() - 1) {
                 expected.append(" or ");
             }
@@ -312,7 +316,7 @@ public class CheckType {
 
         Check check = Check.or(checks.stream().map(TypeCheck::getCheck).collect(Collectors.toList()));
 
-        return new TypeCheck(check, expected.toString());
+        return new SimpleTypeCheck(check, expected.toString());
     }
 
     private static TypeCheck createIntersection(List<TypeCheck> checks) {
@@ -320,18 +324,26 @@ public class CheckType {
         if (checks.size() == 1) {
             return checks.iterator().next();
         }
+        String expected = createIntersectionDescription(checks);
+
+        Check check = Check.and(checks.stream().map(TypeCheck::getCheck).collect(Collectors.toList()));
+
+        return new SimpleTypeCheck(check, expected);
+    }
+
+    public static String createIntersectionDescription(List<TypeCheck> checks) {
+        if (checks.size() == 1) {
+            return checks.iterator().next().getExpected();
+        }
         StringBuilder expected = new StringBuilder("(");
         for (int i = 0; i < checks.size(); i++) {
-            expected.append(checks.get(i).expected);
+            expected.append(checks.get(i).getExpected());
             if (i != checks.size() - 1) {
                 expected.append(" and ");
             }
         }
         expected.append(")");
-
-        Check check = Check.and(checks.stream().map(TypeCheck::getCheck).collect(Collectors.toList()));
-
-        return new TypeCheck(check, expected.toString());
+        return expected.toString();
     }
 
     private static String getTypeOf(SimpleType type) {
@@ -353,7 +365,7 @@ public class CheckType {
     }
 
     private static TypeCheck expectNotNull() {
-        return new TypeCheck(
+        return new SimpleTypeCheck(
                 Check.and(
                     Check.not(Check.typeOf("undefined")),
                     Check.not(Check.equalTo(nullLiteral()))

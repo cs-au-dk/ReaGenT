@@ -30,7 +30,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         long startTime = System.currentTimeMillis();
         try {
-//            generateTestProgram(Benchmarks.test);
+            generateTestProgram(Benchmarks.test);
 
             generateTestProgram(Benchmarks.moment);
 
@@ -79,7 +79,7 @@ public class Main {
         List<Test> tests = TestCreator.createTests(nativeTypes, typeToTest, bench.module);
         tests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest));
 
-        Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests).buildTestProgram(recording);
+        Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest).buildTestProgram(recording);
 
         return AstToStringVisitor.toString(program);
     }

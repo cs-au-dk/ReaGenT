@@ -3,15 +3,15 @@ package dk.webbies.tajscheck.paser.AST;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import dk.webbies.tajscheck.paser.StatementVisitor;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Created by erik1 on 01-09-2015.
  */
 public class BlockStatement extends Statement{
-    private final List<Statement> statements;
+    private final Collection<Statement> statements;
 
-    public BlockStatement(SourceRange location, List<Statement> statements) {
+    public BlockStatement(SourceRange location, Collection<Statement> statements) {
         super(location);
         this.statements = statements;
     }
@@ -21,7 +21,7 @@ public class BlockStatement extends Statement{
         return visitor.visit(this);
     }
 
-    public List<Statement> getStatements() {
+    public Collection<Statement> getStatements() {
         return statements;
     }
 }

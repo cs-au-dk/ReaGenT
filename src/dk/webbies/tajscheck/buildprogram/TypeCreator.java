@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck.buildprogram;
 
-import com.google.common.reflect.TypeParameter;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
@@ -199,7 +198,7 @@ public class TypeCreator {
                 program.add(ifThenElse(
                         binary(identifier("objectResult_" + i), Operator.EQUAL_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
                         Return(identifier(VARIABLE_NO_VALUE)),
-                        expressionStatement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, identifier("objectResult_" + i)))
+                        statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, identifier("objectResult_" + i)))
                 ));
             }
 
@@ -294,7 +293,7 @@ public class TypeCreator {
                             binary(unary(Operator.TYPEOF, identifier("result")), Operator.NOT_EQUAL_EQUAL, string("object")),
                             throwStatement(newCall(identifier(RUNTIME_ERROR_NAME)))
                     ),
-                    expressionStatement(
+                    statement(
                             binary(member(identifier("result"), markerField), Operator.EQUAL, bool(true))
                     ),
                     Return(identifier("result"))
@@ -414,14 +413,14 @@ public class TypeCreator {
             int value = typeIndexes.size();
             typeIndexes.put(key, value);
 
-            ExpressionStatement primaryFunction = expressionStatement(
+            ExpressionStatement primaryFunction = statement(
                     function(
                             GET_TYPE_PREFIX + value,
                             block(this.getExistingInstanceOfType(type, parameterMap))
                     )
             );
 
-            ExpressionStatement constructNewInstanceFunction = expressionStatement(
+            ExpressionStatement constructNewInstanceFunction = statement(
                     function(
                             CONSTRUCT_TYPE_PREFIX + value,
                             block(

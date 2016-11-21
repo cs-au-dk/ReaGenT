@@ -1,11 +1,11 @@
 package dk.webbies.tajscheck.paser;
 
-import com.sun.deploy.util.ArrayUtil;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -74,8 +74,12 @@ public class AstBuilder {
         return block(Arrays.asList(statements));
     }
 
-    public static BlockStatement block(List<Statement> statements) {
+    public static BlockStatement block(Collection<Statement> statements) {
         return new BlockStatement(null, statements);
+    }
+
+    public static ExpressionStatement statement(Expression expression) {
+        return expressionStatement(expression);
     }
 
     public static ExpressionStatement expressionStatement(Expression expression) {

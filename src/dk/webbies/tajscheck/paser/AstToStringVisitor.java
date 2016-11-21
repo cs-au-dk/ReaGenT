@@ -4,6 +4,7 @@ import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.Condition;
 
@@ -404,12 +405,13 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             write("; ");
         } else if (forStatement.getInitialize() instanceof BlockStatement) {
             BlockStatement block = (BlockStatement) forStatement.getInitialize();
-            assert block.getStatements().stream().allMatch(VariableNode.class::isInstance);
+            List<Statement> statements = new ArrayList<>(block.getStatements());
+            assert statements.stream().allMatch(VariableNode.class::isInstance);
 
             write("var ");
 
-            for (int i = 0; i < block.getStatements().size(); i++) {
-                VariableNode variable = (VariableNode) block.getStatements().get(i);
+            for (int i = 0; i < statements.size(); i++) {
+                VariableNode variable = (VariableNode) statements.get(i);
 
                 variable.getlValue().accept(this);
 
@@ -418,7 +420,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
                     variable.getInit().accept(this);
                 }
 
-                if (i != block.getStatements().size() - 1) {
+                if (i != statements.size() - 1) {
                     write(", ");
                 } else {
                     write(";");

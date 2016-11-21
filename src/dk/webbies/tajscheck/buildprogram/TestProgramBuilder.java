@@ -40,6 +40,7 @@ public class TestProgramBuilder {
     private final Set<Type> nativeTypes;
     private final TypeParameterIndexer typeParameterIndexer;
     private Map<Type, String> typeNames;
+    private Type moduleType;
 
     private final MultiMap<TypeWithParameters, Integer> valueLocations = new ArrayListMultiMap<>();
     private final Map<Test, Integer> testToValueMap = new IdentityHashMap<>();
@@ -59,11 +60,12 @@ public class TestProgramBuilder {
         }
     }
 
-    public TestProgramBuilder(Benchmark bench, Set<Type> nativeTypes, Map<Type, String> typeNames, List<Test> tests) {
+    public TestProgramBuilder(Benchmark bench, Set<Type> nativeTypes, Map<Type, String> typeNames, List<Test> tests, Type moduleType) {
         this.bench = bench;
         this.tests = new ArrayList<>(tests);
         this.nativeTypes = nativeTypes;
         this.typeNames = typeNames;
+        this.moduleType = moduleType;
         this.typeParameterIndexer = new TypeParameterIndexer();
 
         for (Test test : this.tests) {
@@ -121,24 +123,28 @@ public class TestProgramBuilder {
             program.add(variable("recording", array()));
             Arrays.stream(recording.testSequence)
                     .mapToObj(i -> methodCall(identifier("recording"), "push", number(i)))
-                    .map(AstBuilder::expressionStatement)
+                    .map(AstBuilder::statement)
                     .forEach(program::add);
         }
 
         // Non-deterministically running all the test-cases.
-        Expression getNumberToRun = null;
+        Expression getNumberToRun;
         if (recording == null) {
             getNumberToRun = binary(binary(call(identifier("random")), Operator.MULT, number(tests.size())), Operator.BITWISE_OR, number(0));
         } else {
             getNumberToRun = arrayAccess(identifier("recording"), identifier("i"));
         }
+
+        program.add(createCheckHeapFunction());
+
         program.add(forLoop(
                 variable("i", number(0)),
                 binary(identifier("i"), Operator.LESS_THAN, iterationsToRun),
                 unary(Operator.POST_PLUS_PLUS, identifier("i")),
                 block(
+                        statement(call(identifier("checkHeap"))),
                         variable("testNumberToRun", getNumberToRun),
-                        expressionStatement(methodCall(identifier("testOrderRecording"), "push", identifier("testNumberToRun"))),
+                        statement(methodCall(identifier("testOrderRecording"), "push", identifier("testNumberToRun"))),
                         tryCatch(
                                 AstBuilder.switchCase(
                                         identifier("testNumberToRun"),
@@ -146,11 +152,11 @@ public class TestProgramBuilder {
                                 catchBlock(
                                         identifier("e"),
                                         block(
-//                                                expressionStatement(call(identifier("print"), identifier("e"))),
+//                                                statement(call(identifier("print"), identifier("e"))),
                                                 ifThen(
                                                         binary(identifier("e"), Operator.INSTANCEOF, identifier(RUNTIME_ERROR_NAME)),
                                                         block(
-                                                                expressionStatement(call(identifier("print"), member(identifier("e"), "message"))),
+                                                                statement(call(identifier("print"), member(identifier("e"), "message"))),
                                                                 throwStatement(identifier("e"))
                                                         )
                                                 )
@@ -159,7 +165,30 @@ public class TestProgramBuilder {
 
         program.add(parseProgram("dumb.js"));
 
-        return expressionStatement(call(function(block(program))));
+        return statement(call(function(block(program))));
+    }
+
+    private ExpressionStatement createCheckHeapFunction() {
+        int moduleTypeIndex = typeCreator.getTypeIndex(moduleType, new ParameterMap());
+
+        return statement(function("checkHeap", block(
+                // If module not loaded, return.
+                variable("module", null),
+                ifThen(
+                        binary(
+                                binary(
+                                        identifier("module"),
+                                        Operator.EQUAL,
+                                        call(identifier(GET_TYPE_PREFIX + moduleTypeIndex))
+                                ),
+                                Operator.EQUAL_EQUAL_EQUAL,
+                                identifier(VARIABLE_NO_VALUE)
+                        ),
+                        Return()
+                ),
+                new CheckType(nativeTypes, typeNames, typeParameterIndexer, new ParameterMap()).checkResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
+
+        )));
     }
 
     private BlockStatement parseProgram(String fileName) throws IOException {
@@ -177,7 +206,7 @@ public class TestProgramBuilder {
             result.add(new Pair<>(
                     number(i),
                     block(
-                            expressionStatement(call(function(block(buildTestCase(test))))),
+                            statement(call(function(block(buildTestCase(test))))),
                             breakStatement()
                     )
             ));
@@ -199,7 +228,7 @@ public class TestProgramBuilder {
                 testCode,
                 Arrays.asList(
                         new CheckType(nativeTypes, typeNames, typeParameterIndexer, test.getParameterMap()).checkResultingType(test.getProduces(), identifier("result"), test.getPath(), Main.CHECK_DEPTH),
-                        expressionStatement(binary(identifier(VALUE_VARIABLE_PREFIX + testToValueMap.get(test)), Operator.EQUAL, identifier("result")))
+                        statement(binary(identifier(VALUE_VARIABLE_PREFIX + testToValueMap.get(test)), Operator.EQUAL, identifier("result")))
                 ));
     }
 
