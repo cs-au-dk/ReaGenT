@@ -3,17 +3,36 @@
 // require("/mnt/c/Users/erik1/Dropbox/Uni/Ph.D/TAJSCheck/node_modules/seedrandom/seedrandom.js");
 
 // var random = eval("(Math.seedrandom(initialRandomness + ''), Math.random)");
-Math.seedrandom(initialRandomness + '')
+Math.seedrandom(initialRandomness + '');
 var random = Math.random;
 
 console.log("Initial random: " + initialRandomness);
 
-var assertionFailures = new Set();
+var require_cache = {};
+
+function tajs_require (path) {
+    if (require_cache[path]) {
+        return require_cache[path];
+    }
+    function require () {
+        throw new Error();
+    }
+    var utilFunction = TAJS_load(path, false, "exports", "module", "require");
+    var exports = {};
+    var module = {
+        "require": require,
+        "exports": exports
+    };
+    utilFunction(exports, module, require);
+    return module.exports;
+}
+
+var assertionFailures = [];
 var no_value = {};
 var testOrderRecording = [];
 function assert (cond, path, expected, actual) {
     if (!cond) {
-        assertionFailures.add({
+        assertionFailures.push({
             path: path,
             expected: expected,
             actual: actual,

@@ -5,8 +5,6 @@
  }*/
 
 (function (assertionFailures, print) {
-    assertionFailures = Array.from(assertionFailures);
-
     var assertionsByPath = {};
 
     for (var i = 0; i < assertionFailures.length; i++) {
