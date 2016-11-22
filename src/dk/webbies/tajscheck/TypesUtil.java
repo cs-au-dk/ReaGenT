@@ -62,7 +62,7 @@ public class TypesUtil {
         return filterParameterMap(parameterMap, Collections.singletonList(type));
     }
 
-    private static ParameterMap filterParameterMap(ParameterMap parameterMap, Collection<Type> types) {
+    public static ParameterMap filterParameterMap(ParameterMap parameterMap, Collection<Type> types) {
         CollectAllTypesVisitor visitor = new CollectAllTypesVisitor();
         types.forEach(visitor::accept);
         Set<Type> reachable = visitor.getSeen();

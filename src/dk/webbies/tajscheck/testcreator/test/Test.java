@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.ParameterMap;
 import dk.webbies.tajscheck.TypesUtil;
+import dk.webbies.tajscheck.util.Util;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -24,7 +25,12 @@ public abstract class Test {
         this.dependsOn = dependsOn;
         this.produces = produces;
         this.path = path;
-        this.parameterMap = TypesUtil.filterParameterMap(parameterMap, produces);
+        this.parameterMap = TypesUtil.filterParameterMap(parameterMap,
+                Util.concat(
+                        Collections.singletonList(produces),
+                        dependsOn
+                )
+        );
     }
 
     public Collection<Type> getDependsOn() {
