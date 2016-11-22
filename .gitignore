@@ -3,6 +3,7 @@ tests/*/test.js
 tests/*/out.txt
 cache/*
 node_modules/*
+paper/*
 
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template
