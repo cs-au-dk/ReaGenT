@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.ParameterMap;
 import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
+import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
@@ -21,7 +22,9 @@ import static dk.webbies.tajscheck.testcreator.test.check.Check.*;
  */
 public class TestCreator {
 
-    public static List<Test> createTests(Set<Type> nativeTypes, Type typeToTest, String module) {
+    public static List<Test> createTests(Set<Type> nativeTypes, Type typeToTest, Benchmark bench) {
+        String module = bench.module;
+
         PriorityQueue<CreateTestQueueElement> queue = new PriorityQueue<>();
         CreateTestVisitor visitor = new CreateTestVisitor(nativeTypes, queue);
 
@@ -59,7 +62,16 @@ public class TestCreator {
             element.type.accept(visitor, element.arg);
         }
 
-        return concatDuplicateTests(Util.concat(topLevelFunctionTests, visitor.getTests()));
+
+        Collection<Test> tests = visitor.getTests();
+
+        if (bench.pathsToTest != null) {
+            tests = tests.stream().filter(test ->
+                bench.pathsToTest.stream().anyMatch(path -> path.startsWith(test.getPath()))
+            ).collect(Collectors.toList());
+        }
+
+        return concatDuplicateTests(Util.concat(topLevelFunctionTests, tests));
     }
 
     private static final class TestNoPathContainer {
@@ -219,7 +231,6 @@ public class TestCreator {
                 tests.add(new MemberAccessTest(t, type, key, arg.path, arg.getParameterMap()));
 
                 // TODO: Functions with lower-minArgs.
-                // TODO: Consider doing something with positive and negative types, as in function parameters and function return. Such that arguments that the library passes to callbacks are catched, and tested.
                 if (type instanceof InterfaceType || type instanceof GenericType) {
                     List<Signature> callSignatures = type instanceof InterfaceType ? ((InterfaceType) type).getDeclaredCallSignatures() : ((GenericType) type).getDeclaredCallSignatures();
                     for (Signature signature : callSignatures) {
