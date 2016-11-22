@@ -36,4 +36,6 @@ public interface StatementVisitor<T> {
     T visit(CatchStatement catchStatement);
 
     T visit(LabeledStatement labeledStatement);
+
+    T visit(CommentStatement commentStatement);
 }
