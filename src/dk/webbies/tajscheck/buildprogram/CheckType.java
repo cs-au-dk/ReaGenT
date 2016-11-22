@@ -202,6 +202,9 @@ public class CheckType {
             if (nativeTypes.contains(t)) {
                 throw new RuntimeException();
             }
+            if (nativeTypes.contains(t.getTarget())) {
+                throw new RuntimeException();
+            }
             return t.getTarget().accept(this, arg.withParameters(arg.parameterMap.append(TypesUtil.generateParameterMap(t))));
         }
 
