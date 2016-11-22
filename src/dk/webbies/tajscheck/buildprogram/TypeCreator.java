@@ -1,5 +1,7 @@
 package dk.webbies.tajscheck.buildprogram;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
@@ -24,19 +26,22 @@ import static dk.webbies.tajscheck.paser.AstBuilder.identifier;
  * Created by erik1 on 03-11-2016.
  */
 public class TypeCreator {
-    private final Map<TypeWithParameters, Integer> typeIndexes;
+    private final BiMap<TypeWithParameters, Integer> typeIndexes;
     private final MultiMap<TypeWithParameters, Integer> valueLocations;
     private Map<Type, String> typeNames;
     private Set<Type> nativeTypes;
     private TypeParameterIndexer typeParameterIndexer;
     private ArrayList<Statement> functions = new ArrayList<>();
 
+    private static final String GET_TYPE_PREFIX = "getType_";
+    private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
+
     public TypeCreator(MultiMap<TypeWithParameters, Integer> valueLocations, Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer) {
         this.valueLocations = valueLocations;
         this.typeNames = typeNames;
         this.nativeTypes = nativeTypes;
         this.typeParameterIndexer = typeParameterIndexer;
-        this.typeIndexes = new HashMap<>();
+        this.typeIndexes = HashBiMap.create();
     }
 
     public Statement getExistingInstanceOfType(Type type, ParameterMap parameterMap) {
@@ -84,9 +89,9 @@ public class TypeCreator {
             Integer index = elements.iterator().next();
             if (fromTypes) {
                 if (constructNew) {
-                    return Return(call(identifier(CONSTRUCT_TYPE_PREFIX + index)));
+                    return Return(createType(index));
                 } else {
-                    return Return(call(identifier(GET_TYPE_PREFIX + index)));
+                    return Return(getType(index));
                 }
             } else {
                 return Return(identifier(VALUE_VARIABLE_PREFIX + index));
@@ -101,9 +106,9 @@ public class TypeCreator {
             Expression getValueOrType;
             if (fromTypes) {
                 if (constructNew) {
-                    getValueOrType = call(identifier(CONSTRUCT_TYPE_PREFIX + pair.getRight()));
+                    getValueOrType = createType(pair.getRight());
                 } else {
-                    getValueOrType = call(identifier(GET_TYPE_PREFIX + pair.getRight()));
+                    getValueOrType = getType(pair.getRight());
                 }
             } else {
                 getValueOrType = identifier(VALUE_VARIABLE_PREFIX + pair.getRight());
@@ -192,7 +197,7 @@ public class TypeCreator {
                 Pair<String, Type> property = properties.get(i);
                 program.add(
                         variable("objectResult_" + i, call(function(
-                                Return(call(identifier(CONSTRUCT_TYPE_PREFIX + getTypeIndex(property.getRight(), parameterMap))))
+                                Return(createType(property.getRight(), parameterMap))
                         )))
                 );
                 program.add(ifThenElse(
@@ -211,7 +216,7 @@ public class TypeCreator {
         public Statement visit(ReferenceType type, ParameterMap parameterMap) {
             if ("Array".equals(typeNames.get(type.getTarget()))) {
                 Type indexType = type.getTypeArguments().iterator().next();
-                Expression constructArrayElement = call(identifier(CONSTRUCT_TYPE_PREFIX + getTypeIndex(indexType, parameterMap)));
+                Expression constructArrayElement = createType(indexType, parameterMap);
                 return Return(array(constructArrayElement, constructArrayElement, constructArrayElement)); // TODO: An at runtime random number of elements, from 0 to 5.
             }
 
@@ -403,7 +408,30 @@ public class TypeCreator {
         return new Pair<>(result, new ParameterMap().append(newParameters));
     }
 
-    public int getTypeIndex(Type type, ParameterMap parameterMap) {
+    public CallExpression getType(Type type, ParameterMap parameterMap) {
+        int index = getTypeIndex(type, parameterMap);
+
+        return getType(index);
+    }
+
+    public CallExpression getType(int index) {
+        return call(identifier(GET_TYPE_PREFIX + index));
+    }
+
+    public CallExpression createType(Type type, ParameterMap parameterMap) {
+        int index = getTypeIndex(type, parameterMap);
+
+        addConstructInstanceFunction(index);
+
+        return call(identifier(CONSTRUCT_TYPE_PREFIX + index));
+    }
+
+    public CallExpression createType(int index) {
+        TypeWithParameters typeWithParameters = typeIndexes.inverse().get(index);
+        return createType(typeWithParameters.getType(), typeWithParameters.getParameterMap());
+    }
+
+    private int getTypeIndex(Type type, ParameterMap parameterMap) {
         parameterMap = TypesUtil.filterParameterMap(parameterMap, type);
 
         TypeWithParameters key = new TypeWithParameters(type, parameterMap);
@@ -413,36 +441,49 @@ public class TypeCreator {
             int value = typeIndexes.size();
             typeIndexes.put(key, value);
 
-            ExpressionStatement primaryFunction = statement(
+            ExpressionStatement getTypeFunction = statement(
                     function(
                             GET_TYPE_PREFIX + value,
                             block(this.getExistingInstanceOfType(type, parameterMap))
                     )
             );
-
-            ExpressionStatement constructNewInstanceFunction = statement(
-                    function(
-                            CONSTRUCT_TYPE_PREFIX + value,
-                            block(
-                                    variable("result", call(identifier(GET_TYPE_PREFIX + value))),
-                                    ifThenElse(
-                                            binary(
-                                                    binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
-                                                    Operator.AND,
-                                                    binary(call(identifier("random")), Operator.GREATER_THAN, number(0.8))
-                                            ),
-                                            Return(identifier("result")),
-                                            this.constructNewInstanceOfType(type, parameterMap)
-                                    )
-                            )
-                    )
-            );
-
-            functions.add(primaryFunction);
-            functions.add(constructNewInstanceFunction);
+            functions.add(getTypeFunction);
 
             return value;
         }
+    }
+
+    private final Set<Integer> hasCreateTypeFunction = new HashSet<>();
+
+    private void addConstructInstanceFunction(int index) {
+        if (hasCreateTypeFunction.contains(index)) {
+            return;
+        }
+        hasCreateTypeFunction.add(index);
+
+        TypeWithParameters typeWithParameters = typeIndexes.inverse().get(index);
+        Type type = typeWithParameters.getType();
+        ParameterMap parameterMap = typeWithParameters.getParameterMap();
+
+        ExpressionStatement constructNewInstanceFunction = statement(
+                function(
+                        CONSTRUCT_TYPE_PREFIX + index,
+                        block(
+                                variable("result", getType(index)),
+                                ifThenElse(
+                                        binary(
+                                                binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
+                                                Operator.AND,
+                                                binary(call(identifier("random")), Operator.GREATER_THAN, number(0.5))
+                                        ),
+                                        Return(identifier("result")),
+                                        this.constructNewInstanceOfType(type, parameterMap)
+                                )
+                        )
+                )
+        );
+
+        functions.add(constructNewInstanceFunction);
     }
 
     public BlockStatement getBlockStatementWithTypeFunctions() {
