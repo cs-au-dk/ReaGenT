@@ -86,6 +86,10 @@ public class AstBuilder {
         return new ExpressionStatement(null, expression);
     }
 
+    public static CommentStatement comment(String comment) {
+        return new CommentStatement(comment);
+    }
+
     public static IfStatement ifThen(Expression condition, Statement ifBranch) {
         return new IfStatement(null, condition, ifBranch, null);
     }

@@ -647,6 +647,15 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
         throw new RuntimeException();
     }
 
+    @Override
+    public Void visit(CommentStatement commentStatement) {
+        for (String comment : commentStatement.getComment().split("\n")) {
+            writeLn("// " + comment);
+        }
+
+        return null;
+    }
+
     public static String toString(Expression exp) {
         AstToStringVisitor visitor = new AstToStringVisitor();
         exp.accept(visitor);
