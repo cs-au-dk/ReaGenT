@@ -89,6 +89,9 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             case IN:
                 write("in");
                 break;
+            case NOT_EQUAL:
+                write("!=");
+                break;
             default:
                 throw new RuntimeException("Yet unhandled operator: " + binOp.getOperator());
         }
@@ -346,7 +349,8 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
     @Override
     public Void visit(RegExpExpression regExp) {
-        throw new RuntimeException();
+        write(regExp.getValue());
+        return null;
     }
 
     @Override
@@ -563,7 +567,16 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
     @Override
     public Void visit(WhileStatement whileStatement) {
-        throw new RuntimeException();
+        ident();
+        write("while (");
+        whileStatement.getCondition().accept(this);
+        write(") {\n");
+        ident++;
+        writeAsBlock(whileStatement.getBody());
+        ident--;
+        ident();
+        write("} \n");
+        return null;
     }
 
     @Override
@@ -664,7 +677,11 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
     public static String toString(Statement stmt) {
         AstToStringVisitor visitor = new AstToStringVisitor();
-        stmt.accept(visitor);
+        if (stmt instanceof BlockStatement) {
+            visitor.writeAsBlock(stmt);
+        } else {
+            stmt.accept(visitor);
+        }
         return visitor.builder.toString();
     }
 
