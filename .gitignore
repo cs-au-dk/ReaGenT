@@ -4,6 +4,7 @@ tests/*/out.txt
 cache/*
 node_modules/*
 paper/*
+test/**/test.js
 
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template
