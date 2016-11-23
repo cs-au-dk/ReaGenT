@@ -4,8 +4,6 @@ import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Created by erik1 on 01-11-2016.
@@ -16,18 +14,19 @@ public class Benchmark {
     public final String dTSFile;
     public final String module;
     public final Collection<String> pathsToTest;
+    public final LOAD_METHOD load_method;
 
-    public Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module) {
-        this(environment, jsFile, dTSFile, module, null);
+    public Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, LOAD_METHOD load_method) {
+        this(environment, jsFile, dTSFile, module, load_method, null);
     }
 
-    private Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, Collection<String> pathsToTest) {
+    private Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, LOAD_METHOD load_method, Collection<String> pathsToTest) {
         this.environment = environment;
         this.jsFile = jsFile;
         this.dTSFile = dTSFile;
         this.module = module;
         this.pathsToTest = pathsToTest;
-
+        this.load_method = load_method;
     }
 
     public Benchmark withPathsToTest(Collection<String> pathsToTest) {
@@ -36,7 +35,19 @@ public class Benchmark {
                 this.jsFile,
                 this.dTSFile,
                 this.module,
-                Collections.unmodifiableCollection(pathsToTest)
+                load_method, Collections.unmodifiableCollection(pathsToTest)
         );
+    }
+
+    public enum LOAD_METHOD {
+        NODE,
+        BROWSER
+    }
+
+    @Override
+    public String toString() {
+        return "Benchmark{" +
+                 jsFile +
+                '}';
     }
 }

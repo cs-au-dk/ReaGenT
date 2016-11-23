@@ -6,24 +6,30 @@
 Math.seedrandom(initialRandomness + '');
 var random = Math.random;
 
-console.log("Initial random: " + initialRandomness);
+console.log("Initial random: " + JSON.stringify(initialRandomness));
 
 var require_cache = {};
 
-function tajs_require (path) {
+function loadLibrary(path) {
+    try {
+        var foo = TAJS_load(path, false, "exports", "module", "require");
+    } catch (e) {
+        return require(path);
+    }
+
     if (require_cache[path]) {
         return require_cache[path];
     }
-    function require () {
+    function nestedRequire() {
         throw new Error();
     }
     var utilFunction = TAJS_load(path, false, "exports", "module", "require");
     var exports = {};
     var module = {
-        "require": require,
+        "require": nestedRequire,
         "exports": exports
     };
-    utilFunction(exports, module, require);
+    utilFunction(exports, module, nestedRequire);
     return module.exports;
 }
 

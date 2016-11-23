@@ -115,7 +115,7 @@ public class TestProgramBuilder {
         program.add(typeCreator.getBlockStatementWithTypeFunctions());
 
         Expression iterationsToRun;
-        if (recording == null) {
+        if (recording == null || recording.testSequence == null) {
             iterationsToRun = number(1000);
         } else {
             iterationsToRun = member(identifier("recording"), "length");
@@ -128,7 +128,7 @@ public class TestProgramBuilder {
 
         // Non-deterministically running all the test-cases.
         Expression getNumberToRun;
-        if (recording == null) {
+        if (recording == null || recording.testSequence == null) {
             getNumberToRun = binary(binary(call(identifier("random")), Operator.MULT, number(tests.size())), Operator.BITWISE_OR, number(0));
         } else {
             getNumberToRun = arrayAccess(identifier("recording"), identifier("i"));
@@ -166,7 +166,18 @@ public class TestProgramBuilder {
 
         program.add(parseProgram("dumb.js"));
 
-        return statement(call(function(block(program))));
+        if (bench.load_method == Benchmark.LOAD_METHOD.BROWSER) {
+            BlockStatement dependency = new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse(bench.jsFile, Util.readFile(bench.jsFile)).toTSCreateAST().getBody();
+            return block(
+                    dependency,
+                    statement(call(function(block(program))))
+            );
+        } else {
+            assert bench.load_method == Benchmark.LOAD_METHOD.NODE;
+            return statement(call(function(block(program))));
+        }
+
+
     }
 
     private ExpressionStatement createCheckHeapFunction() {
@@ -275,20 +286,21 @@ public class TestProgramBuilder {
 
         @Override
         public List<Statement> visit(LoadModuleTest test) {
-            return Collections.singletonList(
-                    tryCatch(
+            switch (bench.load_method) {
+                case NODE:
+                    return Collections.singletonList(
                             variable(
                                     identifier("result"),
-                                    call(identifier("tajs_require"), string(test.getModule()))
-                            ),
-                            catchBlock(identifier("i"),
-                                    variable(
-                                            identifier("result"),
-                                            call(identifier("require"), string(test.getModule()))
-                                    ))
-                    )
-            );
-            /**/
+                                    call(identifier("loadLibrary"), string(test.getModule()))
+                            )
+                    );
+                case BROWSER:
+                    return Collections.singletonList(
+                            variable("result", identifier(bench.module))
+                    );
+                default:
+                    throw new RuntimeException();
+            }
         }
 
         @Override
@@ -323,6 +335,8 @@ public class TestProgramBuilder {
             List<Statement> result = new ArrayList<>();
 
             result.add(variable("base", getTypeExpression(test.getFunction(), test.getParameterMap())));
+
+            // TODO: Save the dependencies in variables, dependency_1...
 
             List<Expression> parameters = test.getParameters().stream().map((type) -> typeCreator.createType(type, test.getParameterMap())).collect(Collectors.toList());
             Expression newCall = AstBuilder.call(identifier("base"), parameters);
