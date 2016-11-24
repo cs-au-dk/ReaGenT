@@ -281,6 +281,18 @@ public class Util {
                 : StreamSupport.stream(split, false);
     }
 
+    public static <A, B> List<Pair<A, B>> zip(Collection<? extends A> a, Collection<? extends B> b) {
+        Stream<Pair<A, B>> zip = zip(a.stream(), b.stream());
+        return zip.collect(Collectors.toList());
+    }
+
+    public static <A, B> Stream<Pair<A, B>> zip(Collection<? extends A> a, Stream<? extends B> b) {
+        return zip(a.stream(), b);
+    }
+
+    public static <A, B> Stream<Pair<A, B>> zip(Stream<? extends A> a, Collection<? extends B> b) {
+        return zip(a, b.stream());
+    }
 
     public static <A, B> Stream<Pair<A, B>> zip(Stream<? extends A> a, Stream<? extends B> b) {
         //noinspection Convert2MethodRef
