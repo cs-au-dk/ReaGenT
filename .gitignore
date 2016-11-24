@@ -5,6 +5,7 @@ cache/*
 node_modules/*
 paper/*
 test/**/test.js
+test/**/small_driver*
 
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template
