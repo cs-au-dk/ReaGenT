@@ -50,6 +50,10 @@ public class AstBuilder {
     }
 
     public static FunctionExpression function(String name, BlockStatement body, String... args) {
+        return function(name, body, Arrays.asList(args));
+    }
+
+    public static FunctionExpression function(String name, BlockStatement body, List<String> args) {
         Identifier nameIdentifier = null;
         if (name != null) {
             nameIdentifier = identifier(name);
@@ -67,6 +71,10 @@ public class AstBuilder {
     }
 
     public static FunctionExpression function(Statement body, String... args) {
+        return function(block(body), Arrays.asList(args));
+    }
+
+    public static FunctionExpression function(Statement body, List<String> args) {
         return function(null, block(body), args);
     }
 
