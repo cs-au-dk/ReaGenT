@@ -55,13 +55,13 @@ public class TestProgramBuilder {
         }
     }
 
-    public TestProgramBuilder(Benchmark bench, Set<Type> nativeTypes, Map<Type, String> typeNames, List<Test> tests, Type moduleType) {
+    public TestProgramBuilder(Benchmark bench, Set<Type> nativeTypes, Map<Type, String> typeNames, List<Test> tests, Type moduleType, TypeParameterIndexer typeParameterIndexer) {
         this.bench = bench;
         this.tests = new ArrayList<>(tests);
         this.nativeTypes = nativeTypes;
         this.typeNames = typeNames;
         this.moduleType = moduleType;
-        this.typeParameterIndexer = new TypeParameterIndexer();
+        this.typeParameterIndexer = typeParameterIndexer;
 
         this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer);
 

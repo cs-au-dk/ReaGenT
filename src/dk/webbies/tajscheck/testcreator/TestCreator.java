@@ -1,10 +1,12 @@
 package dk.webbies.tajscheck.testcreator;
 
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.ParameterMap;
 import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
@@ -22,7 +24,7 @@ import static dk.webbies.tajscheck.testcreator.test.check.Check.*;
  */
 public class TestCreator {
 
-    public static List<Test> createTests(Set<Type> nativeTypes, Type typeToTest, Benchmark bench) {
+    public static List<Test> createTests(Set<Type> nativeTypes, Type typeToTest, Benchmark bench, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer) {
         String module = bench.module;
 
         PriorityQueue<CreateTestQueueElement> queue = new PriorityQueue<>();
@@ -31,14 +33,14 @@ public class TestCreator {
 
         CreateTestVisitor visitor = new CreateTestVisitor(nativeTypes, queue, negativeTypesSeen);
 
-        List<Test> topLevelFunctionTests = addTopLevelFunctionTests(typeToTest, module, queue, new ParameterMap(), visitor, negativeTypesSeen);
+        List<Test> topLevelFunctionTests = addTopLevelFunctionTests(typeToTest, module, queue, new ParameterMap(), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes);
 
         queue.add(new CreateTestQueueElement(typeToTest, new Arg(module, new ParameterMap(), 0)));
 
         while (!queue.isEmpty()) {
             CreateTestQueueElement element = queue.poll();
             if (element.arg.withTopLevelFunctions) {
-                addTopLevelFunctionTests(element.type, element.arg.path, queue, element.arg.parameterMap, visitor, negativeTypesSeen);
+                addTopLevelFunctionTests(element.type, element.arg.path, queue, element.arg.parameterMap, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes);
             }
             element.type.accept(visitor, element.arg.noTopLevelFunctions());
         }
@@ -54,16 +56,31 @@ public class TestCreator {
         return concatDuplicateTests(Util.concat(topLevelFunctionTests, tests));
     }
 
-    private static List<Test> addTopLevelFunctionTests(Type type, String path, PriorityQueue<CreateTestQueueElement> queue, ParameterMap parameterMap, CreateTestVisitor visitor, Set<TypeWithParameters> negativeTypesSeen) {
+    private static List<Test> addTopLevelFunctionTests(Type type, String path, PriorityQueue<CreateTestQueueElement> queue, ParameterMap parameterMap, CreateTestVisitor visitor, Set<TypeWithParameters> negativeTypesSeen, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, Set<Type> nativeTypes) {
+        if (nativeTypes.contains(type)) {
+            return new ArrayList<>();
+        }
         List<Test> topLevelFunctionTests = new ArrayList<>();
 
         assert type instanceof GenericType || type instanceof InterfaceType || type instanceof SimpleType || type instanceof ReferenceType || type instanceof UnionType || type instanceof TypeParameterType;
 
         if (type instanceof TypeParameterType) {
+            List<Test> result = new ArrayList<>();
             TypeParameterType typeParameterType = (TypeParameterType) type;
-            assert typeParameterType.getConstraint() == null || TypesUtil.isEmptyInterface((InterfaceType) typeParameterType.getConstraint()); // If this fails, consider adding tests based on the constaint.
+            if (typeParameterType.getConstraint() != null) {
+                result.addAll(addTopLevelFunctionTests(((TypeParameterType) type).getConstraint(), path, queue, parameterMap, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes));
+            }
+            List<Type> recursiveDefinition = TypesUtil.findRecursiveDefinition(typeParameterType, parameterMap, typeParameterIndexer);
+            if (!recursiveDefinition.isEmpty()) {
+                for (Type subType : recursiveDefinition) {
+                    result.addAll(addTopLevelFunctionTests(subType, path, queue, parameterMap, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes));
+                }
+                return result;
+
+            }
             if (parameterMap.containsKey(typeParameterType)) {
-                return addTopLevelFunctionTests(parameterMap.get(typeParameterType), path, queue, parameterMap, visitor, negativeTypesSeen);
+                result.addAll(addTopLevelFunctionTests(parameterMap.get(typeParameterType), path, queue, parameterMap, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes));
+                return result;
             }
         }
 
@@ -401,6 +418,9 @@ public class TestCreator {
                 recurse(type, arg);
                 return null;
             } else {
+                if (Main.UNDERSCORE_TEST) {
+                    return null;
+                }
                 throw new RuntimeException();
             }
 

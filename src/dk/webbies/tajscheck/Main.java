@@ -19,6 +19,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
+
 /**
  * Created by erik1 on 01-11-2016.
  */
@@ -26,6 +28,8 @@ public class Main {
     public static final int CHECK_DEPTH = 0;
     public static final boolean CHECK_HEAP = false;
     private static final String TEST_FILE_NAME = "test.js";
+
+    public static final boolean UNDERSCORE_TEST = true;
 
     public static void writeFullDriver(Benchmark bench) throws IOException {
         writeFullDriver(bench, null);
@@ -61,7 +65,9 @@ public class Main {
 
         Type typeToTest = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(orgBench.module);
 
-        List<Test> tests = TestCreator.createTests(nativeTypes, typeToTest, orgBench);
+        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
+
+        List<Test> tests = TestCreator.createTests(nativeTypes, typeToTest, orgBench, typeParameterIndexer);
 
         int counter = 0;
 
@@ -82,10 +88,10 @@ public class Main {
                 try {
                     System.out.println("Creating small driver for: " + path + "  " + (count + 1) + "/" + tests.size());
 
-                    List<Test> specificTests = TestCreator.createTests(nativeTypes, typeToTest, bench);
+                    List<Test> specificTests = TestCreator.createTests(nativeTypes, typeToTest, bench, typeParameterIndexer);
                     specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest));
 
-                    Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest).buildTestProgram(null);
+                    Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer).buildTestProgram(null);
 
                     String filePath = getTestFilePath(bench, "smallDrivers/small_driver_" + count + ".js");
 
@@ -116,10 +122,12 @@ public class Main {
 
         Type typeToTest = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(bench.module);
 
-        List<Test> tests = TestCreator.createTests(nativeTypes, typeToTest, bench);
+        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
+
+        List<Test> tests = TestCreator.createTests(nativeTypes, typeToTest, bench, typeParameterIndexer);
         tests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest));
 
-        Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest).buildTestProgram(recording);
+        Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest, typeParameterIndexer).buildTestProgram(recording);
 
         return AstToStringVisitor.toString(program);
     }
