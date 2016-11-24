@@ -1,9 +1,7 @@
 package dk.webbies.tajscheck.parsespec;
 
 import dk.au.cs.casa.typescript.SpecReader;
-import dk.au.cs.casa.typescript.types.GenericType;
-import dk.au.cs.casa.typescript.types.InterfaceType;
-import dk.au.cs.casa.typescript.types.Type;
+import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.File;
@@ -31,12 +29,6 @@ public class ParseDeclaration {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static Map<Type, String> getTypeNamesMap(SpecReader spec) {
-        Map<Type, String> typeNames = new HashMap<>();
-        markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
-        return typeNames;
     }
 
     private static void markNamedTypes(SpecReader.Node namedTypes, String prefix, Map<Type, String> typeNames) {
@@ -74,6 +66,215 @@ public class ParseDeclaration {
 
         public String getCliArgument() {
             return "es" + ESversion + (this.hasDOM ? "-dom" : "");
+        }
+    }
+
+    public static Map<Type, String> getTypeNamesMap(SpecReader spec) {
+        Map<Type, String> typeNames = new HashMap<>();
+        markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
+
+        PriorityQueue<Arg> queue = new PriorityQueue<>(Comparator.comparingInt(Arg::getDepth));
+        queue.add(new Arg("window", 0, spec.getGlobal()));
+
+        Set<Type> seen = new HashSet<>();
+
+        while (!queue.isEmpty()) {
+            Arg arg = queue.poll();
+            arg.type.accept(new MarkAllTypesVisitor(queue, seen, typeNames), arg);
+        }
+
+        return typeNames;
+    }
+
+    private static final class Arg {
+        final int depth;
+        final String path;
+        final Type type;
+
+        private Arg(String path, int depth, Type type) {
+            this.path = path;
+            this.depth = depth;
+            this.type = type;
+        }
+
+        public int getDepth() {
+            return depth;
+        }
+
+        public Arg append(String key, Type newType) {
+            return new Arg(this.path + "." + key, depth + 1, newType);
+        }
+    }
+
+    private static class MarkAllTypesVisitor implements TypeVisitorWithArgument<Void, Arg> {
+        private final PriorityQueue<Arg> queue;
+        private final Set<Type> seen;
+        private Map<Type, String> typeNames;
+
+        public MarkAllTypesVisitor(PriorityQueue<Arg> queue, Set<Type> seen, Map<Type, String> typeNames) {
+            this.queue = queue;
+            this.seen = seen;
+            this.typeNames = typeNames;
+        }
+
+        @Override
+        public Void visit(AnonymousType t, Arg arg) {
+            return null;
+        }
+
+        @Override
+        public Void visit(ClassType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Void visit(GenericType t, Arg arg) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            return t.toInterface().accept(this, arg);
+        }
+
+        @Override
+        public Void visit(InterfaceType t, Arg arg) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            for (Type baseType : t.getBaseTypes()) {
+                baseType.accept(this, arg);
+            }
+
+            for (Signature signature : Util.concat(t.getDeclaredCallSignatures(), t.getDeclaredConstructSignatures())) {
+                queue.add(arg.append("[return]", signature.getResolvedReturnType()));
+
+                for (int i = 0; i < signature.getParameters().size(); i++) {
+                    queue.add(arg.append("[arg" + i + "]", signature.getParameters().get(i).getType()));
+                }
+            }
+
+            if (t.getDeclaredNumberIndexType() != null) {
+                queue.add(arg.append("[numberIndexer]", t.getDeclaredNumberIndexType()));
+            }
+            if (t.getDeclaredStringIndexType() != null) {
+                queue.add(arg.append("[stringIndexer]", t.getDeclaredStringIndexType()));
+            }
+
+            for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
+                queue.add(arg.append(entry.getKey(), entry.getValue()));
+            }
+
+            return null;
+        }
+
+        private void addName(Type type, String path) {
+            if (!typeNames.containsKey(type)) {
+                typeNames.put(type, path);
+            }
+        }
+
+        @Override
+        public Void visit(ReferenceType t, Arg arg) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            for (int i = 0; i < t.getTypeArguments().size(); i++) {
+                queue.add(arg.append("{typeArg" + i + "]", t.getTypeArguments().get(i)));
+            }
+
+            return t.getTarget().accept(this, arg);
+        }
+
+        @Override
+        public Void visit(SimpleType t, Arg arg) {
+            return null;
+        }
+
+        @Override
+        public Void visit(TupleType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Void visit(UnionType t, Arg arg) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            for (int i = 0; i < t.getElements().size(); i++) {
+                queue.add(arg.append("[union" + i + "]", t.getElements().get(i)));
+            }
+
+            return null;
+        }
+
+        @Override
+        public Void visit(UnresolvedType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Void visit(TypeParameterType t, Arg arg) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            if (t.getTarget() != null) {
+                queue.add(arg.append("[target]", t.getTarget()));
+            }
+
+            if (t.getConstraint() != null) {
+                queue.add(arg.append("[constraint]", t.getConstraint()));
+            }
+
+            return null;
+        }
+
+        @Override
+        public Void visit(SymbolType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Void visit(StringLiteral t, Arg arg) {
+            return null;
+        }
+
+        @Override
+        public Void visit(BooleanLiteral t, Arg arg) {
+            return null;
+        }
+
+        @Override
+        public Void visit(NumberLiteral t, Arg arg) {
+            return null;
+        }
+
+        @Override
+        public Void visit(IntersectionType t, Arg arg) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            for (int i = 0; i < t.getElements().size(); i++) {
+                queue.add(arg.append("[intersection" + i + "]", t.getElements().get(i)));
+            }
+
+            return null;
         }
     }
 }
