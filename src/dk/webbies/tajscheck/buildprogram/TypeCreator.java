@@ -7,16 +7,19 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
+import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.ParameterMap;
 import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.paser.AST.*;
+import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
 import static dk.webbies.tajscheck.paser.AstBuilder.*;
@@ -35,41 +38,44 @@ public class TypeCreator {
 
     private static final String GET_TYPE_PREFIX = "getType_";
     private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
+    private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
-    public TypeCreator(MultiMap<TypeWithParameters, Integer> valueLocations, Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer) {
-        this.valueLocations = valueLocations;
+    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer) {
+        this.valueLocations = new ArrayListMultiMap<>();
         this.typeNames = typeNames;
         this.nativeTypes = nativeTypes;
         this.typeParameterIndexer = typeParameterIndexer;
         this.typeIndexes = HashBiMap.create();
     }
 
-    public Statement getExistingInstanceOfType(Type type, ParameterMap parameterMap) {
-        // This is filtering the keys, where the type is the same, and where the map contains at least the same key/value pairs.
-        Collection<Integer> values = valueLocations.keySet().stream()
-                .filter(candidate -> TypeCreator.canTypeBeUsed(candidate, new TypeWithParameters(type, parameterMap))).map(valueLocations::get)
-                .reduce(new ArrayList<>(), Util::reduceCollection);
+    private int valueCounter = 0;
+    int createProducedValueVariable(Type type, ParameterMap parameterMap) {
+        int index = valueCounter++;
+        valueVariableDeclarationList.add(variable(VALUE_VARIABLE_PREFIX + index, identifier(VARIABLE_NO_VALUE)));
 
-        if (values.size() == 1) {
-            return Return(identifier(VALUE_VARIABLE_PREFIX + values.iterator().next()));
-        }
-        if (values.isEmpty()) {
-            return Return(identifier(VARIABLE_NO_VALUE));
-        }
-
-        return returnOneOfIndexes(values, false, false);
+        putProducedValueIndex(index, type, parameterMap);
+        return index;
     }
 
-    /*
-            Collection<Integer> values = valueLocations.keySet().stream()
-                .check(key ->
-                        key.getTypeString() == type
-                ).check(key -> {
-                    return parameterMap.entrySet().stream().allMatch(entry -> {
-                        return parameterMap.containsKey(entry.getKey()) && parameterMap.get(entry.getKey()) == entry.getValue();
-                    });
-                }).map(valueLocations::get)
-     */
+    public Collection<Statement> getValueVariableDeclarationList() {
+        return valueVariableDeclarationList;
+    }
+
+    private void putProducedValueIndex(int index, Type type, ParameterMap parameterMap) {
+        valueLocations.put(new TypeWithParameters(type, parameterMap), index);
+        if (type instanceof InterfaceType) {
+            List<Type> baseTypes = ((InterfaceType) type).getBaseTypes();
+            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, parameterMap));
+        }
+        if (type instanceof ReferenceType) {
+            putProducedValueIndex(index, ((ReferenceType) type).getTarget(), TypesUtil.generateParameterMap((ReferenceType) type, parameterMap));
+        }
+        if (type instanceof GenericType) {
+            putProducedValueIndex(index, ((GenericType) type).toInterface(), parameterMap);
+        }
+    }
+
+
     private static boolean canTypeBeUsed(TypeWithParameters candidate, TypeWithParameters type) {
         if (!candidate.getType().equals(type.getType())) {
             return false;
@@ -77,10 +83,10 @@ public class TypeCreator {
         return type.getParameterMap().isSubSetOf(candidate.getParameterMap());
     }
 
-    private Statement returnOneOfTypes(List<Type> types, boolean construct, ParameterMap parameterMap) {
+    private Statement returnOneOfTypes(List<Type> types, boolean createNew, ParameterMap parameterMap) {
         List<Integer> elements = types.stream().distinct().map((type) -> getTypeIndex(type, parameterMap)).collect(Collectors.toList());
 
-        return returnOneOfIndexes(elements, true, construct);
+        return returnOneOfIndexes(elements, true, createNew);
     }
 
     private Statement returnOneOfIndexes(Collection<Integer> elementsCollection, boolean fromTypes, boolean constructNew) {
@@ -173,22 +179,7 @@ public class TypeCreator {
             if (returnTypes.isEmpty()) {
                 program.add(variable("result", object()));
             } else {
-                // TODO: This is wrong, it should actually return the correct type corrosponding to the arguments given.
-                program.add(
-                        variable("functionResult", call(function(returnOneOfTypes(returnTypes, true, parameterMap))))
-                );
-                program.add(
-                        ifThenElse(
-                                binary(identifier("functionResult"), Operator.EQUAL_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
-                                Return(identifier(VARIABLE_NO_VALUE)),
-                                variable(
-                                        identifier("result"),
-                                        function(
-                                                Return(identifier("functionResult"))
-                                        )
-                                )
-                        )
-                );
+                program.add(variable("result", createFunction(inter, parameterMap)));
             }
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
@@ -331,6 +322,62 @@ public class TypeCreator {
         }
     }
 
+    private FunctionExpression createFunction(InterfaceType inter, ParameterMap parameterMap) {
+        List<Signature> signatures = Util.concat(inter.getDeclaredCallSignatures(), inter.getDeclaredConstructSignatures());
+
+        assert signatures.size() > 0;
+
+        int maxArgs = signatures.stream().map(Signature::getParameters).map(List::size).reduce(0, Math::max);
+
+        List<String> args = new ArrayList<>();
+        for (int i = 0; i < maxArgs; i++) {
+            args.add("arg" + i);
+        }
+
+        CheckType typeChecker = new CheckType(nativeTypes, typeNames, typeParameterIndexer, parameterMap);
+
+        String interName = typeNames.get(inter);
+        assert interName != null;
+
+        if (signatures.size() == 1) {
+            Signature signature = signatures.iterator().next();
+
+            List<Statement> typeChecks = Util.zip(args.stream(), signature.getParameters().stream(), (argName, par) ->
+                typeChecker.checkResultingType(par.getType(), identifier(argName), interName + ".[" + argName + "]", Main.CHECK_DEPTH)
+            ).collect(Collectors.toList());
+
+            List<Statement> saveArgumentValues = Util.zip(
+                    IntStream.range(0, signature.getParameters().size()).boxed(),
+                    signature.getParameters().stream().map(par -> createProducedValueVariable(par.getType(), parameterMap)),
+                    (argIndex, valueIndex) -> {
+                        return statement(binary(identifier(VALUE_VARIABLE_PREFIX + valueIndex), Operator.EQUAL, identifier("arg" + argIndex)));
+                    }
+            ).collect(Collectors.toList());
+
+            BlockStatement functionBody = block(
+                    variable(identifier("typeChecked"), call(function(
+                            block(
+                                    Util.concat(
+                                            typeChecks,
+                                            Collections.singletonList(Return(bool(true)))
+                                    )
+                            )
+                    ))),
+                    block(saveArgumentValues),
+                    Return(createType(signature.getResolvedReturnType(), parameterMap)) // Currently doing nothing if it ended up not type-checking.
+            );
+
+
+            return function(
+                    block(functionBody),
+                    args
+            );
+        } else {
+            throw new RuntimeException();
+        }
+    }
+
+
     private Statement constructTypeFromName(String name, ParameterMap parameterMap) {
         if (name == null) {
             throw new NullPointerException();
@@ -349,6 +396,7 @@ public class TypeCreator {
                 callSignature.setMinArgumentCount(0);
                 callSignature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
                 interfaceWithSimpleFunction.getDeclaredCallSignatures().add(callSignature);
+                typeNames.put(interfaceWithSimpleFunction, "Function");
                 return constructNewInstanceOfType(interfaceWithSimpleFunction, parameterMap);
             case "Error":
                 return Return(newCall(identifier("Error")));
@@ -431,8 +479,8 @@ public class TypeCreator {
         return createType(typeWithParameters.getType(), typeWithParameters.getParameterMap());
     }
 
-    private int getTypeIndex(Type type, ParameterMap parameterMap) {
-        parameterMap = TypesUtil.filterParameterMap(parameterMap, type);
+    private int getTypeIndex(Type type, ParameterMap unFilteredParameterMap) {
+        ParameterMap parameterMap = TypesUtil.filterParameterMap(unFilteredParameterMap, type);
 
         TypeWithParameters key = new TypeWithParameters(type, parameterMap);
         if (typeIndexes.containsKey(key)) {
@@ -441,16 +489,47 @@ public class TypeCreator {
             int value = typeIndexes.size();
             typeIndexes.put(key, value);
 
-            ExpressionStatement getTypeFunction = statement(
-                    function(
-                            GET_TYPE_PREFIX + value,
-                            block(this.getExistingInstanceOfType(type, parameterMap))
-                    )
-            );
-            functions.add(getTypeFunction);
+//            getType()
+
+            getTypeFunctionQueue.add(key);
 
             return value;
         }
+    }
+
+    private List<TypeWithParameters> getTypeFunctionQueue = new ArrayList<>();
+
+    public void finish() {
+        for (TypeWithParameters type : getTypeFunctionQueue) {
+            addGetTypeFunction(type.getType(), type.getParameterMap());
+        }
+    }
+
+    private int addGetTypeFunction(Type type, ParameterMap parameterMap) {
+        int value = typeIndexes.get(new TypeWithParameters(type, parameterMap));
+
+        Collection<Integer> values = valueLocations.keySet().stream()
+                .filter(candidate -> TypeCreator.canTypeBeUsed(candidate, new TypeWithParameters(type, parameterMap))).map(valueLocations::get)
+                .reduce(new ArrayList<>(), Util::reduceCollection);
+
+        Statement returnTypeStatement;
+
+        if (values.size() == 1) {
+            returnTypeStatement = Return(identifier(VALUE_VARIABLE_PREFIX + values.iterator().next()));
+        } else if (values.isEmpty()) {
+            returnTypeStatement = Return(identifier(VARIABLE_NO_VALUE));
+        } else {
+            returnTypeStatement = returnOneOfIndexes(values, false, false);
+        }
+
+        ExpressionStatement getTypeFunction = statement(
+                function(
+                        GET_TYPE_PREFIX + value,
+                        block(returnTypeStatement)
+                )
+        );
+        functions.add(getTypeFunction);
+        return value;
     }
 
     private final Set<Integer> hasCreateTypeFunction = new HashSet<>();

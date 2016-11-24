@@ -113,4 +113,14 @@ public class UnitTests {
 
         assertThat(result.size(), is(0));
     }
+
+    @Test
+    public void simpleFunctionArg() throws Exception {
+        List<ParseResult> result = parseDriverResult(runDriver("simpleFunctionArg", "someSeed"));
+
+        expect(result)
+                .forPath("module.foo.[arg0].[arg0].<>.value")
+                .expected("string")
+                .got(TYPEOF, is("number"));
+    }
 }

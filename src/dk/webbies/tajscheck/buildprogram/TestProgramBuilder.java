@@ -12,8 +12,6 @@ import dk.webbies.tajscheck.paser.JavaScriptParser;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
-import dk.webbies.tajscheck.util.ArrayListMultiMap;
-import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
@@ -40,9 +38,7 @@ public class TestProgramBuilder {
     private Map<Type, String> typeNames;
     private Type moduleType;
 
-    private final MultiMap<TypeWithParameters, Integer> valueLocations = new ArrayListMultiMap<>();
     private final Map<Test, Integer> testToValueMap = new IdentityHashMap<>();
-    private int numberOfTypes = 0;
     private TypeCreator typeCreator;
 
 
@@ -67,27 +63,12 @@ public class TestProgramBuilder {
         this.moduleType = moduleType;
         this.typeParameterIndexer = new TypeParameterIndexer();
 
+        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer);
+
         for (Test test : this.tests) {
-            int index = numberOfTypes++;
             Type produces = test.getProduces();
-            putProducedValueIndex(index, produces, test.getParameterMap());
+            int index = typeCreator.createProducedValueVariable(produces, test.getParameterMap());
             testToValueMap.put(test, index);
-        }
-
-        this.typeCreator = new TypeCreator(valueLocations, this.typeNames, nativeTypes, typeParameterIndexer);
-    }
-
-    private void putProducedValueIndex(int index, Type type, ParameterMap parameterMap) {
-        valueLocations.put(new TypeWithParameters(type, parameterMap), index);
-        if (type instanceof InterfaceType) {
-            List<Type> baseTypes = ((InterfaceType) type).getBaseTypes();
-            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, parameterMap));
-        }
-        if (type instanceof ReferenceType) {
-            putProducedValueIndex(index, ((ReferenceType) type).getTarget(), TypesUtil.generateParameterMap((ReferenceType) type, parameterMap));
-        }
-        if (type instanceof GenericType) {
-            putProducedValueIndex(index, ((GenericType) type).toInterface(), parameterMap);
         }
     }
 
@@ -103,12 +84,7 @@ public class TestProgramBuilder {
 
         program.add(parseProgram("prelude.js"));
 
-        // Adding all the var variable_X = null;
-        for (int i = 0; i < this.numberOfTypes; i++) {
-            program.add(
-                    variable(VALUE_VARIABLE_PREFIX + i, identifier(VARIABLE_NO_VALUE))
-            );
-        }
+        program.add(block(typeCreator.getValueVariableDeclarationList()));
 
         // Adding all the getType_X functions.
 
@@ -165,6 +141,8 @@ public class TestProgramBuilder {
                 )));
 
         program.add(parseProgram("dumb.js"));
+
+        typeCreator.finish();
 
         if (bench.load_method == Benchmark.LOAD_METHOD.BROWSER) {
             BlockStatement dependency = new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse(bench.jsFile, Util.readFile(bench.jsFile)).toTSCreateAST().getBody();
