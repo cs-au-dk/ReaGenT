@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * Created by erik1 on 22-11-2016.
  */
 @RunWith(Parameterized.class)
-public class WriteAllDrivers {
+public class RunAllBenchmarks {
 
     @SuppressWarnings("WeakerAccess")
     @Parameterized.Parameter
@@ -44,5 +44,15 @@ public class WriteAllDrivers {
     @Test
     public void genSmallDrivers() throws Exception {
         Main.genSmallDrivers(benchmark);
+    }
+
+    @Test
+    public void runFullDriver() throws Exception {
+        Main.writeFullDriver(benchmark);
+        String out = Main.runFullDriver(benchmark);
+        System.out.println(out);
+
+        assert !out.trim().isEmpty();
+
     }
 }
