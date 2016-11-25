@@ -24,16 +24,12 @@ public class TestCreator {
     private final Type typeToTest;
     private final Benchmark bench;
     private final TypeParameterIndexer typeParameterIndexer;
-    private final Map<Type, String> typeNames; // TODO: Unused?
-    private TypeParameterIndexer parameterIndexer;
 
-    public TestCreator(Set<Type> nativeTypes, Type typeToTest, Benchmark bench, TypeParameterIndexer typeParameterIndexer, Map<Type, String> typeNames, TypeParameterIndexer parameterIndexer) {
+    public TestCreator(Set<Type> nativeTypes, Type typeToTest, Benchmark bench, TypeParameterIndexer typeParameterIndexer) {
         this.nativeTypes = nativeTypes;
         this.typeToTest = typeToTest;
         this.bench = bench;
         this.typeParameterIndexer = typeParameterIndexer;
-        this.typeNames = typeNames;
-        this.parameterIndexer = parameterIndexer;
     }
 
     public List<Test> createTests() {
