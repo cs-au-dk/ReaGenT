@@ -4,7 +4,6 @@ import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.ParameterMap;
 
 import java.util.Collections;
-import java.util.HashMap;
 
 /**
  * Created by erik1 on 02-11-2016.

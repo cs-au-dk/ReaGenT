@@ -1,9 +1,6 @@
 package dk.webbies.tajscheck;
 
 import dk.au.cs.casa.typescript.types.Type;
-import dk.au.cs.casa.typescript.types.TypeParameterType;
-
-import java.util.Map;
 
 /**
  * Created by erik1 on 11-11-2016.

@@ -9,7 +9,6 @@ import org.junit.runners.Parameterized;
 
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.benchmarks.Benchmark.LOAD_METHOD.BROWSER;
 import static dk.webbies.tajscheck.benchmarks.Benchmark.LOAD_METHOD.NODE;

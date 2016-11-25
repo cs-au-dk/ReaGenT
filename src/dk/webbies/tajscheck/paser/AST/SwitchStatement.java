@@ -5,7 +5,6 @@ import dk.webbies.tajscheck.paser.StatementVisitor;
 import dk.webbies.tajscheck.util.Pair;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Erik Krogh Kristensen on 07-09-2015.

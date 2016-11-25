@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck.paser.AST;
 
-import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import dk.webbies.tajscheck.paser.StatementVisitor;
 
 /**

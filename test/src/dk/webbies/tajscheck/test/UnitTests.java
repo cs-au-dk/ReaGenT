@@ -9,7 +9,6 @@ import org.hamcrest.Matcher;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,7 +17,6 @@ import static dk.webbies.tajscheck.test.UnitTests.ParseResultTester.ExpectType.J
 import static dk.webbies.tajscheck.test.UnitTests.ParseResultTester.ExpectType.STRING;
 import static dk.webbies.tajscheck.test.UnitTests.ParseResultTester.ExpectType.TYPEOF;
 import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**

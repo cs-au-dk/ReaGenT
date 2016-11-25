@@ -9,7 +9,6 @@ import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.JavaScriptParser;
 import dk.webbies.tajscheck.util.Pair;
-import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;

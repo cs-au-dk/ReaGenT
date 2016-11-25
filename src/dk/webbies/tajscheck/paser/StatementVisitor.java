@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck.paser;
 
-import dk.webbies.tajscheck.paser.AST.BlockStatement;
 import dk.webbies.tajscheck.paser.AST.*;
 
 /**

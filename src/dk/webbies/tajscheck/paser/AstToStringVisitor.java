@@ -6,7 +6,6 @@ import dk.webbies.tajscheck.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.Condition;
 
 /**
  * Created by erik1 on 01-11-2016.

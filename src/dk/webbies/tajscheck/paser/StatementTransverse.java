@@ -3,8 +3,6 @@ package dk.webbies.tajscheck.paser;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.util.Pair;
 
-import java.util.Map;
-
 /**
  * Created by Erik Krogh Kristensen on 07-09-2015.
  */
