@@ -2,29 +2,39 @@ package dk.webbies.tajscheck.test;
 
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.benchmarks.Benchmarks;
+import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static dk.webbies.tajscheck.benchmarks.Benchmark.LOAD_METHOD.BROWSER;
+import static dk.webbies.tajscheck.benchmarks.Benchmark.LOAD_METHOD.NODE;
 
 /**
  * Created by erik1 on 22-11-2016.
  */
 @RunWith(Parameterized.class)
-public class RunAllBenchmarks {
+public class RunBigBenchmarks {
 
     @SuppressWarnings("WeakerAccess")
     @Parameterized.Parameter
     public Benchmark benchmark = null;
 
+    public static final Map<String, Benchmark> benchmarks = new HashMap<>();
+    static {
+        benchmarks.put("module", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/test/module.js", "test/test/module.d.ts", "moment", NODE));
+        benchmarks.put("moment", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/moment/moment.js", "test/moment/moment.d.ts", "moment", NODE));
+        benchmarks.put("async", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/async/async.js", "test/async/async.d.ts", "async", NODE));
+        benchmarks.put("path.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/pathjs/pathjs.js", "test/pathjs/pathjs.d.ts", "Path", BROWSER));
+    }
+
     @Parameterized.Parameters(name = "{0}")
-    public static List<Benchmark> getData() {
-        return Arrays.stream(Benchmarks.class.getDeclaredFields()).filter(field -> field.getType() == Benchmark.class).map(field -> readField(Benchmark.class, field)).collect(Collectors.toList());
+    public static List<Benchmark> getBenchmarks() {
+        return new ArrayList<>(benchmarks.values());
     }
 
     private static <T> T readField(Class<T> clazz, Field field) {
