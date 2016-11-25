@@ -323,7 +323,6 @@ public class TestCreator {
 
                 tests.add(new MemberAccessTest(t, type, key, arg.path, arg.getParameterMap()));
 
-                // TODO: Functions with lower-minArgs.
                 if (type instanceof InterfaceType || type instanceof GenericType) {
                     List<Signature> callSignatures = type instanceof InterfaceType ? ((InterfaceType) type).getDeclaredCallSignatures() : ((GenericType) type).getDeclaredCallSignatures();
                     for (Signature signature : callSignatures) {

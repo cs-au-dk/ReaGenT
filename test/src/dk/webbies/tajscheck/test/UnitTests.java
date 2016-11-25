@@ -134,14 +134,16 @@ public class UnitTests {
 
     }
 
+
+
     @Test
-    public void testAsyncGenericStuff() throws Exception {
-        Benchmark async = RunBigBenchmarks.benchmarks.get("async");
-//        Benchmark bench = new Benchmark(async.environment, async.jsFile, async.dTSFile, async.module, async.load_method).withPathsToTest(Collections.singletonList("window.async.timesLimit.[arg3].[arg0]"));
+    public void optionalParameters() throws Exception {
+        List<ParseResult> result = parseDriverResult(runDriver("optionalParameters", "foo"));
 
-        Main.writeFullDriver(async, new ExecutionRecording(null, "0.7707537541701355"));
-        String output = Main.runFullDriver(async);
-
-        System.out.println(output);
+        expect(result)
+                .forPath("module.foo()")
+                .expected("number");
     }
+
+
 }
