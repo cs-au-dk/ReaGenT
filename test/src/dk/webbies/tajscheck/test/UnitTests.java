@@ -9,6 +9,7 @@ import org.hamcrest.Matcher;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,7 +51,7 @@ public class UnitTests {
         private ParseResultTester forPath(String path) {
             results = results.stream().filter(result -> result.path.equals(path)).collect(Collectors.toList());
 
-            assertThat(results.size(),is(not(equalTo(0))));
+            assertThat("expected something on path: " + path, results.size(),is(not(equalTo(0))));
             return this;
         }
 
@@ -122,5 +123,27 @@ public class UnitTests {
                 .forPath("module.foo.[arg0].[arg0].<>.value")
                 .expected("string")
                 .got(TYPEOF, is("number"));
+    }
+
+    @Test
+    public void testComplexUnion() throws Exception {
+        List<ParseResult> result = parseDriverResult(runDriver("complexUnion", "foo"));
+
+        expect(result)
+                .forPath("module.foo().[union2]()")
+                .expected("boolean")
+                .got(TYPEOF, is("string"));
+
+    }
+
+    @Test
+    public void testAsyncGenericStuff() throws Exception {
+        Benchmark async = RunBigBenchmarks.benchmarks.get("async");
+//        Benchmark bench = new Benchmark(async.environment, async.jsFile, async.dTSFile, async.module, async.load_method).withPathsToTest(Collections.singletonList("window.async.timesLimit.[arg3].[arg0]"));
+
+        Main.writeFullDriver(async, new ExecutionRecording(null, "0.7707537541701355"));
+        String output = Main.runFullDriver(async);
+
+        System.out.println(output);
     }
 }
