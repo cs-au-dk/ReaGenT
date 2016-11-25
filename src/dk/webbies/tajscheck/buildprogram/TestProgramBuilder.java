@@ -28,7 +28,6 @@ public class TestProgramBuilder {
     public static final String ASSERTION_FAILURES = "assertionFailures";
     public static final String VARIABLE_NO_VALUE = "no_value";
     public static final String VALUE_VARIABLE_PREFIX = "value_";
-    public static final String TYPE_VALUE_PREFIX = "type_";
     public static final String RUNTIME_ERROR_NAME = "RuntimeError";
 
     private final Benchmark bench;
@@ -38,7 +37,6 @@ public class TestProgramBuilder {
     private Map<Type, String> typeNames;
     private Type moduleType;
 
-    private final Map<Test, Integer> testToValueMap = new IdentityHashMap<>();
     private TypeCreator typeCreator;
 
 
@@ -64,12 +62,6 @@ public class TestProgramBuilder {
         this.typeParameterIndexer = typeParameterIndexer;
 
         this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer);
-
-        for (Test test : this.tests) {
-            Type produces = test.getProduces();
-            int index = typeCreator.createProducedValueVariable(produces, test.getParameterMap());
-            testToValueMap.put(test, index);
-        }
     }
 
     public Statement buildTestProgram(ExecutionRecording recording) throws IOException {
@@ -174,7 +166,7 @@ public class TestProgramBuilder {
                         ),
                         Return()
                 ),
-                new CheckType(nativeTypes, typeNames, typeParameterIndexer, new ParameterMap()).checkResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
+                new CheckType(nativeTypes, typeNames, typeParameterIndexer, new ParameterMap()).assertResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
 
         )));
     }
@@ -205,19 +197,97 @@ public class TestProgramBuilder {
 
     private List<Statement> buildTestCase(Test test) {
         List<Statement> testCode = test.accept(new TestBuilderVisitor());
+
+        List<Type> produces = new ArrayList<>(test.getProduces());
+        Statement saveResultStatement;
+        CheckType checkType = new CheckType(nativeTypes, typeNames, typeParameterIndexer, test.getParameterMap());
+        if (produces.size() == 1) {
+            Type product = produces.iterator().next();
+            int index = typeCreator.createProducedValueVariable(product, test.getParameterMap());
+            saveResultStatement = block(
+                    checkType.assertResultingType(product, identifier("result"), test.getPath(), Main.CHECK_DEPTH),
+                    statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result")))
+            );
+        } else {
+            List<Integer> valueIndexes = produces.stream().map(type -> typeCreator.createProducedValueVariable(type, test.getParameterMap())).collect(Collectors.toList());
+
+            int depthToCheck = 1;
+
+            saveResultStatement = block(
+                    variable("passedResults", array()),
+                    block(
+                            Util.zip(produces, valueIndexes).stream().map(pair -> {
+                                Type type = pair.getLeft();
+                                Integer valueIndex = pair.getRight();
+                                return block(
+                                        variable("passed", checkType.checkResultingType(type, identifier("result"), test.getPath(), depthToCheck)),
+                                        ifThen(
+                                                identifier("passed"),
+                                                statement(methodCall(identifier("passedResults"), "push", number(valueIndex)))
+                                        )
+                                );
+                            }).collect(Collectors.toList())
+                    ),
+                    // If no type passed, then we have an assertionError
+                    ifThen(
+                            binary(
+                                    member(identifier("passedResults"), "length"),
+                                    Operator.EQUAL_EQUAL_EQUAL,
+                                    number(0)
+                            ),
+                            block(
+                                    statement(
+                                            call(identifier("assert"), bool(false), string(test.getPath()), string(checkType.getTypeDescription(createUnionType(produces), depthToCheck)), identifier("result"))
+                                    ),
+                                    Return()
+                            )
+                    ),
+                    // If we have more than 1 type that passed, then it is our fault, we cannot distinguish between the union types.
+                    ifThen(
+                            binary(
+                                    member(identifier("passedResults"), "length"),
+                                    Operator.GREATER_THAN_EQUAL,
+                                    number(2)
+                            ),
+                            block(
+                                    statement(call(identifier("error"), binary(string("Could distinguish which union on path: " + test.getPath() + " types: "), Operator.PLUS, methodCall(identifier("passedResults"), "toString")))),
+                                    Return()
+                            )
+                    ),
+                    // Otherwise, assign to the single found union-type, the result.
+                    switchCase(
+                            arrayAccess(identifier("passedResults"), number(0)),
+                            valueIndexes.stream().map(index ->
+                                    new Pair<Expression, Statement>(
+                                            number(index),
+                                            block(
+                                                    statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result"))),
+                                                    breakStatement()
+                                            )
+                                    )
+                            ).collect(Collectors.toList())
+                    )
+            );
+        }
+
         /*
          * Check dependencies
          * Run test, put result in "result"
          * Check that "result" is of the right type
          * Store result for use by other tests
          */
+
         return Util.concat(
                 checkDependencies(test),
                 testCode,
-                Arrays.asList(
-                        new CheckType(nativeTypes, typeNames, typeParameterIndexer, test.getParameterMap()).checkResultingType(test.getProduces(), identifier("result"), test.getPath(), Main.CHECK_DEPTH),
-                        statement(binary(identifier(VALUE_VARIABLE_PREFIX + testToValueMap.get(test)), Operator.EQUAL, identifier("result")))
-                ));
+                Collections.singletonList(saveResultStatement)
+        );
+    }
+
+    private UnionType createUnionType(List<Type> types) {
+        UnionType union = new UnionType();
+        union.setElements(types);
+        return union;
     }
 
     private Collection<Statement> checkDependencies(Test test) {
@@ -331,6 +401,14 @@ public class TestProgramBuilder {
                             CheckToExpression.generate(Check.not(test.getCheck()), identifier("result")),
                             Return()
                     )
+            );
+        }
+
+        @Override
+        public List<Statement> visit(UnionTypeTest test) {
+            // Looks trivial, but that is because everything complicated is handled by the method calling this visitor.
+            return Collections.singletonList(
+                    variable("result", getTypeExpression(test.getGetUnionType(), test.getParameterMap()))
             );
         }
 

@@ -35,7 +35,7 @@ public class CheckType {
         this.parameterMap = parameterMap;
     }
 
-    public Statement checkResultingType(Type type, Expression exp, String path, int depth) {
+    public Statement assertResultingType(Type type, Expression exp, String path, int depth) {
         List<TypeCheck> typeChecks = type.accept(new CreateTypeCheckVisitor(nativeTypes, typeParameterIndexer, typeNames), new Arg(parameterMap, depth));
 
         return block(
@@ -45,9 +45,28 @@ public class CheckType {
                 ),
                 ifThen(
                         unary(Operator.NOT, identifier("typeChecked")),
-                        Return()
+                        Return(bool(false))
                 )
         );
+    }
+
+    public Expression checkResultingType(Type type, Expression exp, String path, int depth) {
+        return call(function(
+                block(
+                        statement(function("assert", block(
+                                comment("Overriding assert, i'm only interested in IF the type check passes. "),
+                                Return(identifier("cond"))
+                        ), "cond")),
+
+                        assertResultingType(type, exp, path, depth), // This returns false, if the type check fails
+                        Return(bool(true)) // If it didn't return false, then the type check passed!
+                )
+        ));
+    }
+
+    public String getTypeDescription(Type type, int depth) {
+        List<TypeCheck> result = type.accept(new CreateTypeCheckVisitor(nativeTypes, typeParameterIndexer, typeNames), new Arg(parameterMap, depth));
+        return createIntersection(result).getExpected();
     }
 
     private Statement checkToAssertions(TypeCheck typeCheck, Expression exp, String path) {
@@ -132,7 +151,7 @@ public class CheckType {
         @Override
         public List<TypeCheck> visit(InterfaceType t, Arg arg) {
             if (TypesUtil.isEmptyInterface(t)) {
-                return Collections.singletonList(new SimpleTypeCheck(Check.trueCheck(), "[any]"));
+                return Collections.singletonList(new SimpleTypeCheck(Check.alwaysTrue(), "[any]"));
             }
             if ("Date".equals(typeNames.get(t))) {
                 return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.instanceOf(identifier("Date")), "Date"));
@@ -147,9 +166,10 @@ public class CheckType {
                 return new SimpleType(SimpleTypeKind.Number).accept(this, arg);
             }
             if ("Object".equals(typeNames.get(t))) {
-                return Collections.singletonList(
-                        new SimpleTypeCheck(Check.typeOf("object"), "Object")
-                );
+                return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.typeOf("object"), "Object"));
+            }
+            if ("Error".equals(typeNames.get(t))) {
+                return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.instanceOf(identifier("Error")), "Error"));
             }
 
             if (nativeTypes.contains(t)) {
@@ -212,7 +232,7 @@ public class CheckType {
         public List<TypeCheck> visit(SimpleType t, Arg arg) {
             if (t.getKind() == SimpleTypeKind.Any) {
                 return Collections.singletonList(
-                        new SimpleTypeCheck(Check.trueCheck(), "[any]")
+                        new SimpleTypeCheck(Check.alwaysTrue(), "[any]")
                 );
             }
             String typeOf = getTypeOf(t);

@@ -11,7 +11,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
         TestUnderscore.class,
         UnitTests.class,
-        RunAllBenchmarks.class
+        RunBigBenchmarks.class
 })
 public class TestSuite {
 }

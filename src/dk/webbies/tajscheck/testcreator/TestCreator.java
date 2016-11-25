@@ -1,13 +1,11 @@
 package dk.webbies.tajscheck.testcreator;
 
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.ParameterMap;
 import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
-import dk.webbies.tajscheck.paser.AstBuilder;
+import dk.webbies.tajscheck.buildprogram.TestProgramBuilder.TypeParameterIndexer;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
@@ -17,30 +15,45 @@ import dk.webbies.tajscheck.util.Util;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tajscheck.testcreator.test.check.Check.*;
-
 /**
  * Created by erik1 on 01-11-2016.
  */
 public class TestCreator {
 
-    public static List<Test> createTests(Set<Type> nativeTypes, Type typeToTest, Benchmark bench, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer) {
+    private final Set<Type> nativeTypes;
+    private final Type typeToTest;
+    private final Benchmark bench;
+    private final TypeParameterIndexer typeParameterIndexer;
+    private final Map<Type, String> typeNames; // TODO: Unused?
+    private TypeParameterIndexer parameterIndexer;
+
+    public TestCreator(Set<Type> nativeTypes, Type typeToTest, Benchmark bench, TypeParameterIndexer typeParameterIndexer, Map<Type, String> typeNames, TypeParameterIndexer parameterIndexer) {
+        this.nativeTypes = nativeTypes;
+        this.typeToTest = typeToTest;
+        this.bench = bench;
+        this.typeParameterIndexer = typeParameterIndexer;
+        this.typeNames = typeNames;
+        this.parameterIndexer = parameterIndexer;
+    }
+
+    public List<Test> createTests() {
         String module = bench.module;
 
         PriorityQueue<CreateTestQueueElement> queue = new PriorityQueue<>();
 
         Set<TypeWithParameters> negativeTypesSeen = new HashSet<>();
 
-        CreateTestVisitor visitor = new CreateTestVisitor(nativeTypes, queue, negativeTypesSeen);
+        CreateTestVisitor visitor = new CreateTestVisitor(queue, negativeTypesSeen);
 
-        List<Test> topLevelFunctionTests = addTopLevelFunctionTests(typeToTest, module, queue, new ParameterMap(), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes);
+        List<Test> topLevelFunctionTests = new ArrayList<>();
+        topLevelFunctionTests.addAll(addTopLevelFunctionTests(typeToTest, module, queue, new ParameterMap(), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes));
 
         queue.add(new CreateTestQueueElement(typeToTest, new Arg(module, new ParameterMap(), 0)));
 
         while (!queue.isEmpty()) {
             CreateTestQueueElement element = queue.poll();
             if (element.arg.withTopLevelFunctions) {
-                addTopLevelFunctionTests(element.type, element.arg.path, queue, element.arg.parameterMap, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes);
+                topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, element.arg.path, queue, element.arg.parameterMap, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes));
             }
             element.type.accept(visitor, element.arg.noTopLevelFunctions());
         }
@@ -56,13 +69,26 @@ public class TestCreator {
         return concatDuplicateTests(Util.concat(topLevelFunctionTests, tests));
     }
 
-    private static List<Test> addTopLevelFunctionTests(Type type, String path, PriorityQueue<CreateTestQueueElement> queue, ParameterMap parameterMap, CreateTestVisitor visitor, Set<TypeWithParameters> negativeTypesSeen, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, Set<Type> nativeTypes) {
+    private static List<Test> addTopLevelFunctionTests(Type type, String path, PriorityQueue<CreateTestQueueElement> queue, ParameterMap parameterMap, CreateTestVisitor visitor, Set<TypeWithParameters> negativeTypesSeen, TypeParameterIndexer typeParameterIndexer, Set<Type> nativeTypes) {
         if (nativeTypes.contains(type)) {
             return new ArrayList<>();
         }
-        List<Test> topLevelFunctionTests = new ArrayList<>();
+
+        if (type instanceof StringLiteral || type instanceof NumberLiteral || type instanceof BooleanLiteral) {
+            return Collections.emptyList();
+        }
 
         assert type instanceof GenericType || type instanceof InterfaceType || type instanceof SimpleType || type instanceof ReferenceType || type instanceof UnionType || type instanceof TypeParameterType;
+
+        if (type instanceof UnionType) {
+            List<Test> result = new ArrayList<>();
+            List<Type> element = ((UnionType) type).getElements();
+            for (int i = 0; i < element.size(); i++) {
+                Type subType = element.get(i);
+                result.addAll(addTopLevelFunctionTests(subType, path + ".[union" + i + "]", queue, parameterMap, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes));
+            }
+            return result;
+        }
 
         if (type instanceof TypeParameterType) {
             List<Test> result = new ArrayList<>();
@@ -80,8 +106,8 @@ public class TestCreator {
             }
             if (parameterMap.containsKey(typeParameterType)) {
                 result.addAll(addTopLevelFunctionTests(parameterMap.get(typeParameterType), path, queue, parameterMap, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes));
-                return result;
             }
+            return result;
         }
 
 
@@ -97,29 +123,31 @@ public class TestCreator {
         }
 
         if (type instanceof InterfaceType) {
+            List<Test> result = new ArrayList<>();
             List<Signature> callSignatures = ((InterfaceType) type).getDeclaredCallSignatures();
             for (Signature callSignature : callSignatures) {
                 List<Type> parameters = callSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                 findPositiveTypesInParameters(visitor, new Arg(path, parameterMap, 0), parameters, negativeTypesSeen);
-                topLevelFunctionTests.add(
-                        new FunctionCallTest(type, parameters, callSignature.getResolvedReturnType(), path, new ParameterMap())
+                result.add(
+                        new FunctionCallTest(type, parameters, callSignature.getResolvedReturnType(), path, parameterMap)
                 );
 
-                queue.add(new CreateTestQueueElement(callSignature.getResolvedReturnType(), new Arg(path + "()", parameterMap, 0)));
+                queue.add(new CreateTestQueueElement(callSignature.getResolvedReturnType(), new Arg(path + "()", parameterMap, 0).withTopLevelFunctions()));
             }
 
             List<Signature> constructSignatures = ((InterfaceType) type).getDeclaredConstructSignatures();
             for (Signature constructSignature : constructSignatures) {
                 List<Type> parameters = constructSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                 findPositiveTypesInParameters(visitor, new Arg(path, parameterMap, 0), parameters, negativeTypesSeen);
-                topLevelFunctionTests.add(
-                        new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, new ParameterMap())
+                result.add(
+                        new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, parameterMap)
                 );
 
-                queue.add(new CreateTestQueueElement(constructSignature.getResolvedReturnType(), new Arg("new " + path + "()", new ParameterMap(), 0)));
+                queue.add(new CreateTestQueueElement(constructSignature.getResolvedReturnType(), new Arg("new " + path + "()", parameterMap, 0).withTopLevelFunctions()));
             }
+            return result;
         }
-        return topLevelFunctionTests;
+        throw new RuntimeException(type.getClass().getName());
     }
 
     private static void findPositiveTypesInParameters(CreateTestVisitor visitor, Arg arg, List<Type> parameters, Set<TypeWithParameters> negativeTypesSeen) {
@@ -232,15 +260,13 @@ public class TestCreator {
 
 
 
-    private static final class CreateTestVisitor implements TypeVisitorWithArgument<Void, Arg> {
+    private final class CreateTestVisitor implements TypeVisitorWithArgument<Void, Arg> {
         private final Set<TypeWithParameters> seen = new HashSet<>();
-        private final Set<Type> nativeTypes;
         private final List<Test> tests = new ArrayList<>();
         private final PriorityQueue<CreateTestQueueElement> queue;
         private Set<TypeWithParameters> negativeTypesSeen;
 
-        private CreateTestVisitor(Set<Type> nativeTypes, PriorityQueue<CreateTestQueueElement> queue, Set<TypeWithParameters> negativeTypesSeen) {
-            this.nativeTypes = nativeTypes;
+        private CreateTestVisitor(PriorityQueue<CreateTestQueueElement> queue, Set<TypeWithParameters> negativeTypesSeen) {
             this.queue = queue;
             this.negativeTypesSeen = negativeTypesSeen;
         }
@@ -309,7 +335,7 @@ public class TestCreator {
                         findPositiveTypesInParameters(this, arg.append(key), parameters, this.negativeTypesSeen);
                         tests.add(new MethodCallTest(t, type, key, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getParameterMap()));
 
-                        recurse(signature.getResolvedReturnType(), arg.append(key + "()"));
+                        recurse(signature.getResolvedReturnType(), arg.append(key + "()").withTopLevelFunctions());
                     }
 
                     List<Signature> constructSignatures = type instanceof InterfaceType ? ((InterfaceType) type).getDeclaredConstructSignatures() : ((GenericType) type).getDeclaredConstructSignatures();
@@ -318,7 +344,7 @@ public class TestCreator {
                         findPositiveTypesInParameters(this, arg.append(key), parameters, this.negativeTypesSeen);
                         tests.add(new ConstructorCallTest(type, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getParameterMap()));
 
-                        recurse(signature.getResolvedReturnType(), arg.append(key + "[new]()"));
+                        recurse(signature.getResolvedReturnType(), arg.append(key + "[new]()").withTopLevelFunctions());
                     }
                 }
 
@@ -378,49 +404,20 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            // Filtering out all primitive types, there is not test generated on those anyway.
-            List<Type> elements = union.getElements().stream().filter(type -> {
-                if (type instanceof SimpleType) {
-                    switch (((SimpleType) type).getKind()) {
-                        case String:
-                        case Boolean:
-                        case Number:
-                            return false;
-                        case Undefined:
-                        case Null:
-                            return true;
-                        default:
-                            throw new RuntimeException("Kind: " + ((SimpleType) type).getKind());
-                    }
-                } else if (type instanceof BooleanLiteral || type instanceof NumberLiteral || type instanceof StringLiteral) {
-                    return false;
-                } else if (type instanceof InterfaceType || type instanceof GenericType ||type instanceof ReferenceType || type instanceof TypeParameterType){
-                    return true;
-                } else {
-                    throw new RuntimeException(type.getClass().getName());
-                }
-            }).collect(Collectors.toList());
+            List<Type> elements = union.getElements();
 
             if (elements.size() == 0) {
                 return null;
             }
 
-            // undefined | Type
-            if (elements.size() == 2 && elements.get(0) instanceof SimpleType && (((SimpleType) elements.get(0)).getKind() == SimpleTypeKind.Undefined || ((SimpleType) elements.get(0)).getKind() == SimpleTypeKind.Null)) {
-                Type type = elements.get(1);
-                assert type instanceof InterfaceType || type instanceof GenericType || type instanceof ReferenceType || type instanceof TypeParameterType;
-                Check check = not(or(
-                        typeOf("undefined"),
-                        equalTo(AstBuilder.nullLiteral())
-                ));
-                tests.add(new FilterTest(union, type, arg.path, arg.getParameterMap(), check));
+            tests.add(new UnionTypeTest(union, union.getElements(), arg.path, arg.parameterMap));
 
-                recurse(type, arg);
-                return null;
-            } else {
-                throw new RuntimeException();
+            for (int i = 0; i < union.getElements().size(); i++) {
+                Type type = union.getElements().get(i);
+                recurse(type, arg.append("[union" + i + "]"));
             }
 
+            return null;
         }
 
         @Override
@@ -449,7 +446,7 @@ public class TestCreator {
             assert t.getTarget() == null;
 
             if (t.getConstraint() != null) {
-                tests.add(new FilterTest(t, t.getConstraint(), arg.path, arg.getParameterMap(), Check.trueCheck()));
+                tests.add(new FilterTest(t, t.getConstraint(), arg.path, arg.getParameterMap(), Check.alwaysTrue()));
                 recurse(t.getConstraint(), arg.append("[constraint]"));
             }
 
@@ -490,9 +487,11 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            for (Type subType : t.getElements()) {
-                tests.add(new FilterTest(t, subType, arg.path, arg.getParameterMap(), Check.trueCheck()));
-                recurse(subType, arg);
+
+            for (int i = 0; i < t.getElements().size(); i++) {
+                Type subType = t.getElements().get(i);
+                tests.add(new FilterTest(t, subType, arg.path, arg.getParameterMap(), Check.alwaysTrue()));
+                recurse(subType, arg.append("[intersection" + i + "]"));
             }
 
             return null;

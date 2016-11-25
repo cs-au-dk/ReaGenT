@@ -23,7 +23,6 @@ import java.util.stream.IntStream;
 
 import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
 import static dk.webbies.tajscheck.paser.AstBuilder.*;
-import static dk.webbies.tajscheck.paser.AstBuilder.identifier;
 
 /**
  * Created by erik1 on 03-11-2016.
@@ -343,7 +342,7 @@ public class TypeCreator {
             Signature signature = signatures.iterator().next();
 
             List<Statement> typeChecks = Util.zip(args.stream(), signature.getParameters().stream(), (argName, par) ->
-                typeChecker.checkResultingType(par.getType(), identifier(argName), interName + ".[" + argName + "]", Main.CHECK_DEPTH)
+                typeChecker.assertResultingType(par.getType(), identifier(argName), interName + ".[" + argName + "]", Main.CHECK_DEPTH)
             ).collect(Collectors.toList());
 
             List<Statement> saveArgumentValues = Util.zip(

@@ -39,7 +39,7 @@ public interface Check {
         return new EqualityCheck(exp);
     }
 
-    static TrueCheck trueCheck() {
+    static TrueCheck alwaysTrue() {
         return new TrueCheck();
     }
 
