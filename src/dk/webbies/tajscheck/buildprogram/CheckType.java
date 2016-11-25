@@ -235,6 +235,14 @@ public class CheckType {
                         new SimpleTypeCheck(Check.alwaysTrue(), "[any]")
                 );
             }
+            if (t.getKind() == SimpleTypeKind.Undefined || t.getKind() == SimpleTypeKind.Void || t.getKind() == SimpleTypeKind.Null) {
+                return Collections.singletonList(
+                        new SimpleTypeCheck(Check.or(
+                                Check.typeOf("undefined"),
+                                Check.equalTo(nullLiteral())
+                        ), "undefined/null")
+                );
+            }
             String typeOf = getTypeOf(t);
             return Collections.singletonList(new SimpleTypeCheck(Check.typeOf(typeOf), typeOf));
         }
@@ -377,11 +385,6 @@ public class CheckType {
                 return "number";
             case Boolean:
                 return "boolean";
-            case Undefined:
-            case Void:
-                return "undefined";
-            case Null:
-                return "Null";
             default:
                 throw new RuntimeException(type.getKind().toString());
         }
