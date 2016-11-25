@@ -47,7 +47,24 @@ function assert (cond, path, expected, actual) {
     }
     return cond
 }
+
+var printedWarnings = [];
+var printedErrors = [];
+
 var print = console.log;
+var warn = function (message) {
+    printedWarnings.push(message);
+};
+var error = function (message) {
+    printedErrors.push(message);
+};
+try {
+    process.on('uncaughtException', function(err) {
+        error((err && err.stack) ? err.stack : err);
+    });
+} catch(e) {
+    // ignored.
+}
 for (var key in console) {
     console[key] = function () {};
 }
