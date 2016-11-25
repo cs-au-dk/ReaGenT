@@ -418,9 +418,6 @@ public class TestCreator {
                 recurse(type, arg);
                 return null;
             } else {
-                if (Main.UNDERSCORE_TEST) {
-                    return null;
-                }
                 throw new RuntimeException();
             }
 

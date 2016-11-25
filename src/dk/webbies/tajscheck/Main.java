@@ -29,8 +29,6 @@ public class Main {
     public static final boolean CHECK_HEAP = false;
     private static final String TEST_FILE_NAME = "test.js";
 
-    public static final boolean UNDERSCORE_TEST = true;
-
     public static void writeFullDriver(Benchmark bench) throws IOException {
         writeFullDriver(bench, null);
     }
