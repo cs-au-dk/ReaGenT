@@ -512,27 +512,23 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             ident();
             write("case ");
             pair.getLeft().accept(this);
-            write(": {\n");
+            write(":\n");
             ident++;
             writeAsBlock(pair.getRight());
             ident--;
-            ident();
-            write("} \n");
         }
 
         if (switchStatement.getDefaultCase() != null) {
             ident();
-            write("default: {\n");
+            write("default: \n");
             ident++;
             writeAsBlock(switchStatement.getDefaultCase());
             ident--;
-            ident();
-            write("} \n");
         }
 
         ident--;
         ident();
-        write("} \n");
+        write("}\n");
         return null;
     }
 
