@@ -13,7 +13,7 @@ public class MemberAccessTest extends Test {
     private final String key;
 
     public MemberAccessTest(Type dependsOn, Type produces, String key, String path, ParameterMap parameterMap) {
-        super(Collections.singletonList(dependsOn), Collections.EMPTY_LIST, produces, path + "." + key, parameterMap);
+        super(Collections.singletonList(dependsOn), Collections.emptyList(), produces, path + "." + key, parameterMap);
         this.baseType = dependsOn;
         this.key = key;
     }
