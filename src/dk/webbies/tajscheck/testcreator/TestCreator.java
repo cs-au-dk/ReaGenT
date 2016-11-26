@@ -74,7 +74,14 @@ public class TestCreator {
             return Collections.emptyList();
         }
 
-        assert type instanceof GenericType || type instanceof InterfaceType || type instanceof SimpleType || type instanceof ReferenceType || type instanceof UnionType || type instanceof TypeParameterType;
+        if (type instanceof IntersectionType) {
+            List<Test> result = new ArrayList<>();
+            for (Type subType : ((IntersectionType) type).getElements()) {
+                result.addAll(addTopLevelFunctionTests(subType, path, queue, parameterMap, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes));
+            }
+
+            return result;
+        }
 
         if (type instanceof UnionType) {
             List<Test> result = new ArrayList<>();
@@ -128,7 +135,7 @@ public class TestCreator {
                         new FunctionCallTest(type, parameters, callSignature.getResolvedReturnType(), path, parameterMap)
                 );
 
-                queue.add(new CreateTestQueueElement(callSignature.getResolvedReturnType(), new Arg(path + "()", parameterMap, 0).withTopLevelFunctions()));
+                visitor.recurse(callSignature.getResolvedReturnType(), new Arg(path + "()", parameterMap, 0).withTopLevelFunctions());
             }
 
             List<Signature> constructSignatures = ((InterfaceType) type).getDeclaredConstructSignatures();
@@ -139,7 +146,7 @@ public class TestCreator {
                         new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, parameterMap)
                 );
 
-                queue.add(new CreateTestQueueElement(constructSignature.getResolvedReturnType(), new Arg("new " + path + "()", parameterMap, 0).withTopLevelFunctions()));
+                visitor.recurse(constructSignature.getResolvedReturnType(), new Arg("new " + path + "()", parameterMap, 0).withTopLevelFunctions());
             }
             return result;
         }
@@ -250,7 +257,7 @@ public class TestCreator {
 
         @Override
         public int compareTo(CreateTestQueueElement o) {
-            return Integer.compare(o.arg.depth, o.arg.depth);
+            return Integer.compare(this.arg.depth, o.arg.depth);
         }
     }
 
