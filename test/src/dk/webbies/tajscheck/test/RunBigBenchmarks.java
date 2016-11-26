@@ -36,15 +36,6 @@ public class RunBigBenchmarks {
         return new ArrayList<>(benchmarks.values());
     }
 
-    private static <T> T readField(Class<T> clazz, Field field) {
-        try {
-            Object value = field.get(null);
-            return clazz.cast(value);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Test
     public void genFullDriver() throws Exception {
         Main.writeFullDriver(benchmark);
