@@ -18,6 +18,7 @@ import dk.webbies.tajscheck.util.Util;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static dk.webbies.tajscheck.paser.AstBuilder.*;
 
@@ -214,13 +215,13 @@ public class TestProgramBuilder {
             saveResultStatement = block(
                     variable("passedResults", array()),
                     block(
-                            Util.zip(produces, valueIndexes).stream().map(pair -> {
+                            Util.zip(produces, IntStream.range(0, produces.size()).boxed()).map(pair -> {
                                 Type type = pair.getLeft();
                                 Integer valueIndex = pair.getRight();
                                 return block(
-                                        variable("passed", checkType.checkResultingType(type, identifier("result"), test.getPath(), Main.CHECK_DEPTH_FOR_UNIONS)),
+                                        variable("passed" + valueIndex, checkType.checkResultingType(type, identifier("result"), test.getPath(), Main.CHECK_DEPTH_FOR_UNIONS)),
                                         ifThen(
-                                                identifier("passed"),
+                                                identifier("passed" + valueIndex),
                                                 statement(methodCall(identifier("passedResults"), "push", number(valueIndex)))
                                         )
                                 );
@@ -248,18 +249,18 @@ public class TestProgramBuilder {
                                     number(2)
                             ),
                             block(
-                                    statement(call(identifier("error"), binary(string("Could distinguish which union on path: " + test.getPath() + " types: "), Operator.PLUS, methodCall(identifier("passedResults"), "toString")))),
+                                    statement(call(identifier("error"), binary(string("Could not distinguish which union on path: " + test.getPath() + " types: "), Operator.PLUS, methodCall(identifier("passedResults"), "toString")))),
                                     Return()
                             )
                     ),
                     // Otherwise, assign to the single found union-type, the result.
                     switchCase(
                             arrayAccess(identifier("passedResults"), number(0)),
-                            valueIndexes.stream().map(index ->
+                            IntStream.range(0, produces.size()).mapToObj(index ->
                                     new Pair<Expression, Statement>(
                                             number(index),
                                             block(
-                                                    statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result"))),
+                                                    statement(binary(identifier(VALUE_VARIABLE_PREFIX + valueIndexes.get(index)), Operator.EQUAL, identifier("result"))),
                                                     breakStatement()
                                             )
                                     )
