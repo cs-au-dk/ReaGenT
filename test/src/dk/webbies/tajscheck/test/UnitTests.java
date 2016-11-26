@@ -134,8 +134,6 @@ public class UnitTests {
 
     }
 
-
-
     @Test
     public void optionalParameters() throws Exception {
         List<ParseResult> result = parseDriverResult(runDriver("optionalParameters", "foo"));
@@ -145,5 +143,10 @@ public class UnitTests {
                 .expected("number");
     }
 
+    @Test
+    public void simpleOverloads() throws Exception {
+        List<ParseResult> result = parseDriverResult(runDriver("simpleOverloads", "foo"));
 
+        assertThat(result.size(), is(0));
+    }
 }
