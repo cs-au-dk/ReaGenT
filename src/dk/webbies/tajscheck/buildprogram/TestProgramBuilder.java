@@ -211,8 +211,6 @@ public class TestProgramBuilder {
         } else {
             List<Integer> valueIndexes = produces.stream().map(type -> typeCreator.createProducedValueVariable(type, test.getParameterMap())).collect(Collectors.toList());
 
-            int depthToCheck = 1;
-
             saveResultStatement = block(
                     variable("passedResults", array()),
                     block(
@@ -220,7 +218,7 @@ public class TestProgramBuilder {
                                 Type type = pair.getLeft();
                                 Integer valueIndex = pair.getRight();
                                 return block(
-                                        variable("passed", checkType.checkResultingType(type, identifier("result"), test.getPath(), depthToCheck)),
+                                        variable("passed", checkType.checkResultingType(type, identifier("result"), test.getPath(), Main.CHECK_DEPTH_FOR_UNIONS)),
                                         ifThen(
                                                 identifier("passed"),
                                                 statement(methodCall(identifier("passedResults"), "push", number(valueIndex)))
@@ -237,7 +235,7 @@ public class TestProgramBuilder {
                             ),
                             block(
                                     statement(
-                                            call(identifier("assert"), bool(false), string(test.getPath()), string(checkType.getTypeDescription(createUnionType(produces), depthToCheck)), identifier("result"))
+                                            call(identifier("assert"), bool(false), string(test.getPath()), string(checkType.getTypeDescription(createUnionType(produces), Main.CHECK_DEPTH_FOR_UNIONS)), identifier("result"))
                                     ),
                                     Return()
                             )

@@ -26,6 +26,7 @@ import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
  */
 public class Main {
     public static final int CHECK_DEPTH = 0;
+    public static final int CHECK_DEPTH_FOR_UNIONS = 1;
     public static final boolean CHECK_HEAP = false;
     private static final String TEST_FILE_NAME = "test.js";
 
