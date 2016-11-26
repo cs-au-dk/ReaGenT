@@ -338,19 +338,14 @@ public class TypeCreator {
         String interName = typeNames.get(inter);
         assert interName != null;
 
+        assert !signatures.isEmpty();
+
         if (signatures.size() == 1) {
             Signature signature = signatures.iterator().next();
 
+            // Currently changing nothing if it ended up not type-checking.
             List<Statement> typeChecks = Util.zip(args.stream(), signature.getParameters().stream(), (argName, par) ->
                 typeChecker.assertResultingType(par.getType(), identifier(argName), interName + ".[" + argName + "]", Main.CHECK_DEPTH)
-            ).collect(Collectors.toList());
-
-            List<Statement> saveArgumentValues = Util.zip(
-                    IntStream.range(0, signature.getParameters().size()).boxed(),
-                    signature.getParameters().stream().map(par -> createProducedValueVariable(par.getType(), parameterMap)),
-                    (argIndex, valueIndex) -> {
-                        return statement(binary(identifier(VALUE_VARIABLE_PREFIX + valueIndex), Operator.EQUAL, identifier("arg" + argIndex)));
-                    }
             ).collect(Collectors.toList());
 
             BlockStatement functionBody = block(
@@ -362,8 +357,7 @@ public class TypeCreator {
                                     )
                             )
                     ))),
-                    block(saveArgumentValues),
-                    Return(createType(signature.getResolvedReturnType(), parameterMap)) // Currently doing nothing if it ended up not type-checking.
+                    saveArgsAndReturnValue(signature, parameterMap)
             );
 
 
@@ -372,8 +366,92 @@ public class TypeCreator {
                     args
             );
         } else {
-            throw new RuntimeException();
+            Statement functionBody = block(
+                    variable("foundSignatures", array()),
+                    // Checking each signature, to see if correct.
+                    block(Util.zip(IntStream.range(0, signatures.size()).boxed(), signatures).map(signaturePair -> {
+                        int signatureIndex = signaturePair.getLeft();
+                        Signature signature = signaturePair.getRight();
+                        return block(
+                                variable("signatureCorrect" + signatureIndex, call(function(block(
+                                        block(Util.zip(IntStream.range(0, signature.getParameters().size()).boxed(), signature.getParameters()).map(parameterPair -> {
+                                            Integer argIndex = parameterPair.getLeft();
+                                            Signature.Parameter arg = parameterPair.getRight();
+
+                                            return block(
+                                                    variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(arg.getType(), identifier("arg" + argIndex), interName + ".[arg" + argIndex + "]", Main.CHECK_DEPTH_FOR_UNIONS)),
+                                                    ifThen(
+                                                            unary(Operator.NOT, identifier("arg" + argIndex + "Correct")),
+                                                            Return(bool(false))
+                                                    )
+                                            );
+                                        }).collect(Collectors.toList())),
+                                        Return(bool(true))
+                                )))),
+                                ifThen(
+                                        identifier("signatureCorrect" + signatureIndex),
+                                        statement(methodCall(identifier("foundSignatures"), "push", number(signatureIndex)))
+                                )
+                        );
+                    }).collect(Collectors.toList())),
+                    ifThen(
+                            binary(
+                                    member(identifier("foundSignatures"), "length"),
+                                    Operator.EQUAL_EQUAL_EQUAL,
+                                    number(0)
+                            ),
+                            block(
+                                    comment("Call assert, no valid overload found, the application was called in a wrong way."),
+                                    statement(call(identifier("assert"), bool(false), string(interName), string("A valid overload"), string("No valid overloads found!"))),
+                                    Return()
+                            )
+                    ),
+                    ifThen(
+                            binary(
+                                    member(identifier("foundSignatures"), "length"),
+                                    Operator.GREATER_THAN_EQUAL,
+                                    number(2)
+                            ),
+                            block(
+                                    comment("Call error, the application was imprecise, and couldn't identity the correct overload"),
+                                    statement(call(identifier("error"), binary(string("Could not find correct overload for function: " + interName + " results: "), Operator.PLUS, methodCall(identifier("foundSignatures"), "toString")))),
+                                    Return()
+                            )
+                    ),
+                    comment("Save the arguments, and returns the value, of the correct overload. "),
+                    switchCase(
+                            arrayAccess(identifier("foundSignatures"), number(0)),
+                            Util.zip(IntStream.range(0, signatures.size()).boxed(), signatures).map(pair -> {
+                                Integer signatureIndex = pair.getLeft();
+                                Signature signature = pair.getRight();
+                                return new Pair<Expression, Statement>(
+                                        number(signatureIndex),
+                                        saveArgsAndReturnValue(signature, parameterMap)
+                                );
+                            }).collect(Collectors.toList())
+                    )
+            );
+
+            return function(
+                    block(functionBody),
+                    args
+            );
         }
+    }
+
+    private BlockStatement saveArgsAndReturnValue(Signature signature, ParameterMap parameterMap) {
+        List<Statement> saveArgumentValues = Util.zip(
+                IntStream.range(0, signature.getParameters().size()).boxed(),
+                signature.getParameters().stream().map(par -> createProducedValueVariable(par.getType(), parameterMap)),
+                (argIndex, valueIndex) -> {
+                    return statement(binary(identifier(VALUE_VARIABLE_PREFIX + valueIndex), Operator.EQUAL, identifier("arg" + argIndex)));
+                }
+        ).collect(Collectors.toList());
+
+        return block(
+                block(saveArgumentValues),
+                Return(createType(signature.getResolvedReturnType(), parameterMap))
+        );
     }
 
 
@@ -547,14 +625,14 @@ public class TypeCreator {
                 function(
                         CONSTRUCT_TYPE_PREFIX + index,
                         block(
-                                variable("result", getType(index)),
+                                variable("existingValue", getType(index)),
                                 ifThenElse(
                                         binary(
-                                                binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
+                                                binary(identifier("existingValue"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
                                                 Operator.AND,
                                                 binary(call(identifier("random")), Operator.GREATER_THAN, number(0.5))
                                         ),
-                                        Return(identifier("result")),
+                                        Return(identifier("existingValue")),
                                         this.constructNewInstanceOfType(type, parameterMap)
                                 )
                         )
