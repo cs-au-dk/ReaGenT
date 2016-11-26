@@ -232,7 +232,7 @@ public class Util {
     }
 
     public static <T, S> List<S> filter(Class<S> clazz, List<T> list) {
-        return list.stream().filter(clazz::isInstance).map(t -> (S) t).collect(Collectors.toList());
+        return list.stream().filter(clazz::isInstance).map(clazz::cast).collect(Collectors.toList());
     }
 
     public static String readFile(String path) throws IOException {
