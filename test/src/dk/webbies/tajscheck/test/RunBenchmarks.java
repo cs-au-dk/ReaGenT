@@ -17,7 +17,7 @@ import static dk.webbies.tajscheck.benchmarks.Benchmark.LOAD_METHOD.NODE;
  * Created by erik1 on 22-11-2016.
  */
 @RunWith(Parameterized.class)
-public class RunBigBenchmarks {
+public class RunBenchmarks {
 
     @SuppressWarnings("WeakerAccess")
     @Parameterized.Parameter
@@ -25,10 +25,11 @@ public class RunBigBenchmarks {
 
     public static final Map<String, Benchmark> benchmarks = new HashMap<>();
     static {
-        benchmarks.put("module", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/test/module.js", "test/test/module.d.ts", "moment", NODE));
-        benchmarks.put("moment", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/moment/moment.js", "test/moment/moment.d.ts", "moment", NODE));
-        benchmarks.put("async", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/async/async.js", "test/async/async.d.ts", "async", NODE));
-        benchmarks.put("path.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/pathjs/pathjs.js", "test/pathjs/pathjs.d.ts", "Path", BROWSER));
+        benchmarks.put("moment", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", "moment", NODE));
+        benchmarks.put("async", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/async/async.js", "test/benchmarks/async/async.d.ts", "async", NODE));
+        benchmarks.put("path.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pathjs/pathjs.js", "test/benchmarks/pathjs/pathjs.d.ts", "Path", BROWSER));
+        benchmarks.put("accounting.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/accounting/accounting.js", "test/benchmarks/accounting/accounting.d.ts", "accounting", NODE));
+        benchmarks.put("lunr.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lunr/lunr.js", "test/benchmarks/lunr/lunr.d.ts", "lunr", NODE));
     }
 
     @Parameterized.Parameters(name = "{0}")
