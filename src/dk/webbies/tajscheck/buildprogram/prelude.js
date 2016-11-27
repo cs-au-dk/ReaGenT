@@ -36,7 +36,7 @@ function loadLibrary(path) {
 var assertionFailures = [];
 var no_value = {};
 var testOrderRecording = [];
-function assert (cond, path, expected, actual) {
+function assert(cond, path, expected, actual) {
     if (!cond) {
         assertionFailures.push({
             path: path,
@@ -46,6 +46,11 @@ function assert (cond, path, expected, actual) {
         });
     }
     return cond
+}
+try {
+    TAJS_makeContextSensitive(assert, 0);
+} catch (e) {
+    // Ignored.
 }
 
 var printedWarnings = [];
@@ -71,6 +76,7 @@ for (var key in console) {
 
 function RuntimeError(message) {
     this.message = message;
+    error("RuntimeError: " + message);
     Error.call(this, message);
 }
 RuntimeError.prototype = Object.create(Error.prototype);
