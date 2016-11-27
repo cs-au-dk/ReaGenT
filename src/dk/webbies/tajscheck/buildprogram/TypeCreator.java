@@ -74,13 +74,6 @@ public class TypeCreator {
     }
 
 
-    private static boolean canTypeBeUsed(TypeWithParameters candidate, TypeWithParameters type) {
-        if (!candidate.getType().equals(type.getType())) {
-            return false;
-        }
-        return type.getParameterMap().isSubSetOf(candidate.getParameterMap());
-    }
-
     private Statement constructUnion(List<Type> types, ParameterMap parameterMap) {
         List<Integer> elements = types.stream().distinct().map((type) -> getTypeIndex(type, parameterMap)).collect(Collectors.toList());
 
@@ -560,8 +553,8 @@ public class TypeCreator {
         return createType(typeWithParameters.getType(), typeWithParameters.getParameterMap());
     }
 
-    private int getTypeIndex(Type type, ParameterMap unFilteredParameterMap) {
-        ParameterMap parameterMap = TypesUtil.filterParameterMap(unFilteredParameterMap, type);
+    private int getTypeIndex(Type type, ParameterMap parameterMap) {
+//        ParameterMap parameterMap = TypesUtil.filterParameterMap(unFilteredParameterMap, type);
 
         TypeWithParameters key = new TypeWithParameters(type, parameterMap);
         if (typeIndexes.containsKey(key)) {
@@ -590,7 +583,8 @@ public class TypeCreator {
         int value = typeIndexes.get(new TypeWithParameters(type, parameterMap));
 
         Collection<Integer> values = valueLocations.keySet().stream()
-                .filter(candidate -> TypeCreator.canTypeBeUsed(candidate, new TypeWithParameters(type, parameterMap))).map(valueLocations::get)
+                .filter(candidate -> type.equals(candidate.getType()) && parameterMap.equals(candidate.getParameterMap()))
+                .map(valueLocations::get)
                 .reduce(new ArrayList<>(), Util::reduceCollection);
 
         Statement returnTypeStatement;

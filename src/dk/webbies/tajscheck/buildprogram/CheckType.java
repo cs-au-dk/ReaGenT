@@ -144,7 +144,6 @@ public class CheckType {
                 }
                 throw new RuntimeException();
             }
-            assert t.getTypeParameters().equals(t.getTypeArguments());
             return t.toInterface().accept(this, arg);
         }
 

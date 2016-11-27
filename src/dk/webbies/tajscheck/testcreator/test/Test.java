@@ -27,12 +27,7 @@ public abstract class Test {
         this.dependsOn = dependsOn;
         this.produces = produces;
         this.path = path;
-        this.parameterMap = TypesUtil.filterParameterMap(parameterMap,
-                Util.concat(
-                        produces,
-                        dependsOn
-                )
-        );
+        this.parameterMap = parameterMap;
     }
 
     public Collection<Type> getDependsOn() {

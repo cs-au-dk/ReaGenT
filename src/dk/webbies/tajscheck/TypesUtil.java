@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.util.Util;
+import sun.net.www.content.text.Generic;
 
 import java.util.*;
 import java.util.function.Function;
@@ -14,13 +15,20 @@ import java.util.stream.Collectors;
  */
 public class TypesUtil {
     public static ParameterMap generateParameterMap(ReferenceType ref) {
-        GenericType target = (GenericType) ref.getTarget();
-
-        Map<TypeParameterType, Type> parameterMap = new HashMap<>();
         List<Type> arguments = ref.getTypeArguments();
-        assert target.getTypeParameters().equals(target.getTypeArguments());
-        assert target.getTarget() == target;
-        List<TypeParameterType> parameters = Util.cast(TypeParameterType.class, target.getTypeParameters());
+        Map<TypeParameterType, Type> parameterMap = new HashMap<>();
+
+        if (ref.getTarget() instanceof GenericType) {
+            GenericType target = (GenericType) ref.getTarget();
+            assert target.getTypeParameters().equals(target.getTypeArguments());
+            assert target.getTarget() == target;
+        } else {
+            assert ref.getTarget() instanceof InterfaceType;
+        }
+
+        List<Type> typeParameters = ref.getTarget() instanceof GenericType ? ((GenericType) ref.getTarget()).getTypeParameters() : ((InterfaceType) ref.getTarget()).getTypeParameters();
+        assert typeParameters.size() == arguments.size();
+        List<TypeParameterType> parameters = Util.cast(TypeParameterType.class, typeParameters);
         parameterMap = new HashMap<>(parameterMap);
         for (int i = 0; i < arguments.size(); i++) {
             parameterMap.put(parameters.get(i), arguments.get(i));

@@ -533,6 +533,7 @@ public class TestCreator {
 
         @Override
         public Void visit(GenericType t, Arg arg) {
+            assert t.getTypeParameters().equals(t.getTypeArguments()); // If this fails, look at the other visitor.
             t.toInterface().accept(this, arg);
             return null;
         }

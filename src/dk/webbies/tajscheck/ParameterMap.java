@@ -67,10 +67,4 @@ public class ParameterMap {
     public int hashCode() {
         return map.hashCode();
     }
-
-    public boolean isSubSetOf(ParameterMap larger) {
-        return this.map.entrySet().stream().allMatch(entry ->
-                larger.containsKey(entry.getKey()) && larger.get(entry.getKey()).equals(this.get(entry.getKey()))
-        );
-    }
 }
