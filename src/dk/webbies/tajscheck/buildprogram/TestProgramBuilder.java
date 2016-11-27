@@ -215,7 +215,7 @@ public class TestProgramBuilder {
             saveResultStatement = block(
                     variable("passedResults", array()),
                     block(
-                            Util.zip(produces, IntStream.range(0, produces.size()).boxed()).map(pair -> {
+                            Util.withIndex(produces).map(pair -> {
                                 Type type = pair.getLeft();
                                 Integer valueIndex = pair.getRight();
                                 return block(
@@ -356,7 +356,11 @@ public class TestProgramBuilder {
 
             result.add(variable("base", getTypeExpression(test.getObject(), test.getParameterMap())));
 
-            List<Expression> parameters = test.getParameters().stream().map((type) -> typeCreator.createType(type, test.getParameterMap())).collect(Collectors.toList());
+            List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
+                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getParameterMap())));
+                return identifier("argument_" + index);
+            }).collect(Collectors.toList());
+
             MethodCallExpression methodCall = methodCall(identifier("base"), test.getPropertyName(), parameters);
 
             result.add(variable("result", methodCall));
@@ -370,7 +374,11 @@ public class TestProgramBuilder {
 
             result.add(variable("base", getTypeExpression(test.getFunction(), test.getParameterMap())));
 
-            List<Expression> parameters = test.getParameters().stream().map((type) -> typeCreator.createType(type, test.getParameterMap())).collect(Collectors.toList());
+            List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
+                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getParameterMap())));
+                return identifier("argument_" + index);
+            }).collect(Collectors.toList());
+
             Expression newCall = AstBuilder.newCall(identifier("base"), parameters);
             result.add(variable("result", newCall));
 
@@ -383,9 +391,11 @@ public class TestProgramBuilder {
 
             result.add(variable("base", getTypeExpression(test.getFunction(), test.getParameterMap())));
 
-            // TODO: Save the dependencies in variables, dependency_1...
+            List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
+                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getParameterMap())));
+                return identifier("argument_" + index);
+            }).collect(Collectors.toList());
 
-            List<Expression> parameters = test.getParameters().stream().map((type) -> typeCreator.createType(type, test.getParameterMap())).collect(Collectors.toList());
             Expression newCall = AstBuilder.call(identifier("base"), parameters);
             result.add(variable("result", newCall));
 

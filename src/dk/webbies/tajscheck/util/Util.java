@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.util;
 
 
+import dk.au.cs.casa.typescript.types.Type;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -17,6 +18,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -86,6 +88,22 @@ public class Util {
         } else {
             return Double.toString(d);
         }
+    }
+
+    public static <T> Stream<Pair<T, Integer>> withIndex(Collection<T> list) {
+        return zip(list, IntStream.range(0, list.size()).boxed());
+    }
+
+    public static <T, R> Stream<R> withIndex(Collection<T> list, BiFunction<? super T, ? super Integer, ? extends R> zipper) {
+        return zip(list.stream(), IntStream.range(0, list.size()).boxed(), zipper);
+    }
+
+    public static <T, R> Stream<R> withIndex(Stream<T> list, BiFunction<? super T, ? super Integer, ? extends R> zipper) {
+        return withIndex(list.collect(Collectors.toList()), zipper);
+    }
+
+    public static <T> Stream<Pair<T, Integer>> withIndex(Stream<T> list) {
+        return withIndex(list.collect(Collectors.toList()));
     }
 
     public static class StreamGobbler extends Thread {

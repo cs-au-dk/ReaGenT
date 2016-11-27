@@ -336,7 +336,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(IntersectionType t, ParameterMap parameterMap) {
-            return throwStatement(newCall(identifier("RuntimeError"), string("Not implemented yet, intersectionTypes"))); // TODO:
+            return throwStatement(newCall(identifier("RuntimeError"), string("Not implemented yet, intersectionTypes")));
         }
     }
 
@@ -388,14 +388,14 @@ public class TypeCreator {
             Statement functionBody = block(
                     variable("foundSignatures", array()),
                     // Checking each signature, to see if correct.
-                    block(Util.zip(IntStream.range(0, signatures.size()).boxed(), signatures).map(signaturePair -> {
-                        int signatureIndex = signaturePair.getLeft();
-                        Signature signature = signaturePair.getRight();
+                    block(Util.withIndex(signatures).map(signaturePair -> {
+                        int signatureIndex = signaturePair.getRight();
+                        Signature signature = signaturePair.getLeft();
                         return block(
                                 variable("signatureCorrect" + signatureIndex, call(function(block(
-                                        block(Util.zip(IntStream.range(0, signature.getParameters().size()).boxed(), signature.getParameters()).map(parameterPair -> {
-                                            Integer argIndex = parameterPair.getLeft();
-                                            Signature.Parameter arg = parameterPair.getRight();
+                                        block(Util.withIndex(signature.getParameters()).map(parameterPair -> {
+                                            Integer argIndex = parameterPair.getRight();
+                                            Signature.Parameter arg = parameterPair.getLeft();
 
                                             return block(
                                                     variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(arg.getType(), identifier("arg" + argIndex), interName + ".[arg" + argIndex + "]", Main.CHECK_DEPTH_FOR_UNIONS)),
@@ -440,9 +440,9 @@ public class TypeCreator {
                     comment("Save the arguments, and returns the value, of the correct overload. "),
                     switchCase(
                             arrayAccess(identifier("foundSignatures"), number(0)),
-                            Util.zip(IntStream.range(0, signatures.size()).boxed(), signatures).map(pair -> {
-                                Integer signatureIndex = pair.getLeft();
-                                Signature signature = pair.getRight();
+                            Util.withIndex(signatures).map(pair -> {
+                                Integer signatureIndex = pair.getRight();
+                                Signature signature = pair.getLeft();
                                 return new Pair<Expression, Statement>(
                                         number(signatureIndex),
                                         saveArgsAndReturnValue(signature, parameterMap)
@@ -459,10 +459,9 @@ public class TypeCreator {
     }
 
     private BlockStatement saveArgsAndReturnValue(Signature signature, ParameterMap parameterMap) {
-        List<Statement> saveArgumentValues = Util.zip(
-                IntStream.range(0, signature.getParameters().size()).boxed(),
+        List<Statement> saveArgumentValues = Util.withIndex(
                 signature.getParameters().stream().map(par -> createProducedValueVariable(par.getType(), parameterMap)),
-                (argIndex, valueIndex) -> {
+                (valueIndex, argIndex) -> {
                     return statement(binary(identifier(VALUE_VARIABLE_PREFIX + valueIndex), Operator.EQUAL, identifier("arg" + argIndex)));
                 }
         ).collect(Collectors.toList());
