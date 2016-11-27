@@ -353,7 +353,8 @@ public class TypeCreator {
             ).collect(Collectors.toList());
 
             BlockStatement functionBody = block(
-                    variable(identifier("typeChecked"), call(function(
+                    // Currently not using the information whether or not the signature was correct. The assertion-errors has already been reported anyway.
+                    variable(identifier("signatureCorrect"), call(function(
                             block(
                                     Util.concat(
                                             typeChecks,
