@@ -225,4 +225,8 @@ public class AstBuilder {
     public static ThrowStatement throwStatement(Expression exp) {
         return new ThrowStatement(null, exp);
     }
+
+    public static ConditionalExpression conditional(Expression cond, Expression then, Expression otherwise) {
+        return new ConditionalExpression(null, cond, then, otherwise);
+    }
 }

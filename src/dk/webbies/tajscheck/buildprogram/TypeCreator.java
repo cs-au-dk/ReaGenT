@@ -206,8 +206,27 @@ public class TypeCreator {
         public Statement visit(ReferenceType type, ParameterMap parameterMap) {
             if ("Array".equals(typeNames.get(type.getTarget()))) {
                 Type indexType = type.getTypeArguments().iterator().next();
-                Expression constructArrayElement = createType(indexType, parameterMap);
-                return Return(array(constructArrayElement, constructArrayElement, constructArrayElement)); // TODO: An at runtime random number of elements, from 0 to 5.
+                Expression constructElement = createType(indexType, parameterMap);
+
+
+                // An expression that returns an array with the correct type, with either 0, 1, 3, 4 or 5 elements in the array.
+                return Return(conditional(
+                        binary(call(identifier("random")), Operator.GREATER_THAN, number(0.8)),
+                        array(),
+                        conditional(
+                                binary(call(identifier("random")), Operator.GREATER_THAN, number(0.75)),
+                                array(constructElement),
+                                conditional(
+                                        binary(call(identifier("random")), Operator.GREATER_THAN, number(0.67)),
+                                        array(constructElement, constructElement, constructElement),
+                                        conditional(
+                                                binary(call(identifier("random")), Operator.GREATER_THAN, number(0.5)),
+                                                array(constructElement, constructElement, constructElement, constructElement),
+                                                array(constructElement, constructElement, constructElement, constructElement, constructElement)
+                                        )
+                                )
+                        )
+                ));
             }
 
             GenericType target = (GenericType) type.getTarget();
