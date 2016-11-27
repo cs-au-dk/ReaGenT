@@ -19,7 +19,6 @@ import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
 import static dk.webbies.tajscheck.paser.AstBuilder.*;
@@ -82,44 +81,40 @@ public class TypeCreator {
         return type.getParameterMap().isSubSetOf(candidate.getParameterMap());
     }
 
-    private Statement returnOneOfTypes(List<Type> types, boolean createNew, ParameterMap parameterMap) {
+    private Statement constructUnion(List<Type> types, ParameterMap parameterMap) {
         List<Integer> elements = types.stream().distinct().map((type) -> getTypeIndex(type, parameterMap)).collect(Collectors.toList());
 
-        return returnOneOfIndexes(elements, true, createNew);
+        if (elements.size() == 1) {
+            return Return(createType(elements.iterator().next()));
+        }
+
+        List<Pair<Expression, Statement>> cases = Util.withIndex(elements).map(pair -> {
+            return new Pair<Expression, Statement>(number(pair.getRight()), Return(createType(pair.getLeft())));
+        }).collect(Collectors.toList());
+
+        return block(
+                switchCase(
+                        binary(binary(call(identifier("random")), Operator.MULT, number(elements.size())), Operator.BITWISE_OR, number(0)),
+                        cases,
+                        block(
+                                comment("Unreachable"),
+                                Return(createType(elements.iterator().next()))
+                        )
+                )
+        );
     }
 
-    private Statement returnOneOfIndexes(Collection<Integer> elementsCollection, boolean fromTypes, boolean constructNew) {
+    private Statement returnOneOfExistingValues(Collection<Integer> elementsCollection) {
         List<Integer> elements = new ArrayList<>(elementsCollection);
         if (elements.size() == 1) {
             Integer index = elements.iterator().next();
-            if (fromTypes) {
-                if (constructNew) {
-                    return Return(createType(index));
-                } else {
-                    return Return(getType(index));
-                }
-            } else {
-                return Return(identifier(VALUE_VARIABLE_PREFIX + index));
-            }
+            return Return(identifier(VALUE_VARIABLE_PREFIX + index));
         }
 
-        List<Pair<Integer, Integer>> elementsWithIndex = new ArrayList<>();
-        for (int i = 0; i < elements.size(); i++) {
-            elementsWithIndex.add(new Pair<>(i, elements.get(i)));
-        }
-        List<Pair<Expression, Statement>> cases = elementsWithIndex.stream().map(pair -> {
-            Expression getValueOrType;
-            if (fromTypes) {
-                if (constructNew) {
-                    getValueOrType = createType(pair.getRight());
-                } else {
-                    getValueOrType = getType(pair.getRight());
-                }
-            } else {
-                getValueOrType = identifier(VALUE_VARIABLE_PREFIX + pair.getRight());
-            }
-            return new Pair<Expression, Statement>(number(pair.getLeft()), block(
-                    variable("result", getValueOrType),
+        List<Pair<Expression, Statement>> cases = Util.withIndex(elements).map(pair -> {
+            Expression getValue = identifier(VALUE_VARIABLE_PREFIX + pair.getLeft());
+            return new Pair<Expression, Statement>(number(pair.getRight()), block(
+                    variable("result", getValue),
                     ifThen(binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)), Return(identifier("result")))
             ));
         }).collect(Collectors.toList());
@@ -183,18 +178,8 @@ public class TypeCreator {
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
 
-            for (int i = 0; i < properties.size(); i++) {
-                Pair<String, Type> property = properties.get(i);
-                program.add(
-                        variable("objectResult_" + i, call(function(
-                                Return(createType(property.getRight(), parameterMap))
-                        )))
-                );
-                program.add(ifThenElse(
-                        binary(identifier("objectResult_" + i), Operator.EQUAL_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
-                        Return(identifier(VARIABLE_NO_VALUE)),
-                        statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, identifier("objectResult_" + i)))
-                ));
+            for (Pair<String, Type> property : properties) {
+                program.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, createType(property.getRight(), parameterMap))));
             }
 
             program.add(Return(identifier("result")));
@@ -280,7 +265,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(UnionType t, ParameterMap parameterMap) {
-            return returnOneOfTypes(t.getElements(), true, parameterMap);
+            return constructUnion(t.getElements(), parameterMap);
         }
 
         @Override
@@ -614,7 +599,7 @@ public class TypeCreator {
         } else if (values.isEmpty()) {
             returnTypeStatement = Return(identifier(VARIABLE_NO_VALUE));
         } else {
-            returnTypeStatement = returnOneOfIndexes(values, false, false);
+            returnTypeStatement = returnOneOfExistingValues(values);
         }
 
         ExpressionStatement getTypeFunction = statement(
