@@ -13,12 +13,12 @@ import static dk.webbies.tajscheck.benchmarks.Benchmark.LOAD_METHOD.NODE;
  */
 public class TestUnderscore {
 
-    @Ignore // TODO: Get this to work, first remove runtimeExceptions which are thrown, then limit the number of tests created, then re-introduce the runtimeExceptions.
+    @Ignore
     @Test
     public void genFullUnderscoreDriver() throws Exception {
         Benchmark underscore = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/underscore/underscore.js", "test/underscore/underscore.d.ts", "_", NODE);
 
-        String program = Main.generateFullDriver(underscore);
+        Main.writeFullDriver(underscore);
 
     }
 }
