@@ -165,4 +165,14 @@ public class UnitTests {
                 .expected(startsWith("a generic type marker"))
                 .got(JSON, is("\"foo\""));
     }
+
+    @Test
+    public void generics() throws Exception {
+        List<ParseResult> result = parseDriverResult(runDriver("generics", "someSeed"));
+
+        expect(result)
+                .forPath("module.foo().<>.value.foo")
+                .expected("string")
+                .got(JSON, is("123"));
+    }
 }
