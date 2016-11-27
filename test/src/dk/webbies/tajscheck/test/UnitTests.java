@@ -69,6 +69,10 @@ public class UnitTests {
         }
 
         public ParseResultTester expected(String type) {
+            return expected(is(type));
+        }
+
+        public ParseResultTester expected(Matcher<String> type) {
             for (ParseResult result : results) {
                 assertThat(result.expected, is(type));
             }
@@ -148,5 +152,17 @@ public class UnitTests {
         List<ParseResult> result = parseDriverResult(runDriver("simpleOverloads", "foo"));
 
         assertThat(result.size(), is(0));
+    }
+
+    @Test
+    public void genericClass() throws Exception {
+        List<ParseResult> result = parseDriverResult(runDriver("genericClass", "mySeed"));
+
+        assertThat(result.size(), is(1));
+
+        expect(result)
+                .forPath("module.Container.create().<>.value")
+                .expected(startsWith("a generic type marker"))
+                .got(JSON, is("\"foo\""));
     }
 }
