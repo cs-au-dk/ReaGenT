@@ -4,7 +4,6 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.util.Util;
-import sun.net.www.content.text.Generic;
 
 import java.util.*;
 import java.util.function.Function;
@@ -14,7 +13,7 @@ import java.util.stream.Collectors;
  * Created by erik1 on 01-11-2016.
  */
 public class TypesUtil {
-    public static ParameterMap generateParameterMap(ReferenceType ref) {
+    public static TypeContext generateParameterMap(ReferenceType ref) {
         List<Type> arguments = ref.getTypeArguments();
         Map<TypeParameterType, Type> parameterMap = new HashMap<>();
 
@@ -27,7 +26,7 @@ public class TypesUtil {
         for (int i = 0; i < arguments.size(); i++) {
             parameterMap.put(parameters.get(i), arguments.get(i));
         }
-        return new ParameterMap(parameterMap);
+        return new TypeContext().append(parameterMap);
     }
 
     private static void assertAboutTarget(Type untypedTarget) {
@@ -62,8 +61,8 @@ public class TypesUtil {
         }
     }
 
-    public static ParameterMap generateParameterMap(ReferenceType type, ParameterMap parameterMap) {
-        return parameterMap.append(generateParameterMap(type).getMap());
+    public static TypeContext generateParameterMap(ReferenceType type, TypeContext typeContext) {
+        return typeContext.append(generateParameterMap(type).getMap());
     }
 
     static Set<Type> collectNativeTypes(SpecReader spec, SpecReader emptySpec) {
@@ -92,39 +91,6 @@ public class TypesUtil {
         return nativeCollector.getSeen();
     }
 
-    public static ParameterMap filterParameterMap(ParameterMap parameterMap, Type type) {
-        return filterParameterMap(parameterMap, Collections.singletonList(type));
-    }
-
-    public static ParameterMap filterParameterMap(ParameterMap parameterMap, Collection<Type> types) {
-        CollectAllTypesVisitor visitor = new CollectAllTypesVisitor();
-        types.forEach(visitor::accept);
-        Set<Type> reachable = visitor.getSeen();
-
-        List<TypeParameterType> reachableTypeParameters = reachable.stream().filter(TypeParameterType.class::isInstance).map(typeparameter -> (TypeParameterType)typeparameter).collect(Collectors.toList());
-
-        List<TypeParameterType> keys = Util.intersection(reachableTypeParameters, parameterMap.keySet());
-
-        keys.stream().map(parameterMap::get).forEach(visitor::accept);
-
-        reachableTypeParameters = reachable.stream().filter(TypeParameterType.class::isInstance).map(typeparameter -> (TypeParameterType)typeparameter).collect(Collectors.toList());
-
-        List<TypeParameterType> keys2 = Util.intersection(reachableTypeParameters, parameterMap.keySet());
-
-        assert keys2.size() >= keys.size();
-
-        if (keys2.size() > keys.size()) {
-            List<Type> reachableTypes = new ArrayList<>();
-            reachableTypes.addAll(types);
-            reachableTypes.addAll(keys2);
-            return filterParameterMap(parameterMap, reachableTypes);
-        } else {
-            assert new HashSet<>(keys).equals(new HashSet<>(keys2));
-            Map<TypeParameterType, Type> map = keys.stream().collect(Collectors.toMap(Function.identity(), parameterMap::get));
-            return new ParameterMap(map);
-        }
-    }
-
     public static boolean isEmptyInterface(InterfaceType type) {
         return type.getDeclaredProperties().isEmpty() &&
                 type.getBaseTypes().isEmpty() &&
@@ -135,7 +101,7 @@ public class TypesUtil {
                 type.getDeclaredNumberIndexType() == null;
     }
 
-    public static List<Type> findRecursiveDefinition(TypeParameterType firstType, ParameterMap parameterMap, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer) {
+    public static List<Type> findRecursiveDefinition(TypeParameterType firstType, TypeContext typeContext, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer) {
         List<Type> constraints = new ArrayList<>();
 
         constraints.add(firstType.getConstraint());
@@ -147,11 +113,11 @@ public class TypesUtil {
             constraints.add(markerConstraint);
         }
 
-        Type type = parameterMap.get(firstType);
+        Type type = typeContext.get(firstType);
 
         Set<Type> seen = new HashSet<>();
 
-        while (type instanceof TypeParameterType && parameterMap.containsKey((TypeParameterType)type)) {
+        while (type instanceof TypeParameterType && typeContext.containsKey((TypeParameterType)type)) {
             if (type.equals(firstType)) {
                 return constraints; // There is an infinite loop, starting with firstType, return something satisfying the constraints.
             }
@@ -166,7 +132,7 @@ public class TypesUtil {
                 markerConstraint.getDeclaredProperties().put(markerField, new BooleanLiteral(true));
                 constraints.add(markerConstraint);
             }
-            type = parameterMap.get((TypeParameterType)type);
+            type = typeContext.get((TypeParameterType)type);
         }
 
         return new ArrayList<>();
@@ -313,7 +279,7 @@ public class TypesUtil {
                 return null;
             }
             seen.add(t);
-            
+
             return null;
         }
 

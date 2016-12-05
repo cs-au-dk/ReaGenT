@@ -2,14 +2,13 @@ package dk.webbies.tajscheck.buildprogram;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.reflect.TypeParameter;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
 import dk.webbies.tajscheck.Main;
-import dk.webbies.tajscheck.ParameterMap;
+import dk.webbies.tajscheck.TypeContext;
 import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.paser.AST.*;
@@ -49,11 +48,11 @@ public class TypeCreator {
     }
 
     private int valueCounter = 0;
-    int createProducedValueVariable(Type type, ParameterMap parameterMap) {
+    int createProducedValueVariable(Type type, TypeContext typeContext) {
         int index = valueCounter++;
         valueVariableDeclarationList.add(variable(VALUE_VARIABLE_PREFIX + index, identifier(VARIABLE_NO_VALUE)));
 
-        putProducedValueIndex(index, type, parameterMap);
+        putProducedValueIndex(index, type, typeContext);
         return index;
     }
 
@@ -61,20 +60,21 @@ public class TypeCreator {
         return valueVariableDeclarationList;
     }
 
-    private void putProducedValueIndex(int index, Type type, ParameterMap parameterMap) {
-        valueLocations.put(new TypeWithParameters(type, parameterMap), index);
+    private void putProducedValueIndex(int index, Type type, TypeContext typeContext) {
+        valueLocations.put(new TypeWithParameters(type, typeContext), index);
         if (type instanceof InterfaceType) {
             List<Type> baseTypes = ((InterfaceType) type).getBaseTypes();
-            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, parameterMap));
+            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext));
         } else if (type instanceof ReferenceType) {
-            putProducedValueIndex(index, ((ReferenceType) type).getTarget(), TypesUtil.generateParameterMap((ReferenceType) type, parameterMap));
+            putProducedValueIndex(index, ((ReferenceType) type).getTarget(), TypesUtil.generateParameterMap((ReferenceType) type, typeContext));
         } else if (type instanceof GenericType) {
-            putProducedValueIndex(index, ((GenericType) type).toInterface(), parameterMap);
+            putProducedValueIndex(index, ((GenericType) type).toInterface(), typeContext);
         } else if (type instanceof ClassType) {
             List<Type> baseTypes = ((ClassType) type).getBaseTypes();
-            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, parameterMap));
+            valueLocations.put(new TypeWithParameters(type, typeContext.withClass((ClassType) type)), index);
+            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext.withClass((ClassType) type)));
         } else if (type instanceof ClassInstanceType) {
-            putProducedValueIndex(index, ((ClassType)((ClassInstanceType) type).getClassType()).getInstanceType(), parameterMap);
+            putProducedValueIndex(index, ((ClassType)((ClassInstanceType) type).getClassType()).getInstanceType(), typeContext);
         } else if (type instanceof TypeParameterType || type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType || type instanceof NeverType) {
             // Do nothing.
         } else {
@@ -84,8 +84,8 @@ public class TypeCreator {
     }
 
 
-    private Statement constructUnion(List<Type> types, ParameterMap parameterMap) {
-        List<Integer> elements = types.stream().distinct().map((type) -> getTypeIndex(type, parameterMap)).collect(Collectors.toList());
+    private Statement constructUnion(List<Type> types, TypeContext typeContext) {
+        List<Integer> elements = types.stream().distinct().map((type) -> getTypeIndex(type, typeContext)).collect(Collectors.toList());
 
         if (elements.size() == 1) {
             return Return(createType(elements.iterator().next()));
@@ -134,37 +134,37 @@ public class TypeCreator {
         );
     }
 
-    private final class ConstructNewInstanceVisitor implements TypeVisitorWithArgument<Statement, ParameterMap> {
+    private final class ConstructNewInstanceVisitor implements TypeVisitorWithArgument<Statement, TypeContext> {
         @Override
-        public Statement visit(AnonymousType t, ParameterMap parameterMap) {
+        public Statement visit(AnonymousType t, TypeContext typeContext) {
             throw new RuntimeException();
         }
 
         @Override
-        public Statement visit(ClassType t, ParameterMap parameterMap) {
+        public Statement visit(ClassType t, TypeContext typeContext) {
             throw new RuntimeException();
         }
 
         @Override
-        public Statement visit(GenericType type, ParameterMap parameterMap) {
+        public Statement visit(GenericType type, TypeContext typeContext) {
             assert type.getTypeParameters().equals(type.getTypeArguments());
             if (nativeTypes.contains(type)) {
-                return constructTypeFromName(typeNames.get(type), parameterMap);
+                return constructTypeFromName(typeNames.get(type), typeContext);
             }
 
-            return type.toInterface().accept(this, parameterMap);
+            return type.toInterface().accept(this, typeContext);
         }
 
         @Override
-        public Statement visit(InterfaceType type, ParameterMap parameterMap) {
+        public Statement visit(InterfaceType type, TypeContext typeContext) {
             if (nativeTypes.contains(type) && !TypesUtil.isEmptyInterface(type)) {
-                return constructTypeFromName(typeNames.get(type), parameterMap);
+                return constructTypeFromName(typeNames.get(type), typeContext);
             }
 
 
-            Pair<InterfaceType, ParameterMap> pair = constructSyntheticInterfaceWithBaseTypes(type);
+            Pair<InterfaceType, TypeContext> pair = constructSyntheticInterfaceWithBaseTypes(type);
             InterfaceType inter = pair.getLeft();
-            parameterMap = parameterMap.append(pair.getRight());
+            typeContext = typeContext.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
 
             assert inter.getDeclaredStringIndexType() == null;
@@ -176,13 +176,13 @@ public class TypeCreator {
             if (returnTypes.isEmpty()) {
                 program.add(variable("result", object()));
             } else {
-                program.add(variable("result", createFunction(inter, parameterMap)));
+                program.add(variable("result", createFunction(inter, typeContext)));
             }
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
 
             for (Pair<String, Type> property : properties) {
-                program.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, createType(property.getRight(), parameterMap))));
+                program.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, createType(property.getRight(), typeContext))));
             }
 
             program.add(Return(identifier("result")));
@@ -191,10 +191,10 @@ public class TypeCreator {
         }
 
         @Override
-        public Statement visit(ReferenceType type, ParameterMap parameterMap) {
+        public Statement visit(ReferenceType type, TypeContext typeContext) {
             if ("Array".equals(typeNames.get(type.getTarget()))) {
                 Type indexType = type.getTypeArguments().iterator().next();
-                Expression constructElement = createType(indexType, parameterMap);
+                Expression constructElement = createType(indexType, typeContext);
 
 
                 // An expression that returns an array with the correct type, with either 0, 1, 3, 4 or 5 elements in the array.
@@ -219,11 +219,11 @@ public class TypeCreator {
 
             GenericType target = (GenericType) type.getTarget();
 
-            return constructNewInstanceOfType(target.toInterface(), TypesUtil.generateParameterMap(type, parameterMap));
+            return constructNewInstanceOfType(target.toInterface(), TypesUtil.generateParameterMap(type, typeContext));
         }
 
         @Override
-        public Statement visit(SimpleType simple, ParameterMap parameterMap) {
+        public Statement visit(SimpleType simple, TypeContext typeContext) {
             switch (simple.getKind()) {
                 case String:
                     // Math.random().toString(36).substring(Math.random() * 20);
@@ -262,35 +262,35 @@ public class TypeCreator {
         }
 
         @Override
-        public Statement visit(TupleType t, ParameterMap parameterMap) {
+        public Statement visit(TupleType t, TypeContext typeContext) {
             throw new RuntimeException();
         }
 
         @Override
-        public Statement visit(UnionType t, ParameterMap parameterMap) {
-            return constructUnion(t.getElements(), parameterMap);
+        public Statement visit(UnionType t, TypeContext typeContext) {
+            return constructUnion(t.getElements(), typeContext);
         }
 
         @Override
-        public Statement visit(UnresolvedType t, ParameterMap parameterMap) {
+        public Statement visit(UnresolvedType t, TypeContext typeContext) {
             throw new RuntimeException();
         }
 
         @Override
-        public Statement visit(TypeParameterType type, ParameterMap parameterMap) {
-            if (parameterMap.containsKey(type)) {
-                if (!TypesUtil.findRecursiveDefinition(type, parameterMap, typeParameterIndexer).isEmpty()) {
+        public Statement visit(TypeParameterType type, TypeContext typeContext) {
+            if (typeContext.containsKey(type)) {
+                if (!TypesUtil.findRecursiveDefinition(type, typeContext, typeParameterIndexer).isEmpty()) {
                     IntersectionType intersection = new IntersectionType();
-                    intersection.setElements(TypesUtil.findRecursiveDefinition(type, parameterMap, typeParameterIndexer));
+                    intersection.setElements(TypesUtil.findRecursiveDefinition(type, typeContext, typeParameterIndexer));
 
-                    return constructNewInstanceOfType(intersection, parameterMap);
+                    return constructNewInstanceOfType(intersection, typeContext);
                 }
 
-                return constructNewInstanceOfType(parameterMap.get(type), parameterMap);
+                return constructNewInstanceOfType(typeContext.get(type), typeContext);
             }
             String markerField = typeParameterIndexer.getMarkerField(type);
             return block(
-                    variable("result", call(function(constructNewInstanceOfType(type.getConstraint(), parameterMap)))),
+                    variable("result", call(function(constructNewInstanceOfType(type.getConstraint(), typeContext)))),
                     ifThen(
                             binary(unary(Operator.TYPEOF, identifier("result")), Operator.NOT_EQUAL_EQUAL, string("object")),
                             throwStatement(newCall(identifier(RUNTIME_ERROR_NAME)))
@@ -303,42 +303,42 @@ public class TypeCreator {
         }
 
         @Override
-        public Statement visit(SymbolType t, ParameterMap parameterMap) {
+        public Statement visit(SymbolType t, TypeContext typeContext) {
             throw new RuntimeException();
         }
 
         @Override
-        public Statement visit(StringLiteral str, ParameterMap parameterMap) {
+        public Statement visit(StringLiteral str, TypeContext typeContext) {
             return Return(string(str.getText()));
         }
 
         @Override
-        public Statement visit(BooleanLiteral t, ParameterMap parameterMap) {
+        public Statement visit(BooleanLiteral t, TypeContext typeContext) {
             return Return(bool(t.getValue()));
         }
 
         @Override
-        public Statement visit(NumberLiteral t, ParameterMap parameterMap) {
+        public Statement visit(NumberLiteral t, TypeContext typeContext) {
             return Return(number(t.getValue()));
         }
 
         @Override
-        public Statement visit(IntersectionType t, ParameterMap parameterMap) {
+        public Statement visit(IntersectionType t, TypeContext typeContext) {
             return throwStatement(newCall(identifier(RUNTIME_ERROR_NAME), string("Not implemented yet, intersectionTypes")));
         }
 
         @Override
-        public Statement visit(ClassInstanceType t, ParameterMap parameterMap) {
-            return ((ClassType) t.getClassType()).getInstanceType().accept(this, parameterMap);
+        public Statement visit(ClassInstanceType t, TypeContext typeContext) {
+            return ((ClassType) t.getClassType()).getInstanceType().accept(this, typeContext);
         }
 
         @Override
-        public Statement visit(NeverType t, ParameterMap parameterMap) {
+        public Statement visit(NeverType t, TypeContext typeContext) {
             return throwStatement(newCall(identifier("Error"), string("This is a correct result of a never-type")));
         }
     }
 
-    private FunctionExpression createFunction(InterfaceType inter, ParameterMap parameterMap) {
+    private FunctionExpression createFunction(InterfaceType inter, TypeContext typeContext) {
         List<Signature> signatures = Util.concat(inter.getDeclaredCallSignatures(), inter.getDeclaredConstructSignatures());
 
         assert signatures.size() > 0;
@@ -350,7 +350,7 @@ public class TypeCreator {
             args.add("arg" + i);
         }
 
-        CheckType typeChecker = new CheckType(nativeTypes, typeNames, typeParameterIndexer, parameterMap);
+        CheckType typeChecker = new CheckType(nativeTypes, typeNames, typeParameterIndexer, typeContext);
 
         String interName = typeNames.get(inter);
         assert interName != null;
@@ -375,7 +375,7 @@ public class TypeCreator {
                                     )
                             )
                     ))),
-                    saveArgsAndReturnValue(signature, parameterMap)
+                    saveArgsAndReturnValue(signature, typeContext)
             );
 
 
@@ -443,7 +443,7 @@ public class TypeCreator {
                                 Signature signature = pair.getLeft();
                                 return new Pair<Expression, Statement>(
                                         number(signatureIndex),
-                                        saveArgsAndReturnValue(signature, parameterMap)
+                                        saveArgsAndReturnValue(signature, typeContext)
                                 );
                             }).collect(Collectors.toList())
                     )
@@ -456,9 +456,9 @@ public class TypeCreator {
         }
     }
 
-    private BlockStatement saveArgsAndReturnValue(Signature signature, ParameterMap parameterMap) {
+    private BlockStatement saveArgsAndReturnValue(Signature signature, TypeContext typeContext) {
         List<Statement> saveArgumentValues = Util.withIndex(
-                signature.getParameters().stream().map(par -> createProducedValueVariable(par.getType(), parameterMap)),
+                signature.getParameters().stream().map(par -> createProducedValueVariable(par.getType(), typeContext)),
                 (valueIndex, argIndex) -> {
                     return statement(binary(identifier(VALUE_VARIABLE_PREFIX + valueIndex), Operator.EQUAL, identifier("arg" + argIndex)));
                 }
@@ -466,20 +466,20 @@ public class TypeCreator {
 
         return block(
                 block(saveArgumentValues),
-                Return(createType(signature.getResolvedReturnType(), parameterMap))
+                Return(createType(signature.getResolvedReturnType(), typeContext))
         );
     }
 
 
-    private Statement constructTypeFromName(String name, ParameterMap parameterMap) {
+    private Statement constructTypeFromName(String name, TypeContext typeContext) {
         if (name == null) {
             throw new NullPointerException();
         }
         switch (name) {
             case "Object":
-                return constructNewInstanceOfType(SpecReader.makeEmptySyntheticInterfaceType(), parameterMap);
+                return constructNewInstanceOfType(SpecReader.makeEmptySyntheticInterfaceType(), typeContext);
             case "Number":
-                return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.Number), parameterMap);
+                return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.Number), typeContext);
             case "Date":
                 return Return(newCall(identifier("Date")));
             case "Function":
@@ -490,14 +490,14 @@ public class TypeCreator {
                 callSignature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
                 interfaceWithSimpleFunction.getDeclaredCallSignatures().add(callSignature);
                 typeNames.put(interfaceWithSimpleFunction, "Function");
-                return constructNewInstanceOfType(interfaceWithSimpleFunction, parameterMap);
+                return constructNewInstanceOfType(interfaceWithSimpleFunction, typeContext);
             case "Error":
                 return Return(newCall(identifier("Error")));
             case "RegExp":
-                Expression constructString = call(function(constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), new ParameterMap())));
+                Expression constructString = call(function(constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), new TypeContext())));
                 return Return(newCall(identifier("RegExp"), constructString));
             case "String":
-                return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), parameterMap);
+                return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), typeContext);
             case "HTMLCanvasElement":
                 return AstBuilder.programFromString("return document.createElement('canvas')");
             case "HTMLVideoElement":
@@ -548,16 +548,16 @@ public class TypeCreator {
     }
 
 
-    private Statement constructNewInstanceOfType(Type type, ParameterMap parameterMap) {
-        return type.accept(new ConstructNewInstanceVisitor(), parameterMap);
+    private Statement constructNewInstanceOfType(Type type, TypeContext typeContext) {
+        return type.accept(new ConstructNewInstanceVisitor(), typeContext);
     }
 
-    private Pair<InterfaceType, ParameterMap> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter) {
+    private Pair<InterfaceType, TypeContext> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter) {
         if (inter.getBaseTypes().isEmpty()) {
-            return new Pair<>(inter, new ParameterMap());
+            return new Pair<>(inter, new TypeContext());
         }
 //        assert inter.getTypeParameters().isEmpty(); // This should only happen when constructed from a generic/reference type, and in that case we have handled the TypeParameters.
-        Map<TypeParameterType, Type> newParameters = new ParameterMap().getMap();
+        Map<TypeParameterType, Type> newParameters = new TypeContext().getMap();
         InterfaceType result = SpecReader.makeEmptySyntheticInterfaceType();
         typeNames.put(result, typeNames.get(inter));
         inter.getBaseTypes().forEach(subType -> {
@@ -568,7 +568,7 @@ public class TypeCreator {
             if (subType instanceof GenericType) {
                 subType = ((GenericType) subType).toInterface();
             }
-            Pair<InterfaceType, ParameterMap> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) subType);
+            Pair<InterfaceType, TypeContext> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) subType);
             newParameters.putAll(pair.getRight().getMap());
             InterfaceType type = pair.getLeft();
             result.getDeclaredCallSignatures().addAll((type.getDeclaredCallSignatures()));
@@ -591,11 +591,11 @@ public class TypeCreator {
                 result.getDeclaredProperties().put(entry.getKey(), entry.getValue());
             }
         });
-        return new Pair<>(result, new ParameterMap().append(newParameters));
+        return new Pair<>(result, new TypeContext().append(newParameters));
     }
 
-    public CallExpression getType(Type type, ParameterMap parameterMap) {
-        int index = getTypeIndex(type, parameterMap);
+    public CallExpression getType(Type type, TypeContext typeContext) {
+        int index = getTypeIndex(type, typeContext);
 
         return getType(index);
     }
@@ -604,8 +604,8 @@ public class TypeCreator {
         return call(identifier(GET_TYPE_PREFIX + index));
     }
 
-    public CallExpression createType(Type type, ParameterMap parameterMap) {
-        int index = getTypeIndex(type, parameterMap);
+    public CallExpression createType(Type type, TypeContext typeContext) {
+        int index = getTypeIndex(type, typeContext);
 
         addConstructInstanceFunction(index);
 
@@ -614,13 +614,13 @@ public class TypeCreator {
 
     public CallExpression createType(int index) {
         TypeWithParameters typeWithParameters = typeIndexes.inverse().get(index);
-        return createType(typeWithParameters.getType(), typeWithParameters.getParameterMap());
+        return createType(typeWithParameters.getType(), typeWithParameters.getTypeContext());
     }
 
-    private int getTypeIndex(Type type, ParameterMap parameterMap) {
-//        ParameterMap parameterMap = TypesUtil.filterParameterMap(unFilteredParameterMap, type);
+    private int getTypeIndex(Type type, TypeContext typeContext) {
+//        TypeContext typeContext = TypesUtil.filterParameterMap(unFilteredParameterMap, type);
 
-        TypeWithParameters key = new TypeWithParameters(type, parameterMap);
+        TypeWithParameters key = new TypeWithParameters(type, typeContext);
         if (typeIndexes.containsKey(key)) {
             return typeIndexes.get(key);
         } else {
@@ -639,15 +639,15 @@ public class TypeCreator {
 
     public void finish() {
         for (TypeWithParameters type : getTypeFunctionQueue) {
-            addGetTypeFunction(type.getType(), type.getParameterMap());
+            addGetTypeFunction(type.getType(), type.getTypeContext());
         }
     }
 
-    private int addGetTypeFunction(Type type, ParameterMap parameterMap) {
-        int value = typeIndexes.get(new TypeWithParameters(type, parameterMap));
+    private int addGetTypeFunction(Type type, TypeContext typeContext) {
+        int value = typeIndexes.get(new TypeWithParameters(type, typeContext));
 
         Collection<Integer> values = valueLocations.keySet().stream()
-                .filter(candidate -> type.equals(candidate.getType()) && parameterMap.equals(candidate.getParameterMap()))
+                .filter(candidate -> type.equals(candidate.getType()) && typeContext.equals(candidate.getTypeContext()))
                 .map(valueLocations::get)
                 .reduce(new ArrayList<>(), Util::reduceCollection);
 
@@ -681,7 +681,7 @@ public class TypeCreator {
 
         TypeWithParameters typeWithParameters = typeIndexes.inverse().get(index);
         Type type = typeWithParameters.getType();
-        ParameterMap parameterMap = typeWithParameters.getParameterMap();
+        TypeContext typeContext = typeWithParameters.getTypeContext();
 
         ExpressionStatement constructNewInstanceFunction = statement(
                 function(
@@ -695,7 +695,7 @@ public class TypeCreator {
                                                 binary(call(identifier("random")), Operator.GREATER_THAN, number(0.5))
                                         ),
                                         Return(identifier("existingValue")),
-                                        this.constructNewInstanceOfType(type, parameterMap)
+                                        this.constructNewInstanceOfType(type, typeContext)
                                 )
                         )
                 )

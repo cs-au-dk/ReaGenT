@@ -7,19 +7,19 @@ import dk.au.cs.casa.typescript.types.Type;
  */
 public class TypeWithParameters {
     private final Type type;
-    private final ParameterMap parameterMap;
+    private final TypeContext typeContext;
 
-    public TypeWithParameters(Type type, ParameterMap parameterMap) {
+    public TypeWithParameters(Type type, TypeContext typeContext) {
         this.type = type;
-        this.parameterMap = parameterMap;
+        this.typeContext = typeContext;
     }
 
     public Type getType() {
         return type;
     }
 
-    public ParameterMap getParameterMap() {
-        return parameterMap;
+    public TypeContext getTypeContext() {
+        return typeContext;
     }
 
     @Override
@@ -30,14 +30,14 @@ public class TypeWithParameters {
         TypeWithParameters that = (TypeWithParameters) o;
 
         if (!type.equals(that.type)) return false;
-        return parameterMap.equals(that.parameterMap);
+        return typeContext.equals(that.typeContext);
 
     }
 
     @Override
     public int hashCode() {
         int result = type.hashCode();
-        result = 31 * result + parameterMap.hashCode();
+        result = 31 * result + typeContext.hashCode();
         return result;
     }
 }

@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.ParameterMap;
+import dk.webbies.tajscheck.TypeContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,8 +13,8 @@ public class ConstructorCallTest extends Test {
     private final Type function;
     private List<Type> parameters;
 
-    public ConstructorCallTest(Type function, List<Type> parameters, Type returnType, String path, ParameterMap parameterMap) {
-        super(Collections.singletonList(function), parameters, returnType, path + "[new]()", parameterMap);
+    public ConstructorCallTest(Type function, List<Type> parameters, Type returnType, String path, TypeContext typeContext) {
+        super(Collections.singletonList(function), parameters, returnType, path + "[new]()", typeContext);
         this.function = function;
         this.parameters = parameters;
     }

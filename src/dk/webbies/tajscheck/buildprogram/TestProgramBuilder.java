@@ -159,14 +159,14 @@ public class TestProgramBuilder {
                                 binary(
                                         identifier("module"),
                                         Operator.EQUAL,
-                                        typeCreator.getType(moduleType, new ParameterMap())
+                                        typeCreator.getType(moduleType, new TypeContext())
                                 ),
                                 Operator.EQUAL_EQUAL_EQUAL,
                                 identifier(VARIABLE_NO_VALUE)
                         ),
                         Return()
                 ),
-                new CheckType(nativeTypes, typeNames, typeParameterIndexer, new ParameterMap()).assertResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
+                new CheckType(nativeTypes, typeNames, typeParameterIndexer, new TypeContext()).assertResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
 
         )));
     }
@@ -196,16 +196,16 @@ public class TestProgramBuilder {
 
         List<Type> produces = new ArrayList<>(test.getProduces());
         Statement saveResultStatement;
-        CheckType checkType = new CheckType(nativeTypes, typeNames, typeParameterIndexer, test.getParameterMap());
+        CheckType checkType = new CheckType(nativeTypes, typeNames, typeParameterIndexer, test.getTypeContext());
         if (produces.size() == 1) {
             Type product = produces.iterator().next();
-            int index = typeCreator.createProducedValueVariable(product, test.getParameterMap());
+            int index = typeCreator.createProducedValueVariable(product, test.getTypeContext());
             saveResultStatement = block(
                     checkType.assertResultingType(product, identifier("result"), test.getPath(), Main.CHECK_DEPTH),
                     statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result")))
             );
         } else {
-            List<Integer> valueIndexes = produces.stream().map(type -> typeCreator.createProducedValueVariable(type, test.getParameterMap())).collect(Collectors.toList());
+            List<Integer> valueIndexes = produces.stream().map(type -> typeCreator.createProducedValueVariable(type, test.getTypeContext())).collect(Collectors.toList());
 
             saveResultStatement = block(
                     variable("passedResults", array()),
@@ -287,12 +287,12 @@ public class TestProgramBuilder {
     private Collection<Statement> checkDependencies(Test test) {
         List<Statement> result = new ArrayList<>();
 
-        ParameterMap parameterMap = test.getParameterMap();
+        TypeContext typeContext = test.getTypeContext();
 
         test.getTypeToTest().stream().map((type) ->
                 ifThen(
                         binary(
-                                typeCreator.getType(type, parameterMap),
+                                typeCreator.getType(type, typeContext),
                                 Operator.EQUAL_EQUAL_EQUAL,
                                 identifier(VARIABLE_NO_VALUE)
                         ),
@@ -307,9 +307,9 @@ public class TestProgramBuilder {
      * And the result of the test should be put into a variable "result".
      */
     private class TestBuilderVisitor implements TestVisitor<List<Statement>> {
-        Expression getTypeExpression(Type type, ParameterMap parameterMap) {
+        Expression getTypeExpression(Type type, TypeContext typeContext) {
             return call(function(block(
-                    variable("base", typeCreator.getType(type, parameterMap)),
+                    variable("base", typeCreator.getType(type, typeContext)),
                     ifThenElse(
                             binary(identifier("base"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
                             Return(identifier("base")),
@@ -321,7 +321,7 @@ public class TestProgramBuilder {
         @Override
         public List<Statement> visit(MemberAccessTest test) {
             List<Statement> result = new ArrayList<>();
-            result.add(variable("base", getTypeExpression(test.getBaseType(), test.getParameterMap())));
+            result.add(variable("base", getTypeExpression(test.getBaseType(), test.getTypeContext())));
             if (Util.isInteger(test.getProperty())) {
                 result.add(variable("result", arrayAccess(identifier("base"), number(Integer.parseInt(test.getProperty())))));
             } else {
@@ -346,7 +346,7 @@ public class TestProgramBuilder {
                     );
                 case BOOTSTRAP:
                     return Collections.singletonList(
-                            variable("result", typeCreator.createType(test.getModuleType(), test.getParameterMap()))
+                            variable("result", typeCreator.createType(test.getModuleType(), test.getTypeContext()))
                     );
                 default:
                     throw new RuntimeException();
@@ -357,10 +357,10 @@ public class TestProgramBuilder {
         public List<Statement> visit(MethodCallTest test) {
             List<Statement> result = new ArrayList<>();
 
-            result.add(variable("base", getTypeExpression(test.getObject(), test.getParameterMap())));
+            result.add(variable("base", getTypeExpression(test.getObject(), test.getTypeContext())));
 
             List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
-                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getParameterMap())));
+                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getTypeContext())));
                 return identifier("argument_" + index);
             }).collect(Collectors.toList());
 
@@ -375,10 +375,10 @@ public class TestProgramBuilder {
         public List<Statement> visit(ConstructorCallTest test) {
             List<Statement> result = new ArrayList<>();
 
-            result.add(variable("base", getTypeExpression(test.getFunction(), test.getParameterMap())));
+            result.add(variable("base", getTypeExpression(test.getFunction(), test.getTypeContext())));
 
             List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
-                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getParameterMap())));
+                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getTypeContext())));
                 return identifier("argument_" + index);
             }).collect(Collectors.toList());
 
@@ -392,10 +392,10 @@ public class TestProgramBuilder {
         public List<Statement> visit(FunctionCallTest test) {
             List<Statement> result = new ArrayList<>();
 
-            result.add(variable("base", getTypeExpression(test.getFunction(), test.getParameterMap())));
+            result.add(variable("base", getTypeExpression(test.getFunction(), test.getTypeContext())));
 
             List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
-                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getParameterMap())));
+                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getTypeContext())));
                 return identifier("argument_" + index);
             }).collect(Collectors.toList());
 
@@ -408,7 +408,7 @@ public class TestProgramBuilder {
         @Override
         public List<Statement> visit(FilterTest test) {
             return Arrays.asList(
-                    variable("result", getTypeExpression(test.getType(), test.getParameterMap())),
+                    variable("result", getTypeExpression(test.getType(), test.getTypeContext())),
                     ifThen(
                             CheckToExpression.generate(Check.not(test.getCheck()), identifier("result")),
                             Return()
@@ -420,7 +420,7 @@ public class TestProgramBuilder {
         public List<Statement> visit(UnionTypeTest test) {
             // Looks trivial, but that is because everything complicated is handled by the method calling this visitor.
             return Collections.singletonList(
-                    variable("result", getTypeExpression(test.getGetUnionType(), test.getParameterMap()))
+                    variable("result", getTypeExpression(test.getGetUnionType(), test.getTypeContext()))
             );
         }
 

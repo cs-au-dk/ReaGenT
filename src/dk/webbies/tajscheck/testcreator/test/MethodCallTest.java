@@ -1,8 +1,7 @@
 package dk.webbies.tajscheck.testcreator.test;
 
-import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.ParameterMap;
+import dk.webbies.tajscheck.TypeContext;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,8 +14,8 @@ public class MethodCallTest extends Test {
     private final String propertyName;
     private List<Type> parameters;
 
-    public MethodCallTest(Type object, Type function, String propertyName, List<Type> parameters, Type returnType, String path, ParameterMap parameterMap) {
-        super(Arrays.asList(object, function), parameters, returnType, path + "()", parameterMap);
+    public MethodCallTest(Type object, Type function, String propertyName, List<Type> parameters, Type returnType, String path, TypeContext typeContext) {
+        super(Arrays.asList(object, function), parameters, returnType, path + "()", typeContext);
         this.object = object;
         this.propertyName = propertyName;
         this.parameters = parameters;

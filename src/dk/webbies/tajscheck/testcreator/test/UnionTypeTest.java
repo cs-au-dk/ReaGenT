@@ -2,7 +2,7 @@ package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.UnionType;
-import dk.webbies.tajscheck.ParameterMap;
+import dk.webbies.tajscheck.TypeContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,8 +14,8 @@ import java.util.List;
 public class UnionTypeTest extends Test {
     private UnionType unionType;
 
-    public UnionTypeTest(UnionType unionType, List<Type> elements, String path, ParameterMap parameterMap) {
-        super(Collections.singletonList(unionType), new ArrayList<>(), elements, path, parameterMap);
+    public UnionTypeTest(UnionType unionType, List<Type> elements, String path, TypeContext typeContext) {
+        super(Collections.singletonList(unionType), new ArrayList<>(), elements, path, typeContext);
         this.unionType = unionType;
     }
 

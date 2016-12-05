@@ -1,8 +1,10 @@
 package dk.webbies.tajscheck;
 
+import dk.au.cs.casa.typescript.types.ClassType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -10,23 +12,29 @@ import java.util.Set;
 /**
  * Created by erik1 on 14-11-2016.
  */
-public class ParameterMap {
+public class TypeContext {
     private final Map<TypeParameterType, Type> map;
+    private final ClassType classType;
 
-    public ParameterMap() {
-        this.map = new HashMap<>();
+    public TypeContext() {
+        this.map = Collections.emptyMap();
+        this.classType = null;
     }
 
-    ParameterMap(Map<TypeParameterType, Type> map) {
+    TypeContext(Map<TypeParameterType, Type> map, ClassType classType) {
         this.map = map;
+        this.classType = classType;
     }
 
-    public ParameterMap append(Map<TypeParameterType, Type> newParameters) {
+    public TypeContext append(Map<TypeParameterType, Type> newParameters) {
         Map<TypeParameterType, Type> newMap = new HashMap<>(this.map);
         newMap.putAll(newParameters);
-        return new ParameterMap(newMap);
+        return new TypeContext(newMap, this.classType);
     }
 
+    public TypeContext withClass(ClassType classType) {
+        return new TypeContext(this.map, classType);
+    }
 
     public boolean containsKey(TypeParameterType parameter) {
         return map.containsKey(parameter);
@@ -36,7 +44,7 @@ public class ParameterMap {
         return map.get(parameter);
     }
 
-    public Set<TypeParameterType> keySet() {
+    Set<TypeParameterType> keySet() {
         return map.keySet();
     }
 
@@ -44,11 +52,15 @@ public class ParameterMap {
         return map;
     }
 
+    public ClassType getClassType() {
+        return classType;
+    }
+
     public Set<Map.Entry<TypeParameterType, Type>> entrySet() {
         return map.entrySet();
     }
 
-    public ParameterMap append(ParameterMap other) {
+    public TypeContext append(TypeContext other) {
         return append(other.getMap());
     }
 
@@ -57,7 +69,7 @@ public class ParameterMap {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ParameterMap that = (ParameterMap) o;
+        TypeContext that = (TypeContext) o;
 
         return map.equals(that.map);
 

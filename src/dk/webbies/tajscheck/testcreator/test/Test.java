@@ -1,9 +1,7 @@
 package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.ParameterMap;
-import dk.webbies.tajscheck.TypesUtil;
-import dk.webbies.tajscheck.util.Util;
+import dk.webbies.tajscheck.TypeContext;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -16,18 +14,18 @@ public abstract class Test {
     private final Collection<Type> dependsOn;
     private final Collection<Type> produces;
     private String path;
-    private final ParameterMap parameterMap;
+    private final TypeContext typeContext;
 
-    protected Test(Collection<Type> typeToTest, Collection<Type> dependsOn, Type produces, String path, ParameterMap parameterMap) {
-        this(typeToTest, dependsOn, Collections.singletonList(produces), path, parameterMap);
+    protected Test(Collection<Type> typeToTest, Collection<Type> dependsOn, Type produces, String path, TypeContext typeContext) {
+        this(typeToTest, dependsOn, Collections.singletonList(produces), path, typeContext);
     }
 
-    protected Test(Collection<Type> typeToTest, Collection<Type> dependsOn, Collection<Type> produces, String path, ParameterMap parameterMap) {
+    protected Test(Collection<Type> typeToTest, Collection<Type> dependsOn, Collection<Type> produces, String path, TypeContext typeContext) {
         this.typeToTest = typeToTest;
         this.dependsOn = dependsOn;
         this.produces = produces;
         this.path = path;
-        this.parameterMap = parameterMap;
+        this.typeContext = typeContext;
     }
 
     public Collection<Type> getDependsOn() {
@@ -66,7 +64,7 @@ public abstract class Test {
         if (!typeToTest.equals(test.typeToTest)) return false;
         if (!dependsOn.equals(test.dependsOn)) return false;
         if (!produces.equals(test.produces)) return false;
-        return parameterMap.equals(test.parameterMap);
+        return typeContext.equals(test.typeContext);
     }
 
     public abstract boolean equalsNoPath(Object o);
@@ -75,13 +73,13 @@ public abstract class Test {
         int result = typeToTest.hashCode();
         result = 31 * result + dependsOn.hashCode();
         result = 31 * result + produces.hashCode();
-        result = 31 * result + parameterMap.hashCode();
+        result = 31 * result + typeContext.hashCode();
         return result;
     }
 
     public abstract int hashCodeNoPath();
 
-    public ParameterMap getParameterMap() {
-        return parameterMap;
+    public TypeContext getTypeContext() {
+        return typeContext;
     }
 }

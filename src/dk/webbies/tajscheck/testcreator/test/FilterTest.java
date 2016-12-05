@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.ParameterMap;
+import dk.webbies.tajscheck.TypeContext;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 
 import java.util.Collections;
@@ -13,8 +13,8 @@ public class FilterTest extends Test {
     private Type type;
     private Check check;
 
-    public FilterTest(Type type, Type produces, String path, ParameterMap parameterMap, Check check) {
-        super(Collections.singletonList(type), Collections.EMPTY_LIST, produces, path, parameterMap);
+    public FilterTest(Type type, Type produces, String path, TypeContext typeContext, Check check) {
+        super(Collections.singletonList(type), Collections.EMPTY_LIST, produces, path, typeContext);
         this.type = type;
         this.check = check;
     }

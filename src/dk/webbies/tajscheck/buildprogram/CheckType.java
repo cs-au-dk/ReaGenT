@@ -4,7 +4,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
-import dk.webbies.tajscheck.ParameterMap;
+import dk.webbies.tajscheck.TypeContext;
 import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
@@ -26,17 +26,17 @@ public class CheckType {
     private final Set<Type> nativeTypes;
     private Map<Type, String> typeNames;
     private TestProgramBuilder.TypeParameterIndexer typeParameterIndexer;
-    private ParameterMap parameterMap;
+    private TypeContext typeContext;
 
-    public CheckType(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, ParameterMap parameterMap) {
+    public CheckType(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, TypeContext typeContext) {
         this.nativeTypes = nativeTypes;
         this.typeNames = typeNames;
         this.typeParameterIndexer = typeParameterIndexer;
-        this.parameterMap = parameterMap;
+        this.typeContext = typeContext;
     }
 
     public Statement assertResultingType(Type type, Expression exp, String path, int depth) {
-        List<TypeCheck> typeChecks = type.accept(new CreateTypeCheckVisitor(nativeTypes, typeParameterIndexer, typeNames), new Arg(parameterMap, depth));
+        List<TypeCheck> typeChecks = type.accept(new CreateTypeCheckVisitor(nativeTypes, typeParameterIndexer, typeNames), new Arg(typeContext, depth));
 
         return block(
                 variable("typeChecked", bool(true)),
@@ -65,7 +65,7 @@ public class CheckType {
     }
 
     public String getTypeDescription(Type type, int depth) {
-        List<TypeCheck> result = type.accept(new CreateTypeCheckVisitor(nativeTypes, typeParameterIndexer, typeNames), new Arg(parameterMap, depth));
+        List<TypeCheck> result = type.accept(new CreateTypeCheckVisitor(nativeTypes, typeParameterIndexer, typeNames), new Arg(typeContext, depth));
         return createIntersection(result).getExpected();
     }
 
@@ -92,20 +92,20 @@ public class CheckType {
     }
 
     private static final class Arg {
-        final ParameterMap parameterMap;
+        final TypeContext typeContext;
         final int depthRemaining;
 
-        private Arg(ParameterMap parameterMap, int depthRemaining) {
-            this.parameterMap = parameterMap;
+        private Arg(TypeContext typeContext, int depthRemaining) {
+            this.typeContext = typeContext;
             this.depthRemaining = depthRemaining;
         }
 
-        public Arg withParameters(ParameterMap map) {
+        public Arg withParameters(TypeContext map) {
             return new Arg(map, this.depthRemaining);
         }
 
         public Arg decreaseDepth() {
-            return new Arg(this.parameterMap, this.depthRemaining - 1);
+            return new Arg(this.typeContext, this.depthRemaining - 1);
         }
     }
 
@@ -257,7 +257,7 @@ public class CheckType {
             if (nativeTypes.contains(t.getTarget())) {
                 throw new RuntimeException();
             }
-            return t.getTarget().accept(this, arg.withParameters(arg.parameterMap.append(TypesUtil.generateParameterMap(t))));
+            return t.getTarget().accept(this, arg.withParameters(arg.typeContext.append(TypesUtil.generateParameterMap(t))));
         }
 
         @Override
@@ -312,16 +312,16 @@ public class CheckType {
         public List<TypeCheck> visit(TypeParameterType parameter, Arg arg) {
             assert parameter.getTarget() == null;
 
-            ParameterMap parameterMap = arg.parameterMap;
+            TypeContext typeContext = arg.typeContext;
 
-            if (parameterMap.containsKey(parameter)) {
-                if (!TypesUtil.findRecursiveDefinition(parameter, parameterMap, typeParameterIndexer).isEmpty()) {
-                    List<Type> constraints = TypesUtil.findRecursiveDefinition(parameter, parameterMap, typeParameterIndexer);
+            if (typeContext.containsKey(parameter)) {
+                if (!TypesUtil.findRecursiveDefinition(parameter, typeContext, typeParameterIndexer).isEmpty()) {
+                    List<Type> constraints = TypesUtil.findRecursiveDefinition(parameter, typeContext, typeParameterIndexer);
                     IntersectionType constraintsIntersection = new IntersectionType();
                     constraintsIntersection.setElements(constraints);
                     return constraintsIntersection.accept(this, arg);
                 }
-                return parameterMap.get(parameter).accept(this, arg);
+                return typeContext.get(parameter).accept(this, arg);
             }
 
             List<TypeCheck> checks = new ArrayList<>(parameter.getConstraint().accept(this, arg));
