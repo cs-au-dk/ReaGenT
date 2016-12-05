@@ -238,6 +238,17 @@ public class UnitTests {
                 .got(TYPEOF, "undefined");
     }
 
+    @Test
+    public void symbols() throws Exception {
+        RunResult result = parseDriverResult(runDriver("symbol", "seed"));
+
+        assertThat(result.typeErrors.size(), is(equalTo(1)));
+
+        expect(result)
+                .forPath("module.bar()")
+                .expected("symbol")
+                .got(TYPEOF, "string");
+    }
+
     // TODO: Look for other TODO's in ts-spec-reader.
-    // TODO: Symbols.
 }

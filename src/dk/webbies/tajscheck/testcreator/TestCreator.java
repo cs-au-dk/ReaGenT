@@ -70,7 +70,7 @@ public class TestCreator {
             return new ArrayList<>();
         }
 
-        if (type instanceof StringLiteral || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof AnonymousType || type instanceof ClassType /* The class in classType are handled in the visitor */ || type instanceof ClassInstanceType || type instanceof TupleType || type instanceof ThisType) {
+        if (type instanceof StringLiteral || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof AnonymousType || type instanceof ClassType /* The class in classType are handled in the visitor */ || type instanceof ClassInstanceType || type instanceof TupleType || type instanceof ThisType || type instanceof SymbolType) {
             return Collections.emptyList();
         }
 
@@ -559,13 +559,7 @@ public class TestCreator {
 
         @Override
         public Void visit(SymbolType t, Arg arg) {
-            TypeWithParameters withParameters = new TypeWithParameters(t, arg.getTypeContext());
-            if (seen.contains(withParameters) || nativeTypes.contains(t)) {
-                return null;
-            }
-            seen.add(withParameters);
-
-            throw new RuntimeException();
+            return null;
         }
 
         @Override

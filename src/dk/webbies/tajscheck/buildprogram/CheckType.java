@@ -339,7 +339,9 @@ public class CheckType {
 
         @Override
         public List<TypeCheck> visit(SymbolType t, Arg arg) {
-            throw new RuntimeException();
+            return Collections.singletonList(
+                    new SimpleTypeCheck(Check.typeOf("symbol"), "symbol")
+            );
         }
 
         @Override
