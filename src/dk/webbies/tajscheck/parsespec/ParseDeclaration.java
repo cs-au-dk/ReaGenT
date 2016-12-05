@@ -291,7 +291,13 @@ public class ParseDeclaration {
 
         @Override
         public Void visit(SymbolType t, Arg arg) {
-            throw new RuntimeException();
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            return null;
         }
 
         @Override
@@ -339,6 +345,17 @@ public class ParseDeclaration {
 
         @Override
         public Void visit(NeverType t, Arg arg) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            return null;
+        }
+
+        @Override
+        public Void visit(ThisType t, Arg arg) {
             if (seen.contains(t)) {
                 return null;
             }

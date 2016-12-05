@@ -74,7 +74,9 @@ public class TypeCreator {
             valueLocations.put(new TypeWithParameters(type, typeContext.withClass((ClassType) type)), index);
             baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext.withClass((ClassType) type)));
         } else if (type instanceof ClassInstanceType) {
-            putProducedValueIndex(index, ((ClassType)((ClassInstanceType) type).getClassType()).getInstanceType(), typeContext);
+            putProducedValueIndex(index, ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType(), typeContext);
+        } else if (type instanceof ThisType) {
+            putProducedValueIndex(index, typeContext.getClassType().getInstanceType(), typeContext);
         } else if (type instanceof TypeParameterType || type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType || type instanceof NeverType) {
             // Do nothing.
         } else {
@@ -335,6 +337,11 @@ public class TypeCreator {
         @Override
         public Statement visit(NeverType t, TypeContext typeContext) {
             return throwStatement(newCall(identifier("Error"), string("This is a correct result of a never-type")));
+        }
+
+        @Override
+        public Statement visit(ThisType t, TypeContext typeContext) {
+            return typeContext.getClassType().getInstanceType().accept(this, typeContext);
         }
     }
 

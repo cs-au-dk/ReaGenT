@@ -70,7 +70,7 @@ public class TestCreator {
             return new ArrayList<>();
         }
 
-        if (type instanceof StringLiteral || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof AnonymousType || type instanceof ClassType /* The class in classType are handled in the visitor */ || type instanceof ClassInstanceType || type instanceof TupleType) {
+        if (type instanceof StringLiteral || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof AnonymousType || type instanceof ClassType /* The class in classType are handled in the visitor */ || type instanceof ClassInstanceType || type instanceof TupleType || type instanceof ThisType) {
             return Collections.emptyList();
         }
 
@@ -148,7 +148,7 @@ public class TestCreator {
                         new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, typeContext)
                 );
 
-                visitor.recurse(constructSignature.getResolvedReturnType(), new Arg(path + "[new]()", typeContext, depth + 1).withTopLevelFunctions());
+                visitor.recurse(constructSignature.getResolvedReturnType(), new Arg(path + "new()", typeContext, depth + 1).withTopLevelFunctions());
             }
             return result;
         }
@@ -392,7 +392,7 @@ public class TestCreator {
                     findPositiveTypesInParameters(this, arg.append(key), parameters, this.negativeTypesSeen);
                     tests.add(new ConstructorCallTest(propertyType, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext()));
 
-                    recurse(signature.getResolvedReturnType(), arg.append(key + "[new]()").addDepth().withTopLevelFunctions());
+                    recurse(signature.getResolvedReturnType(), arg.append(key + "new()").addDepth().withTopLevelFunctions());
                 }
                 return;
             }
@@ -615,6 +615,11 @@ public class TestCreator {
             return null;
         }
 
+        @Override
+        public Void visit(ThisType t, Arg arg) {
+            return arg.typeContext.getClassType().getInstanceType().accept(this, arg);
+        }
+
         public Collection<Test> getTests() {
             return tests;
         }
@@ -791,6 +796,11 @@ public class TestCreator {
         @Override
         public Void visit(NeverType t, Arg arg) {
             return null;
+        }
+
+        @Override
+        public Void visit(ThisType t, Arg arg) {
+            return arg.getTypeContext().getClassType().getInstanceType().accept(this, arg);
         }
     }
 }

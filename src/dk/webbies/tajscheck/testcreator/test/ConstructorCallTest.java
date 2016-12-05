@@ -14,7 +14,7 @@ public class ConstructorCallTest extends Test {
     private List<Type> parameters;
 
     public ConstructorCallTest(Type function, List<Type> parameters, Type returnType, String path, TypeContext typeContext) {
-        super(Collections.singletonList(function), parameters, returnType, path + "[new]()", typeContext);
+        super(Collections.singletonList(function), parameters, returnType, path + "new()", typeContext);
         this.function = function;
         this.parameters = parameters;
     }

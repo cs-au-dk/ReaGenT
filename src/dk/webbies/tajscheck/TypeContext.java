@@ -71,12 +71,14 @@ public class TypeContext {
 
         TypeContext that = (TypeContext) o;
 
-        return map.equals(that.map);
-
+        if (!map.equals(that.map)) return false;
+        return classType != null ? classType.equals(that.classType) : that.classType == null;
     }
 
     @Override
     public int hashCode() {
-        return map.hashCode();
+        int result = map.hashCode();
+        result = 31 * result + (classType != null ? classType.hashCode() : 0);
+        return result;
     }
 }

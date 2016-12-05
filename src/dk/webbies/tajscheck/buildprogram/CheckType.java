@@ -382,6 +382,11 @@ public class CheckType {
                     Check.equalTo(object()), "never" // equalTo check with an object will always fail.
             ));
         }
+
+        @Override
+        public List<TypeCheck> visit(ThisType t, Arg arg) {
+            return arg.typeContext.getClassType().getInstanceType().accept(this, arg);
+        }
     }
 
     private static TypeCheck createUnionCheck(List<List<TypeCheck>> checksLists) {

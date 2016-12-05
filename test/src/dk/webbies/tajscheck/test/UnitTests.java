@@ -228,6 +228,16 @@ public class UnitTests {
 
     }
 
-    // TODO: This types
+    @Test
+    public void thisTypes() throws Exception {
+        RunResult result = parseDriverResult(runDriver("thisTypes", "seed"));
+
+        expect(result)
+                .forPath("module.Bar.new().bar")
+                .expected("function")
+                .got(TYPEOF, "undefined");
+    }
+
     // TODO: Look for other TODO's in ts-spec-reader.
+    // TODO: Symbols.
 }

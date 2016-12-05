@@ -284,6 +284,16 @@ public class TypesUtil {
         }
 
         @Override
+        public Void visit(ThisType t) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+
+            return null;
+        }
+
+        @Override
         public Void visit(UnresolvedType t) {
             throw new RuntimeException();
         }
@@ -304,7 +314,12 @@ public class TypesUtil {
 
         @Override
         public Void visit(SymbolType t) {
-            throw new RuntimeException();
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+
+            return null;
         }
 
         @Override
