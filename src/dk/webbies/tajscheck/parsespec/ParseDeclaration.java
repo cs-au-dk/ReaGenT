@@ -336,5 +336,16 @@ public class ParseDeclaration {
 
             return null;
         }
+
+        @Override
+        public Void visit(NeverType t, Arg arg) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            return null;
+        }
     }
 }

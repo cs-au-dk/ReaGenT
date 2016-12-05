@@ -604,6 +604,11 @@ public class TestCreator {
             return null;
         }
 
+        @Override
+        public Void visit(NeverType t, Arg arg) {
+            return null;
+        }
+
         public Collection<Test> getTests() {
             return tests;
         }
@@ -775,6 +780,11 @@ public class TestCreator {
         @Override
         public Void visit(ClassInstanceType t, Arg arg) {
             return ((ClassType) t.getClassType()).getInstanceType().accept(this, arg);
+        }
+
+        @Override
+        public Void visit(NeverType t, Arg arg) {
+            return null;
         }
     }
 }

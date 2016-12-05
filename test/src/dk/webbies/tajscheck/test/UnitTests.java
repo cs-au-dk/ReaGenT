@@ -217,6 +217,17 @@ public class UnitTests {
                 .got(STRING, "1,2,3,4");
     }
 
+    @Test
+    public void never() throws Exception {
+        RunResult result = parseDriverResult(runDriver("never", "seed"));
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("never")
+                .got(STRING, "1");
+
+    }
+
     // TODO: This types
     // TODO: Look for other TODO's in ts-spec-reader.
 }

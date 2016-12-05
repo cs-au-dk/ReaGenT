@@ -75,7 +75,7 @@ public class TypeCreator {
             baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, parameterMap));
         } else if (type instanceof ClassInstanceType) {
             putProducedValueIndex(index, ((ClassType)((ClassInstanceType) type).getClassType()).getInstanceType(), parameterMap);
-        } else if (type instanceof TypeParameterType || type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType) {
+        } else if (type instanceof TypeParameterType || type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType || type instanceof NeverType) {
             // Do nothing.
         } else {
             throw new RuntimeException(type.getClass().getName());
@@ -330,6 +330,11 @@ public class TypeCreator {
         @Override
         public Statement visit(ClassInstanceType t, ParameterMap parameterMap) {
             return ((ClassType) t.getClassType()).getInstanceType().accept(this, parameterMap);
+        }
+
+        @Override
+        public Statement visit(NeverType t, ParameterMap parameterMap) {
+            return throwStatement(newCall(identifier("Error"), string("This is a correct result of a never-type")));
         }
     }
 

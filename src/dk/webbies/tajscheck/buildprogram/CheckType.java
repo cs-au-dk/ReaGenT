@@ -375,6 +375,13 @@ public class CheckType {
         public List<TypeCheck> visit(ClassInstanceType t, Arg arg) {
             return ((ClassType) t.getClassType()).getInstanceType().accept(this, arg);
         }
+
+        @Override
+        public List<TypeCheck> visit(NeverType t, Arg arg) {
+            return Collections.singletonList(new SimpleTypeCheck(
+                    Check.equalTo(object()), "never" // equalTo check with an object will always fail.
+            ));
+        }
     }
 
     private static TypeCheck createUnionCheck(List<List<TypeCheck>> checksLists) {
