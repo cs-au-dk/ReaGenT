@@ -144,7 +144,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(ClassType t, TypeContext typeContext) {
-            throw new RuntimeException();
+            return TypesUtil.classToInterface(t).accept(this, typeContext);
         }
 
         @Override
@@ -219,9 +219,14 @@ public class TypeCreator {
                 ));
             }
 
-            GenericType target = (GenericType) type.getTarget();
-
-            return constructNewInstanceOfType(target.toInterface(), TypesUtil.generateParameterMap(type, typeContext));
+            InterfaceType target;
+            if (type.getTarget() instanceof GenericType) {
+                target = ((GenericType) type.getTarget()).toInterface();
+            } else {
+                assert type.getTarget() instanceof ClassInstanceType;
+                target = ((ClassType) ((ClassInstanceType) type.getTarget()).getClassType()).getInstanceType();
+            }
+            return constructNewInstanceOfType(target, TypesUtil.generateParameterMap(type, typeContext));
         }
 
         @Override

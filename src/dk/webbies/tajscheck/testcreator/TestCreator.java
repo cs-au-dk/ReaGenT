@@ -132,7 +132,7 @@ public class TestCreator {
             List<Signature> callSignatures = ((InterfaceType) type).getDeclaredCallSignatures();
             for (Signature callSignature : callSignatures) {
                 List<Type> parameters = callSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters, negativeTypesSeen);
+                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters, negativeTypesSeen, nativeTypes);
                 result.add(
                         new FunctionCallTest(type, parameters, callSignature.getResolvedReturnType(), path, typeContext)
                 );
@@ -143,7 +143,7 @@ public class TestCreator {
             List<Signature> constructSignatures = ((InterfaceType) type).getDeclaredConstructSignatures();
             for (Signature constructSignature : constructSignatures) {
                 List<Type> parameters = constructSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters, negativeTypesSeen);
+                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters, negativeTypesSeen, nativeTypes);
                 result.add(
                         new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, typeContext)
                 );
@@ -155,10 +155,10 @@ public class TestCreator {
         throw new RuntimeException(type.getClass().getName());
     }
 
-    private static void findPositiveTypesInParameters(CreateTestVisitor visitor, Arg arg, List<Type> parameters, Set<TypeWithParameters> negativeTypesSeen) {
+    private static void findPositiveTypesInParameters(CreateTestVisitor visitor, Arg arg, List<Type> parameters, Set<TypeWithParameters> negativeTypesSeen, Set<Type> nativeTypes) {
         for (int i = 0; i < parameters.size(); i++) {
             Type parameter = parameters.get(i);
-            findPositiveTypes(visitor, parameter, arg.append("[arg" + i + "]"), negativeTypesSeen);
+            findPositiveTypes(visitor, parameter, arg.append("[arg" + i + "]"), negativeTypesSeen, nativeTypes);
         }
     }
 
@@ -380,7 +380,7 @@ public class TestCreator {
                 List<Signature> callSignatures = ((InterfaceType) propertyType).getDeclaredCallSignatures();
                 for (Signature signature : callSignatures) {
                     List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                    findPositiveTypesInParameters(this, arg.append(key), parameters, this.negativeTypesSeen);
+                    findPositiveTypesInParameters(this, arg.append(key), parameters, this.negativeTypesSeen, TestCreator.this.nativeTypes);
                     tests.add(new MethodCallTest(baseType, propertyType, key, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext()));
 
                     recurse(signature.getResolvedReturnType(), arg.append(key + "()").addDepth().withTopLevelFunctions());
@@ -389,7 +389,7 @@ public class TestCreator {
                 List<Signature> constructSignatures = ((InterfaceType) propertyType).getDeclaredConstructSignatures();
                 for (Signature signature : constructSignatures) {
                     List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                    findPositiveTypesInParameters(this, arg.append(key), parameters, this.negativeTypesSeen);
+                    findPositiveTypesInParameters(this, arg.append(key), parameters, this.negativeTypesSeen, TestCreator.this.nativeTypes);
                     tests.add(new ConstructorCallTest(propertyType, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext()));
 
                     recurse(signature.getResolvedReturnType(), arg.append(key + "new()").addDepth().withTopLevelFunctions());
@@ -619,17 +619,19 @@ public class TestCreator {
         }
     }
 
-    private static void findPositiveTypes(CreateTestVisitor visitor, Type type, Arg arg, Set<TypeWithParameters> negativeTypesSeen) {
-        type.accept(new FindPositiveTypesVisitor(visitor, negativeTypesSeen), arg);
+    private static void findPositiveTypes(CreateTestVisitor visitor, Type type, Arg arg, Set<TypeWithParameters> negativeTypesSeen, Set<Type> nativeTypes) {
+        type.accept(new FindPositiveTypesVisitor(visitor, negativeTypesSeen, nativeTypes), arg);
     }
 
     private static class FindPositiveTypesVisitor implements TypeVisitorWithArgument<Void, Arg> {
         private CreateTestVisitor visitor;
         private Set<TypeWithParameters> negativeTypesSeen;
+        private Set<Type> nativeTypes;
 
-        public FindPositiveTypesVisitor(CreateTestVisitor createTestVisitor, Set<TypeWithParameters> negativeTypesSeen) {
+        public FindPositiveTypesVisitor(CreateTestVisitor createTestVisitor, Set<TypeWithParameters> negativeTypesSeen, Set<Type> nativeTypes) {
             this.visitor = createTestVisitor;
             this.negativeTypesSeen = negativeTypesSeen;
+            this.nativeTypes = nativeTypes;
         }
 
         @Override
@@ -639,12 +641,41 @@ public class TestCreator {
 
         @Override
         public Void visit(ClassType t, Arg arg) {
-            throw new RuntimeException();
+            if (negativeTypesSeen.contains(new TypeWithParameters(t, arg.getTypeContext())) || nativeTypes.contains(t)) {
+                return null;
+            }
+            negativeTypesSeen.add(new TypeWithParameters(t, arg.getTypeContext()));
+
+            t.getInstanceType().accept(this, arg.append("new()"));
+
+            for (Signature signature : t.getSignatures()) {
+                for (int i = 0; i < signature.getParameters().size(); i++) {
+                    Signature.Parameter parameter = signature.getParameters().get(i);
+                    visitor.recurse(parameter.getType(), arg.append("[arg" + i + "]").withTopLevelFunctions());
+                }
+            }
+
+            for (Type baseType : t.getBaseTypes()) {
+                baseType.accept(this, arg);
+            }
+
+            if (t.getDeclaredStringIndexType() != null) {
+                t.getDeclaredStringIndexType().accept(this, arg.append("[stringIndexer]"));
+            }
+            if (t.getDeclaredNumberIndexType() != null) {
+                t.getDeclaredNumberIndexType().accept(this, arg.append("[numberIndexer"));
+            }
+
+            for (Map.Entry<String, Type> entry : t.getStaticProperties().entrySet()) {
+                entry.getValue().accept(this, arg.append(entry.getKey()));
+            }
+
+            return null;
         }
 
         @Override
         public Void visit(GenericType t, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithParameters(t, arg.getTypeContext()))) {
+            if (negativeTypesSeen.contains(new TypeWithParameters(t, arg.getTypeContext())) || nativeTypes.contains(t)) {
                 return null;
             }
             negativeTypesSeen.add(new TypeWithParameters(t, arg.getTypeContext()));
@@ -656,7 +687,7 @@ public class TestCreator {
 
         @Override
         public Void visit(InterfaceType t, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithParameters(t, arg.getTypeContext()))) {
+            if (negativeTypesSeen.contains(new TypeWithParameters(t, arg.getTypeContext())) || nativeTypes.contains(t)) {
                 return null;
             }
             negativeTypesSeen.add(new TypeWithParameters(t, arg.getTypeContext()));
@@ -688,7 +719,7 @@ public class TestCreator {
 
         @Override
         public Void visit(ReferenceType t, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithParameters(t, arg.getTypeContext()))) {
+            if (negativeTypesSeen.contains(new TypeWithParameters(t, arg.getTypeContext())) || nativeTypes.contains(t)) {
                 return null;
             }
             negativeTypesSeen.add(new TypeWithParameters(t, arg.getTypeContext()));
@@ -712,7 +743,7 @@ public class TestCreator {
 
         @Override
         public Void visit(UnionType union, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithParameters(union, arg.getTypeContext()))) {
+            if (negativeTypesSeen.contains(new TypeWithParameters(union, arg.getTypeContext())) || nativeTypes.contains(union)) {
                 return null;
             }
             negativeTypesSeen.add(new TypeWithParameters(union, arg.getTypeContext()));
@@ -731,7 +762,7 @@ public class TestCreator {
 
         @Override
         public Void visit(TypeParameterType t, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithParameters(t, arg.getTypeContext()))) {
+            if (negativeTypesSeen.contains(new TypeWithParameters(t, arg.getTypeContext())) || nativeTypes.contains(t)) {
                 return null;
             }
             negativeTypesSeen.add(new TypeWithParameters(t, arg.getTypeContext()));
@@ -770,7 +801,7 @@ public class TestCreator {
 
         @Override
         public Void visit(IntersectionType intersection, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithParameters(intersection, arg.getTypeContext()))) {
+            if (negativeTypesSeen.contains(new TypeWithParameters(intersection, arg.getTypeContext())) || nativeTypes.contains(intersection)) {
                 return null;
             }
             negativeTypesSeen.add(new TypeWithParameters(intersection, arg.getTypeContext()));

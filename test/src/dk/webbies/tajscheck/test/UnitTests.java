@@ -250,5 +250,15 @@ public class UnitTests {
                 .got(TYPEOF, "string");
     }
 
+    @Test
+    public void constructClass() throws Exception {
+        RunResult result = parseDriverResult(runDriver("constructClass", "seed"));
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("\"foo\"")
+                .got(STRING, "fooBar");
+    }
+
     // TODO: Look for other TODO's in ts-spec-reader.
 }

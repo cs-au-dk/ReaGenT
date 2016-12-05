@@ -13,6 +13,45 @@ import java.util.stream.Collectors;
  * Created by erik1 on 01-11-2016.
  */
 public class TypesUtil {
+    public static InterfaceType classToInterface(ClassType t) {
+        InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
+
+        for (Signature signature : t.getSignatures()) {
+            Signature constructor = new Signature();
+            constructor.setHasRestParameter(signature.isHasRestParameter());
+            constructor.setHasStringLiterals(signature.isHasStringLiterals());
+            constructor.setIsolatedSignatureType(signature.getIsolatedSignatureType());
+            constructor.setMinArgumentCount(signature.getMinArgumentCount());
+            constructor.setParameters(signature.getParameters());
+            constructor.setTarget(signature.getTarget());
+            constructor.setTypeParameters(signature.getTypeParameters());
+            constructor.setUnionSignatures(signature.getUnionSignatures());
+            constructor.setResolvedReturnType(t.getInstanceType());
+        }
+
+        interfaceType.setBaseTypes(
+                t.getBaseTypes().stream().map(base -> {
+                    if (base instanceof ClassType) {
+                        return classToInterface((ClassType) base);
+                    } else {
+                        return base;
+                    }
+                }).collect(Collectors.toList())
+        );
+
+        interfaceType.setDeclaredProperties(t.getStaticProperties());
+
+        interfaceType.setDeclaredNumberIndexType(t.getDeclaredNumberIndexType());
+
+        interfaceType.setDeclaredStringIndexType(t.getDeclaredStringIndexType());
+
+        // Target and typeArguments are out. But they are pretty much ignored in GenericType anyway (which is similar).
+
+        interfaceType.setTypeParameters(t.getTypeParameters());
+
+        return interfaceType;
+    }
+
     public static TypeContext generateParameterMap(ReferenceType ref) {
         List<Type> arguments = ref.getTypeArguments();
         Map<TypeParameterType, Type> parameterMap = new HashMap<>();
