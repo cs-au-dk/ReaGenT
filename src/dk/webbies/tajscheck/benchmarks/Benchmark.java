@@ -39,9 +39,21 @@ public class Benchmark {
         );
     }
 
+    public Benchmark withLoadMethod(LOAD_METHOD method) {
+        return new Benchmark(
+                this.environment,
+                this.jsFile,
+                this.dTSFile,
+                this.module,
+                method,
+                this.pathsToTest
+        );
+    }
+
     public enum LOAD_METHOD {
-        NODE,
-        BROWSER
+        REQUIRE,
+        BROWSER,
+        BOOTSTRAP
     }
 
     @Override

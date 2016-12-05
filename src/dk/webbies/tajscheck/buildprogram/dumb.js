@@ -4,14 +4,16 @@
  "actual": actual
  }*/
 
-setTimeout(function () {
+/*setTimeout(function () {
     dumbMessages();
     try {
         process.exit(0)
     } catch(e) {
 
     }
-}, 100);
+}, 100);*/
+
+dumbMessages(); // TODO: TAJS Seems unhappy about async, so doing this for now.
 
 function dumbMessages() {
     (function (assertionFailures, print) {

@@ -2,6 +2,7 @@ package dk.webbies.tajscheck.buildprogram;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.common.reflect.TypeParameter;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
@@ -12,6 +13,7 @@ import dk.webbies.tajscheck.ParameterMap;
 import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.paser.AST.*;
+import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
@@ -64,13 +66,21 @@ public class TypeCreator {
         if (type instanceof InterfaceType) {
             List<Type> baseTypes = ((InterfaceType) type).getBaseTypes();
             baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, parameterMap));
-        }
-        if (type instanceof ReferenceType) {
+        } else if (type instanceof ReferenceType) {
             putProducedValueIndex(index, ((ReferenceType) type).getTarget(), TypesUtil.generateParameterMap((ReferenceType) type, parameterMap));
-        }
-        if (type instanceof GenericType) {
+        } else if (type instanceof GenericType) {
             putProducedValueIndex(index, ((GenericType) type).toInterface(), parameterMap);
+        } else if (type instanceof ClassType) {
+            List<Type> baseTypes = ((ClassType) type).getBaseTypes();
+            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, parameterMap));
+        } else if (type instanceof ClassInstanceType) {
+            putProducedValueIndex(index, ((ClassType)((ClassInstanceType) type).getClassType()).getInstanceType(), parameterMap);
+        } else if (type instanceof TypeParameterType || type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType) {
+            // Do nothing.
+        } else {
+            throw new RuntimeException(type.getClass().getName());
         }
+
     }
 
 
@@ -314,7 +324,12 @@ public class TypeCreator {
 
         @Override
         public Statement visit(IntersectionType t, ParameterMap parameterMap) {
-            return throwStatement(newCall(identifier("RuntimeError"), string("Not implemented yet, intersectionTypes")));
+            return throwStatement(newCall(identifier(RUNTIME_ERROR_NAME), string("Not implemented yet, intersectionTypes")));
+        }
+
+        @Override
+        public Statement visit(ClassInstanceType t, ParameterMap parameterMap) {
+            return ((ClassType) t.getClassType()).getInstanceType().accept(this, parameterMap);
         }
     }
 
@@ -412,8 +427,7 @@ public class TypeCreator {
                             ),
                             block(
                                     comment("Call error, the application was imprecise, and couldn't identity the correct overload"),
-                                    statement(call(identifier("error"), binary(string("Could not find correct overload for function: " + interName + " results: "), Operator.PLUS, methodCall(identifier("foundSignatures"), "toString")))),
-                                    Return()
+                                    throwStatement(newCall(identifier(RUNTIME_ERROR_NAME), binary(string("Could not find correct overload for function: " + interName + " results: "), Operator.PLUS, methodCall(identifier("foundSignatures"), "toString"))))
                             )
                     ),
                     comment("Save the arguments, and returns the value, of the correct overload. "),
@@ -479,6 +493,50 @@ public class TypeCreator {
                 return Return(newCall(identifier("RegExp"), constructString));
             case "String":
                 return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), parameterMap);
+            case "HTMLCanvasElement":
+                return AstBuilder.programFromString("return document.createElement('canvas')");
+            case "HTMLVideoElement":
+                return AstBuilder.programFromString("return document.createElement('video')");
+            case "HTMLImageElement":
+                return AstBuilder.programFromString("return document.createElement('img')");
+            case "Uint32Array":
+                return AstBuilder.programFromString("return new Uint32Array()");
+            case "Float32Array":
+                return AstBuilder.programFromString("return new Float32Array()");
+            case "Uint16Array":
+                return AstBuilder.programFromString("return new Uint16Array()");
+            case "WebGLRenderingContext":
+                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\")");
+            case "WebGLTexture":
+                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createTexture()");
+            case "WebGLFramebuffer":
+                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createFramebuffer()");
+            case "WebGLRenderbuffer":
+                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createRenderbuffer()");
+            case "CanvasRenderingContext2D":
+                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"2d\")");
+            case "MouseEvent":
+                return AstBuilder.programFromString("return new MouseEvent(null)");
+            case "Event":
+                return AstBuilder.programFromString("return new Event(null)");
+            case "WebGLProgram":
+                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createProgram()");
+            case "WebGLBuffer":
+                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createBuffer()");
+            case "ArrayBuffer":
+                return AstBuilder.programFromString("return new ArrayBuffer()");
+            case "ImageData":
+                return AstBuilder.programFromString("return new ImageData(10, 10)");
+            case "TouchEvent":
+                return AstBuilder.programFromString("return new TouchEvent(null)");
+            case "WebGLContextEvent":
+                return AstBuilder.programFromString("return new WebGLContextEvent(null)");
+            case "PointerEvent":
+                return AstBuilder.programFromString("return new PointerEvent(\"pointermove\")");
+            case "CanvasGradient":
+                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"2d\").createLinearGradient()");
+            case "HTMLElement":
+                return AstBuilder.programFromString("return document.createElement('div')");
             default:
                 throw new RuntimeException("Unknown: " + name);
         }
@@ -496,6 +554,7 @@ public class TypeCreator {
 //        assert inter.getTypeParameters().isEmpty(); // This should only happen when constructed from a generic/reference type, and in that case we have handled the TypeParameters.
         Map<TypeParameterType, Type> newParameters = new ParameterMap().getMap();
         InterfaceType result = SpecReader.makeEmptySyntheticInterfaceType();
+        typeNames.put(result, typeNames.get(inter));
         inter.getBaseTypes().forEach(subType -> {
             if (subType instanceof ReferenceType) {
                 newParameters.putAll(TypesUtil.generateParameterMap((ReferenceType) subType).getMap());

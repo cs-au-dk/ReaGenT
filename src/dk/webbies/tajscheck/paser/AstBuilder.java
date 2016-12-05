@@ -1,8 +1,13 @@
 package dk.webbies.tajscheck.paser;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
+import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.util.Pair;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -13,13 +18,11 @@ import java.util.stream.Collectors;
  * Created by erik1 on 01-11-2016.
  */
 public class AstBuilder {
-    public static List<Statement> program(Statement... statements) {
-        return Arrays.asList(statements);
-    }
-
     public static VariableNode variable(Expression lValue, Expression init) {
         return new VariableNode(null, lValue, init);
     }
+
+
 
     public static VariableNode variable(String id, Expression init) {
         return new VariableNode(null, identifier(id), init);
@@ -228,5 +231,15 @@ public class AstBuilder {
 
     public static ConditionalExpression conditional(Expression cond, Expression then, Expression otherwise) {
         return new ConditionalExpression(null, cond, then, otherwise);
+    }
+
+    public static BlockStatement programFromFile(URL resource) throws IOException {
+        return new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse("filename", Resources.toString(resource, Charsets.UTF_8)).toTSCreateAST().getBody();
+    }
+
+    public static BlockStatement programFromString(String program){
+        // Packing and unpacking, to allow top-level return-statements.
+        BlockStatement body = new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse("filename", "function foo() {" + program + "}").toTSCreateAST().getBody();
+        return ((FunctionExpression)((ExpressionStatement)body.getStatements().iterator().next()).getExpression()).getBody();
     }
 }

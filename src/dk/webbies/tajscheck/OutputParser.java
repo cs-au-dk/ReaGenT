@@ -10,14 +10,14 @@ import java.util.stream.Collectors;
  * Created by erik1 on 23-11-2016.
  */
 public class OutputParser {
-    public static final class ParseResult {
+    public static final class TypeError {
         public final String path;
         public String expected;
         public String typeof;
         public String toString;
         public String JSON;
 
-        public ParseResult(String path, String expected, String typeof, String toString, String JSON) {
+        public TypeError(String path, String expected, String typeof, String toString, String JSON) {
             this.path = path;
             this.expected = expected;
             this.typeof = typeof;
@@ -26,14 +26,30 @@ public class OutputParser {
         }
     }
 
-    public static List<ParseResult> parseDriverResult(String output) {
+    public static final class RunResult {
+        public final List<TypeError> typeErrors;
+        public final List<String> errors;
+
+        public RunResult(List<TypeError> typeErrors, List<String> errors) {
+            this.typeErrors = typeErrors;
+            this.errors = errors;
+        }
+    }
+
+    public static RunResult parseDriverResult(String output) {
         List<String> split = Arrays.stream(output.split("\n")).filter(line -> !line.trim().isEmpty()).collect(Collectors.toList());
-        List<ParseResult> result = new ArrayList<>();
+        int errorsIndex = split.indexOf("---- ERRORS ----");
+        List<String> errors = new ArrayList<>();
+        if (errorsIndex != -1) {
+            errors = split.subList(errorsIndex + 1, split.size());
+            split = split.subList(0, errorsIndex);
+        }
+        List<TypeError> typeErrors = new ArrayList<>();
 
         assert split.get(0).startsWith("Initial random: ");
 
         if (split.size() == 1) {
-            return new ArrayList<>();
+            return new RunResult(new ArrayList<>(), errors);
         }
 
         List<String> singleResultCollector = new ArrayList<>();
@@ -43,21 +59,21 @@ public class OutputParser {
             String line = split.get(i);
 
             if (!line.startsWith(" ")) {
-                result.add(parseSingleResult(singleResultCollector));
+                typeErrors.add(parseSingleResult(singleResultCollector));
                 singleResultCollector.clear();
             }
             singleResultCollector.add(line);
 
         }
 
-        result.add(parseSingleResult(singleResultCollector));
+        typeErrors.add(parseSingleResult(singleResultCollector));
 
-        assert result.stream().allMatch(Objects::nonNull);
+        assert typeErrors.stream().allMatch(Objects::nonNull);
 
-        return result;
+        return new RunResult(typeErrors, errors);
     }
 
-    private static ParseResult parseSingleResult(List<String> lines) {
+    private static TypeError parseSingleResult(List<String> lines) {
         assert lines.size() == 5 || lines.size() == 4;
 
         assert lines.get(0).lastIndexOf(':') == lines.get(0).length() - 1;
@@ -85,6 +101,6 @@ public class OutputParser {
             JSON = lines.get(4).substring(jsonPrefix.length(), lines.get(4).length());
         }
 
-        return new ParseResult(path, expected, typeof, toString, JSON);
+        return new TypeError(path, expected, typeof, toString, JSON);
     }
 }

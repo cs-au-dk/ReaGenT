@@ -10,10 +10,16 @@ import java.util.Collections;
  */
 public class LoadModuleTest extends Test {
     private final String module;
+    private Type moduleType;
 
-    public LoadModuleTest(String module, Type typeToTest) {
-        super(Collections.EMPTY_LIST, Collections.EMPTY_LIST, typeToTest, "require(\"" + module + "\")", new ParameterMap());
+    public LoadModuleTest(String module, Type moduleType) {
+        super(Collections.EMPTY_LIST, Collections.EMPTY_LIST, moduleType, "require(\"" + module + "\")", new ParameterMap());
         this.module = module;
+        this.moduleType = moduleType;
+    }
+
+    public Type getModuleType() {
+        return moduleType;
     }
 
     public String getModule() {

@@ -24,7 +24,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class UnitTests {
     private String runDriver(String folderName, String seed) throws IOException {
-        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.NODE);
+        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE);
 
         Main.writeFullDriver(bench, new ExecutionRecording(null, seed));
 
@@ -35,14 +35,20 @@ public class UnitTests {
         return result;
     }
 
-    private static ParseResultTester expect(List<ParseResult> result) {
+    private static ParseResultTester expect(List<TypeError> result) {
         return new ParseResultTester(result);
     }
 
-    static final class ParseResultTester {
-        private List<ParseResult> results;
+    private static ParseResultTester expect(RunResult result) {
+        assertThat(result.errors.size(), is(0));
 
-        private ParseResultTester(List<ParseResult> result) {
+        return new ParseResultTester(result.typeErrors);
+    }
+
+    static final class ParseResultTester {
+        private List<TypeError> results;
+
+        private ParseResultTester(List<TypeError> result) {
             this.results = result;
         }
 
@@ -53,8 +59,12 @@ public class UnitTests {
             return this;
         }
 
+        private ParseResultTester got(ExpectType type, String str) {
+            return got(type, is(str));
+        }
+
         private ParseResultTester got(ExpectType type, Matcher<String> matcher) {
-            for (ParseResult result : results) {
+            for (TypeError result : results) {
                 if (type == ExpectType.JSON) {
                     assertThat(result.JSON, matcher);
                 } else if (type == ExpectType.STRING) {
@@ -73,7 +83,7 @@ public class UnitTests {
         }
 
         public ParseResultTester expected(Matcher<String> type) {
-            for (ParseResult result : results) {
+            for (TypeError result : results) {
                 assertThat(result.expected, is(type));
             }
 
@@ -89,7 +99,7 @@ public class UnitTests {
 
     @Test
     public void testMissingProperty() throws Exception {
-        List<ParseResult> result = OutputParser.parseDriverResult(runDriver("missingProperty", "mySeed"));
+        RunResult result = OutputParser.parseDriverResult(runDriver("missingProperty", "mySeed"));
 
         expect(result)
                 .forPath("module.foo.missing")
@@ -98,9 +108,9 @@ public class UnitTests {
 
     @Test
     public void wrongSimpleType() throws Exception {
-        List<ParseResult> result = parseDriverResult(runDriver("wrongSimpleType", "aSeed"));
+        RunResult result = parseDriverResult(runDriver("wrongSimpleType", "aSeed"));
 
-        assertThat(result.size(), is(1));
+        assertThat(result.typeErrors.size(), is(1));
 
         expect(result)
                 .forPath("module.foo.bar")
@@ -112,14 +122,14 @@ public class UnitTests {
 
     @Test
     public void everyThingGoesRight() throws Exception {
-        List<ParseResult> result = parseDriverResult(runDriver("everythingIsRight", "aSeed"));
+        RunResult result = parseDriverResult(runDriver("everythingIsRight", "aSeed"));
 
-        assertThat(result.size(), is(0));
+        assertThat(result.typeErrors.size(), is(0));
     }
 
     @Test
     public void simpleFunctionArg() throws Exception {
-        List<ParseResult> result = parseDriverResult(runDriver("simpleFunctionArg", "someSeed"));
+        RunResult result = parseDriverResult(runDriver("simpleFunctionArg", "someSeed"));
 
         expect(result)
                 .forPath("module.foo.[arg0].[arg0].<>.value")
@@ -129,7 +139,7 @@ public class UnitTests {
 
     @Test
     public void testComplexUnion() throws Exception {
-        List<ParseResult> result = parseDriverResult(runDriver("complexUnion", "foo"));
+        RunResult result = parseDriverResult(runDriver("complexUnion", "foo"));
 
         expect(result)
                 .forPath("module.foo().[union2]()")
@@ -140,7 +150,7 @@ public class UnitTests {
 
     @Test
     public void optionalParameters() throws Exception {
-        List<ParseResult> result = parseDriverResult(runDriver("optionalParameters", "foo"));
+        RunResult result = parseDriverResult(runDriver("optionalParameters", "foo"));
 
         expect(result)
                 .forPath("module.foo()")
@@ -149,16 +159,16 @@ public class UnitTests {
 
     @Test
     public void simpleOverloads() throws Exception {
-        List<ParseResult> result = parseDriverResult(runDriver("simpleOverloads", "foo"));
+        RunResult result = parseDriverResult(runDriver("simpleOverloads", "foo"));
 
-        assertThat(result.size(), is(0));
+        assertThat(result.typeErrors.size(), is(0));
     }
 
     @Test
     public void genericClass() throws Exception {
-        List<ParseResult> result = parseDriverResult(runDriver("genericClass", "mySeed"));
+        RunResult result = parseDriverResult(runDriver("genericClass", "mySeed"));
 
-        assertThat(result.size(), is(1));
+        assertThat(result.typeErrors.size(), is(1));
 
         expect(result)
                 .forPath("module.Container.create().<>.value")
@@ -168,11 +178,45 @@ public class UnitTests {
 
     @Test
     public void generics() throws Exception {
-        List<ParseResult> result = parseDriverResult(runDriver("generics", "someSeed"));
+        RunResult result = parseDriverResult(runDriver("generics", "someSeed"));
 
         expect(result)
                 .forPath("module.foo().<>.value.foo")
                 .expected("string")
                 .got(JSON, is("123"));
     }
+
+    @Test
+    public void genericClass2() throws Exception {
+        RunResult result = parseDriverResult(runDriver("genericClass2", "mySeed"));
+
+        expect(result)
+                .forPath("module.Index.new().store.<>.value")
+                .expected("string")
+                .got(JSON, "123");
+    }
+
+    @Test
+    public void tuple() throws Exception {
+        RunResult result = parseDriverResult(runDriver("tuple", "seed"));
+
+        expect(result)
+                .forPath("module.foo().<>.2")
+                .expected("3.0")
+                .got(TYPEOF, "string")
+                .got(STRING, "3");
+    }
+
+    @Test
+    public void tupleLength() throws Exception {
+        RunResult result = parseDriverResult(runDriver("tupleLength", "seed"));
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("tuple of 3 elements")
+                .got(STRING, "1,2,3,4");
+    }
+
+    // TODO: This types
+    // TODO: Look for other TODO's in ts-spec-reader.
 }

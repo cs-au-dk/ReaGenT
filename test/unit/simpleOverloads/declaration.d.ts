@@ -7,5 +7,5 @@ interface MyFunction {
 }
 
 export module module {
-    function run(calback: MyFunction): number;
+    function run(callback: MyFunction): number;
 }

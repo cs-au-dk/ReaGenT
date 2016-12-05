@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.testcreator.test.check;
 import dk.webbies.tajscheck.paser.AST.Expression;
 import dk.webbies.tajscheck.paser.AST.Operator;
 import dk.webbies.tajscheck.paser.AstBuilder;
+import dk.webbies.tajscheck.util.Util;
 
 import java.util.stream.Collectors;
 
@@ -73,7 +74,11 @@ public class CheckToExpression implements CheckVisitorWithArgument<Expression, E
 
     @Override
     public Expression visit(FieldCheck check, Expression expression) {
-        return Check.and(check.getChecks()).accept(this, member(expression, check.getField()));
+        if (Util.isInteger(check.getField())) {
+            return Check.and(check.getChecks()).accept(this, arrayAccess(expression, number(Integer.parseInt(check.getField()))));
+        } else {
+            return Check.and(check.getChecks()).accept(this, member(expression, check.getField()));
+        }
     }
 
     public static Expression generate(Check check, Expression exp) {

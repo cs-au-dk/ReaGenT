@@ -18,15 +18,9 @@ public class TypesUtil {
         List<Type> arguments = ref.getTypeArguments();
         Map<TypeParameterType, Type> parameterMap = new HashMap<>();
 
-        if (ref.getTarget() instanceof GenericType) {
-            GenericType target = (GenericType) ref.getTarget();
-            assert target.getTypeParameters().equals(target.getTypeArguments());
-            assert target.getTarget() == target;
-        } else {
-            assert ref.getTarget() instanceof InterfaceType;
-        }
+        assertAboutTarget(ref.getTarget());
 
-        List<Type> typeParameters = ref.getTarget() instanceof GenericType ? ((GenericType) ref.getTarget()).getTypeParameters() : ((InterfaceType) ref.getTarget()).getTypeParameters();
+        List<Type> typeParameters = getTypeParameters(ref.getTarget());
         assert typeParameters.size() == arguments.size();
         List<TypeParameterType> parameters = Util.cast(TypeParameterType.class, typeParameters);
         parameterMap = new HashMap<>(parameterMap);
@@ -34,6 +28,38 @@ public class TypesUtil {
             parameterMap.put(parameters.get(i), arguments.get(i));
         }
         return new ParameterMap(parameterMap);
+    }
+
+    private static void assertAboutTarget(Type untypedTarget) {
+        if (untypedTarget instanceof GenericType) {
+            GenericType target = (GenericType) untypedTarget;
+            assert target.getTypeParameters().equals(target.getTypeArguments());
+            assert target.getTarget() == target;
+        } else if (untypedTarget instanceof ClassType) {
+            ClassType target = (ClassType) untypedTarget;
+            assert target.getTypeParameters().equals(target.getTypeArguments());
+            assert target.getTarget() == target || (target.getTarget() instanceof ClassInstanceType && ((ClassInstanceType) target.getTarget()).getClassType().equals(target));
+        } else if (untypedTarget instanceof ClassInstanceType || untypedTarget instanceof TupleType) {
+            // nothing.
+        } else {
+            assert untypedTarget instanceof InterfaceType;
+        }
+    }
+
+    private static List<Type> getTypeParameters(Type target) {
+        if (target instanceof GenericType) {
+            return ((GenericType) target).getTypeParameters();
+        } else if (target instanceof InterfaceType) {
+            return ((InterfaceType) target).getTypeParameters();
+        } else if (target instanceof ClassType) {
+            return ((ClassType) target).getTypeParameters();
+        } else if (target instanceof ClassInstanceType) {
+            return ((ClassType) ((ClassInstanceType) target).getClassType()).getTypeParameters();
+        } else if (target instanceof TupleType) {
+            return ((TupleType) target).getElementTypes();
+        } else {
+            throw new RuntimeException(target.getClass().getName());
+        }
     }
 
     public static ParameterMap generateParameterMap(ReferenceType type, ParameterMap parameterMap) {
@@ -265,6 +291,18 @@ public class TypesUtil {
             seen.add(t);
 
             t.getElements().forEach(this::accept);
+
+            return null;
+        }
+
+        @Override
+        public Void visit(ClassInstanceType t) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+
+            t.getClassType().accept(this);
 
             return null;
         }

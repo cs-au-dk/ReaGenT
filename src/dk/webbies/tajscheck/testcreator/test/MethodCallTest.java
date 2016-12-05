@@ -11,18 +11,18 @@ import java.util.List;
  * Created by erik1 on 02-11-2016.
  */
 public class MethodCallTest extends Test {
-    private InterfaceType object;
+    private Type object;
     private final String propertyName;
     private List<Type> parameters;
 
-    public MethodCallTest(InterfaceType object, Type function, String propertyName, List<Type> parameters, Type returnType, String path, ParameterMap parameterMap) {
+    public MethodCallTest(Type object, Type function, String propertyName, List<Type> parameters, Type returnType, String path, ParameterMap parameterMap) {
         super(Arrays.asList(object, function), parameters, returnType, path + "()", parameterMap);
         this.object = object;
         this.propertyName = propertyName;
         this.parameters = parameters;
     }
 
-    public InterfaceType getObject() {
+    public Type getObject() {
         return object;
     }
 

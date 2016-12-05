@@ -122,27 +122,54 @@ public class CheckType {
 
         @Override
         public List<TypeCheck> visit(AnonymousType t, Arg arg) {
-            throw new RuntimeException();
+            return Collections.emptyList();
         }
 
         @Override
         public List<TypeCheck> visit(ClassType t, Arg arg) {
-            throw new RuntimeException();
+            List<TypeCheck> result = new ArrayList<>();
+
+            result.add(new SimpleTypeCheck(
+                    Check.typeOf("function"),
+                    "a constructor"
+            ));
+
+            t.getBaseTypes().forEach(base -> result.addAll(base.accept(this, arg)));
+
+            if (arg.depthRemaining > 0) {
+                Arg subArg = arg.decreaseDepth();
+                for (Map.Entry<String, Type> entry : t.getStaticProperties().entrySet()) {
+                    List<TypeCheck> fieldChecks = entry.getValue().accept(this, subArg);
+                    result.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
+                }
+            }
+
+            return result;
         }
 
         @Override
         public List<TypeCheck> visit(GenericType t, Arg arg) {
             if (nativeTypes.contains(t)) {
-                if ("RegExp".equals(typeNames.get(t))) {
-                    return Arrays.asList(
-                            expectNotNull(),
-                            new SimpleTypeCheck(
-                                    Check.instanceOf(identifier("RegExp")),
-                                    "RegExp"
-                            )
-                    );
+                switch (typeNames.get(t)) {
+                    case "RegExp":
+                    case "HTMLCanvasElement":
+                    case "HTMLImageElement":
+                    case "HTMLVideoElement":
+                    case "Float32Array":
+                    case "HTMLElement":
+                    case "XMLHttpRequest":
+                    case "Uint16Array":
+                    case "Uint32Array":
+                        return Collections.singletonList(
+                                new SimpleTypeCheck(
+                                        Check.instanceOf(identifier(typeNames.get(t))),
+                                        typeNames.get(t)
+                                )
+                        );
+                    default:
+                        throw new RuntimeException(typeNames.get(t));
+
                 }
-                throw new RuntimeException();
             }
             return t.toInterface().accept(this, arg);
         }
@@ -152,27 +179,34 @@ public class CheckType {
             if (TypesUtil.isEmptyInterface(t)) {
                 return Collections.singletonList(new SimpleTypeCheck(Check.alwaysTrue(), "[any]"));
             }
-            if ("Date".equals(typeNames.get(t))) {
-                return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.instanceOf(identifier("Date")), "Date"));
-            }
-            if ("Function".equals(typeNames.get(t))) {
-                return Collections.singletonList(new SimpleTypeCheck(Check.typeOf("function"), "function"));
-            }
-            if ("String".equals(typeNames.get(t))) {
-                return new SimpleType(SimpleTypeKind.String).accept(this, arg);
-            }
-            if ("Number".equals(typeNames.get(t))) {
-                return new SimpleType(SimpleTypeKind.Number).accept(this, arg);
-            }
-            if ("Object".equals(typeNames.get(t))) {
-                return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.typeOf("object"), "Object"));
-            }
-            if ("Error".equals(typeNames.get(t))) {
-                return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.instanceOf(identifier("Error")), "Error"));
-            }
-
             if (nativeTypes.contains(t)) {
-                throw new RuntimeException();
+                switch (typeNames.get(t)) {
+                    case "Function":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.typeOf("function"), "function"));
+                    case "String":
+                        return new SimpleType(SimpleTypeKind.String).accept(this, arg);
+                    case "Number":
+                        return new SimpleType(SimpleTypeKind.Number).accept(this, arg);
+                    case "Object":
+                        return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.typeOf("object"), "Object"));
+                    case "Date":
+                    case "Error":
+                    case "WebGLRenderingContext":
+                    case "ImageData":
+                    case "WebGLBuffer":
+                    case "WebGLContextEvent":
+                    case "WebGLTexture":
+                    case "CanvasRenderingContext2D":
+                    case "WebGLProgram":
+                    case "ArrayBuffer":
+                    case "CanvasGradient":
+                    case "WebGLFramebuffer":
+                    case "Event":
+                    case "WebGLRenderbuffer":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(typeNames.get(t))), typeNames.get(t)));
+                    default:
+                        throw new RuntimeException(typeNames.get(t));
+                }
             }
 
             List<TypeCheck> result = new ArrayList<>();
@@ -205,7 +239,6 @@ public class CheckType {
                     List<TypeCheck> fieldChecks = entry.getValue().accept(this, subArg);
                     result.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
                 }
-
             }
 
             return result;
@@ -244,8 +277,23 @@ public class CheckType {
         }
 
         @Override
-        public List<TypeCheck> visit(TupleType t, Arg arg) {
-            throw new RuntimeException();
+        public List<TypeCheck> visit(TupleType tuple, Arg arg) {
+            int size = tuple.getElementTypes().size();
+            List<TypeCheck> result = new ArrayList<>(Arrays.asList(
+                    expectNotNull(),
+                    new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "tuple"),
+                    new SimpleTypeCheck(Check.field("length", Check.equalTo(number(size))), "tuple of " + size + " elements")
+            ));
+
+            if (arg.depthRemaining > 0) {
+                arg = arg.decreaseDepth();
+                for (int i = 0; i < size; i++) {
+                    List<TypeCheck> subCheck = tuple.getElementTypes().get(i).accept(this, arg);
+                    result.add(new FieldTypeCheck(Integer.toString(i), subCheck));
+                }
+            }
+
+            return result;
         }
 
         @Override
@@ -321,6 +369,11 @@ public class CheckType {
                     .stream()
                     .map(subType -> subType.accept(this, arg))
                     .reduce(new ArrayList<>(), Util::reduceList);
+        }
+
+        @Override
+        public List<TypeCheck> visit(ClassInstanceType t, Arg arg) {
+            return ((ClassType) t.getClassType()).getInstanceType().accept(this, arg);
         }
     }
 

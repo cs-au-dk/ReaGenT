@@ -1,7 +1,5 @@
 package dk.webbies.tajscheck.buildprogram;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.*;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
@@ -75,7 +73,7 @@ public class TestProgramBuilder {
             program.add(variable("initialRandomness", string(recording.seed)));
         }
 
-        program.add(parseProgram("prelude.js"));
+        program.add(AstBuilder.programFromFile(this.getClass().getResource("prelude.js")));
 
         program.add(block(typeCreator.getValueVariableDeclarationList()));
 
@@ -126,14 +124,15 @@ public class TestProgramBuilder {
                                                 ifThen(
                                                         binary(identifier("e"), Operator.INSTANCEOF, identifier(RUNTIME_ERROR_NAME)),
                                                         block(
-                                                                statement(call(identifier("print"), member(identifier("e"), "message"))),
-                                                                throwStatement(identifier("e"))
+                                                                statement(call(identifier("error"),
+                                                                        binary(string(RUNTIME_ERROR_NAME), Operator.PLUS, member(identifier("e"), "message"))
+                                                                ))
                                                         )
                                                 )
                                         )))
                 )));
 
-        program.add(parseProgram("dumb.js"));
+        program.add(AstBuilder.programFromFile(this.getClass().getResource("dumb.js")));
 
         typeCreator.finish();
 
@@ -144,7 +143,7 @@ public class TestProgramBuilder {
                     statement(call(function(block(program))))
             );
         } else {
-            assert bench.load_method == Benchmark.LOAD_METHOD.NODE;
+            assert bench.load_method == Benchmark.LOAD_METHOD.REQUIRE || bench.load_method == Benchmark.LOAD_METHOD.BOOTSTRAP;
             return statement(call(function(block(program))));
         }
 
@@ -170,10 +169,6 @@ public class TestProgramBuilder {
                 new CheckType(nativeTypes, typeNames, typeParameterIndexer, new ParameterMap()).assertResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
 
         )));
-    }
-
-    private BlockStatement parseProgram(String fileName) throws IOException {
-        return new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse(fileName, Resources.toString(this.getClass().getResource(fileName), Charsets.UTF_8)).toTSCreateAST().getBody();
     }
 
 
@@ -325,16 +320,20 @@ public class TestProgramBuilder {
 
         @Override
         public List<Statement> visit(MemberAccessTest test) {
-            return Arrays.asList(
-                    variable("base", getTypeExpression(test.getBaseType(), test.getParameterMap())),
-                    variable("result", member(identifier("base"), test.getProperty()))
-            );
+            List<Statement> result = new ArrayList<>();
+            result.add(variable("base", getTypeExpression(test.getBaseType(), test.getParameterMap())));
+            if (Util.isInteger(test.getProperty())) {
+                result.add(variable("result", arrayAccess(identifier("base"), number(Integer.parseInt(test.getProperty())))));
+            } else {
+                result.add(variable("result", member(identifier("base"), test.getProperty())));
+            }
+            return result;
         }
 
         @Override
         public List<Statement> visit(LoadModuleTest test) {
             switch (bench.load_method) {
-                case NODE:
+                case REQUIRE:
                     return Collections.singletonList(
                             variable(
                                     identifier("result"),
@@ -344,6 +343,10 @@ public class TestProgramBuilder {
                 case BROWSER:
                     return Collections.singletonList(
                             variable("result", identifier(bench.module))
+                    );
+                case BOOTSTRAP:
+                    return Collections.singletonList(
+                            variable("result", typeCreator.createType(test.getModuleType(), test.getParameterMap()))
                     );
                 default:
                     throw new RuntimeException();

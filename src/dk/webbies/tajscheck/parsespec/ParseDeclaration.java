@@ -37,9 +37,7 @@ public class ParseDeclaration {
             SpecReader.TypeNameTree type = entry.getValue();
             if (type instanceof SpecReader.Leaf) {
                 SpecReader.Leaf leaf = (SpecReader.Leaf) type;
-                if (leaf.getType() instanceof InterfaceType) {
-                    typeNames.put(leaf.getType(), name);
-                } else if (leaf.getType() instanceof GenericType) {
+                if (leaf.getType() instanceof InterfaceType || leaf.getType() instanceof GenericType || leaf.getType() instanceof ClassType || leaf.getType() instanceof ClassInstanceType) {
                     typeNames.put(leaf.getType(), name);
                 } else {
                     throw new RuntimeException("I don't handle marking " + leaf.getType().getClass().getName() + " yet!");
@@ -80,7 +78,7 @@ public class ParseDeclaration {
 
         while (!queue.isEmpty()) {
             Arg arg = queue.poll();
-            arg.type.accept(new MarkAllTypesVisitor(queue, seen, typeNames), arg);
+            arg.type.accept(new NameAllTypesVisitor(queue, seen, typeNames), arg);
         }
 
         return typeNames;
@@ -104,14 +102,19 @@ public class ParseDeclaration {
         public Arg append(String key, Type newType) {
             return new Arg(this.path + "." + key, depth + 1, newType);
         }
+
+        public Arg extraDepth(int depth) {
+            return new Arg(this.path, this.depth + depth, this.type);
+        }
+
     }
 
-    private static class MarkAllTypesVisitor implements TypeVisitorWithArgument<Void, Arg> {
+    private static class NameAllTypesVisitor implements TypeVisitorWithArgument<Void, Arg> {
         private final PriorityQueue<Arg> queue;
         private final Set<Type> seen;
         private Map<Type, String> typeNames;
 
-        public MarkAllTypesVisitor(PriorityQueue<Arg> queue, Set<Type> seen, Map<Type, String> typeNames) {
+        public NameAllTypesVisitor(PriorityQueue<Arg> queue, Set<Type> seen, Map<Type, String> typeNames) {
             this.queue = queue;
             this.seen = seen;
             this.typeNames = typeNames;
@@ -124,7 +127,36 @@ public class ParseDeclaration {
 
         @Override
         public Void visit(ClassType t, Arg arg) {
-            throw new RuntimeException();
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            for (Signature signature : t.getSignatures()) {
+                for (int i = 0; i < signature.getParameters().size(); i++) {
+                    queue.add(arg.append("[arg" + i + "]", signature.getParameters().get(i).getType()));
+                }
+            }
+            for (Type baseType : t.getBaseTypes()) {
+                queue.add(arg.append("[base]", baseType));
+            }
+            for (Map.Entry<String, Type> entry : t.getInstanceProperties().entrySet()) {
+                queue.add(arg.append(entry.getKey(), entry.getValue()));
+            }
+
+            for (Map.Entry<String, Type> entry : t.getStaticProperties().entrySet()) {
+                queue.add(arg.append("[static]" + entry.getKey(), entry.getValue()));
+            }
+            if (t.getDeclaredNumberIndexType() != null) {
+                queue.add(arg.append("[numberIndexer]", t.getDeclaredNumberIndexType()));
+            }
+            if (t.getDeclaredStringIndexType() != null) {
+                queue.add(arg.append("[stringIndexer]", t.getDeclaredStringIndexType()));
+            }
+            assert t.getTarget().equals(t) || (t.getTarget() instanceof ClassInstanceType && ((ClassInstanceType) t.getTarget()).getClassType().equals(t));
+
+            return null;
         }
 
         @Override
@@ -147,16 +179,21 @@ public class ParseDeclaration {
             addName(t, arg.path);
 
             for (Type baseType : t.getBaseTypes()) {
-                baseType.accept(this, arg);
+                queue.add(arg.append("[base]", baseType));
             }
 
             for (Signature signature : Util.concat(t.getDeclaredCallSignatures(), t.getDeclaredConstructSignatures())) {
-                queue.add(arg.append("[return]", signature.getResolvedReturnType()));
-
                 for (int i = 0; i < signature.getParameters().size(); i++) {
                     queue.add(arg.append("[arg" + i + "]", signature.getParameters().get(i).getType()));
                 }
             }
+            for (Signature signature : t.getDeclaredCallSignatures()) {
+                queue.add(arg.append("()", signature.getResolvedReturnType()));
+            }
+            for (Signature signature : t.getDeclaredConstructSignatures()) {
+                queue.add(arg.append("new()", signature.getResolvedReturnType()));
+            }
+
 
             if (t.getDeclaredNumberIndexType() != null) {
                 queue.add(arg.append("[numberIndexer]", t.getDeclaredNumberIndexType()));
@@ -200,7 +237,17 @@ public class ParseDeclaration {
 
         @Override
         public Void visit(TupleType t, Arg arg) {
-            throw new RuntimeException();
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            for (int i = 0; i < t.getElementTypes().size(); i++) {
+                queue.add(arg.append(Integer.toString(i), t.getElementTypes().get(i)));
+            }
+
+            return null;
         }
 
         @Override
@@ -273,6 +320,19 @@ public class ParseDeclaration {
             for (int i = 0; i < t.getElements().size(); i++) {
                 queue.add(arg.append("[intersection" + i + "]", t.getElements().get(i)));
             }
+
+            return null;
+        }
+
+        @Override
+        public Void visit(ClassInstanceType t, Arg arg) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            queue.add(arg.append("[instanceOf]", t.getClassType()).extraDepth(1000));
 
             return null;
         }

@@ -76,7 +76,6 @@ for (var key in console) {
 
 function RuntimeError(message) {
     this.message = message;
-    error("RuntimeError: " + message);
     Error.call(this, message);
 }
 RuntimeError.prototype = Object.create(Error.prototype);

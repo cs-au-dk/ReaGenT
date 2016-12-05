@@ -1,18 +1,22 @@
 
 TODO:
-    // Checking function arguments.
-    // First class functions.
+    // For paper.tex, note that small node applications can be nice analysis-targets.
+    // Find 5 small node-applications, that has TypeScript declarations, as analysis-targets, both for this project and Hamid's project.
+
+Papers to look at:
+    // Efficiently generating structurally complex inputs with thousands of objects (in relation to JConTest)
+
+Implemtation TODO's
+    // I concat some tests, which most likely screws up the filtering when creating smaller tests.
+    // Try to get ts-spec-reader and TAJS-private as modules (in IntelliJ) and sub-modules (in git). (Tjek email fra Esben, med checkout as TAJS-meta). (Consider including TAJS as a jar instead).
     // Try to make it so only "executeable" tests are attempted. So that ALL checkDependencies calls are successful.
     // TAJS_Record: (Eksempel TestMicro#tajsRecord), skal kaldes som: TAJS_record("o.foo should be number", typeof o.foo === "number")`
     // Make sure no constructed object is tested
-    // Limit the amount of tests created in underscore.
     // Explicitly try to instantiate unconstrained generic types with a primitive?
     // Måske prøve at fange og raportere nogle runtime fejl (TypeErrorException). + prøve at kalde en ikke funktion
     // Coverage can measure how well we are doing, make an automatic coverage report after each test run.
-
-
-// TODO: Oprindelig blame tracker: Philip Wadler (blame)
-// Thiemann, contracts for JS, "ConTest"
+    // idea from Esben: Instead of generating assertions, at runtime convert the concrete object into a type (with some limited depth, followed by any types), and ask the TypeScript compiler if they are assignable.
+    // RestArgs, both for checking and for generating calls to functions
 
 Notes:
     - A crucial thing about generic types, is that it works if it is instantiated with a type A or a Type B.
@@ -24,6 +28,13 @@ Notes:
         - It is assumed that the declaration file describes all possible behaviour that an application can do.
         - instanceOf doesn't work like it should on constructed objects, they are only structurally correct.
         - No modification is made to the object structure of the library, and no modifications is done to any object returned by the library.
+	- Blame tracking: 
+		Here is the thing, in our setting the application is correct pr. construction. Therefore we only need to track positive blame (positive, right), and everything negative is assumed to be correct. 
+		And if we pass an optained positive type into a negative argument (as we do), then the argument is checked elsewhere, and can therefore still be assumed as correct.
+    - General union-types and overloaded signatures:
+        When presented with a general union-type, or an overloaded signature, we at runtime try to detect which overload is being executed.
+        However, this is not always possible, sometimes we find that none of the overloads match, in which case it is an error of the library
+    - We test the soundness of our dynamic analysis, by constructing a instance of the library type, and testing that.
 
 
 What we are trying to do:
@@ -47,19 +58,20 @@ Contributions:
     - We show how sound static analysis of a generalized test program can find errors that are not found by any automatic testing (not tested).
 
 Related works:
-    Well-typed programs can’t be blamed: (http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.645.2399&rep=rep1&type=pdf) TODO: From sec 2.2.
+    Well-typed programs can’t be blamed: (http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.645.2399&rep=rep1&type=pdf)
         Introduces blame calculus.
         We factor the well-known notion of subtyping into new notions of positive and negative subtyping
         We prove that a cast from a positive subtype cannot give rise to positive blame, and that a cast from a negative subtype cannot give rise to negative blame
+        If casting a function, the check is delayed until the actual function application. Then the check is split in two, a check on the function return, with the same blame label, and a check on the function argument, with negated blame label.
 
 
     Feedback-directed random test generation (RANDOOP).
         Randomly executes statements in the tested library, records the behaviour, and creates tests that does the same thing.
         Limitations:
             - Only handles Java's type system, which is conceptually simple, since there is no union types.
-            - Conceptually (section 2.3), it only constructs primitives by itself, everything else must come from previous executions (not completly true though).
+            - (section 2.3), it only constructs primitives by itself, everything else must come from previous executions (not completely true though).
             - Doesn't handle first order functions, but it would possibly not take much to make it.
-            - In Java you don't have structural types. In JavaScript we have to create objects ourself.
+            - In Java you don't have structural types. In JavaScript we have to create objects ourselves.
             - RANDOOP doesn't construct much by itself, it construct things like Lists, but it doesn't construct Date, we construct everything!
             - RANDOOP gives up supprisingly quickly, example; the following input generates NO test cases:
                 public class Test<T extends List<String>>  {
@@ -97,6 +109,48 @@ Related works:
     (Typestate: A programming language concept for enhancing software reliability)
         Typestate is a general concept, it is basically that an object has a typestate, which is mutable, and can thereby encode that a getter must be called before a setter.
         It is also called protocol analysis.
+
+    Contract-Driven Testing of JavaScript Code: (JSConTest)
+        Gives programmers the option to add constracts to their functions, which specifies inputs and outputs of the functions.
+        These can both be monitored at runtime (when executing a normal application), or tested automatically (somewhat like we do).
+        The difference is that they seem to only test pure functions, they don't test an entire application.
+        They also perform some simple syntactic analysis, to extract constants from the application, which allows them to find more errors (poor mans symbolic execution, they even ref to a concolic testing paper in the related works section, and say that what they do is much more lightweight version of the it).
+        Generates function inputs somewhat like we do, by generating it automatically from a type (they do however not use previously returned values of the library).
+        "In future work, we plan to extend the generators in the style of JCrasher and Randoop" (that would be basically exactly what we do).
+
+    Efficiently Generating Structurally Complex Inputs with Thousands of Objects (mentioned as future work in JSConTest) (A generation algorithm)
+        Generates a structure of a desired size that satisfies a predicate (general Java code as the predicate).
+        Does this by first generating random structure, then repairing it using symbolic execution.
+        Not really relevant, we don't really have a predicate.
+
+
+    JSConTest: Contract-Driven Testing and Path Effect Inference for JavaScript (The second JSConTest paper)
+        As in previous, now with side-effects in contracts?
+        "JSConTest supports access permission contracts to specify the side effects of an operation"
+        A path is specified, and the contract system then allows reads/write on objects, if the contract allows it (paths are specified by regular expressions).
+        It can also infer these access paths.
+
+    TreatJS: Higher-Order Contracts for JavaScript
+        "We present the design and implementation of TreatJS, a language embedded, higher-order
+        contract system for JavaScript [21] which enforces contracts by run-time monitoring"
+        "No source code transformation or change in the JavaScript run-time system is required."
+        "In particular, TreatJS is the first contract system for JavaScript that supports the standard
+        features of contemporary contract systems (embedded contract language, JavaScript in flat contracts,
+        contracts as projections, full interposition using JavaScript proxies"
+        Supports higher-order functions with blame, and is therefore able to correctly blame the context of the subject.
+        Is meant for use on applications
+
+    Blame Assignment for Higher-Order Contracts with Intersection and Union
+        (My thought, before reading: This can be a problem, when monitoring an execution. The problem is actually simpler for us, since we have to decide which union is the "right" one before we proceed, therefore we cannot delay anything, which makes our options simpler).
+        Is the formal basis for TreatJS.
+        First order functions and intersections types provide some complications, e.g. if you have an intersection of function types, you can only blame the subject (positive blame) if 1 of the "sub" terms have positive blame.
+        And likewise, you can only blame the context (negative blame), if ALL of the "sub" terms have negative blame.
+        Likewise (but the other way around) for union-types.
+        As i said in the "My thought", we don't have to deal with that in this work, since we are forced to determine which union is the right one right away.
+        They also have that "no single test can detect the violation"
+
+
+
 
 
 Future work:
