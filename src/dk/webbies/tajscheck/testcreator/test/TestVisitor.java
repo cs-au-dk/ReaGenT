@@ -20,4 +20,6 @@ public interface TestVisitor<T> {
     T visit(UnionTypeTest test);
 
     T visit(NumberIndexTest test);
+
+    T visit(StringIndexTest test);
 }

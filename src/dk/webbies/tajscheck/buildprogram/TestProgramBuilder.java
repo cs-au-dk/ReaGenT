@@ -428,7 +428,18 @@ public class TestProgramBuilder {
         public List<Statement> visit(NumberIndexTest test) {
             return Arrays.asList(
                     variable("base", getTypeExpression(test.getObj(), test.getTypeContext())),
-                    fromString("var keys = Object.keys(base).filter(function (e) {return Number(e) + \"\" === e})"),
+                    fromString("var keys = getAllKeys(base).filter(function (e) {return Number(e) + \"\" === e})"),
+                    fromString("if (keys.length == 0) {return false}"),
+                    fromString("var key = keys[Math.floor(Math.random()*keys.length)];"),
+                    fromString("var result = base[key]")
+            );
+        }
+
+        @Override
+        public List<Statement> visit(StringIndexTest test) {
+            return Arrays.asList(
+                    variable("base", getTypeExpression(test.getObj(), test.getTypeContext())),
+                    fromString("var keys = getAllKeys(base)"),
                     fromString("if (keys.length == 0) {return false}"),
                     fromString("var key = keys[Math.floor(Math.random()*keys.length)];"),
                     fromString("var result = base[key]")

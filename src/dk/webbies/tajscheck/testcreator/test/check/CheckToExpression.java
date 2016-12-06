@@ -90,6 +90,13 @@ public class CheckToExpression implements CheckVisitorWithArgument<Expression, E
         ), "exp"));
     }
 
+    @Override
+    public Expression visit(StringIndexCheck check, Expression expression) {
+        return call(identifier("stringIndexCheck"), expression, function(block(
+                Return(check.getSubCheck().accept(this, identifier("exp")))
+        ), "exp"));
+    }
+
     public static Expression generate(Check check, Expression exp) {
         return check.accept(new CheckToExpression(), exp);
     }

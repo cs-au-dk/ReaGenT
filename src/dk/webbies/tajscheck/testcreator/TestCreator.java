@@ -348,9 +348,13 @@ public class TestCreator {
 
             t.getBaseTypes().forEach(base -> recurse(base, arg));
 
-            assert t.getDeclaredStringIndexType() == null;
+            if (t.getDeclaredStringIndexType() != null) {
+                tests.add(new StringIndexTest(t, t.getDeclaredStringIndexType(), arg.path, arg.typeContext));
+                t.getDeclaredStringIndexType().accept(this, arg.append("[stringIndexer]"));
+            }
             if (t.getDeclaredNumberIndexType() != null) {
                 tests.add(new NumberIndexTest(t, t.getDeclaredNumberIndexType(), arg.path, arg.typeContext));
+                t.getDeclaredNumberIndexType().accept(this, arg.append("[numberIndexer]"));
             }
 
             Map<String, Type> properties = t.getDeclaredProperties();

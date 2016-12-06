@@ -248,7 +248,11 @@ public class CheckType {
                     result.add(new SimpleTypeCheck(Check.numberIndex(indexCheck.getCheck()), "(numberIndexer: " + indexCheck.getExpected() + ")"));
                 }
                 if (t.getDeclaredStringIndexType() != null) {
-                    assert false;
+                    Type indexType = t.getDeclaredStringIndexType();
+
+                    TypeCheck indexCheck = createIntersection(indexType.accept(this, arg));
+
+                    result.add(new SimpleTypeCheck(Check.stringIndex(indexCheck.getCheck()), "(stringIndexer: " + indexCheck.getExpected() + ")"));
                 }
             }
 

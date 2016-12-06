@@ -70,4 +70,9 @@ public interface Check {
     static NumberIndexCheck numberIndex(Check subCheck) {
         return new NumberIndexCheck(subCheck);
     }
+
+    static StringIndexCheck stringIndex(Check subCheck) {
+        return new StringIndexCheck(subCheck);
+    }
+
 }

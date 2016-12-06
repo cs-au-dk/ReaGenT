@@ -293,4 +293,16 @@ public class UnitTests {
                 .expected("number")
                 .got(TYPEOF, "string");
     }
+
+    @Test
+    public void stringIndexer() throws Exception {
+        RunResult result = run("stringIndexer", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.foo().[stringIndexer]")
+                .expected("number")
+                .got(TYPEOF, "string");
+    }
 }

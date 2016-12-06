@@ -104,3 +104,21 @@ function numberIndexCheck(obj, check) {
     }
     return true;
 }
+
+function getAllKeys(obj) {
+    var result = [];
+    for (var key in obj) {
+        result.push(key);
+    }
+    return result;
+}
+
+function stringIndexCheck(obj, check) {
+    for (var key in obj) {
+        //noinspection JSUnfilteredForInLoop (It is supposed to be that way, the object-prototype is exluded because it's properties are non-enumerable).
+        if (!check(obj[key])) {
+            return false;
+        }
+    }
+    return true;
+}
