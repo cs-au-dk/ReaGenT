@@ -239,6 +239,17 @@ public class CheckType {
                     List<TypeCheck> fieldChecks = entry.getValue().accept(this, subArg);
                     result.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
                 }
+
+                if (t.getDeclaredNumberIndexType() != null) {
+                    Type indexType = t.getDeclaredNumberIndexType();
+
+                    TypeCheck indexCheck = createIntersection(indexType.accept(this, arg));
+
+                    result.add(new SimpleTypeCheck(Check.numberIndex(indexCheck.getCheck()), "(numberIndexer: " + indexCheck.getExpected() + ")"));
+                }
+                if (t.getDeclaredStringIndexType() != null) {
+                    assert false;
+                }
             }
 
             return result;
@@ -252,7 +263,7 @@ public class CheckType {
                 return Arrays.asList(
                         expectNotNull(),
                         new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "Array"),
-                        new SimpleTypeCheck(Check.numberIndexCheck(indexCheck.getCheck()), "(numberIndex: " + indexCheck.getExpected() + ")")
+                        new SimpleTypeCheck(Check.arrayIndexCheck(indexCheck.getCheck()), "(arrayIndex: " + indexCheck.getExpected() + ")")
                 );
             }
 

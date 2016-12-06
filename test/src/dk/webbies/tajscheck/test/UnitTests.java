@@ -270,7 +270,7 @@ public class UnitTests {
 
         expect(result)
                 .forPath("module.foo()")
-                .expected("(numberIndex: number)")
+                .expected("(arrayIndex: number)")
                 .got(JSON, "[1,2,3,\"4\"]");
     }
 
@@ -280,5 +280,17 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size() + result.errors.size(), is(0));
 
+    }
+
+    @Test
+    public void numberIndexer() throws Exception {
+        RunResult result = run("numberIndexer", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.foo().[numberIndexer]")
+                .expected("number")
+                .got(TYPEOF, "string");
     }
 }

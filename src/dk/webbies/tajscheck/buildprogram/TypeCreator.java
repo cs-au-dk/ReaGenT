@@ -511,49 +511,49 @@ public class TypeCreator {
             case "String":
                 return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), typeContext);
             case "HTMLCanvasElement":
-                return AstBuilder.programFromString("return document.createElement('canvas')");
+                return AstBuilder.fromString("return document.createElement('canvas')");
             case "HTMLVideoElement":
-                return AstBuilder.programFromString("return document.createElement('video')");
+                return AstBuilder.fromString("return document.createElement('video')");
             case "HTMLImageElement":
-                return AstBuilder.programFromString("return document.createElement('img')");
+                return AstBuilder.fromString("return document.createElement('img')");
             case "Uint32Array":
-                return AstBuilder.programFromString("return new Uint32Array()");
+                return AstBuilder.fromString("return new Uint32Array()");
             case "Float32Array":
-                return AstBuilder.programFromString("return new Float32Array()");
+                return AstBuilder.fromString("return new Float32Array()");
             case "Uint16Array":
-                return AstBuilder.programFromString("return new Uint16Array()");
+                return AstBuilder.fromString("return new Uint16Array()");
             case "WebGLRenderingContext":
-                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\")");
+                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\")");
             case "WebGLTexture":
-                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createTexture()");
+                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\").createTexture()");
             case "WebGLFramebuffer":
-                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createFramebuffer()");
+                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\").createFramebuffer()");
             case "WebGLRenderbuffer":
-                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createRenderbuffer()");
+                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\").createRenderbuffer()");
             case "CanvasRenderingContext2D":
-                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"2d\")");
+                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"2d\")");
             case "MouseEvent":
-                return AstBuilder.programFromString("return new MouseEvent(null)");
+                return AstBuilder.fromString("return new MouseEvent(null)");
             case "Event":
-                return AstBuilder.programFromString("return new Event(null)");
+                return AstBuilder.fromString("return new Event(null)");
             case "WebGLProgram":
-                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createProgram()");
+                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\").createProgram()");
             case "WebGLBuffer":
-                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createBuffer()");
+                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\").createBuffer()");
             case "ArrayBuffer":
-                return AstBuilder.programFromString("return new ArrayBuffer()");
+                return AstBuilder.fromString("return new ArrayBuffer()");
             case "ImageData":
-                return AstBuilder.programFromString("return new ImageData(10, 10)");
+                return AstBuilder.fromString("return new ImageData(10, 10)");
             case "TouchEvent":
-                return AstBuilder.programFromString("return new TouchEvent(null)");
+                return AstBuilder.fromString("return new TouchEvent(null)");
             case "WebGLContextEvent":
-                return AstBuilder.programFromString("return new WebGLContextEvent(null)");
+                return AstBuilder.fromString("return new WebGLContextEvent(null)");
             case "PointerEvent":
-                return AstBuilder.programFromString("return new PointerEvent(\"pointermove\")");
+                return AstBuilder.fromString("return new PointerEvent(\"pointermove\")");
             case "CanvasGradient":
-                return AstBuilder.programFromString("return document.createElement(\"canvas\").getContext(\"2d\").createLinearGradient()");
+                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"2d\").createLinearGradient()");
             case "HTMLElement":
-                return AstBuilder.programFromString("return document.createElement('div')");
+                return AstBuilder.fromString("return document.createElement('div')");
             default:
                 throw new RuntimeException("Unknown: " + name);
         }
@@ -572,7 +572,7 @@ public class TypeCreator {
         Map<TypeParameterType, Type> newParameters = new TypeContext().getMap();
         InterfaceType result = SpecReader.makeEmptySyntheticInterfaceType();
         typeNames.put(result, typeNames.get(inter));
-        inter.getBaseTypes().forEach(subType -> {
+        Util.concat(Collections.singletonList(inter), inter.getBaseTypes()).forEach(subType -> {
             if (subType instanceof ReferenceType) {
                 newParameters.putAll(TypesUtil.generateParameterMap((ReferenceType) subType).getMap());
                 subType = ((ReferenceType) subType).getTarget();

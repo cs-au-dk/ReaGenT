@@ -244,7 +244,7 @@ public class AstBuilder {
         return new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse("filename", Resources.toString(resource, Charsets.UTF_8)).toTSCreateAST().getBody();
     }
 
-    public static BlockStatement programFromString(String program){
+    public static BlockStatement fromString(String program){
         // Packing and unpacking, to allow top-level return-statements.
         BlockStatement body = new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse("filename", "function foo() {" + program + "}").toTSCreateAST().getBody();
         return ((FunctionExpression)((ExpressionStatement)body.getStatements().iterator().next()).getExpression()).getBody();

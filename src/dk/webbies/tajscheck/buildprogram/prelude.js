@@ -80,7 +80,9 @@ function RuntimeError(message) {
 }
 RuntimeError.prototype = Object.create(Error.prototype);
 
-function numberIndexCheck(obj, check) {
+// Utility functions.
+
+function arrayIndexCheck(obj, check) {
     if (typeof obj.length !== "number" || obj.length < 0) {
         return false;
     }
@@ -90,5 +92,15 @@ function numberIndexCheck(obj, check) {
         }
     }
 
+    return true;
+}
+
+function numberIndexCheck(obj, check) {
+    for (var key in obj) {
+        //noinspection JSUnfilteredForInLoop (It is supposed to be that way, only the object-prototype is excluded).
+        if (Number(key) + "" === key && !check(obj[key])) {
+            return false;
+        }
+    }
     return true;
 }

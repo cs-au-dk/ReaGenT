@@ -295,7 +295,6 @@ public class TestCreator {
             return null;
         }
 
-        @SuppressWarnings("Duplicates")
         @Override
         public Void visit(ClassType t, Arg arg) {
             TypeWithParameters withParameters = new TypeWithParameters(t, arg.getTypeContext());
@@ -318,22 +317,14 @@ public class TestCreator {
 
             recurse(t.getInstanceType(), arg.append("new()"));
 
-            for (Map.Entry<String, Type> entry : t.getStaticProperties().entrySet()) {
-                String key = entry.getKey();
-                Type type = entry.getValue();
-
-                tests.add(new MemberAccessTest(t, type, key, arg.path, arg.getTypeContext()));
-
-                addMethodCallTest(t, arg, key, type);
-
-                recurse(type, arg.append(key));
-            }
+            visitProperties(t, arg, t.getStaticProperties());
 
             return null;
         }
 
         @Override
         public Void visit(GenericType t, Arg arg) {
+            // TODO: Consider creating a special test if it is an array.
             TypeWithParameters withParameters = new TypeWithParameters(t, arg.getTypeContext());
             if (seen.contains(withParameters) || nativeTypes.contains(t)) {
                 return null;
@@ -358,9 +349,19 @@ public class TestCreator {
             t.getBaseTypes().forEach(base -> recurse(base, arg));
 
             assert t.getDeclaredStringIndexType() == null;
-            assert t.getDeclaredNumberIndexType() == null;
+            if (t.getDeclaredNumberIndexType() != null) {
+                tests.add(new NumberIndexTest(t, t.getDeclaredNumberIndexType(), arg.path, arg.typeContext));
+            }
 
-            for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
+            Map<String, Type> properties = t.getDeclaredProperties();
+            visitProperties(t, arg, properties);
+
+
+            return null;
+        }
+
+        private void visitProperties(Type t, Arg arg, Map<String, Type> properties) {
+            for (Map.Entry<String, Type> entry : properties.entrySet()) {
                 String key = entry.getKey();
                 Type type = entry.getValue();
 
@@ -370,9 +371,6 @@ public class TestCreator {
 
                 recurse(type, arg.append(key));
             }
-
-
-            return null;
         }
 
         private void addMethodCallTest(Type baseType, Arg arg, String key, Type propertyType) {

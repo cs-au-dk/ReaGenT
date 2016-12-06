@@ -55,8 +55,8 @@ public interface Check {
         return new InstanceOfCheck(exp);
     }
 
-    static NumberIndexCheck numberIndexCheck(Check subCheck) {
-        return new NumberIndexCheck(subCheck);
+    static ArrayIndexCheck arrayIndexCheck(Check subCheck) {
+        return new ArrayIndexCheck(subCheck);
     }
 
     static FieldCheck field(String field, Check... subChecks) {
@@ -65,5 +65,9 @@ public interface Check {
 
     static FieldCheck field(String field, List<Check> subChecks) {
         return new FieldCheck(subChecks, field);
+    }
+
+    static NumberIndexCheck numberIndex(Check subCheck) {
+        return new NumberIndexCheck(subCheck);
     }
 }
