@@ -74,11 +74,14 @@ public class CheckToExpression implements CheckVisitorWithArgument<Expression, E
 
     @Override
     public Expression visit(FieldCheck check, Expression expression) {
-        if (Util.isInteger(check.getField())) {
-            return Check.and(check.getChecks()).accept(this, arrayAccess(expression, number(Integer.parseInt(check.getField()))));
-        } else {
-            return Check.and(check.getChecks()).accept(this, member(expression, check.getField()));
-        }
+        return Check.and(check.getChecks()).accept(this, member(expression, check.getField()));
+    }
+
+    @Override
+    public Expression visit(NumberIndexCheck check, Expression expression) {
+        return call(identifier("numberIndexCheck"), expression, function(block(
+                Return(check.getSubCheck().accept(this, identifier("exp")))
+        ), "exp"));
     }
 
     public static Expression generate(Check check, Expression exp) {

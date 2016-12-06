@@ -247,8 +247,13 @@ public class CheckType {
         @Override
         public List<TypeCheck> visit(ReferenceType t, Arg arg) {
             if ("Array".equals(typeNames.get(t.getTarget()))) {
-                // TODO: Check the index type:
-                return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "Array"));
+                TypeCheck indexCheck = createIntersection(t.getTypeArguments().get(0).accept(this, arg));
+
+                return Arrays.asList(
+                        expectNotNull(),
+                        new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "Array"),
+                        new SimpleTypeCheck(Check.numberIndexCheck(indexCheck.getCheck()), "(numberIndex: " + indexCheck.getExpected() + ")")
+                );
             }
 
             if (nativeTypes.contains(t)) {
@@ -310,8 +315,6 @@ public class CheckType {
 
         @Override
         public List<TypeCheck> visit(TypeParameterType parameter, Arg arg) {
-            assert parameter.getTarget() == null;
-
             TypeContext typeContext = arg.typeContext;
 
             if (typeContext.containsKey(parameter)) {

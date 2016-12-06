@@ -97,6 +97,10 @@ public class UnitTests {
         }
     }
 
+    private RunResult run(String name, String seed) throws IOException {
+        return parseDriverResult(runDriver(name, seed));
+    }
+
     @Test
     public void testMissingProperty() throws Exception {
         RunResult result = OutputParser.parseDriverResult(runDriver("missingProperty", "mySeed"));
@@ -108,7 +112,7 @@ public class UnitTests {
 
     @Test
     public void wrongSimpleType() throws Exception {
-        RunResult result = parseDriverResult(runDriver("wrongSimpleType", "aSeed"));
+        RunResult result = run("wrongSimpleType", "aSeed");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -122,14 +126,14 @@ public class UnitTests {
 
     @Test
     public void everyThingGoesRight() throws Exception {
-        RunResult result = parseDriverResult(runDriver("everythingIsRight", "aSeed"));
+        RunResult result = run("everythingIsRight", "aSeed");
 
         assertThat(result.typeErrors.size(), is(0));
     }
 
     @Test
     public void simpleFunctionArg() throws Exception {
-        RunResult result = parseDriverResult(runDriver("simpleFunctionArg", "someSeed"));
+        RunResult result = run("simpleFunctionArg", "someSeed");
 
         expect(result)
                 .forPath("module.foo.[arg0].[arg0].<>.value")
@@ -139,7 +143,7 @@ public class UnitTests {
 
     @Test
     public void testComplexUnion() throws Exception {
-        RunResult result = parseDriverResult(runDriver("complexUnion", "foo"));
+        RunResult result = run("complexUnion", "foo");
 
         expect(result)
                 .forPath("module.foo().[union2]()")
@@ -150,7 +154,7 @@ public class UnitTests {
 
     @Test
     public void optionalParameters() throws Exception {
-        RunResult result = parseDriverResult(runDriver("optionalParameters", "foo"));
+        RunResult result = run("optionalParameters", "foo");
 
         expect(result)
                 .forPath("module.foo()")
@@ -159,14 +163,14 @@ public class UnitTests {
 
     @Test
     public void simpleOverloads() throws Exception {
-        RunResult result = parseDriverResult(runDriver("simpleOverloads", "foo"));
+        RunResult result = run("simpleOverloads", "foo");
 
         assertThat(result.typeErrors.size(), is(0));
     }
 
     @Test
     public void genericClass() throws Exception {
-        RunResult result = parseDriverResult(runDriver("genericClass", "mySeed"));
+        RunResult result = run("genericClass", "mySeed");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -178,7 +182,7 @@ public class UnitTests {
 
     @Test
     public void generics() throws Exception {
-        RunResult result = parseDriverResult(runDriver("generics", "someSeed"));
+        RunResult result = run("generics", "someSeed");
 
         expect(result)
                 .forPath("module.foo().<>.value.foo")
@@ -188,7 +192,7 @@ public class UnitTests {
 
     @Test
     public void genericClass2() throws Exception {
-        RunResult result = parseDriverResult(runDriver("genericClass2", "mySeed"));
+        RunResult result = run("genericClass2", "mySeed");
 
         expect(result)
                 .forPath("module.Index.new().store.<>.value")
@@ -198,7 +202,7 @@ public class UnitTests {
 
     @Test
     public void tuple() throws Exception {
-        RunResult result = parseDriverResult(runDriver("tuple", "seed"));
+        RunResult result = run("tuple", "seed");
 
         expect(result)
                 .forPath("module.foo().<>.2")
@@ -209,7 +213,7 @@ public class UnitTests {
 
     @Test
     public void tupleLength() throws Exception {
-        RunResult result = parseDriverResult(runDriver("tupleLength", "seed"));
+        RunResult result = run("tupleLength", "seed");
 
         expect(result)
                 .forPath("module.foo()")
@@ -219,7 +223,7 @@ public class UnitTests {
 
     @Test
     public void never() throws Exception {
-        RunResult result = parseDriverResult(runDriver("never", "seed"));
+        RunResult result = run("never", "seed");
 
         expect(result)
                 .forPath("module.foo()")
@@ -230,7 +234,7 @@ public class UnitTests {
 
     @Test
     public void thisTypes() throws Exception {
-        RunResult result = parseDriverResult(runDriver("thisTypes", "seed"));
+        RunResult result = run("thisTypes", "seed");
 
         expect(result)
                 .forPath("module.Bar.new().bar")
@@ -240,7 +244,7 @@ public class UnitTests {
 
     @Test
     public void symbols() throws Exception {
-        RunResult result = parseDriverResult(runDriver("symbol", "seed"));
+        RunResult result = run("symbol", "seed");
 
         assertThat(result.typeErrors.size(), is(equalTo(1)));
 
@@ -252,7 +256,7 @@ public class UnitTests {
 
     @Test
     public void constructClass() throws Exception {
-        RunResult result = parseDriverResult(runDriver("constructClass", "seed"));
+        RunResult result = run("constructClass", "seed");
 
         expect(result)
                 .forPath("module.foo()")
@@ -260,5 +264,21 @@ public class UnitTests {
                 .got(STRING, "fooBar");
     }
 
-    // TODO: Look for other TODO's in ts-spec-reader.
+    @Test
+    public void arrayType() throws Exception {
+        RunResult result = run("arrayType", "foo");
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("(numberIndex: number)")
+                .got(JSON, "[1,2,3,\"4\"]");
+    }
+
+    @Test
+    public void arrayTypeCorrect() throws Exception {
+        RunResult result = run("correctArrayType", "bar");
+
+        assertThat(result.typeErrors.size() + result.errors.size(), is(0));
+
+    }
 }

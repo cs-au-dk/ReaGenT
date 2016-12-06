@@ -6,7 +6,6 @@ import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -19,7 +18,6 @@ public class TypesUtil {
         for (Signature signature : t.getSignatures()) {
             Signature constructor = new Signature();
             constructor.setHasRestParameter(signature.isHasRestParameter());
-            constructor.setHasStringLiterals(signature.isHasStringLiterals());
             constructor.setIsolatedSignatureType(signature.getIsolatedSignatureType());
             constructor.setMinArgumentCount(signature.getMinArgumentCount());
             constructor.setParameters(signature.getParameters());
@@ -345,9 +343,6 @@ public class TypesUtil {
             seen.add(t);
 
             t.getConstraint().accept(this);
-            if (t.getTarget() != null) {
-                t.getTarget().accept(this);
-            }
             return null;
         }
 

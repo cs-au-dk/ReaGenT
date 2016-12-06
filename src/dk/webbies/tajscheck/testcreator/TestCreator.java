@@ -547,8 +547,6 @@ public class TestCreator {
                 recurse(arg.getTypeContext().get(t), arg);
             }
 
-            assert t.getTarget() == null;
-
             if (t.getConstraint() != null) {
                 tests.add(new FilterTest(t, t.getConstraint(), arg.path, arg.getTypeContext(), Check.alwaysTrue()));
                 recurse(t.getConstraint(), arg.append("[constraint]"));
@@ -770,8 +768,6 @@ public class TestCreator {
             if (arg.getTypeContext().containsKey(t)) {
                 arg.getTypeContext().get(t).accept(this, arg);
             }
-
-            assert t.getTarget() == null;
 
             if (t.getConstraint() != null) {
                 t.getConstraint().accept(this, arg.append("[constraint]"));

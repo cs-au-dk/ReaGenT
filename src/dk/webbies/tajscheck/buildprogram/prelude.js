@@ -79,3 +79,16 @@ function RuntimeError(message) {
     Error.call(this, message);
 }
 RuntimeError.prototype = Object.create(Error.prototype);
+
+function numberIndexCheck(obj, check) {
+    if (typeof obj.length !== "number" || obj.length < 0) {
+        return false;
+    }
+    for (var i = 0; i < obj.length; i++) {
+        if (!check(obj[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
