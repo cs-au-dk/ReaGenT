@@ -145,7 +145,11 @@ public class TypeCreator {
 
         @Override
         public Statement visit(ClassType t, TypeContext typeContext) {
-            return TypesUtil.classToInterface(t).accept(this, typeContext);
+            InterfaceType type = TypesUtil.classToInterface(t);
+
+            typeNames.put(type, typeNames.get(t));
+
+            return type.accept(this, typeContext);
         }
 
         @Override

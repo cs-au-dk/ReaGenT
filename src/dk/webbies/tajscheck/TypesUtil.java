@@ -25,6 +25,19 @@ public class TypesUtil {
             constructor.setTypeParameters(signature.getTypeParameters());
             constructor.setUnionSignatures(signature.getUnionSignatures());
             constructor.setResolvedReturnType(t.getInstanceType());
+            interfaceType.getDeclaredConstructSignatures().add(constructor);
+        }
+        if (t.getSignatures().isEmpty()) {
+            Signature constructor = new Signature();
+            constructor.setHasRestParameter(false);
+            constructor.setIsolatedSignatureType(null);
+            constructor.setMinArgumentCount(0);
+            constructor.setParameters(Collections.emptyList());
+            constructor.setTarget(constructor);
+            constructor.setTypeParameters(Collections.emptyList());
+            constructor.setUnionSignatures(Collections.emptyList());
+            constructor.setResolvedReturnType(t.getInstanceType());
+            interfaceType.getDeclaredConstructSignatures().add(constructor);
         }
 
         interfaceType.setBaseTypes(

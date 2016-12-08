@@ -27,12 +27,16 @@ public class UnitTests {
         Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE);
 
         {
-            // Performing a sanity check.
-            // TODO: Introduce this.
-/*            Main.writeFullDriver(bench.withLoadMethod(Benchmark.LOAD_METHOD.BOOTSTRAP));
-            OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runFullDriver(bench));
+            // Performing a soundness check of the .
+            Main.writeFullDriver(bench.withLoadMethod(Benchmark.LOAD_METHOD.BOOTSTRAP));
+            String output = Main.runFullDriver(bench);
+            OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 
-            assertThat(result.typeErrors.size(), is(0));*/
+            if (!result.typeErrors.isEmpty()) {
+                System.out.println(output);
+            }
+
+            assertThat(result.typeErrors.size(), is(0));
         }
 
 
@@ -334,5 +338,10 @@ public class UnitTests {
                 .forPath("module.foo().[stringIndexer]")
                 .expected("number")
                 .got(TYPEOF, "string");
+    }
+
+    @Test
+    public void simpleClass() throws Exception {
+        run("simpleClass", "foo"); // Just pass the sanity check.
     }
 }
