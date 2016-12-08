@@ -144,7 +144,11 @@ public class AstBuilder {
     }
 
     public static ArrayLiteral array(Expression... elements) {
-        return new ArrayLiteral(null, Arrays.asList(elements));
+        return array(Arrays.asList(elements));
+    }
+
+    public static ArrayLiteral array(List<Expression> expressions) {
+        return new ArrayLiteral(null, expressions);
     }
 
     public static ArrayLiteral array(int[] ints) {

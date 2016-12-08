@@ -149,7 +149,7 @@ public class TypeCreator {
 
             typeNames.put(type, typeNames.get(t));
 
-            return type.accept(this, typeContext);
+            return type.accept(this, typeContext.withClass(t));
         }
 
         @Override
@@ -263,9 +263,11 @@ public class TypeCreator {
                 ));
             }
 
-            InterfaceType target;
+            Type target;
             if (type.getTarget() instanceof GenericType) {
                 target = ((GenericType) type.getTarget()).toInterface();
+            } else if (type.getTarget() instanceof TupleType) {
+                target = type.getTarget();
             } else {
                 assert type.getTarget() instanceof ClassInstanceType;
                 target = ((ClassType) ((ClassInstanceType) type.getTarget()).getClassType()).getInstanceType();
@@ -314,7 +316,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(TupleType t, TypeContext typeContext) {
-            throw new RuntimeException();
+            return Return(array(t.getElementTypes().stream().map(element -> constructType(element, typeContext)).collect(Collectors.toList())));
         }
 
         @Override
@@ -341,7 +343,7 @@ public class TypeCreator {
             }
             String markerField = typeParameterIndexer.getMarkerField(type);
             return block(
-                    variable("result", call(function(constructNewInstanceOfType(type.getConstraint(), typeContext)))),
+                    variable("result", constructType(type.getConstraint(), typeContext)),
                     ifThen(
                             binary(unary(Operator.TYPEOF, identifier("result")), Operator.NOT_EQUAL_EQUAL, string("object")),
                             throwStatement(newCall(identifier(RUNTIME_ERROR_NAME)))
@@ -355,7 +357,8 @@ public class TypeCreator {
 
         @Override
         public Statement visit(SymbolType t, TypeContext typeContext) {
-            throw new RuntimeException();
+            Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), new TypeContext());
+            return Return(call(identifier("Symbol"), constructString));
         }
 
         @Override
