@@ -202,7 +202,16 @@ public class CheckType {
                     case "CanvasGradient":
                     case "WebGLFramebuffer":
                     case "Event":
+                    case "HTMLCanvasElement":
                     case "WebGLRenderbuffer":
+                    case "HTMLImageElement":
+                    case "HTMLVideoElement":
+                    case "XMLHttpRequest":
+                    case "HTMLElement":
+                    case "CanvasPattern":
+                    case "MouseEvent":
+                    case "PointerEvent":
+                    case "TouchEvent":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(typeNames.get(t))), typeNames.get(t)));
                     default:
                         throw new RuntimeException(typeNames.get(t));

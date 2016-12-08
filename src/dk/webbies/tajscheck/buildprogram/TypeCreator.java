@@ -601,6 +601,10 @@ public class TypeCreator {
                 return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"2d\").createLinearGradient()");
             case "HTMLElement":
                 return AstBuilder.fromString("return document.createElement('div')");
+            case "CanvasPattern":
+                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"2d\").createPattern()");
+            case "XMLHttpRequest":
+                return AstBuilder.fromString("return new XMLHttpRequest()");
             default:
                 throw new RuntimeException("Unknown: " + name);
         }
@@ -616,7 +620,7 @@ public class TypeCreator {
             return new Pair<>(inter, new TypeContext());
         }
 //        assert inter.getTypeParameters().isEmpty(); // This should only happen when constructed from a generic/reference type, and in that case we have handled the TypeParameters.
-        Map<TypeParameterType, Type> newParameters = new TypeContext().getMap();
+        Map<TypeParameterType, Type> newParameters = new HashMap<>();
         InterfaceType result = SpecReader.makeEmptySyntheticInterfaceType();
 
         result.getDeclaredCallSignatures().addAll(inter.getDeclaredCallSignatures());
@@ -632,6 +636,9 @@ public class TypeCreator {
             }
             if (subType instanceof GenericType) {
                 subType = ((GenericType) subType).toInterface();
+            }
+            if (subType instanceof ClassInstanceType) {
+                subType = ((ClassType) ((ClassInstanceType) subType).getClassType()).getInstanceType();
             }
             Pair<InterfaceType, TypeContext> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) subType);
             newParameters.putAll(pair.getRight().getMap());

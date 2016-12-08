@@ -10,6 +10,7 @@ import dk.webbies.tajscheck.paser.AstToStringVisitor;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.testcreator.test.LoadModuleTest;
 import dk.webbies.tajscheck.testcreator.TestCreator;
+import dk.webbies.tajscheck.util.IdentityHashSet;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.File;
@@ -67,6 +68,11 @@ public class Main {
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
 
         List<Test> tests = new TestCreator(nativeTypes, typeToTest, orgBench, typeParameterIndexer).createTests();
+
+        if (tests.size() > 1000) {
+            tests.removeAll(new IdentityHashSet<>(tests.subList(1000, tests.size())));
+            System.err.println("Artifically limiting the amount of small drivers to 1000");
+        }
 
         int counter = 0;
 
