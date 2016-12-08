@@ -90,11 +90,11 @@ public class TypeCreator {
         List<Integer> elements = types.stream().distinct().map((type) -> getTypeIndex(type, typeContext)).collect(Collectors.toList());
 
         if (elements.size() == 1) {
-            return Return(createType(elements.iterator().next()));
+            return Return(constructType(elements.iterator().next()));
         }
 
         List<Pair<Expression, Statement>> cases = Util.withIndex(elements).map(pair -> {
-            return new Pair<Expression, Statement>(number(pair.getRight()), Return(createType(pair.getLeft())));
+            return new Pair<Expression, Statement>(number(pair.getRight()), Return(constructType(pair.getLeft())));
         }).collect(Collectors.toList());
 
         return block(
@@ -103,7 +103,7 @@ public class TypeCreator {
                         cases,
                         block(
                                 comment("Unreachable"),
-                                Return(createType(elements.iterator().next()))
+                                Return(constructType(elements.iterator().next()))
                         )
                 )
         );
@@ -163,28 +163,30 @@ public class TypeCreator {
                 return constructTypeFromName(typeNames.get(type), typeContext);
             }
 
-
             Pair<InterfaceType, TypeContext> pair = constructSyntheticInterfaceWithBaseTypes(type);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
 
-            assert inter.getDeclaredStringIndexType() == null;
-            assert inter.getDeclaredNumberIndexType() == null;
-
-            List<Type> returnTypes = Util.concat(inter.getDeclaredCallSignatures(), inter.getDeclaredConstructSignatures()).stream().map(Signature::getResolvedReturnType).collect(Collectors.toList());
+            int numberOfSignatures = type.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size();
 
             List<Statement> program = new ArrayList<>();
-            if (returnTypes.isEmpty()) {
+            if (numberOfSignatures == 0) {
                 program.add(variable("result", object()));
             } else {
                 program.add(variable("result", createFunction(inter, typeContext)));
             }
 
+            if (inter.getDeclaredNumberIndexType() != null) {
+                program.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result")));
+            }
+
+            assert inter.getDeclaredStringIndexType() == null;
+
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
 
             for (Pair<String, Type> property : properties) {
-                program.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, createType(property.getRight(), typeContext))));
+                program.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, constructType(property.getRight(), typeContext))));
             }
 
             program.add(Return(identifier("result")));
@@ -192,11 +194,21 @@ public class TypeCreator {
             return block(program);
         }
 
+        private Collection<Statement> addNumberIndexerType(Type type, TypeContext context, Expression exp) {
+            return Arrays.asList(
+                    statement(binary(member(exp, "1"), Operator.EQUAL, constructType(type, context))),
+                    statement(binary(member(exp, "4"), Operator.EQUAL, constructType(type, context))),
+                    statement(binary(member(exp, "15"), Operator.EQUAL, constructType(type, context))),
+                    statement(binary(member(exp, "102"), Operator.EQUAL, constructType(type, context))),
+                    statement(binary(member(exp, "15.3"), Operator.EQUAL, constructType(type, context)))
+            );
+        }
+
         @Override
         public Statement visit(ReferenceType type, TypeContext typeContext) {
             if ("Array".equals(typeNames.get(type.getTarget()))) {
                 Type indexType = type.getTypeArguments().iterator().next();
-                Expression constructElement = createType(indexType, typeContext);
+                Expression constructElement = constructType(indexType, typeContext);
 
 
                 // An expression that returns an array with the correct type, with either 0, 1, 3, 4 or 5 elements in the array.
@@ -478,7 +490,7 @@ public class TypeCreator {
 
         return block(
                 block(saveArgumentValues),
-                Return(createType(signature.getResolvedReturnType(), typeContext))
+                Return(constructType(signature.getResolvedReturnType(), typeContext))
         );
     }
 
@@ -571,8 +583,14 @@ public class TypeCreator {
 //        assert inter.getTypeParameters().isEmpty(); // This should only happen when constructed from a generic/reference type, and in that case we have handled the TypeParameters.
         Map<TypeParameterType, Type> newParameters = new TypeContext().getMap();
         InterfaceType result = SpecReader.makeEmptySyntheticInterfaceType();
+
+        result.getDeclaredCallSignatures().addAll(inter.getDeclaredCallSignatures());
+        result.getDeclaredConstructSignatures().addAll(inter.getDeclaredConstructSignatures());
+        result.setDeclaredNumberIndexType(inter.getDeclaredNumberIndexType());
+        result.setDeclaredStringIndexType(inter.getDeclaredStringIndexType());
+
         typeNames.put(result, typeNames.get(inter));
-        Util.concat(Collections.singletonList(inter), inter.getBaseTypes()).forEach(subType -> {
+        inter.getBaseTypes().forEach(subType -> {
             if (subType instanceof ReferenceType) {
                 newParameters.putAll(TypesUtil.generateParameterMap((ReferenceType) subType).getMap());
                 subType = ((ReferenceType) subType).getTarget();
@@ -585,14 +603,10 @@ public class TypeCreator {
             InterfaceType type = pair.getLeft();
             result.getDeclaredCallSignatures().addAll((type.getDeclaredCallSignatures()));
             result.getDeclaredConstructSignatures().addAll(type.getDeclaredConstructSignatures());
-            if (inter.getDeclaredNumberIndexType() != null) {
-                result.setDeclaredNumberIndexType(inter.getDeclaredNumberIndexType());
-            } else {
+            if (result.getDeclaredNumberIndexType() == null) {
                 result.setDeclaredNumberIndexType(type.getDeclaredNumberIndexType());
             }
-            if (inter.getDeclaredStringIndexType() != null) {
-                result.setDeclaredStringIndexType(inter.getDeclaredStringIndexType());
-            } else {
+            if (result.getDeclaredStringIndexType() == null) {
                 result.setDeclaredStringIndexType(type.getDeclaredStringIndexType());
             }
             result.getDeclaredProperties().putAll(inter.getDeclaredProperties());
@@ -616,7 +630,7 @@ public class TypeCreator {
         return call(identifier(GET_TYPE_PREFIX + index));
     }
 
-    public CallExpression createType(Type type, TypeContext typeContext) {
+    public CallExpression constructType(Type type, TypeContext typeContext) {
         int index = getTypeIndex(type, typeContext);
 
         addConstructInstanceFunction(index);
@@ -624,9 +638,9 @@ public class TypeCreator {
         return call(identifier(CONSTRUCT_TYPE_PREFIX + index));
     }
 
-    public CallExpression createType(int index) {
+    public CallExpression constructType(int index) {
         TypeWithParameters typeWithParameters = typeIndexes.inverse().get(index);
-        return createType(typeWithParameters.getType(), typeWithParameters.getTypeContext());
+        return constructType(typeWithParameters.getType(), typeWithParameters.getTypeContext());
     }
 
     private int getTypeIndex(Type type, TypeContext typeContext) {

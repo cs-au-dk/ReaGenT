@@ -305,4 +305,16 @@ public class UnitTests {
                 .expected("number")
                 .got(TYPEOF, "string");
     }
+
+    @Test
+    public void createNumberIndexer() throws Exception {
+        RunResult result = run("createNumberIndexer", "bar");
+
+        expect(result)
+                .forPath("module.foo().[numberIndexer]")
+                .expected("number")
+                .got(TYPEOF, "string");
+    }
+
+    // TODO: Create StringIndexer
 }

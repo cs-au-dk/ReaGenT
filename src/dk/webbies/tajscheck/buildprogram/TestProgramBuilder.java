@@ -346,7 +346,7 @@ public class TestProgramBuilder {
                     );
                 case BOOTSTRAP:
                     return Collections.singletonList(
-                            variable("result", typeCreator.createType(test.getModuleType(), test.getTypeContext()))
+                            variable("result", typeCreator.constructType(test.getModuleType(), test.getTypeContext()))
                     );
                 default:
                     throw new RuntimeException();
@@ -360,7 +360,7 @@ public class TestProgramBuilder {
             result.add(variable("base", getTypeExpression(test.getObject(), test.getTypeContext())));
 
             List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
-                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getTypeContext())));
+                result.add(variable(identifier("argument_" + index), typeCreator.constructType(type, test.getTypeContext())));
                 return identifier("argument_" + index);
             }).collect(Collectors.toList());
 
@@ -378,7 +378,7 @@ public class TestProgramBuilder {
             result.add(variable("base", getTypeExpression(test.getFunction(), test.getTypeContext())));
 
             List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
-                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getTypeContext())));
+                result.add(variable(identifier("argument_" + index), typeCreator.constructType(type, test.getTypeContext())));
                 return identifier("argument_" + index);
             }).collect(Collectors.toList());
 
@@ -395,7 +395,7 @@ public class TestProgramBuilder {
             result.add(variable("base", getTypeExpression(test.getFunction(), test.getTypeContext())));
 
             List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
-                result.add(variable(identifier("argument_" + index), typeCreator.createType(type, test.getTypeContext())));
+                result.add(variable(identifier("argument_" + index), typeCreator.constructType(type, test.getTypeContext())));
                 return identifier("argument_" + index);
             }).collect(Collectors.toList());
 
