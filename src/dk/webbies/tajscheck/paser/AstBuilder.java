@@ -5,6 +5,7 @@ import com.google.common.io.Resources;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.util.Pair;
+import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
 import java.net.URL;
@@ -119,6 +120,8 @@ public class AstBuilder {
     public static Expression member(Expression expression, String property) {
         if (testIdentifier.test(property)) {
             return new MemberExpression(null, property, expression);
+        } else if (Util.isInteger(property)){
+            return arrayAccess(expression, number(Integer.parseInt(property)));
         } else {
             return arrayAccess(expression, string(property));
         }
