@@ -271,7 +271,14 @@ public class TypesUtil {
 
         @Override
         public Void visit(TupleType t) {
-            throw new RuntimeException();
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+
+            t.getElementTypes().forEach(this::accept);
+
+            return null;
         }
 
         @Override
@@ -342,7 +349,9 @@ public class TypesUtil {
             }
             seen.add(t);
 
-            t.getConstraint().accept(this);
+            if (t.getConstraint() != null) {
+                t.getConstraint().accept(this);
+            }
             return null;
         }
 

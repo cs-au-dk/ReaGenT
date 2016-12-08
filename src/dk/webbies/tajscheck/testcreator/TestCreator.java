@@ -488,7 +488,7 @@ public class TestCreator {
         @Override
         public Void visit(TupleType tuple, Arg arg) {
             TypeWithParameters withParameters = new TypeWithParameters(tuple, arg.getTypeContext());
-            if (seen.contains(withParameters) || nativeTypes.contains(tuple)) {
+            if (seen.contains(withParameters)/* || nativeTypes.contains(tuple)*/) { // TupleTypes for some weird reason ends up as the result of en Array's map function.
                 return null;
             }
             seen.add(withParameters);
@@ -738,7 +738,17 @@ public class TestCreator {
 
         @Override
         public Void visit(TupleType t, Arg arg) {
-            throw new RuntimeException();
+            if (negativeTypesSeen.contains(new TypeWithParameters(t, arg.getTypeContext())) /* || nativeTypes.contains(tuple)*/) { // TupleTypes for some weird reason ends up as the result of en Array's map function.
+                return null;
+            }
+            negativeTypesSeen.add(new TypeWithParameters(t, arg.getTypeContext()));
+
+            for (int i = 0; i < t.getElementTypes().size(); i++) {
+                Type type = t.getElementTypes().get(i);
+                type.accept(this, arg.append(Integer.toString(i)));
+            }
+
+            return null;
         }
 
         @Override

@@ -17,6 +17,7 @@ import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -178,10 +179,12 @@ public class TypeCreator {
             }
 
             if (inter.getDeclaredNumberIndexType() != null) {
-                program.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result")));
+                program.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result"), typeNames.get(type).hashCode()));
             }
 
-            assert inter.getDeclaredStringIndexType() == null;
+            if (inter.getDeclaredStringIndexType() != null) {
+                program.addAll(addStringIndexerType(inter.getDeclaredStringIndexType(), typeContext, identifier("result"), inter.getDeclaredProperties().keySet(), typeNames.get(type).hashCode()));
+            }
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
 
@@ -194,14 +197,39 @@ public class TypeCreator {
             return block(program);
         }
 
-        private Collection<Statement> addNumberIndexerType(Type type, TypeContext context, Expression exp) {
-            return Arrays.asList(
-                    statement(binary(member(exp, "1"), Operator.EQUAL, constructType(type, context))),
-                    statement(binary(member(exp, "4"), Operator.EQUAL, constructType(type, context))),
-                    statement(binary(member(exp, "15"), Operator.EQUAL, constructType(type, context))),
-                    statement(binary(member(exp, "102"), Operator.EQUAL, constructType(type, context))),
-                    statement(binary(member(exp, "15.3"), Operator.EQUAL, constructType(type, context)))
-            );
+        private Collection<Statement> addStringIndexerType(Type type, TypeContext context, Expression exp, Set<String> existingKeys, int seed) {
+            char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+            Random random = new Random(seed); // I need this to be completely deterministic.
+
+            int keys = random.nextInt(10) + 1;
+
+            List<Statement> result = new ArrayList<>();
+
+
+            for (int i = 0; i < keys; i++) {
+                String key;
+                //noinspection StatementWithEmptyBody
+                while (existingKeys.contains(key = RandomStringUtils.random(random.nextInt(10) + 1, chars))) {
+                    // do nothing.
+                }
+
+                result.add(statement(binary(member(exp, key), Operator.EQUAL, constructType(type, context))));
+            }
+
+            return result;
+        }
+
+        private Collection<Statement> addNumberIndexerType(Type type, TypeContext context, Expression exp, int seed) {
+            Random random = new Random(seed);
+
+            List<Statement> result = new ArrayList<>();
+
+            int keys = random.nextInt(10) + 1;
+            for (int i = 0; i < keys; i++) {
+                result.add(statement(binary(member(exp, Integer.toString(random.nextInt(100))), Operator.EQUAL, constructType(type, context))));
+            }
+
+            return result;
         }
 
         @Override

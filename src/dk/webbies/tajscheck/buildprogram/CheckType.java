@@ -274,8 +274,8 @@ public class CheckType {
             if (nativeTypes.contains(t)) {
                 throw new RuntimeException();
             }
-            if (nativeTypes.contains(t.getTarget())) {
-                throw new RuntimeException();
+            if (nativeTypes.contains(t.getTarget()) && !(t.getTarget() instanceof TupleType)) {
+                throw new RuntimeException(typeNames.get(t));
             }
             return t.getTarget().accept(this, arg.withParameters(arg.typeContext.append(TypesUtil.generateParameterMap(t))));
         }

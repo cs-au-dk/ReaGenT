@@ -26,6 +26,16 @@ public class UnitTests {
     private String runDriver(String folderName, String seed) throws IOException {
         Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE);
 
+        {
+            // Performing a sanity check.
+            // TODO: Introduce this.
+/*            Main.writeFullDriver(bench.withLoadMethod(Benchmark.LOAD_METHOD.BOOTSTRAP));
+            OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runFullDriver(bench));
+
+            assertThat(result.typeErrors.size(), is(0));*/
+        }
+
+
         Main.writeFullDriver(bench, new ExecutionRecording(null, seed));
 
         String result = Main.runFullDriver(bench);
@@ -316,5 +326,13 @@ public class UnitTests {
                 .got(TYPEOF, "string");
     }
 
-    // TODO: Create StringIndexer
+    @Test
+    public void createStringIndexer() throws Exception {
+        RunResult result = run("createStringIndexer", "bar");
+
+        expect(result)
+                .forPath("module.foo().[stringIndexer]")
+                .expected("number")
+                .got(TYPEOF, "string");
+    }
 }
