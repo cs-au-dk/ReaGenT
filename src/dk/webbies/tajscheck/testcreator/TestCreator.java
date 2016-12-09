@@ -33,6 +33,10 @@ public class TestCreator {
     }
 
     public List<Test> createTests() {
+        return createTests(true);
+    }
+
+    public List<Test> createTests(boolean concatDuplicates) {
         String module = bench.module;
 
         PriorityQueue<CreateTestQueueElement> queue = new PriorityQueue<>();
@@ -62,7 +66,11 @@ public class TestCreator {
                 bench.pathsToTest.stream().anyMatch(path -> path.startsWith(test.getPath()))
             ).collect(Collectors.toList());
         }
-        return concatDuplicateTests(tests);
+        if (concatDuplicates) {
+            return concatDuplicateTests(tests);
+        } else {
+            return tests;
+        }
     }
 
     private static List<Test> addTopLevelFunctionTests(Type type, String path, TypeContext typeContext, CreateTestVisitor visitor, Set<TypeWithParameters> negativeTypesSeen, TypeParameterIndexer typeParameterIndexer, Set<Type> nativeTypes, int depth) {

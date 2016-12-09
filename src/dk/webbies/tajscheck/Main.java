@@ -67,7 +67,7 @@ public class Main {
 
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
 
-        List<Test> tests = new TestCreator(nativeTypes, typeToTest, orgBench, typeParameterIndexer).createTests();
+        List<Test> tests = new TestCreator(nativeTypes, typeToTest, orgBench, typeParameterIndexer).createTests(false);
 
         if (tests.size() > 1000) {
             tests.removeAll(new IdentityHashSet<>(tests.subList(1000, tests.size())));
