@@ -395,6 +395,16 @@ public class TypeCreator {
         public Statement visit(ThisType t, TypeContext typeContext) {
             return typeContext.getClassType().getInstanceType().accept(this, typeContext);
         }
+
+        @Override
+        public Statement visit(IndexType t, TypeContext typeContext) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Statement visit(IndexedAccessType t, TypeContext typeContext) {
+            throw new RuntimeException();
+        }
     }
 
     private FunctionExpression createFunction(InterfaceType inter, TypeContext typeContext) {

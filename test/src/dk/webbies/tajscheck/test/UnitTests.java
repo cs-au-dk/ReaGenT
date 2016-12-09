@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.test;
 
+import dk.au.cs.casa.typescript.SpecReader;
 import dk.webbies.tajscheck.ExecutionRecording;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
@@ -9,6 +10,7 @@ import org.hamcrest.Matcher;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,6 +25,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Created by erik1 on 23-11-2016.
  */
 public class UnitTests {
+    private SpecReader parseDeclaration(String folderName) {
+        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE);
+
+        // Only testing that i can parse it, without getting exceptions.
+        return ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile));
+    }
+
     private String runDriver(String folderName, String seed) throws IOException {
         Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE);
 
@@ -343,5 +352,41 @@ public class UnitTests {
     @Test
     public void simpleClass() throws Exception {
         run("simpleClass", "foo"); // Just pass the sanity check.
+    }
+
+    @Test
+    public void keyOf() throws Exception {
+        RunResult result = run("keyOf", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("(\"name\" or \"age\" or \"location\")")
+                .got(STRING, "notAProp");
+    }
+
+    @Test
+    public void indexedAccess() throws Exception {
+        RunResult result = run("indexedAccess", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("(string or number)")
+                .got(TYPEOF, "boolean");
+    }
+
+    @Test
+    public void genericIndexedAccess() throws Exception {
+        SpecReader spec = parseDeclaration("genericIndexedAccess");
+        assertThat(spec, is(notNullValue()));
+    }
+
+    @Test
+    public void mappedTypes() throws Exception {
+        SpecReader spec = parseDeclaration("mappedTypes");
+        assertThat(spec, is(notNullValue()));
     }
 }

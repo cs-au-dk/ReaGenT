@@ -416,6 +416,16 @@ public class CheckType {
         public List<TypeCheck> visit(ThisType t, Arg arg) {
             return arg.typeContext.getClassType().getInstanceType().accept(this, arg);
         }
+
+        @Override
+        public List<TypeCheck> visit(IndexType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public List<TypeCheck> visit(IndexedAccessType t, Arg arg) {
+            throw new RuntimeException();
+        }
     }
 
     private static TypeCheck createUnionCheck(List<List<TypeCheck>> checksLists) {

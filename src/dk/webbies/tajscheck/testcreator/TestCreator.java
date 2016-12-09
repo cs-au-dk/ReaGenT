@@ -74,6 +74,10 @@ public class TestCreator {
             return Collections.emptyList();
         }
 
+        if (type instanceof IndexedAccessType) {
+            return Collections.emptyList();
+        }
+
         if (type instanceof IntersectionType) {
             List<Test> result = new ArrayList<>();
             for (Type subType : ((IntersectionType) type).getElements()) {
@@ -614,6 +618,16 @@ public class TestCreator {
             return arg.typeContext.getClassType().getInstanceType().accept(this, arg);
         }
 
+        @Override
+        public Void visit(IndexType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Void visit(IndexedAccessType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
         public Collection<Test> getTests() {
             return tests;
         }
@@ -834,6 +848,18 @@ public class TestCreator {
         @Override
         public Void visit(ThisType t, Arg arg) {
             return arg.getTypeContext().getClassType().getInstanceType().accept(this, arg);
+        }
+
+        @Override
+        public Void visit(IndexType t, Arg arg) {
+            return t.getType().accept(this, arg.append("[index]"));
+        }
+
+        @Override
+        public Void visit(IndexedAccessType t, Arg arg) {
+            t.getObjectType().accept(this, arg.append("[objectType]"));
+            t.getIndexType().accept(this, arg.append("[indexType]"));
+            return null;
         }
     }
 }

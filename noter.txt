@@ -7,6 +7,7 @@ Papers to look at:
     // Efficiently generating structurally complex inputs with thousands of objects (in relation to JConTest)
 
 Implemtation TODO's
+	// For TAJS, make another program, where primitives are constructed using TAJS_MAKE (and make a note that something special has to be done with the any type).
     // I concat some tests, which most likely screws up the filtering when creating smaller tests.
     // Try to get ts-spec-reader and TAJS-private as modules (in IntelliJ) and sub-modules (in git). (Tjek email fra Esben, med checkout as TAJS-meta). (Consider including TAJS as a jar instead).
     // Try to make it so only "executeable" tests are attempted. So that ALL checkDependencies calls are successful.

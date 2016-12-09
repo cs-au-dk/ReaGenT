@@ -360,5 +360,31 @@ public class ParseDeclaration {
 
             return null;
         }
+
+        @Override
+        public Void visit(IndexType t, Arg arg) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            queue.add(arg.append("[index]", t.getType()));
+            return null;
+        }
+
+        @Override
+        public Void visit(IndexedAccessType t, Arg arg) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            addName(t, arg.path);
+
+            queue.add(arg.append("[indexType]", t.getIndexType()));
+            queue.add(arg.append("[objectType]", t.getObjectType()));
+
+            return null;
+        }
     }
 }

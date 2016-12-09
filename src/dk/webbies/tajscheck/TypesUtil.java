@@ -351,6 +351,31 @@ public class TypesUtil {
         }
 
         @Override
+        public Void visit(IndexType t) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+
+            t.getType().accept(this);
+
+            return null;
+        }
+
+        @Override
+        public Void visit(IndexedAccessType t) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+
+            t.getObjectType().accept(this);
+            t.getIndexType().accept(this);
+
+            return null;
+        }
+
+        @Override
         public Void visit(UnresolvedType t) {
             throw new RuntimeException();
         }
