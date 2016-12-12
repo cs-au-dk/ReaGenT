@@ -13,7 +13,7 @@ public class LoadModuleTest extends Test {
     private Type moduleType;
 
     public LoadModuleTest(String module, Type moduleType) {
-        super(Collections.EMPTY_LIST, Collections.EMPTY_LIST, moduleType, "require(\"" + module + "\")", new TypeContext());
+        super(Collections.emptyList(), Collections.emptyList(), moduleType, "require(\"" + module + "\")", new TypeContext());
         this.module = module;
         this.moduleType = moduleType;
     }

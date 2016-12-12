@@ -24,7 +24,6 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
  * Created by erik1 on 02-11-2016.
  */
 public class TestProgramBuilder {
-    public static final String ASSERTION_FAILURES = "assertionFailures";
     public static final String VARIABLE_NO_VALUE = "no_value";
     public static final String VALUE_VARIABLE_PREFIX = "value_";
     public static final String RUNTIME_ERROR_NAME = "RuntimeError";
@@ -60,7 +59,7 @@ public class TestProgramBuilder {
         this.moduleType = moduleType;
         this.typeParameterIndexer = typeParameterIndexer;
 
-        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer);
+        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer, tests);
     }
 
     public Statement buildTestProgram(ExecutionRecording recording) throws IOException {
@@ -96,13 +95,28 @@ public class TestProgramBuilder {
         // Non-deterministically running all the test-cases.
         Expression getNumberToRun;
         if (recording == null || recording.testSequence == null) {
-            getNumberToRun = binary(binary(call(identifier("random")), Operator.MULT, number(tests.size())), Operator.BITWISE_OR, number(0));
+            getNumberToRun = expFromString("testsThatCanRun[Math.floor(Math.random() * testsThatCanRun.length)]");
         } else {
-            getNumberToRun = arrayAccess(identifier("recording"), identifier("i"));
+            getNumberToRun = expFromString("recording[i]");
         }
 
         if (Main.CHECK_HEAP) {
             program.add(createCheckHeapFunction());
+        }
+
+
+        for (int i = 0; i < tests.size(); i++) {
+            Test test = tests.get(i);
+            List<ArrayLiteral> args = test
+                    .getTypeToTest()
+                    .stream()
+                    .map(typeToTest -> typeCreator.getValueIndex(typeToTest, test.getTypeContext()))
+                    .map(valueIndexes -> valueIndexes.stream().map(AstBuilder::number).collect(Collectors.toList()))
+                    .map(AstBuilder::array).collect(Collectors.toList());
+
+            program.add(statement(
+                    call(identifier("registerTest"), number(i), array(args))
+            ));
         }
 
         program.add(forLoop(
@@ -133,8 +147,6 @@ public class TestProgramBuilder {
                 )));
 
         program.add(AstBuilder.programFromFile(this.getClass().getResource("dumb.js")));
-
-        typeCreator.finish();
 
         if (bench.load_method == Benchmark.LOAD_METHOD.BROWSER) {
             BlockStatement dependency = new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse(bench.jsFile, Util.readFile(bench.jsFile)).toTSCreateAST().getBody();
@@ -195,17 +207,20 @@ public class TestProgramBuilder {
         List<Statement> testCode = test.accept(new TestBuilderVisitor());
 
         List<Type> produces = new ArrayList<>(test.getProduces());
+        assert produces.size() == typeCreator.getTestProducesIndexes(test).size();
+
         Statement saveResultStatement;
         CheckType checkType = new CheckType(nativeTypes, typeNames, typeParameterIndexer, test.getTypeContext());
         if (produces.size() == 1) {
             Type product = produces.iterator().next();
-            int index = typeCreator.createProducedValueVariable(product, test.getTypeContext());
+            int index = typeCreator.getTestProducesIndexes(test).iterator().next();
             saveResultStatement = block(
                     checkType.assertResultingType(product, identifier("result"), test.getPath(), Main.CHECK_DEPTH),
-                    statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result")))
+                    statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result"))),
+                    statement(call(identifier("registerValue"), number(index)))
             );
         } else {
-            List<Integer> valueIndexes = produces.stream().map(type -> typeCreator.createProducedValueVariable(type, test.getTypeContext())).collect(Collectors.toList());
+            List<Integer> valueIndexes = typeCreator.getTestProducesIndexes(test);
 
             saveResultStatement = block(
                     variable("passedResults", array()),
@@ -256,6 +271,7 @@ public class TestProgramBuilder {
                                             number(index),
                                             block(
                                                     statement(binary(identifier(VALUE_VARIABLE_PREFIX + valueIndexes.get(index)), Operator.EQUAL, identifier("result"))),
+                                                    statement(call(identifier("registerValue"), number(valueIndexes.get(index)))),
                                                     breakStatement()
                                             )
                                     )
@@ -428,10 +444,10 @@ public class TestProgramBuilder {
         public List<Statement> visit(NumberIndexTest test) {
             return Arrays.asList(
                     variable("base", getTypeExpression(test.getObj(), test.getTypeContext())),
-                    fromString("var keys = getAllKeys(base).filter(function (e) {return Number(e) + \"\" === e})"),
-                    fromString("if (keys.length == 0) {return false}"),
-                    fromString("var key = keys[Math.floor(Math.random()*keys.length)];"),
-                    fromString("var result = base[key]")
+                    stmtFromString("var keys = getAllKeys(base).filter(function (e) {return Number(e) + \"\" === e})"),
+                    stmtFromString("if (keys.length == 0) {return false}"),
+                    stmtFromString("var key = keys[Math.floor(Math.random()*keys.length)];"),
+                    stmtFromString("var result = base[key]")
             );
         }
 
@@ -439,10 +455,10 @@ public class TestProgramBuilder {
         public List<Statement> visit(StringIndexTest test) {
             return Arrays.asList(
                     variable("base", getTypeExpression(test.getObj(), test.getTypeContext())),
-                    fromString("var keys = getAllKeys(base)"),
-                    fromString("if (keys.length == 0) {return false}"),
-                    fromString("var key = keys[Math.floor(Math.random()*keys.length)];"),
-                    fromString("var result = base[key]")
+                    stmtFromString("var keys = getAllKeys(base)"),
+                    stmtFromString("if (keys.length == 0) {return false}"),
+                    stmtFromString("var key = keys[Math.floor(Math.random()*keys.length)];"),
+                    stmtFromString("var result = base[key]")
             );
         }
 

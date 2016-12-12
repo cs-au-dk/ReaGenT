@@ -2,7 +2,9 @@ package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.TypeContext;
+import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
+import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
 
 import java.util.Collections;
 
@@ -14,7 +16,7 @@ public class FilterTest extends Test {
     private Check check;
 
     public FilterTest(Type type, Type produces, String path, TypeContext typeContext, Check check) {
-        super(Collections.singletonList(type), Collections.EMPTY_LIST, produces, path, typeContext);
+        super(Collections.singletonList(type), Collections.emptyList(), produces, path, typeContext);
         this.type = type;
         this.check = check;
     }
@@ -36,6 +38,7 @@ public class FilterTest extends Test {
     public boolean equalsNoPath(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!CheckToExpression.generate(check, AstBuilder.nullLiteral()).equals(CheckToExpression.generate(((FilterTest)o).check, AstBuilder.nullLiteral()))) return false;
         return super.equalsNoPathBase((Test) o);
     }
 

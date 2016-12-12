@@ -389,4 +389,22 @@ public class UnitTests {
         SpecReader spec = parseDeclaration("mappedTypes");
         assertThat(spec, is(notNullValue()));
     }
+
+    @Test
+    public void differentSizeOverloads() throws Exception {
+        RunResult result = run("differentSizeOverloads", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.errors.size(), is(0));
+    }
+
+    @Test
+    public void complexOverloads() throws Exception {
+        RunResult result = run("complexOverloads", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.errors.size(), is(0));
+    }
+
+    // TODO: More complex overloads, with same size and different sizes.
 }

@@ -124,7 +124,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
         return null;
     }
 
-    private void writeArgs(List<Expression> args) {
+    private void writeArgs(List<? extends Expression> args) {
         write("(");
         for (int i = 0; i < args.size(); i++) {
             Expression arg = args.get(i);
@@ -167,7 +167,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             write(func.getName().getName());
             write(" ");
         }
-        writeArgs(Util.cast(Expression.class, func.getArguments()));
+        writeArgs(func.getArguments());
         if (!func.getBody().getStatements().isEmpty()) {
             write(" {\n");
             ident++;
@@ -300,6 +300,9 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             case PLUS:
                 write("+");
                 break;
+            case MINUS:
+                write("-");
+                break;
             default:
                 throw new RuntimeException("Yet unknown operator: " + unary.getOperator());
         }
@@ -335,7 +338,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
     @Override
     public Void visit(ArrayLiteral arrayLiteral) {
         write("[");
-        List<Expression> elements = arrayLiteral.getExpressions();
+        List<? extends Expression> elements = arrayLiteral.getExpressions();
         for (int i = 0; i < elements.size(); i++) {
             elements.get(i).accept(this);
             if (i != elements.size() - 1) {
@@ -490,7 +493,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
     @Override
     public Void visit(Return aReturn) {
         ident();
-        if (aReturn.getExpression() != null) {
+        if (aReturn.getExpression() != null && !(aReturn.getExpression() instanceof UnaryExpression && ((UnaryExpression) aReturn.getExpression()).getOperator() == Operator.VOID && ((UnaryExpression) aReturn.getExpression()).getExpression() instanceof NumberLiteral)) {
             write("return ");
             aReturn.getExpression().accept(this);
             write(";\n");

@@ -9,14 +9,14 @@ import java.util.List;
  * Created by erik1 on 22-01-2016.
  */
 public class ArrayLiteral extends Expression {
-    private final List<Expression> expressions;
+    private final List<? extends Expression> expressions;
 
-    public ArrayLiteral(SourceRange location, List<Expression> expression) {
+    public ArrayLiteral(SourceRange location, List<? extends Expression> expression) {
         super(location);
         this.expressions = expression;
     }
 
-    public List<Expression> getExpressions() {
+    public List<? extends Expression> getExpressions() {
         return expressions;
     }
 

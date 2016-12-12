@@ -13,6 +13,7 @@ import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
+import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
@@ -31,6 +32,7 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
 public class TypeCreator {
     private final BiMap<TypeWithParameters, Integer> typeIndexes;
     private final MultiMap<TypeWithParameters, Integer> valueLocations;
+    private final Map<Test, List<Integer>> testValueLocations = new IdentityHashMap<>();
     private Map<Type, String> typeNames;
     private Set<Type> nativeTypes;
     private TypeParameterIndexer typeParameterIndexer;
@@ -40,16 +42,40 @@ public class TypeCreator {
     private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
     private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
-    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer) {
+    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests) {
         this.valueLocations = new ArrayListMultiMap<>();
         this.typeNames = typeNames;
         this.nativeTypes = nativeTypes;
         this.typeParameterIndexer = typeParameterIndexer;
         this.typeIndexes = HashBiMap.create();
+
+        for (Test test : tests) {
+            List<Integer> testValueLocations = new ArrayList<>();
+            this.testValueLocations.put(test, testValueLocations);
+            for (Type type : test.getProduces()) {
+                testValueLocations.add(createProducedValueVariable(type, test.getTypeContext()));
+            }
+
+            // Forcing all these to be created ahead of time
+            for (Type dependsOn : test.getDependsOn()) {
+                constructType(dependsOn, test.getTypeContext());
+            }
+
+        }
+    }
+
+    public List<Integer> getTestProducesIndexes(Test test) {
+        return testValueLocations.get(test);
+    }
+
+
+    public Collection<Integer> getValueIndex(Type type, TypeContext context) {
+        return valueLocations.get(new TypeWithParameters(type, context));
     }
 
     private int valueCounter = 0;
-    int createProducedValueVariable(Type type, TypeContext typeContext) {
+
+    private int createProducedValueVariable(Type type, TypeContext typeContext) {
         int index = valueCounter++;
         valueVariableDeclarationList.add(variable(VALUE_VARIABLE_PREFIX + index, identifier(VARIABLE_NO_VALUE)));
 
@@ -431,10 +457,13 @@ public class TypeCreator {
 
             // Currently changing nothing if it ended up not type-checking.
             List<Statement> typeChecks = Util.zip(args.stream(), signature.getParameters().stream(), (argName, par) ->
-                typeChecker.assertResultingType(par.getType(), identifier(argName), interName + ".[" + argName + "]", Main.CHECK_DEPTH)
+                    typeChecker.assertResultingType(par.getType(), identifier(argName), interName + ".[" + argName + "]", Main.CHECK_DEPTH)
             ).collect(Collectors.toList());
 
+            typeChecks.add(checkNumberOfArgs(signature));
+
             BlockStatement functionBody = block(
+                    variable(identifier("args"), identifier("arguments")),
                     // Currently not using the information whether or not the signature was correct. The assertion-errors has already been reported anyway.
                     variable(identifier("signatureCorrect"), call(function(
                             block(
@@ -454,6 +483,7 @@ public class TypeCreator {
             );
         } else {
             Statement functionBody = block(
+                    variable(identifier("args"), identifier("arguments")),
                     variable("foundSignatures", array()),
                     // Checking each signature, to see if correct.
                     block(Util.withIndex(signatures).map(signaturePair -> {
@@ -461,6 +491,7 @@ public class TypeCreator {
                         Signature signature = signaturePair.getLeft();
                         return block(
                                 variable("signatureCorrect" + signatureIndex, call(function(block(
+                                        checkNumberOfArgs(signature),
                                         block(Util.withIndex(signature.getParameters()).map(parameterPair -> {
                                             Integer argIndex = parameterPair.getRight();
                                             Signature.Parameter arg = parameterPair.getLeft();
@@ -525,11 +556,27 @@ public class TypeCreator {
         }
     }
 
+    private Statement checkNumberOfArgs(Signature signature) {
+        return block(
+                ifThen(
+                        unary(Operator.NOT, binary(
+                                member(identifier("args"), "length"),
+                                signature.isHasRestParameter() ? Operator.GREATER_THAN_EQUAL : Operator.EQUAL_EQUAL_EQUAL,
+                                number(signature.getMinArgumentCount()))
+                        ),
+                        Return(bool(false))
+                )
+        );
+    }
+
     private BlockStatement saveArgsAndReturnValue(Signature signature, TypeContext typeContext) {
         List<Statement> saveArgumentValues = Util.withIndex(
                 signature.getParameters().stream().map(par -> createProducedValueVariable(par.getType(), typeContext)),
                 (valueIndex, argIndex) -> {
-                    return statement(binary(identifier(VALUE_VARIABLE_PREFIX + valueIndex), Operator.EQUAL, identifier("arg" + argIndex)));
+                    return block(
+                            statement(binary(identifier(VALUE_VARIABLE_PREFIX + valueIndex), Operator.EQUAL, identifier("arg" + argIndex))),
+                            statement(call(identifier("registerValue"), number(valueIndex)))
+                    );
                 }
         ).collect(Collectors.toList());
 
@@ -568,53 +615,53 @@ public class TypeCreator {
             case "String":
                 return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), typeContext);
             case "HTMLCanvasElement":
-                return AstBuilder.fromString("return document.createElement('canvas')");
+                return AstBuilder.stmtFromString("return document.createElement('canvas')");
             case "HTMLVideoElement":
-                return AstBuilder.fromString("return document.createElement('video')");
+                return AstBuilder.stmtFromString("return document.createElement('video')");
             case "HTMLImageElement":
-                return AstBuilder.fromString("return document.createElement('img')");
+                return AstBuilder.stmtFromString("return document.createElement('img')");
             case "Uint32Array":
-                return AstBuilder.fromString("return new Uint32Array()");
+                return AstBuilder.stmtFromString("return new Uint32Array()");
             case "Float32Array":
-                return AstBuilder.fromString("return new Float32Array()");
+                return AstBuilder.stmtFromString("return new Float32Array()");
             case "Uint16Array":
-                return AstBuilder.fromString("return new Uint16Array()");
+                return AstBuilder.stmtFromString("return new Uint16Array()");
             case "WebGLRenderingContext":
-                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\")");
+                return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\")");
             case "WebGLTexture":
-                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\").createTexture()");
+                return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createTexture()");
             case "WebGLFramebuffer":
-                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\").createFramebuffer()");
+                return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createFramebuffer()");
             case "WebGLRenderbuffer":
-                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\").createRenderbuffer()");
+                return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createRenderbuffer()");
             case "CanvasRenderingContext2D":
-                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"2d\")");
+                return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"2d\")");
             case "MouseEvent":
-                return AstBuilder.fromString("return new MouseEvent(null)");
+                return AstBuilder.stmtFromString("return new MouseEvent(null)");
             case "Event":
-                return AstBuilder.fromString("return new Event(null)");
+                return AstBuilder.stmtFromString("return new Event(null)");
             case "WebGLProgram":
-                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\").createProgram()");
+                return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createProgram()");
             case "WebGLBuffer":
-                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"webgl\").createBuffer()");
+                return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createBuffer()");
             case "ArrayBuffer":
-                return AstBuilder.fromString("return new ArrayBuffer()");
+                return AstBuilder.stmtFromString("return new ArrayBuffer()");
             case "ImageData":
-                return AstBuilder.fromString("return new ImageData(10, 10)");
+                return AstBuilder.stmtFromString("return new ImageData(10, 10)");
             case "TouchEvent":
-                return AstBuilder.fromString("return new TouchEvent(null)");
+                return AstBuilder.stmtFromString("return new TouchEvent(null)");
             case "WebGLContextEvent":
-                return AstBuilder.fromString("return new WebGLContextEvent(null)");
+                return AstBuilder.stmtFromString("return new WebGLContextEvent(null)");
             case "PointerEvent":
-                return AstBuilder.fromString("return new PointerEvent(\"pointermove\")");
+                return AstBuilder.stmtFromString("return new PointerEvent(\"pointermove\")");
             case "CanvasGradient":
-                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"2d\").createLinearGradient()");
+                return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"2d\").createLinearGradient()");
             case "HTMLElement":
-                return AstBuilder.fromString("return document.createElement('div')");
+                return AstBuilder.stmtFromString("return document.createElement('div')");
             case "CanvasPattern":
-                return AstBuilder.fromString("return document.createElement(\"canvas\").getContext(\"2d\").createPattern()");
+                return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"2d\").createPattern()");
             case "XMLHttpRequest":
-                return AstBuilder.fromString("return new XMLHttpRequest()");
+                return AstBuilder.stmtFromString("return new XMLHttpRequest()");
             default:
                 throw new RuntimeException("Unknown: " + name);
         }
@@ -696,8 +743,6 @@ public class TypeCreator {
     }
 
     private int getTypeIndex(Type type, TypeContext typeContext) {
-//        TypeContext typeContext = TypesUtil.filterParameterMap(unFilteredParameterMap, type);
-
         TypeWithParameters key = new TypeWithParameters(type, typeContext);
         if (typeIndexes.containsKey(key)) {
             return typeIndexes.get(key);
@@ -705,48 +750,31 @@ public class TypeCreator {
             int value = typeIndexes.size();
             typeIndexes.put(key, value);
 
-//            getType()
+            Collection<Integer> values = valueLocations.keySet().stream()
+                    .filter(candidate -> type.equals(candidate.getType()) && typeContext.equals(candidate.getTypeContext()))
+                    .map(valueLocations::get)
+                    .reduce(new ArrayList<>(), Util::reduceCollection);
 
-            getTypeFunctionQueue.add(key);
+            Statement returnTypeStatement;
+
+            if (values.size() == 1) {
+                returnTypeStatement = Return(identifier(VALUE_VARIABLE_PREFIX + values.iterator().next()));
+            } else if (values.isEmpty()) {
+                returnTypeStatement = Return(identifier(VARIABLE_NO_VALUE));
+            } else {
+                returnTypeStatement = returnOneOfExistingValues(values);
+            }
+
+            ExpressionStatement getTypeFunction = statement(
+                    function(
+                            GET_TYPE_PREFIX + value,
+                            block(returnTypeStatement)
+                    )
+            );
+            functions.add(getTypeFunction);
 
             return value;
         }
-    }
-
-    private List<TypeWithParameters> getTypeFunctionQueue = new ArrayList<>();
-
-    public void finish() {
-        for (TypeWithParameters type : getTypeFunctionQueue) {
-            addGetTypeFunction(type.getType(), type.getTypeContext());
-        }
-    }
-
-    private int addGetTypeFunction(Type type, TypeContext typeContext) {
-        int value = typeIndexes.get(new TypeWithParameters(type, typeContext));
-
-        Collection<Integer> values = valueLocations.keySet().stream()
-                .filter(candidate -> type.equals(candidate.getType()) && typeContext.equals(candidate.getTypeContext()))
-                .map(valueLocations::get)
-                .reduce(new ArrayList<>(), Util::reduceCollection);
-
-        Statement returnTypeStatement;
-
-        if (values.size() == 1) {
-            returnTypeStatement = Return(identifier(VALUE_VARIABLE_PREFIX + values.iterator().next()));
-        } else if (values.isEmpty()) {
-            returnTypeStatement = Return(identifier(VARIABLE_NO_VALUE));
-        } else {
-            returnTypeStatement = returnOneOfExistingValues(values);
-        }
-
-        ExpressionStatement getTypeFunction = statement(
-                function(
-                        GET_TYPE_PREFIX + value,
-                        block(returnTypeStatement)
-                )
-        );
-        functions.add(getTypeFunction);
-        return value;
     }
 
     private final Set<Integer> hasCreateTypeFunction = new HashSet<>();

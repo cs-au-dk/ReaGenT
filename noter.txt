@@ -7,10 +7,15 @@ Papers to look at:
     // Efficiently generating structurally complex inputs with thousands of objects (in relation to JConTest)
 
 Implemtation TODO's
-	// For TAJS, make another program, where primitives are constructed using TAJS_MAKE (and make a note that something special has to be done with the any type).
-    // I concat some tests, which most likely screws up the filtering when creating smaller tests.
-    // Try to get ts-spec-reader and TAJS-private as modules (in IntelliJ) and sub-modules (in git). (Tjek email fra Esben, med checkout as TAJS-meta). (Consider including TAJS as a jar instead).
+    // Lav en Toogle, der siger om programmet skal være designet til TAJS eller ej (evt. en boolean der bliver sat i prelude.js). Fra Gianluca:
+           Note that I removed one for in the dump message, that was using new Set() and a catch, which was using “process.on”.
+           It would be nice if you can get rid of those features, that are not supported by master-not-reviewed.
+           Later on this weekend I will try to run on the nodejs branch.
+
+
     // Try to make it so only "executeable" tests are attempted. So that ALL checkDependencies calls are successful.
+	// For TAJS, make another program, where primitives are constructed using TAJS_MAKE (and make a note that something special has to be done with the any type).
+    // Try to get ts-spec-reader and TAJS-private as modules (in IntelliJ) and sub-modules (in git). (Tjek email fra Esben, med checkout as TAJS-meta). (Consider including TAJS as a jar instead).
     // TAJS_Record: (Eksempel TestMicro#tajsRecord), skal kaldes som: TAJS_record("o.foo should be number", typeof o.foo === "number")`
     // Make sure no constructed object is tested
     // Explicitly try to instantiate unconstrained generic types with a primitive?

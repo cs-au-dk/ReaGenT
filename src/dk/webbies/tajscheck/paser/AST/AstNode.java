@@ -12,6 +12,8 @@ public abstract class AstNode {
     AstNode(SourceRange location) {
         this.location = location;
     }
+
+    @Override
     public String toString() {
         if (location == null) {
             if (this instanceof Expression) {
@@ -34,7 +36,7 @@ public abstract class AstNode {
         AstNode astNode = (AstNode) o;
 
         if (location == null || astNode.location == null) {
-            throw new RuntimeException("Unsupported");
+            return this.toString().equals(astNode.toString());
         }
 
         return location.equals(astNode.location);
@@ -43,6 +45,10 @@ public abstract class AstNode {
 
     @Override
     public int hashCode() {
-        return location.hashCode();
+        if (location != null) {
+            return location.hashCode();
+        } else {
+            return this.toString().hashCode();
+        }
     }
 }

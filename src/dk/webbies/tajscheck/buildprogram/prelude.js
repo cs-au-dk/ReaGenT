@@ -122,3 +122,56 @@ function stringIndexCheck(obj, check) {
     }
     return true;
 }
+
+// The below is library code, that enables me to only run the tests, that are actually able to run.
+
+var testsThatCanRun = []; // list of test-indexes
+var testsWithUnmetDependencies = {}; // value-index -> {testIndex: number, requirements: []}[]
+
+/**
+ *
+ * @param index the test index.
+ * @param requirements a list of requirements, each requirement is a list of possible value-indexes that satisfy that requirement.
+ */
+function registerTest (index, requirements) {
+    if (requirements.length == 0) {
+        testsThatCanRun.push(index);
+    } else {
+        var registration = {
+            "testIndex": index,
+            "requirements": requirements
+        };
+        for (var i = 0; i < requirements.length; i++) {
+            var requirementList = requirements[i];
+            for (var j = 0; j < requirementList.length; j++) {
+                var requirement = requirementList[j];
+                if (!testsWithUnmetDependencies[requirement]) {
+                    testsWithUnmetDependencies[requirement] = [];
+                }
+                testsWithUnmetDependencies[requirement].push(registration);
+            }
+        }
+    }
+}
+function registerValue(valueIndex) {
+    var testList = testsWithUnmetDependencies[valueIndex];
+    if (!testList) {
+        return;
+    }
+    for (var i = 0; i < testList.length; i++) {
+        var test = testList[i];
+        test.requirements = test.requirements.filter(function (valueIndexes) {
+            return valueIndexes.indexOf(valueIndex) === -1;
+        });
+    }
+    testsWithUnmetDependencies[valueIndex] = testList.filter(function (test) {
+        var isEmpty = test.requirements.length == 0;
+        if (isEmpty) {
+            var testIndex = test.testIndex | 0;
+            if (testsThatCanRun.indexOf(testIndex) === -1) {
+                testsThatCanRun.push(testIndex);
+            }
+        }
+        return !isEmpty;
+    });
+}

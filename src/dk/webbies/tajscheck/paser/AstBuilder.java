@@ -39,7 +39,7 @@ public class AstBuilder {
         return call(function, Arrays.asList(args));
     }
 
-    public static CallExpression call(Expression function, List<Expression> args) {
+    public static CallExpression call(Expression function, List<? extends Expression> args) {
         return new CallExpression(null, function, args);
     }
 
@@ -147,7 +147,7 @@ public class AstBuilder {
         return array(Arrays.asList(elements));
     }
 
-    public static ArrayLiteral array(List<Expression> expressions) {
+    public static ArrayLiteral array(List<? extends Expression> expressions) {
         return new ArrayLiteral(null, expressions);
     }
 
@@ -251,9 +251,16 @@ public class AstBuilder {
         return new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse("filename", Resources.toString(resource, Charsets.UTF_8)).toTSCreateAST().getBody();
     }
 
-    public static BlockStatement fromString(String program){
+    public static BlockStatement stmtFromString(String program){
         // Packing and unpacking, to allow top-level return-statements.
         BlockStatement body = new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse("filename", "function foo() {" + program + "}").toTSCreateAST().getBody();
         return ((FunctionExpression)((ExpressionStatement)body.getStatements().iterator().next()).getExpression()).getBody();
+    }
+
+    public static Expression expFromString(String program){
+        BlockStatement block = stmtFromString(program);
+        assert block.getStatements().size() == 1;
+        Statement statement = block.getStatements().iterator().next();
+        return ((ExpressionStatement) statement).getExpression();
     }
 }

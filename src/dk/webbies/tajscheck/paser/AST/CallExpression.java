@@ -10,9 +10,9 @@ import java.util.List;
  */
 public class CallExpression extends Expression {
     private final Expression function;
-    private final List<Expression> args;
+    private final List<? extends Expression> args;
 
-    public CallExpression(SourceRange location, Expression function, List<Expression> args) {
+    public CallExpression(SourceRange location, Expression function, List<? extends Expression> args) {
         super(location);
         this.function = function;
         this.args = args;
@@ -22,7 +22,7 @@ public class CallExpression extends Expression {
         return function;
     }
 
-    public List<Expression> getArgs() {
+    public List<? extends Expression> getArgs() {
         return args;
     }
 
