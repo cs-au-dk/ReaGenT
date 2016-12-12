@@ -1,0 +1,3 @@
+[submodule "TAJS-private"]
+	path = TAJS-private
+	url = git@github.com:cs-au-dk/TAJS-private
