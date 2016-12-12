@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tajscheck.PrettyTypes;
 import dk.webbies.tajscheck.TypeContext;
 
 import java.util.Collections;
@@ -14,7 +15,7 @@ public class FunctionCallTest extends Test {
     private List<Type> parameters;
 
     public FunctionCallTest(Type function, List<Type> parameters, Type returnType, String path, TypeContext typeContext) {
-        super(Collections.singletonList(function), parameters, returnType, path + "()", typeContext);
+        super(Collections.singletonList(function), parameters, returnType, path + PrettyTypes.parameters(parameters), typeContext);
         this.function = function;
         this.parameters = parameters;
     }

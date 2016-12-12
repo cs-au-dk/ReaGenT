@@ -58,6 +58,9 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             case GREATER_THAN_EQUAL:
                 write(">=");
                 break;
+            case LESS_THAN_EQUAL:
+                write("<=");
+                break;
             case BITWISE_AND:
                 write("&");
                 break;

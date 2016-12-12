@@ -557,12 +557,24 @@ public class TypeCreator {
     }
 
     private Statement checkNumberOfArgs(Signature signature) {
+        BinaryExpression condition = binary(
+                member(identifier("args"), "length"),
+                Operator.GREATER_THAN_EQUAL,
+                number(signature.getMinArgumentCount()));
+        if (!signature.isHasRestParameter()) {
+            condition = binary(
+                    condition,
+                    Operator.AND,
+                    binary(
+                            member(identifier("args"), "length"),
+                            Operator.LESS_THAN_EQUAL,
+                            number(signature.getParameters().size())
+                    )
+            );
+        }
         return block(
                 ifThen(
-                        unary(Operator.NOT, binary(
-                                member(identifier("args"), "length"),
-                                signature.isHasRestParameter() ? Operator.GREATER_THAN_EQUAL : Operator.EQUAL_EQUAL_EQUAL,
-                                number(signature.getMinArgumentCount()))
+                        unary(Operator.NOT, condition
                         ),
                         Return(bool(false))
                 )

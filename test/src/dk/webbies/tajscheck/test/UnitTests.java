@@ -180,7 +180,7 @@ public class UnitTests {
         RunResult result = run("optionalParameters", "foo");
 
         expect(result)
-                .forPath("module.foo()")
+                .forPath("module.foo(boolean, union, union)")
                 .expected("number");
     }
 
@@ -282,7 +282,7 @@ public class UnitTests {
         RunResult result = run("constructClass", "seed");
 
         expect(result)
-                .forPath("module.foo()")
+                .forPath("module.foo(obj)")
                 .expected("\"foo\"")
                 .got(STRING, "fooBar");
     }
@@ -401,6 +401,14 @@ public class UnitTests {
     @Test
     public void complexOverloads() throws Exception {
         RunResult result = run("complexOverloads", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.errors.size(), is(0));
+    }
+
+    @Test
+    public void overloadsWithOptionalParameters() throws Exception {
+        RunResult result = run("overloadsWithOptionalParameters", "foo");
 
         assertThat(result.typeErrors.size(), is(0));
         assertThat(result.errors.size(), is(0));
