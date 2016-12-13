@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.test;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,12 +30,13 @@ public class RunBenchmarks {
     @SuppressWarnings("WeakerAccess")
     public static final Map<String, Benchmark> benchmarks = new HashMap<>();
     static {
-        benchmarks.put("moment", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", "moment", REQUIRE));
-        benchmarks.put("async", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/async/async.js", "test/benchmarks/async/async.d.ts", "async", REQUIRE));
-        benchmarks.put("path.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pathjs/pathjs.js", "test/benchmarks/pathjs/pathjs.d.ts", "Path", BROWSER));
-        benchmarks.put("accounting.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/accounting/accounting.js", "test/benchmarks/accounting/accounting.d.ts", "accounting", REQUIRE));
-        benchmarks.put("lunr.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lunr/lunr.js", "test/benchmarks/lunr/lunr.d.ts", "lunr", REQUIRE));
-        benchmarks.put("PIXI.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pixi/pixi.js", "test/benchmarks/pixi/pixi.d.ts", "PIXI", REQUIRE));
+        CheckOptions options = CheckOptions.defaultOptions();
+        benchmarks.put("moment", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", "moment", REQUIRE, options));
+        benchmarks.put("async", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/async/async.js", "test/benchmarks/async/async.d.ts", "async", REQUIRE, options));
+        benchmarks.put("path.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pathjs/pathjs.js", "test/benchmarks/pathjs/pathjs.d.ts", "Path", BROWSER, options));
+        benchmarks.put("accounting.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/accounting/accounting.js", "test/benchmarks/accounting/accounting.d.ts", "accounting", REQUIRE, options));
+        benchmarks.put("lunr.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lunr/lunr.js", "test/benchmarks/lunr/lunr.d.ts", "lunr", REQUIRE, options));
+        benchmarks.put("PIXI.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pixi/pixi.js", "test/benchmarks/pixi/pixi.d.ts", "PIXI", REQUIRE, options));
 
         // TODO: npm packages, including typings. Have a test (that is @Ignored by default), that sets up all npm packages.
     }

@@ -59,7 +59,7 @@ public class TestProgramBuilder {
         this.moduleType = moduleType;
         this.typeParameterIndexer = typeParameterIndexer;
 
-        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer, tests);
+        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer, tests, bench.options);
     }
 
     public Statement buildTestProgram(ExecutionRecording recording) throws IOException {
@@ -102,7 +102,7 @@ public class TestProgramBuilder {
             getNumberToRun = expFromString("recording[i]");
         }
 
-        if (Main.CHECK_HEAP) {
+        if (bench.options.checkHeap) {
             program.add(createCheckHeapFunction());
         }
 
@@ -126,7 +126,7 @@ public class TestProgramBuilder {
                 binary(identifier("i"), Operator.LESS_THAN, iterationsToRun),
                 unary(Operator.POST_PLUS_PLUS, identifier("i")),
                 block(
-                        Main.CHECK_HEAP ? statement(call(identifier("checkHeap"))) : comment("checkHeap()"),
+                        bench.options.checkHeap ? statement(call(identifier("checkHeap"))) : comment("checkHeap()"),
                         variable("testNumberToRun", getNumberToRun),
                         statement(methodCall(identifier("testOrderRecording"), "push", identifier("testNumberToRun"))),
                         tryCatch(
@@ -217,7 +217,7 @@ public class TestProgramBuilder {
             Type product = produces.iterator().next();
             int index = typeCreator.getTestProducesIndexes(test).iterator().next();
             saveResultStatement = block(
-                    checkType.assertResultingType(product, identifier("result"), test.getPath(), Main.CHECK_DEPTH),
+                    checkType.assertResultingType(product, identifier("result"), test.getPath(), bench.options.checkDepth),
                     statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result"))),
                     statement(call(identifier("registerValue"), number(index)))
             );
@@ -231,7 +231,7 @@ public class TestProgramBuilder {
                                 Type type = pair.getLeft();
                                 Integer valueIndex = pair.getRight();
                                 return block(
-                                        variable("passed" + valueIndex, checkType.checkResultingType(type, identifier("result"), test.getPath(), Main.CHECK_DEPTH_FOR_UNIONS)),
+                                        variable("passed" + valueIndex, checkType.checkResultingType(type, identifier("result"), test.getPath(), bench.options.checkDepthForUnions)),
                                         ifThen(
                                                 identifier("passed" + valueIndex),
                                                 statement(methodCall(identifier("passedResults"), "push", number(valueIndex)))
@@ -256,7 +256,7 @@ public class TestProgramBuilder {
                                                             number(0)
                                                     ),
                                                     string(test.getPath()),
-                                                    string(checkType.getTypeDescription(createUnionType(produces), Main.CHECK_DEPTH_FOR_UNIONS)),
+                                                    string(checkType.getTypeDescription(createUnionType(produces), bench.options.checkDepthForUnions)),
                                                     identifier("result")
                                             )
                                     ),

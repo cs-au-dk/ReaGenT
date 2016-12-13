@@ -7,10 +7,10 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
-import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.TypeContext;
 import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
+import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.Test;
@@ -33,6 +33,7 @@ public class TypeCreator {
     private final BiMap<TypeWithParameters, Integer> typeIndexes;
     private final MultiMap<TypeWithParameters, Integer> valueLocations;
     private final Map<Test, List<Integer>> testValueLocations = new IdentityHashMap<>();
+    private final CheckOptions options;
     private Map<Type, String> typeNames;
     private Set<Type> nativeTypes;
     private TypeParameterIndexer typeParameterIndexer;
@@ -42,7 +43,8 @@ public class TypeCreator {
     private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
     private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
-    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests) {
+    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests, CheckOptions options) {
+        this.options = options;
         this.valueLocations = new ArrayListMultiMap<>();
         this.typeNames = typeNames;
         this.nativeTypes = nativeTypes;
@@ -457,7 +459,7 @@ public class TypeCreator {
 
             // Currently changing nothing if it ended up not type-checking.
             List<Statement> typeChecks = Util.zip(args.stream(), signature.getParameters().stream(), (argName, par) ->
-                    typeChecker.assertResultingType(par.getType(), identifier(argName), interName + ".[" + argName + "]", Main.CHECK_DEPTH)
+                    typeChecker.assertResultingType(par.getType(), identifier(argName), interName + ".[" + argName + "]", options.checkDepth)
             ).collect(Collectors.toList());
 
             typeChecks.add(checkNumberOfArgs(signature));
@@ -497,7 +499,7 @@ public class TypeCreator {
                                             Signature.Parameter arg = parameterPair.getLeft();
 
                                             return block(
-                                                    variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(arg.getType(), identifier("arg" + argIndex), interName + ".[arg" + argIndex + "]", Main.CHECK_DEPTH_FOR_UNIONS)),
+                                                    variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(arg.getType(), identifier("arg" + argIndex), interName + ".[arg" + argIndex + "]", options.checkDepth)),
                                                     ifThen(
                                                             unary(Operator.NOT, identifier("arg" + argIndex + "Correct")),
                                                             Return(bool(false))

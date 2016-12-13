@@ -14,6 +14,7 @@ import dk.brics.tajs.util.ExperimentalAnalysisVariables;
 import dk.brics.tajs.util.Pair;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
@@ -113,7 +114,8 @@ public class TAJSTests {
     }
 
     private static Benchmark benchFromFolder(String folderName) {
-        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE).withTAJS();
+        CheckOptions options = CheckOptions.defaultOptions();
+        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE, options).withTAJS();
     }
 
     private static MultiMap<String, TAJSResult> run(String folderName) throws IOException {

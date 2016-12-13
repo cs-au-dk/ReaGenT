@@ -5,6 +5,7 @@ import dk.webbies.tajscheck.ExecutionRecording;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.hamcrest.Matcher;
 import org.junit.Test;
@@ -33,7 +34,7 @@ public class UnitTests {
     }
 
     static Benchmark benchFromFolder(String folderName) {
-        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE);
+        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE, CheckOptions.defaultOptions());
     }
 
     private String runDriver(String folderName, String seed) throws IOException {

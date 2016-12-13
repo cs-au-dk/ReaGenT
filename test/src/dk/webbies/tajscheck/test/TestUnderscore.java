@@ -2,6 +2,7 @@ package dk.webbies.tajscheck.test;
 
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -16,7 +17,7 @@ public class TestUnderscore {
     @Ignore
     @Test
     public void genFullUnderscoreDriver() throws Exception {
-        Benchmark underscore = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/underscore/underscore.js", "test/underscore/underscore.d.ts", "_", REQUIRE);
+        Benchmark underscore = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/underscore/underscore.js", "test/underscore/underscore.d.ts", "_", REQUIRE, CheckOptions.defaultOptions());
 
         Main.writeFullDriver(underscore);
 
