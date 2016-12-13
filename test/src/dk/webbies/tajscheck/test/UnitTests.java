@@ -26,28 +26,20 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class UnitTests {
     private SpecReader parseDeclaration(String folderName) {
-        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE);
+        Benchmark bench = benchFromFolder(folderName);
 
         // Only testing that i can parse it, without getting exceptions.
         return ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile));
     }
 
+    static Benchmark benchFromFolder(String folderName) {
+        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE);
+    }
+
     private String runDriver(String folderName, String seed) throws IOException {
-        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE);
+        Benchmark bench = benchFromFolder(folderName);
 
-        {
-            // Performing a soundness check of the .
-            Main.writeFullDriver(bench.withLoadMethod(Benchmark.LOAD_METHOD.BOOTSTRAP));
-            String output = Main.runFullDriver(bench);
-            OutputParser.RunResult result = OutputParser.parseDriverResult(output);
-
-            if (!result.typeErrors.isEmpty()) {
-                System.out.println(output);
-            }
-
-            assertThat(result.typeErrors.size(), is(0));
-        }
-
+        sanityCheck(bench);
 
         Main.writeFullDriver(bench, new ExecutionRecording(null, seed));
 
@@ -58,8 +50,17 @@ public class UnitTests {
         return result;
     }
 
-    private static ParseResultTester expect(List<TypeError> result) {
-        return new ParseResultTester(result);
+    static void sanityCheck(Benchmark bench) throws IOException {
+        // Performing a soundness check of the benchmark.
+        Main.writeFullDriver(bench.withLoadMethod(Benchmark.LOAD_METHOD.BOOTSTRAP));
+        String output = Main.runFullDriver(bench);
+        RunResult result = OutputParser.parseDriverResult(output);
+
+        if (!result.typeErrors.isEmpty()) {
+            System.out.println(output);
+        }
+
+        assertThat(result.typeErrors.size(), is(0));
     }
 
     private static ParseResultTester expect(RunResult result) {
@@ -165,7 +166,7 @@ public class UnitTests {
     }
 
     @Test
-    public void testComplexUnion() throws Exception {
+    public void complexUnion() throws Exception {
         RunResult result = run("complexUnion", "foo");
 
         expect(result)
@@ -413,6 +414,4 @@ public class UnitTests {
         assertThat(result.typeErrors.size(), is(0));
         assertThat(result.errors.size(), is(0));
     }
-
-    // TODO: More complex overloads, with same size and different sizes.
 }

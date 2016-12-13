@@ -1,6 +1,11 @@
 package dk.webbies.tajscheck.util;
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -50,5 +55,59 @@ public class ArrayListMultiMap<K, T> implements MultiMap<K, T> {
     @Override
     public Map<K, Collection<T>> toMap() {
         return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    @Override
+    public void putAll(K key, Collection<T> value) {
+        for (T t : value) {
+            put(key, t);
+        }
+    }
+
+    @Override
+    public void putAll(MultiMap<K, T> map) {
+        for (Map.Entry<K, Collection<T>> entry : map.toMap().entrySet()) {
+            putAll(entry.getKey(), entry.getValue());
+        }
+    }
+
+    @Override
+    public int size() {
+        return map.size();
+    }
+
+
+    public static <K, T> Collector<Map.Entry<K, Collection<T>>, MultiMap<K, T>, MultiMap<K, T>> collector() {
+        return new Collector<Map.Entry<K, Collection<T>>, MultiMap<K, T>, MultiMap<K, T>>() {
+            @Override
+            public Supplier<MultiMap<K, T>> supplier() {
+                return ArrayListMultiMap::new;
+            }
+
+            @Override
+            public BiConsumer<MultiMap<K, T>, Map.Entry<K, Collection<T>>> accumulator() {
+                return (map, entry) -> map.putAll(entry.getKey(), entry.getValue());
+            }
+
+            @Override
+            public BinaryOperator<MultiMap<K, T>> combiner() {
+                return (map1, map2) -> {
+                    ArrayListMultiMap<K, T> result = new ArrayListMultiMap<>();
+                    result.putAll(map1);
+                    result.putAll(map2);
+                    return result;
+                };
+            }
+
+            @Override
+            public Function<MultiMap<K, T>, MultiMap<K, T>> finisher() {
+                return Function.identity();
+            }
+
+            @Override
+            public Set<Characteristics> characteristics() {
+                return Collections.emptySet();
+            }
+        };
     }
 }

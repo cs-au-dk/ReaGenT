@@ -29,7 +29,7 @@ public class Main {
     public static final int CHECK_DEPTH = 0;
     public static final int CHECK_DEPTH_FOR_UNIONS = 1;
     public static final boolean CHECK_HEAP = false;
-    private static final String TEST_FILE_NAME = "test.js";
+    public static final String TEST_FILE_NAME = "test.js";
 
     public static void writeFullDriver(Benchmark bench) throws IOException {
         writeFullDriver(bench, null);
@@ -138,7 +138,7 @@ public class Main {
     }
 
 
-    private static String getTestFilePath(Benchmark bench, String fileName) {
+    public static String getTestFilePath(Benchmark bench, String fileName) {
         String jsPath = bench.jsFile;
         int lastIndex = jsPath.lastIndexOf('/');
 

@@ -50,7 +50,7 @@ public class JavaScriptParser {
             default:
                 throw new RuntimeException("Unexpected enum: " + environment);
         }
-        config = ConfigExposer.createConfig(new HashSet<>(), new HashSet<>(), true, false, m);
+        config = ConfigExposer.createConfig(new HashSet<>(), new HashSet<>(), m);
     }
 
     /**

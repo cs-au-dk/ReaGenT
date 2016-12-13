@@ -72,6 +72,8 @@ public class TestProgramBuilder {
             program.add(variable("initialRandomness", string(recording.seed)));
         }
 
+        program.add(variable("isTAJS", bool(bench.useTAJS)));
+
         program.add(AstBuilder.programFromFile(this.getClass().getResource("prelude.js")));
 
         program.add(block(typeCreator.getValueVariableDeclarationList()));
@@ -246,7 +248,17 @@ public class TestProgramBuilder {
                             ),
                             block(
                                     statement(
-                                            call(identifier("assert"), bool(false), string(test.getPath()), string(checkType.getTypeDescription(createUnionType(produces), Main.CHECK_DEPTH_FOR_UNIONS)), identifier("result"))
+                                            call(
+                                                    identifier("assert"),
+                                                    binary(
+                                                            member(identifier("passedResults"), "length"),
+                                                            Operator.EQUAL_EQUAL_EQUAL,
+                                                            number(0)
+                                                    ),
+                                                    string(test.getPath()),
+                                                    string(checkType.getTypeDescription(createUnionType(produces), Main.CHECK_DEPTH_FOR_UNIONS)),
+                                                    identifier("result")
+                                            )
                                     ),
                                     Return()
                             )
@@ -324,14 +336,11 @@ public class TestProgramBuilder {
      */
     private class TestBuilderVisitor implements TestVisitor<List<Statement>> {
         Expression getTypeExpression(Type type, TypeContext typeContext) {
-            return call(function(block(
-                    variable("base", typeCreator.getType(type, typeContext)),
-                    ifThenElse(
-                            binary(identifier("base"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
-                            Return(identifier("base")),
-                            throwStatement(newCall(identifier(RUNTIME_ERROR_NAME)))
-                    )
-            )));
+            if (bench.useTAJS) {
+                return call(identifier("TAJS_exclude"), typeCreator.getType(type, typeContext), identifier(VARIABLE_NO_VALUE));
+            } else {
+                return typeCreator.getType(type, typeContext);
+            }
         }
 
         @Override

@@ -19,4 +19,10 @@ public interface MultiMap <K, T> {
     boolean containsKey(K key);
 
     Map<K, Collection<T>> toMap();
+
+    void putAll(K key, Collection<T> value);
+
+    void putAll(MultiMap<K, T> map);
+
+    int size();
 }

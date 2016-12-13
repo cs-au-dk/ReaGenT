@@ -520,7 +520,16 @@ public class TypeCreator {
                             ),
                             block(
                                     comment("Call assert, no valid overload found, the application was called in a wrong way."),
-                                    statement(call(identifier("assert"), bool(false), string(interName), string("A valid overload"), string("No valid overloads found!"))),
+                                    statement(call(
+                                            identifier("assert"),
+                                            binary(
+                                                    member(identifier("foundSignatures"), "length"),
+                                                    Operator.EQUAL_EQUAL_EQUAL,
+                                                    number(0)
+                                            ),
+                                            string(interName),
+                                            string("A valid overload"),
+                                            string("No valid overloads found!"))),
                                     Return()
                             )
                     ),

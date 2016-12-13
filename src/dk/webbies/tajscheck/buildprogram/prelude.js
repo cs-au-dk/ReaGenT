@@ -37,7 +37,10 @@ var assertionFailures = [];
 var no_value = {};
 var testOrderRecording = [];
 function assert(cond, path, expected, actual) {
-    if (!cond) {
+    if (isTAJS) {
+        TAJS_record(path + " | " + expected, cond);
+        TAJS_record(path + " | " + expected + " | value", actual);
+    } else if (!cond) {
         assertionFailures.push({
             path: path,
             expected: expected,
@@ -45,12 +48,12 @@ function assert(cond, path, expected, actual) {
             sequence: testOrderRecording.slice()
         });
     }
-    return cond
+    return cond;
 }
-try {
+if (isTAJS) {
     TAJS_makeContextSensitive(assert, 0);
-} catch (e) {
-    // Ignored.
+    TAJS_makeContextSensitive(assert, 1);
+    TAJS_makeContextSensitive(assert, 2);
 }
 
 var printedWarnings = [];
@@ -63,12 +66,14 @@ var warn = function (message) {
 var error = function (message) {
     printedErrors.push(message);
 };
-try {
-    process.on('uncaughtException', function(err) {
-        error((err && err.stack) ? err.stack : err);
-    });
-} catch(e) {
-    // ignored.
+if (!isTAJS) {
+    try {
+        process.on('uncaughtException', function (err) {
+            error((err && err.stack) ? err.stack : err);
+        });
+    } catch (e) {
+        // ignored.
+    }
 }
 for (var key in console) {
     console[key] = function () {};
@@ -134,7 +139,7 @@ var testsWithUnmetDependencies = {}; // value-index -> {testIndex: number, requi
  * @param requirements a list of requirements, each requirement is a list of possible value-indexes that satisfy that requirement.
  */
 function registerTest (index, requirements) {
-    if (requirements.length == 0) {
+    if (requirements.length == 0 || isTAJS) {
         testsThatCanRun.push(index);
     } else {
         var registration = {
@@ -154,6 +159,9 @@ function registerTest (index, requirements) {
     }
 }
 function registerValue(valueIndex) {
+    if (isTAJS) {
+        return;
+    }
     var testList = testsWithUnmetDependencies[valueIndex];
     if (!testList) {
         return;

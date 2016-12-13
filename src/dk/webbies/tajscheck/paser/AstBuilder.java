@@ -1,11 +1,11 @@
 package dk.webbies.tajscheck.paser;
 
-import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
+import org.apache.commons.io.Charsets;
 
 import java.io.IOException;
 import java.net.URL;

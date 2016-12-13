@@ -25,5 +25,6 @@
     <orderEntry type="library" name="benchmark-collector-reader" level="project" />
     <orderEntry type="library" name="functionaljava-4.6" level="project" />
     <orderEntry type="library" name="commons-lang3-3.5" level="project" />
+    <orderEntry type="module" module-name="TAJS-private" />
   </component>
 </module>

@@ -11,7 +11,9 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
         TestUnderscore.class,
         UnitTests.class,
-        RunBenchmarks.class
+        RunBenchmarks.class,
+        TAJSTests.class,
+        TAJSTests.RunAllDynamicUnitTests.class
 })
 public class TestSuite {
 }

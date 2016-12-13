@@ -15,18 +15,20 @@ public class Benchmark {
     public final String module;
     public final Collection<String> pathsToTest;
     public final LOAD_METHOD load_method;
+    public final boolean useTAJS;
 
     public Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, LOAD_METHOD load_method) {
-        this(environment, jsFile, dTSFile, module, load_method, null);
+        this(environment, jsFile, dTSFile, module, load_method, null, false);
     }
 
-    private Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, LOAD_METHOD load_method, Collection<String> pathsToTest) {
+    private Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, LOAD_METHOD load_method, Collection<String> pathsToTest, boolean withTAJS) {
         this.environment = environment;
         this.jsFile = jsFile;
         this.dTSFile = dTSFile;
         this.module = module;
         this.pathsToTest = pathsToTest;
         this.load_method = load_method;
+        this.useTAJS = withTAJS;
     }
 
     public Benchmark withPathsToTest(Collection<String> pathsToTest) {
@@ -35,7 +37,8 @@ public class Benchmark {
                 this.jsFile,
                 this.dTSFile,
                 this.module,
-                load_method, Collections.unmodifiableCollection(pathsToTest)
+                load_method, Collections.unmodifiableCollection(pathsToTest),
+                this.useTAJS
         );
     }
 
@@ -46,7 +49,20 @@ public class Benchmark {
                 this.dTSFile,
                 this.module,
                 method,
-                this.pathsToTest
+                this.pathsToTest,
+                this.useTAJS
+        );
+    }
+
+    public Benchmark withTAJS() {
+        return new Benchmark(
+                this.environment,
+                this.jsFile,
+                this.dTSFile,
+                this.module,
+                this.load_method,
+                this.pathsToTest,
+                true
         );
     }
 
