@@ -28,11 +28,11 @@ import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
 public class Main {
     public static final String TEST_FILE_NAME = "test.js";
 
-    public static void writeFullDriver(Benchmark bench) throws IOException {
+    public static void writeFullDriver(Benchmark bench) throws Exception {
         writeFullDriver(bench, null);
     }
 
-    public static void writeFullDriver(Benchmark bench, ExecutionRecording recording) throws IOException {
+    public static void writeFullDriver(Benchmark bench, ExecutionRecording recording) throws Exception {
         System.out.println("Generating test program for " + bench.dTSFile);
         String programString = generateFullDriver(bench, recording);
 
@@ -41,7 +41,7 @@ public class Main {
 //        System.out.println(programString);
     }
 
-    public static String createRecordedProgram(Benchmark bench, ExecutionRecording recording) throws IOException {
+    public static String createRecordedProgram(Benchmark bench, ExecutionRecording recording) throws Exception {
         String programString = generateFullDriver(bench, recording);
 
         Util.writeFile(getTestFilePath(bench, "recorded.js"), programString);

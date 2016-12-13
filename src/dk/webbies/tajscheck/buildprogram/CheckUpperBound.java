@@ -23,6 +23,7 @@ import dk.au.cs.casa.typescript.types.TypeVisitorWithArgument;
 import dk.au.cs.casa.typescript.types.UnionType;
 import dk.au.cs.casa.typescript.types.UnresolvedType;
 import dk.webbies.tajscheck.TypeContext;
+import dk.webbies.tajscheck.TypesUtil;
 import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
@@ -78,43 +79,51 @@ public class CheckUpperBound {
             this.context = context;
             this.depth = depth;
         }
+
+        public Arg withParameters(TypeContext newParameters) {
+            return new Arg(this.context.append(newParameters), depth);
+        }
     }
 
+    // This return an empty list a lot of the time, that is because these tests are only designed to test the upper-bound. E.g. that in a union, all the cases can actually happen.
+    // TODO: Think long and hard of other cases where upper-bound tests make sense.
     private final class CheckUpperBoundTypeVisitor implements TypeVisitorWithArgument<List<TypeCheck>, Arg> {
 
         @Override
-        public List<TypeCheck> visit(AnonymousType t, Arg a) {
+        public List<TypeCheck> visit(AnonymousType t, Arg arg) {
             throw new RuntimeException();
         }
 
         @Override
-        public List<TypeCheck> visit(ClassType t, Arg a) {
-            throw new RuntimeException();
+        public List<TypeCheck> visit(ClassType t, Arg arg) {
+            return Collections.emptyList(); // TODO: Copy paste some stuff from interfaceType.
         }
 
         @Override
-        public List<TypeCheck> visit(GenericType t, Arg a) {
-            throw new RuntimeException();
+        public List<TypeCheck> visit(GenericType t, Arg arg) {
+            return t.toInterface().accept(this, arg);
         }
 
         @Override
-        public List<TypeCheck> visit(InterfaceType t, Arg a) {
+        public List<TypeCheck> visit(InterfaceType t, Arg arg) {
             return Collections.emptyList(); // TODO: Make a test, where this is tested (more depth needed).
         }
 
         @Override
-        public List<TypeCheck> visit(ReferenceType t, Arg a) {
-            throw new RuntimeException();
+        public List<TypeCheck> visit(ReferenceType t, Arg arg) {
+            TypeContext newParameters = TypesUtil.generateParameterMap(t);
+
+            return t.getTarget().accept(this, arg.withParameters(newParameters));
         }
 
         @Override
-        public List<TypeCheck> visit(SimpleType t, Arg a) {
-            throw new RuntimeException();
+        public List<TypeCheck> visit(SimpleType t, Arg arg) {
+            return Collections.emptyList();
         }
 
         @Override
-        public List<TypeCheck> visit(TupleType t, Arg a) {
-            throw new RuntimeException();
+        public List<TypeCheck> visit(TupleType t, Arg arg) {
+            return Collections.emptyList();
         }
 
         @Override
@@ -126,62 +135,66 @@ public class CheckUpperBound {
         }
 
         @Override
-        public List<TypeCheck> visit(UnresolvedType t, Arg a) {
+        public List<TypeCheck> visit(UnresolvedType t, Arg arg) {
             throw new RuntimeException();
         }
 
         @Override
-        public List<TypeCheck> visit(TypeParameterType t, Arg a) {
+        public List<TypeCheck> visit(TypeParameterType t, Arg arg) {
+            if (arg.context.containsKey(t)) {
+                return arg.context.get(t).accept(this, arg);
+            } else {
+                return Collections.emptyList();
+            }
+        }
+
+        @Override
+        public List<TypeCheck> visit(SymbolType t, Arg arg) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public List<TypeCheck> visit(StringLiteral t, Arg arg) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public List<TypeCheck> visit(BooleanLiteral t, Arg arg) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public List<TypeCheck> visit(NumberLiteral t, Arg arg) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public List<TypeCheck> visit(IntersectionType t, Arg arg) {
             throw new RuntimeException();
         }
 
         @Override
-        public List<TypeCheck> visit(SymbolType t, Arg a) {
+        public List<TypeCheck> visit(ClassInstanceType t, Arg arg) {
+            return ((ClassType)t.getClassType()).getInstanceType().accept(this, arg);
+        }
+
+        @Override
+        public List<TypeCheck> visit(NeverType t, Arg arg) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public List<TypeCheck> visit(ThisType t, Arg arg) {
+            return arg.context.getClassType().getInstanceType().accept(this, arg);
+        }
+
+        @Override
+        public List<TypeCheck> visit(IndexType t, Arg arg) {
             throw new RuntimeException();
         }
 
         @Override
-        public List<TypeCheck> visit(StringLiteral t, Arg a) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public List<TypeCheck> visit(BooleanLiteral t, Arg a) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public List<TypeCheck> visit(NumberLiteral t, Arg a) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public List<TypeCheck> visit(IntersectionType t, Arg a) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public List<TypeCheck> visit(ClassInstanceType t, Arg a) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public List<TypeCheck> visit(NeverType t, Arg a) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public List<TypeCheck> visit(ThisType t, Arg a) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public List<TypeCheck> visit(IndexType t, Arg a) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public List<TypeCheck> visit(IndexedAccessType t, Arg a) {
+        public List<TypeCheck> visit(IndexedAccessType t, Arg arg) {
             throw new RuntimeException();
         }
     }

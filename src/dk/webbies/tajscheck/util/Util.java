@@ -257,10 +257,28 @@ public class Util {
         return new String(Files.readAllBytes(Paths.get(path)));
     }
 
-    public static void writeFile(String filename, String data) throws IOException {
-        BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(filename)));
-        IOUtils.write(data, fileOut);
-        fileOut.close();
+    public static void writeFile(String filename, String data) throws Exception {
+        writeFile(filename, data, 0);
+    }
+
+    private static void writeFile(String filename, String data, int tries) throws Exception {
+        try {
+            BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(filename)));
+            IOUtils.write(data, fileOut);
+            fileOut.close();
+        } catch (IOException e) {
+            if (tries > 10) {
+                throw e;
+            }
+            Thread.sleep(100);
+
+            //noinspection ResultOfMethodCallIgnored
+            new File(filename).delete();
+
+            Thread.sleep(100);
+
+            writeFile(filename, data, tries + 1);
+        }
     }
 
     // http://stackoverflow.com/questions/17640754/zipping-streams-using-jdk8-with-lambda-java-util-stream-streams-zip#answer-23529010

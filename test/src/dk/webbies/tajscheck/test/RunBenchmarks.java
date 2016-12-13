@@ -35,8 +35,8 @@ public class RunBenchmarks {
         benchmarks.put("async", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/async/async.js", "test/benchmarks/async/async.d.ts", "async", REQUIRE, options));
         benchmarks.put("path.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pathjs/pathjs.js", "test/benchmarks/pathjs/pathjs.d.ts", "Path", BROWSER, options));
         benchmarks.put("accounting.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/accounting/accounting.js", "test/benchmarks/accounting/accounting.d.ts", "accounting", REQUIRE, options));
-        benchmarks.put("lunr.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lunr/lunr.js", "test/benchmarks/lunr/lunr.d.ts", "lunr", REQUIRE, options));
-        benchmarks.put("PIXI.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pixi/pixi.js", "test/benchmarks/pixi/pixi.d.ts", "PIXI", REQUIRE, options));
+//        benchmarks.put("lunr.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lunr/lunr.js", "test/benchmarks/lunr/lunr.d.ts", "lunr", REQUIRE, options)); // TODO: Re-introduce after timeouts have been introduced.
+//        benchmarks.put("PIXI.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pixi/pixi.js", "test/benchmarks/pixi/pixi.d.ts", "PIXI", REQUIRE, options)); // Commented out because big.
 
         // TODO: npm packages, including typings. Have a test (that is @Ignored by default), that sets up all npm packages.
     }
@@ -59,7 +59,7 @@ public class RunBenchmarks {
     @Test
     public void runFullDriver() throws Exception {
         Main.writeFullDriver(benchmark);
-        String out = Main.runFullDriver(benchmark);
+        String out = Main.runFullDriver(benchmark); // TODO: Timeout.
         System.out.println(out);
 
         assert !out.trim().isEmpty();

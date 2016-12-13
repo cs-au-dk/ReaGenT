@@ -37,7 +37,7 @@ public class UnitTests {
         return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE, CheckOptions.defaultOptions());
     }
 
-    private String runDriver(String folderName, String seed) throws IOException {
+    private String runDriver(String folderName, String seed) throws Exception {
         Benchmark bench = benchFromFolder(folderName);
 
         sanityCheck(bench);
@@ -51,7 +51,7 @@ public class UnitTests {
         return result;
     }
 
-    static void sanityCheck(Benchmark bench) throws IOException {
+    static void sanityCheck(Benchmark bench) throws Exception {
         // Performing a soundness check of the benchmark.
         Main.writeFullDriver(bench.withLoadMethod(Benchmark.LOAD_METHOD.BOOTSTRAP));
         String output = Main.runFullDriver(bench);
@@ -122,7 +122,7 @@ public class UnitTests {
         }
     }
 
-    private RunResult run(String name, String seed) throws IOException {
+    private RunResult run(String name, String seed) throws Exception {
         return parseDriverResult(runDriver(name, seed));
     }
 

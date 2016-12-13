@@ -27,7 +27,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -118,7 +117,7 @@ public class TAJSTests {
         return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE, options).withTAJS();
     }
 
-    private static MultiMap<String, TAJSResult> run(String folderName) throws IOException {
+    private static MultiMap<String, TAJSResult> run(String folderName) throws Exception {
         Benchmark bench = benchFromFolder(folderName);
 
         String fullDriver = Main.generateFullDriver(bench);
@@ -129,7 +128,7 @@ public class TAJSTests {
 
         MultiMap<String, TAJSResult> result = runTAJS(filePath);
 
-        printResult(result);
+        System.out.println(prettyResult(result));
 
         return result;
     }
@@ -205,7 +204,7 @@ public class TAJSTests {
             return this;
         }
 
-        TAJSResultTester toSucceeded() {
+        TAJSResultTester toPass() {
             for (Collection<TAJSResult> values : results.toMap().values()) {
                 for (TAJSResult value : values) {
                     for (Value result : value.result) {
@@ -230,22 +229,25 @@ public class TAJSTests {
         }
     }
 
-    private static void printResult(MultiMap<String, TAJSResult> result) {
+    private static String prettyResult(MultiMap<String, TAJSResult> result) {
+        StringBuilder builder = new StringBuilder();
         for (Map.Entry<String, Collection<TAJSResult>> entry : result.toMap().entrySet()) {
             for (TAJSResult tajsResult : entry.getValue()) {
                 for (Value value : tajsResult.result) {
                     if (value.isMaybeFalse() && !value.isMaybeTrue()) {
-                        System.out.println("Found assertion error on path " + entry.getKey());
-                        System.out.println("Expected: " + tajsResult.expected);
-                        System.out.println("But got: " + Value.join(tajsResult.actual).toString());
+                        builder
+                                .append("Found assertion error on path ").append(entry.getKey()).append("\n")
+                                .append("Expected: ").append(tajsResult.expected).append("\n")
+                                .append("But got: ").append(Value.join(tajsResult.actual).toString()).append("\n");
                         if (Value.join(tajsResult.result).isMaybeTrue()) {
-                            System.out.println("Although not the same was the case for other calls to assert on the same path");
+                            builder.append("Although not the same was the case for other calls to assert on the same path \n");
                         }
-                        System.out.println();
+                        builder.append("\n");
                     }
                 }
             }
         }
+        return builder.toString();
     }
 
     private TAJSResultTester expect(MultiMap<String, TAJSResult> result) {
@@ -261,21 +263,21 @@ public class TAJSTests {
 
         expect(result)
                 .forPath("module.foo.bar")
-                .toSucceeded()
+                .toPass()
                 .expected("boolean")
                 .got((value) -> value.isMaybeTrue() && !value.isMaybeFalse());
 
         expect(result)
                 .forPath("module.foo")
-                .toSucceeded();
+                .toPass();
 
         expect(result)
                 .forPath("module.foo.foo")
-                .toSucceeded();
+                .toPass();
 
         expect(result)
                 .forPath("require(\"./implementation.js\")")
-                .toSucceeded();
+                .toPass();
 
     }
 
@@ -291,11 +293,11 @@ public class TAJSTests {
 
         expect(result)
                 .forPath("module.foo().[union0].bar.baz")
-                .toSucceeded();
+                .toPass();
 
         expect(result)
                 .forPath("module.foo().[union1].bar.baz")
-                .toSucceeded();
+                .toPass();
     }
 
     @Test
@@ -327,12 +329,25 @@ public class TAJSTests {
 
         @Test
         public void runSmallDriver() throws Exception {
-            // Just a sanity check, that it actually works.
-            Main.writeFullDriver(UnitTests.benchFromFolder(folderName));
-
             MultiMap<String, TAJSResult> result = run("../unit/" + folderName);
 
-            printResult(result);
+            System.out.println(prettyResult(result));
+        }
+
+        @Test
+        public void santityCheckAnalysis() throws Exception {
+            // Trying to bootstrap the library with itself, here it is very spurious if any warning is emitted.
+
+            Benchmark bench = UnitTests.benchFromFolder(folderName).withLoadMethod(Benchmark.LOAD_METHOD.BOOTSTRAP).withTAJS();
+            Main.writeFullDriver(bench);
+
+            MultiMap<String, TAJSResult> result = runTAJS(Main.getTestFilePath(bench, Main.TEST_FILE_NAME));
+
+            String printedResult = prettyResult(result);
+
+            System.out.println(printedResult);;
+
+            assertTrue(printedResult.isEmpty());
         }
     }
 
