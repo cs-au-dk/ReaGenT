@@ -12,7 +12,6 @@ import dk.brics.tajs.options.Options;
 import dk.brics.tajs.test.Misc;
 import dk.brics.tajs.util.ExperimentalAnalysisVariables;
 import dk.brics.tajs.util.Pair;
-import dk.webbies.tajscheck.ExecutionRecording;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
@@ -33,6 +32,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -116,10 +116,10 @@ public class TAJSTests {
         return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE).withTAJS();
     }
 
-    private static MultiMap<String, TAJSResult> run(String folderName, String seed) throws IOException {
+    private static MultiMap<String, TAJSResult> run(String folderName) throws IOException {
         Benchmark bench = benchFromFolder(folderName);
 
-        String fullDriver = Main.generateFullDriver(bench, new ExecutionRecording(null, seed));
+        String fullDriver = Main.generateFullDriver(bench);
 
         String filePath = Main.getTestFilePath(bench, Main.TEST_FILE_NAME);
 
@@ -130,6 +130,33 @@ public class TAJSTests {
         printResult(result);
 
         return result;
+    }
+
+    private static class SimpleEntry<K, T> implements Map.Entry<K, T> {
+        private final K key;
+        private T value;
+
+        private SimpleEntry(K key, T value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        @Override
+        public K getKey() {
+            return this.key;
+        }
+
+        @Override
+        public T getValue() {
+            return value;
+        }
+
+        @Override
+        public T setValue(T value) {
+            T old = this.value;
+            this.value = value;
+            return old;
+        }
     }
 
     private class TAJSResultTester {
@@ -158,25 +185,41 @@ public class TAJSTests {
             return this;
         }
 
-        public TAJSResultTester expected(String type) {
+        TAJSResultTester expected(String type) {
             return expected(is(type));
         }
 
-        public TAJSResultTester expected(Matcher<String> matcher) {
+        TAJSResultTester expected(Matcher<String> matcher) {
+            results = results.toMap().entrySet().stream().map(entry -> {
+                Collection<TAJSResult> value = entry.getValue().stream().filter(result ->
+                        matcher.matches(result.expected)
+                ).collect(Collectors.toList());
+
+                return new SimpleEntry<>(entry.getKey(), value);
+            }).filter(entry -> !entry.getValue().isEmpty()).collect(ArrayListMultiMap.collector());
+
+            assertFalse(results.isEmpty());
+
+            return this;
+        }
+
+        TAJSResultTester toSucceeded() {
             for (Collection<TAJSResult> values : results.toMap().values()) {
                 for (TAJSResult value : values) {
-                    assertThat(value.expected, matcher);
+                    for (Value result : value.result) {
+                        assertTrue(result.isMaybeTrue() && !result.isMaybeFalse());
+                    }
                 }
             }
 
             return this;
         }
 
-        public TAJSResultTester toSucceeded() {
+        TAJSResultTester toFail() {
             for (Collection<TAJSResult> values : results.toMap().values()) {
                 for (TAJSResult value : values) {
                     for (Value result : value.result) {
-                        assertTrue(result.isMaybeTrue());
+                        assertTrue(result.isMaybeFalse() && !result.isMaybeTrue());
                     }
                 }
             }
@@ -210,7 +253,7 @@ public class TAJSTests {
 
     @Test
     public void everythingIsRight() throws Exception {
-        MultiMap<String, TAJSResult> result = run("everythingIsRight", "foo");
+        MultiMap<String, TAJSResult> result = run("everythingIsRight");
 
         assertThat(result.size(), is(4));
 
@@ -242,7 +285,7 @@ public class TAJSTests {
     @Test
     @Ignore
     public void baitingTajsUnion() throws Exception {
-        MultiMap<String, TAJSResult> result = run("baitingTajsUnion", "foo");
+        MultiMap<String, TAJSResult> result = run("baitingTajsUnion");
 
         expect(result)
                 .forPath("module.foo().[union0].bar.baz")
@@ -251,10 +294,19 @@ public class TAJSTests {
         expect(result)
                 .forPath("module.foo().[union1].bar.baz")
                 .toSucceeded();
-
     }
 
-    // TODO: Test spurious unions
+    @Test
+    public void spuriousUnion() throws Exception {
+        MultiMap<String, TAJSResult> result = run("spuriousUnion");
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("maybe string")
+                .toFail();
+    }
+
+    // TODO: Test that a overload is never used (highly related to spurious unions).
 
     @RunWith(Parameterized.class)
     public static class RunAllDynamicUnitTests {
@@ -276,7 +328,7 @@ public class TAJSTests {
             // Just a sanity check, that it actually works.
             Main.writeFullDriver(UnitTests.benchFromFolder(folderName));
 
-            MultiMap<String, TAJSResult> result = run("../unit/" + folderName, "foo");
+            MultiMap<String, TAJSResult> result = run("../unit/" + folderName);
 
             printResult(result);
         }

@@ -76,8 +76,13 @@ public class ArrayListMultiMap<K, T> implements MultiMap<K, T> {
         return map.size();
     }
 
+    @Override
+    public boolean isEmpty() {
+        return this.size() == 0;
+    }
 
-    public static <K, T> Collector<Map.Entry<K, Collection<T>>, MultiMap<K, T>, MultiMap<K, T>> collector() {
+
+    public static <K, T> Collector<? super Map.Entry<K, Collection<T>>, MultiMap<K, T>, MultiMap<K, T>> collector() {
         return new Collector<Map.Entry<K, Collection<T>>, MultiMap<K, T>, MultiMap<K, T>>() {
             @Override
             public Supplier<MultiMap<K, T>> supplier() {

@@ -91,11 +91,11 @@ public class CheckType {
         );
     }
 
-    private static final class Arg {
+    static final class Arg {
         final TypeContext typeContext;
         final int depthRemaining;
 
-        private Arg(TypeContext typeContext, int depthRemaining) {
+        Arg(TypeContext typeContext, int depthRemaining) {
             this.typeContext = typeContext;
             this.depthRemaining = depthRemaining;
         }
@@ -109,12 +109,12 @@ public class CheckType {
         }
     }
 
-    private static final class CreateTypeCheckVisitor implements TypeVisitorWithArgument<List<TypeCheck>, Arg> {
+    static final class CreateTypeCheckVisitor implements TypeVisitorWithArgument<List<TypeCheck>, Arg> {
         private final Set<Type> nativeTypes;
         private final TestProgramBuilder.TypeParameterIndexer typeParameterIndexer;
         private final Map<Type, String> typeNames;
 
-        private CreateTypeCheckVisitor(Set<Type> nativeTypes, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, Map<Type, String> typeNames) {
+        CreateTypeCheckVisitor(Set<Type> nativeTypes, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, Map<Type, String> typeNames) {
             this.nativeTypes = nativeTypes;
             this.typeParameterIndexer = typeParameterIndexer;
             this.typeNames = typeNames;
@@ -450,7 +450,7 @@ public class CheckType {
         return new SimpleTypeCheck(check, expected.toString());
     }
 
-    private static TypeCheck createIntersection(List<TypeCheck> checks) {
+    static TypeCheck createIntersection(List<TypeCheck> checks) {
         assert !checks.isEmpty();
         if (checks.size() == 1) {
             return checks.iterator().next();

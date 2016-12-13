@@ -299,9 +299,19 @@ public class TestProgramBuilder {
          * Store result for use by other tests
          */
 
+        Type product;
+        if (test.getProduces().size() == 1) {
+            product = test.getProduces().iterator().next();
+        } else {
+            UnionType union = new UnionType();
+            union.setElements(new ArrayList<>(test.getProduces()));
+            product = union;
+        }
+
         return Util.concat(
                 checkDependencies(test),
                 testCode,
+                bench.useTAJS ? new CheckUpperBound(nativeTypes, typeNames, typeParameterIndexer).checkType(product, test.getTypeContext(), identifier("result"), test.getPath()) : Collections.emptyList(),
                 Collections.singletonList(saveResultStatement)
         );
     }
@@ -337,7 +347,7 @@ public class TestProgramBuilder {
     private class TestBuilderVisitor implements TestVisitor<List<Statement>> {
         Expression getTypeExpression(Type type, TypeContext typeContext) {
             if (bench.useTAJS) {
-                return call(identifier("TAJS_exclude"), typeCreator.getType(type, typeContext), identifier(VARIABLE_NO_VALUE));
+                return call(identifier("TAJS_except"), typeCreator.getType(type, typeContext), identifier(VARIABLE_NO_VALUE));
             } else {
                 return typeCreator.getType(type, typeContext);
             }

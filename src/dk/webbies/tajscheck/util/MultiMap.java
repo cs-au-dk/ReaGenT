@@ -25,4 +25,6 @@ public interface MultiMap <K, T> {
     void putAll(MultiMap<K, T> map);
 
     int size();
+
+    boolean isEmpty();
 }
