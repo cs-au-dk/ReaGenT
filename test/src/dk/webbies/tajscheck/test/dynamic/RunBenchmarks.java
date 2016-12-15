@@ -1,4 +1,4 @@
-package dk.webbies.tajscheck.test;
+package dk.webbies.tajscheck.test.dynamic;
 
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;

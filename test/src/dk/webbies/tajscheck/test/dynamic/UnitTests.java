@@ -1,4 +1,4 @@
-package dk.webbies.tajscheck.test;
+package dk.webbies.tajscheck.test.dynamic;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.webbies.tajscheck.ExecutionRecording;
@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.OutputParser.*;
-import static dk.webbies.tajscheck.test.UnitTests.ParseResultTester.ExpectType.JSON;
-import static dk.webbies.tajscheck.test.UnitTests.ParseResultTester.ExpectType.STRING;
-import static dk.webbies.tajscheck.test.UnitTests.ParseResultTester.ExpectType.TYPEOF;
+import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.JSON;
+import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
+import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.TYPEOF;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -32,7 +32,7 @@ public class UnitTests {
         return ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile));
     }
 
-    static Benchmark benchFromFolder(String folderName) {
+    public static Benchmark benchFromFolder(String folderName) {
         return benchFromFolder(folderName, CheckOptions.defaultOptions());
     }
 
