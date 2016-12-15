@@ -7,9 +7,11 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
+import dk.webbies.tajscheck.PrettyTypes;
 import dk.webbies.tajscheck.TypeContext;
 import dk.webbies.tajscheck.TypeWithParameters;
 import dk.webbies.tajscheck.TypesUtil;
+import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
@@ -34,6 +36,7 @@ public class TypeCreator {
     private final MultiMap<TypeWithParameters, Integer> valueLocations;
     private final Map<Test, List<Integer>> testValueLocations = new IdentityHashMap<>();
     private final CheckOptions options;
+    private Benchmark benchmark;
     private Map<Type, String> typeNames;
     private Set<Type> nativeTypes;
     private TypeParameterIndexer typeParameterIndexer;
@@ -43,8 +46,9 @@ public class TypeCreator {
     private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
     private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
-    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests, CheckOptions options) {
-        this.options = options;
+    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests, Benchmark benchmark) {
+        this.options = benchmark.options;
+        this.benchmark = benchmark;
         this.valueLocations = new ArrayListMultiMap<>();
         this.typeNames = typeNames;
         this.nativeTypes = nativeTypes;
@@ -508,6 +512,9 @@ public class TypeCreator {
                                         }).collect(Collectors.toList())),
                                         Return(bool(true))
                                 )))),
+                                benchmark.useTAJS ? statement(
+                                        call(identifier("assert"), identifier("signatureCorrect" + signatureIndex), string(interName), string("overload " + PrettyTypes.parameters(signature.getParameters()) + " to be called"), string("it was not called"))
+                                ): block(),
                                 ifThen(
                                         identifier("signatureCorrect" + signatureIndex),
                                         statement(methodCall(identifier("foundSignatures"), "push", number(signatureIndex)))

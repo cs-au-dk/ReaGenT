@@ -91,9 +91,9 @@ public class TAJSTests {
             TAJSResult partResult = result.get(pairKey);
             partResult.expected = expected;
             if (split.length == 2) {
-                partResult.result = entry.getValue();
+                partResult.result = Value.join(entry.getValue());
             } else {
-                partResult.actual = entry.getValue();
+                partResult.actual = Value.join(entry.getValue());
             }
         }
 
@@ -107,9 +107,9 @@ public class TAJSTests {
     }
 
     private static final class TAJSResult {
-        Collection<Value> result;
+        Value result;
         String expected;
-        Collection<Value> actual;
+        Value actual;
     }
 
     private static Benchmark benchFromFolder(String folderName) {
@@ -177,9 +177,7 @@ public class TAJSTests {
         private TAJSResultTester got(Predicate<Value> matcher) {
             for (Collection<TAJSResult> values : results.toMap().values()) {
                 for (TAJSResult value : values) {
-                    for (Value actual : value.actual) {
-                        assertTrue(matcher.test(actual));
-                    }
+                    assertTrue(matcher.test(value.actual));
                 }
             }
 
@@ -207,9 +205,7 @@ public class TAJSTests {
         TAJSResultTester toPass() {
             for (Collection<TAJSResult> values : results.toMap().values()) {
                 for (TAJSResult value : values) {
-                    for (Value result : value.result) {
-                        assertTrue(result.isMaybeTrue() && !result.isMaybeFalse());
-                    }
+                    assertTrue(value.result.isMaybeTrue() && !value.result.isMaybeFalse());
                 }
             }
 
@@ -219,9 +215,7 @@ public class TAJSTests {
         TAJSResultTester toFail() {
             for (Collection<TAJSResult> values : results.toMap().values()) {
                 for (TAJSResult value : values) {
-                    for (Value result : value.result) {
-                        assertTrue(result.isMaybeFalse() && !result.isMaybeTrue());
-                    }
+                    assertTrue(value.result.isMaybeFalse() && !value.result.isMaybeTrue());
                 }
             }
 
@@ -233,17 +227,13 @@ public class TAJSTests {
         StringBuilder builder = new StringBuilder();
         for (Map.Entry<String, Collection<TAJSResult>> entry : result.toMap().entrySet()) {
             for (TAJSResult tajsResult : entry.getValue()) {
-                for (Value value : tajsResult.result) {
-                    if (value.isMaybeFalse() && !value.isMaybeTrue()) {
-                        builder
-                                .append("Found assertion error on path ").append(entry.getKey()).append("\n")
-                                .append("Expected: ").append(tajsResult.expected).append("\n")
-                                .append("But got: ").append(Value.join(tajsResult.actual).toString()).append("\n");
-                        if (Value.join(tajsResult.result).isMaybeTrue()) {
-                            builder.append("Although not the same was the case for other calls to assert on the same path \n");
-                        }
-                        builder.append("\n");
-                    }
+                Value value = tajsResult.result;
+                if (value.isMaybeFalse() && !value.isMaybeTrue()) {
+                    builder
+                            .append("Found assertion error on path ").append(entry.getKey()).append("\n")
+                            .append("Expected: ").append(tajsResult.expected).append("\n")
+                            .append("But got: ").append(tajsResult.actual.toString()).append("\n");
+                    builder.append("\n");
                 }
             }
         }
@@ -310,7 +300,17 @@ public class TAJSTests {
                 .toFail();
     }
 
-    // TODO: Test that a overload is never used (highly related to spurious unions).
+    @Test
+    public void spuriousOverload() throws Exception {
+        // I wanted to make a more complicated test, but since TAJS cannot see that (typeof [bool/number] !== "string"), it has to be quite simple.
+        MultiMap<String, TAJSResult> result = run("spuriousOverload");
+
+        expect(result)
+                .forPath("Foo")
+                .expected("overload (a: string) to be called")
+                .toFail();
+
+    }
 
     @RunWith(Parameterized.class)
     public static class RunAllDynamicUnitTests {

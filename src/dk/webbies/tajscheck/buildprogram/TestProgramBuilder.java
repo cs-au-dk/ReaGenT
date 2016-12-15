@@ -59,7 +59,7 @@ public class TestProgramBuilder {
         this.moduleType = moduleType;
         this.typeParameterIndexer = typeParameterIndexer;
 
-        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer, tests, bench.options);
+        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer, tests, bench);
     }
 
     public Statement buildTestProgram(ExecutionRecording recording) throws IOException {

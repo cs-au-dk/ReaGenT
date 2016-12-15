@@ -9,12 +9,32 @@ import java.util.*;
  * Created by erik1 on 01-11-2016.
  */
 public class PrettyTypes {
-    public static String parameters(List<Type> parameters) {
+    public static String parametersTypes(List<Type> parameters) {
         StringBuilder builder = new StringBuilder();
 
         builder.append("(");
         for (int i = 0; i < parameters.size(); i++) {
             Type type = parameters.get(i);
+            builder.append(type(type));
+
+            if (i != parameters.size() - 1) {
+                builder.append(", ");
+            }
+        }
+
+        builder.append(")");
+
+        return builder.toString();
+    }
+
+    public static String parameters(List<Signature.Parameter> parameters) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("(");
+        for (int i = 0; i < parameters.size(); i++) {
+            Type type = parameters.get(i).getType();
+            String name = parameters.get(i).getName();
+            builder.append(name).append(": ");
             builder.append(type(type));
 
             if (i != parameters.size() - 1) {
@@ -67,6 +87,8 @@ public class PrettyTypes {
             return "classInstance";
         } else if (type instanceof ClassType) {
             return "class";
+        } else if (type instanceof SymbolType) {
+            return "symbol";
         }
 
         throw new RuntimeException(type.getClass().getName());

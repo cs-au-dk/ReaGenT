@@ -16,7 +16,7 @@ public class MethodCallTest extends Test {
     private List<Type> parameters;
 
     public MethodCallTest(Type object, Type function, String propertyName, List<Type> parameters, Type returnType, String path, TypeContext typeContext) {
-        super(Arrays.asList(object, function), parameters, returnType, path + PrettyTypes.parameters(parameters), typeContext);
+        super(Arrays.asList(object, function), parameters, returnType, path + PrettyTypes.parametersTypes(parameters), typeContext);
         this.object = object;
         this.propertyName = propertyName;
         this.parameters = parameters;
