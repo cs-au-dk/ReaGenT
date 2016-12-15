@@ -4,8 +4,8 @@ package dk.webbies.tajscheck.benchmarks;
  * Created by erik1 on 13-12-2016.
  */
 public final class CheckOptions {
-    public final int checkDepth; // TODO: Test incrementing this one.
-    public final int checkDepthForUnions; // TODO: Test incrementing this to two.
+    public final int checkDepth;
+    public final int checkDepthForUnions;
     public final boolean checkHeap;
     private CheckOptions(Builder builder) {
         this.checkDepth = builder.checkDepth;
@@ -21,6 +21,7 @@ public final class CheckOptions {
         return new Builder();
     }
 
+    @SuppressWarnings("SameParameterValue")
     public static final class Builder {
         private int checkDepth = 0;
         private int checkDepthForUnions = 1;

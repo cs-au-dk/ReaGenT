@@ -46,6 +46,12 @@ public class UnitTests {
         return runDriver(bench, seed);
     }
 
+    private String runDriver(String folderName, CheckOptions options, String seed) throws Exception {
+        Benchmark bench = benchFromFolder(folderName, options);
+
+        return runDriver(bench, seed);
+    }
+
     private String runDriver(Benchmark bench, String seed) throws Exception {
         sanityCheck(bench);
 
@@ -131,6 +137,10 @@ public class UnitTests {
 
     private RunResult run(String name, String seed) throws Exception {
         return parseDriverResult(runDriver(name, seed));
+    }
+
+    private RunResult run(String name, CheckOptions options, String seed) throws Exception {
+        return parseDriverResult(runDriver(name, options, seed));
     }
 
     @Test
@@ -324,6 +334,22 @@ public class UnitTests {
                 .forPath("module.foo().[numberIndexer]")
                 .expected("number")
                 .got(TYPEOF, "string");
+    }
+
+    @Test
+    public void deepNumberIndexer() throws Exception {
+        CheckOptions options = CheckOptions.builder()
+                .setCheckDepth(1)
+                .build();
+
+        RunResult result = run("numberIndexer", options, "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("(numberIndexer: number)")
+                .got(JSON, "{\"1\":1,\"3\":4,\"7\":1,\"10\":\"blah\"}");
     }
 
     @Test
