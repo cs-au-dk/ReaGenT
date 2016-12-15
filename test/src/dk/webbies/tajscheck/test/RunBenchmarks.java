@@ -9,7 +9,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 
 import static dk.webbies.tajscheck.benchmarks.Benchmark.LOAD_METHOD.BOOTSTRAP;
 import static dk.webbies.tajscheck.benchmarks.Benchmark.LOAD_METHOD.BROWSER;
@@ -59,7 +61,14 @@ public class RunBenchmarks {
     @Test
     public void runFullDriver() throws Exception {
         Main.writeFullDriver(benchmark);
-        String out = Main.runFullDriver(benchmark); // TODO: Timeout.
+        String out = null;
+        try {
+            out = Main.runFullDriver(benchmark, 60 * 1000);
+        } catch (TimeoutException e) {
+            // this is ok, it happens.
+            System.out.println("Timeout");
+            return;
+        }
         System.out.println(out);
 
         assert !out.trim().isEmpty();

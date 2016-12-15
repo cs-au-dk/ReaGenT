@@ -7,6 +7,7 @@ Papers to look at:
     // Efficiently generating structurally complex inputs with thousands of objects (in relation to JConTest)
 
 Implemtation TODO's
+    // Brug spec-reader som module. 
     // Lav en Toogle, der siger om programmet skal være designet til TAJS eller ej (evt. en boolean der bliver sat i prelude.js). Fra Gianluca:
            Note that I removed one for in the dump message, that was using new Set() and a catch, which was using “process.on”.
            It would be nice if you can get rid of those features, that are not supported by master-not-reviewed.

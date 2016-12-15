@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
 
@@ -155,8 +156,13 @@ public class Main {
 
     public static String runFullDriver(Benchmark bench) throws IOException {
         String path = getTestFilePath(bench, TEST_FILE_NAME);
-
         return Util.runNodeScript(path);
+    }
+
+    public static String runFullDriver(Benchmark bench, long timeout) throws IOException, TimeoutException {
+        String path = getTestFilePath(bench, TEST_FILE_NAME);
+
+        return Util.runNodeScript(path, timeout);
     }
 
 }

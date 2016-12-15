@@ -1,7 +1,6 @@
 package dk.webbies.tajscheck.util;
 
 
-import dk.au.cs.casa.typescript.types.Type;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -12,6 +11,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -27,13 +27,21 @@ import java.util.stream.StreamSupport;
  */
 public class Util {
     private static final boolean alwaysRecreate = false;
-    public static String runNodeScript(String args) throws IOException {
+    public static String runNodeScript(String args, long timeout) throws IOException, TimeoutException {
         if (args.endsWith("\"")) args = args.replace("\"", "");
         Process process = Runtime.getRuntime().exec("node " + args);
+
+        process.destroy();
 
         CountDownLatch latch = new CountDownLatch(2);
         StreamGobbler inputGobbler = new StreamGobbler(process.getInputStream(), latch);
         StreamGobbler errGobbler = new StreamGobbler(process.getErrorStream(), latch);
+
+        try {
+            waitForProcess(process, timeout);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         try {
             latch.await();
@@ -47,6 +55,40 @@ public class Util {
         }
 
         return inputGobbler.getResult();
+    }
+
+    public static int waitForProcess(Process process, long timeout)
+            throws IOException, InterruptedException, TimeoutException {
+        Worker worker = new Worker(process);
+        worker.start();
+        try {
+            worker.join(timeout);
+            if (worker.exit != null)
+                return worker.exit;
+            else
+                throw new TimeoutException();
+        } catch(InterruptedException ex) {
+            worker.interrupt();
+            Thread.currentThread().interrupt();
+            throw ex;
+        } finally {
+            process.destroy();
+        }
+    }
+
+    private static class Worker extends Thread {
+        private final Process process;
+        private Integer exit;
+        private Worker(Process process) {
+            this.process = process;
+        }
+        public void run() {
+            try {
+                exit = process.waitFor();
+            } catch (InterruptedException ignore) {
+                // ignored.
+            }
+        }
     }
 
     public static String removeSuffix(String str, String suffix) {
@@ -141,6 +183,14 @@ public class Util {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public static String runNodeScript(String nodeArgs) throws IOException {
+        try {
+            return runNodeScript(nodeArgs, Long.MAX_VALUE);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static String getCachedOrRun(String cachePath, List<File> checkAgainst, Supplier<String> run) throws IOException {
