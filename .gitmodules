@@ -1,3 +1,6 @@
 [submodule "TAJS-private"]
 	path = TAJS-private
 	url = git@github.com:cs-au-dk/TAJS-private
+[submodule "ts-spec-reader"]
+	path = ts-spec-reader
+	url = git@github.com:cs-au-dk/ts-spec-reader.git
