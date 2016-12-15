@@ -31,16 +31,16 @@ public class Util {
         if (args.endsWith("\"")) args = args.replace("\"", "");
         Process process = Runtime.getRuntime().exec("node " + args);
 
-        process.destroy();
-
         CountDownLatch latch = new CountDownLatch(2);
         StreamGobbler inputGobbler = new StreamGobbler(process.getInputStream(), latch);
         StreamGobbler errGobbler = new StreamGobbler(process.getErrorStream(), latch);
 
-        try {
-            waitForProcess(process, timeout);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        if (timeout > 0) {
+            try {
+                waitForProcess(process, timeout);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         try {
@@ -57,7 +57,7 @@ public class Util {
         return inputGobbler.getResult();
     }
 
-    public static int waitForProcess(Process process, long timeout)
+    private static int waitForProcess(Process process, long timeout)
             throws IOException, InterruptedException, TimeoutException {
         Worker worker = new Worker(process);
         worker.start();
@@ -187,7 +187,7 @@ public class Util {
 
     public static String runNodeScript(String nodeArgs) throws IOException {
         try {
-            return runNodeScript(nodeArgs, Long.MAX_VALUE);
+            return runNodeScript(nodeArgs, -1);
         } catch (TimeoutException e) {
             throw new RuntimeException(e);
         }
@@ -196,10 +196,17 @@ public class Util {
     public static String getCachedOrRun(String cachePath, List<File> checkAgainst, Supplier<String> run) throws IOException {
         cachePath = cachePath.replaceAll("/", "");
         cachePath = cachePath.replaceAll(":", "");
-        cachePath = cachePath.replaceAll("\\\\", "");
+         cachePath = cachePath.replaceAll("\\\\", "");
+
+        List<Boolean> exists = checkAgainst.stream().map(File::exists).collect(Collectors.toList());
 
         if (!checkAgainst.stream().allMatch(File::exists)) {
             throw new RuntimeException("I cannot check against something that doesn't exist.");
+        }
+
+        if (!new File("cache/").exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            new File("cache/").mkdir();
         }
 
         File cache = new File("cache/" + cachePath);

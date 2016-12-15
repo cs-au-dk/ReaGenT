@@ -12,14 +12,14 @@ import java.util.*;
  */
 public class ParseDeclaration {
     public static SpecReader getTypeSpecification(Environment env, Collection<String> declarationFilePaths) {
-        String runString = "node_modules/ts-type-reader/src/CLI.js --env " + env.getCliArgument();
+        String runString = "ts-spec-reader/src/CLI.js --env " + env.getCliArgument();
         for (String declarationFile : declarationFilePaths) {
             runString += " \"" + declarationFile + "\"";
         }
 
         String cachePath = "declaration-" + env.getCliArgument() + "-" + runString.hashCode() + ".json";
 
-        List<File> toCheckAgainst = new ArrayList<>(Arrays.asList(new File("node_modules/ts-type-reader")));
+        List<File> toCheckAgainst = new ArrayList<>(Arrays.asList(new File("ts-spec-reader")));
         declarationFilePaths.stream().map(File::new).forEach(toCheckAgainst::add);
 
         String specification;

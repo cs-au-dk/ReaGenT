@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/TAJS-private/TAJS-private.iml" filepath="$PROJECT_DIR$/TAJS-private/TAJS-private.iml" group="TAJS" />
       <module fileurl="file://$PROJECT_DIR$/TAJSCheck.iml" filepath="$PROJECT_DIR$/TAJSCheck.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ts-spec-reader/deserializers/java/deserializers.iml" filepath="$PROJECT_DIR$/ts-spec-reader/deserializers/java/deserializers.iml" />
     </modules>
   </component>
 </project>

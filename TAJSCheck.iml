@@ -20,11 +20,12 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="closure-compiler (2)" level="project" />
-    <orderEntry type="library" name="moment" level="application" />
     <orderEntry type="library" name="hamcrest-core-1.3" level="project" />
     <orderEntry type="library" name="benchmark-collector-reader" level="project" />
     <orderEntry type="library" name="functionaljava-4.6" level="project" />
     <orderEntry type="library" name="commons-lang3-3.5" level="project" />
     <orderEntry type="module" module-name="TAJS-private" />
+    <orderEntry type="library" name="benchmark-collector-reader" level="project" />
+    <orderEntry type="module" module-name="deserializers" />
   </component>
 </module>

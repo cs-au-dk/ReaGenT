@@ -61,12 +61,12 @@ public class RunBenchmarks {
     @Test
     public void runFullDriver() throws Exception {
         Main.writeFullDriver(benchmark);
-        String out = null;
+        String out;
         try {
             out = Main.runFullDriver(benchmark, 60 * 1000);
         } catch (TimeoutException e) {
             // this is ok, it happens.
-            System.out.println("Timeout");
+            System.out.println("Timeout!");
             return;
         }
         System.out.println(out);
