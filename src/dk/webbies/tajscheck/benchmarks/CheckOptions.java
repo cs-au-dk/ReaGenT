@@ -17,13 +17,32 @@ public final class CheckOptions {
         return new Builder().build();
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public static final class Builder {
         private int checkDepth = 0;
         private int checkDepthForUnions = 1;
         public boolean checkHeap = false;
 
-        private CheckOptions build() {
+        public CheckOptions build() {
             return new CheckOptions(this);
+        }
+
+        public Builder setCheckDepth(int checkDepth) {
+            this.checkDepth = checkDepth;
+            return this;
+        }
+
+        public Builder setCheckDepthForUnions(int checkDepthForUnions) {
+            this.checkDepthForUnions = checkDepthForUnions;
+            return this;
+        }
+
+        public Builder setCheckHeap(boolean checkHeap) {
+            this.checkHeap = checkHeap;
+            return this;
         }
     }
 }

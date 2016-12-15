@@ -10,7 +10,6 @@ import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.hamcrest.Matcher;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,12 +33,20 @@ public class UnitTests {
     }
 
     static Benchmark benchFromFolder(String folderName) {
-        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE, CheckOptions.defaultOptions());
+        return benchFromFolder(folderName, CheckOptions.defaultOptions());
+    }
+
+    static Benchmark benchFromFolder(String folderName, CheckOptions options) {
+        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE, options);
     }
 
     private String runDriver(String folderName, String seed) throws Exception {
         Benchmark bench = benchFromFolder(folderName);
 
+        return runDriver(bench, seed);
+    }
+
+    private String runDriver(Benchmark bench, String seed) throws Exception {
         sanityCheck(bench);
 
         Main.writeFullDriver(bench, new ExecutionRecording(null, seed));
@@ -415,4 +422,19 @@ public class UnitTests {
         assertThat(result.typeErrors.size(), is(0));
         assertThat(result.errors.size(), is(0));
     }
+
+    @Test
+    public void deepUnions() throws Exception {
+        CheckOptions options = CheckOptions.builder()
+                .setCheckDepthForUnions(2)
+                .build();
+
+        RunResult result = parseDriverResult(runDriver(benchFromFolder("deepUnion", options), "foo"));
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("(((function or object) and field[foo]:(((function or object) and field[bar]:(boolean)))) or ((function or object) and field[foo]:(((function or object) and field[bar]:(string)))))")
+                .got(JSON, "{\"foo\":{\"bar\":123}}");
+    }
+
 }

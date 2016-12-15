@@ -252,7 +252,7 @@ public class TestProgramBuilder {
                                                     identifier("assert"),
                                                     binary(
                                                             member(identifier("passedResults"), "length"),
-                                                            Operator.EQUAL_EQUAL_EQUAL,
+                                                            Operator.NOT_EQUAL_EQUAL,
                                                             number(0)
                                                     ),
                                                     string(test.getPath()),
