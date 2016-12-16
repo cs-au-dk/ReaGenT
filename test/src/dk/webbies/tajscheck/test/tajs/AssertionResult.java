@@ -13,12 +13,18 @@ public class AssertionResult {
     Value actual;
 
     public enum BooleanResult {
-        DEFINITELY_FALSE,
-        DEFINITELY_TRUE,
-        SOMETIMES_TRUE,
-        SOMETIMES_FALSE,
-        SOMETIMES_TRUE_SOMETIMES_FALSE,
-        ALWAYS_UNKNOWN;
+        DEFINITELY_FALSE("definitely false"),
+        DEFINITELY_TRUE("definitely true"),
+        SOMETIMES_TRUE("sometimes true"),
+        SOMETIMES_FALSE("sometimes false"),
+        SOMETIMES_TRUE_SOMETIMES_FALSE("sometimes true, sometimes false"),
+        ALWAYS_UNKNOWN("always unknown");
+
+        final String pretty;
+
+        BooleanResult(String pretty) {
+            this.pretty = pretty;
+        }
 
         static BooleanResult parse(Collection<Value> values) {
             boolean hasBeenFalse = false;

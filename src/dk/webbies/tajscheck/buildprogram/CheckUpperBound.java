@@ -24,12 +24,15 @@ import dk.au.cs.casa.typescript.types.UnionType;
 import dk.au.cs.casa.typescript.types.UnresolvedType;
 import dk.webbies.tajscheck.TypeContext;
 import dk.webbies.tajscheck.TypesUtil;
+import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
 import dk.webbies.tajscheck.paser.AST.Expression;
 import dk.webbies.tajscheck.paser.AST.Statement;
+import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
+import dk.webbies.tajscheck.util.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,16 +46,18 @@ public class CheckUpperBound {
     private final Set<Type> nativeTypes;
     private final Map<Type, String> typeNames;
     private final TestProgramBuilder.TypeParameterIndexer indexer;
+    private Benchmark bench;
 
-    CheckUpperBound(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer indexer) {
+    CheckUpperBound(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer indexer, Benchmark bench) {
         this.nativeTypes = nativeTypes;
         this.typeNames = typeNames;
         this.indexer = indexer;
+        this.bench = bench;
     }
 
 
     List<Statement> checkType(Type type, TypeContext context, Expression exp, String path) {
-        List<TypeCheck> typeChecks = type.accept(new CheckUpperBoundTypeVisitor(), new Arg(context, 1)); // TODO: Depth out in some sort of option.
+        List<TypeCheck> typeChecks = type.accept(new CheckUpperBoundTypeVisitor(), new Arg(context));
 
         return typeChecks.stream().map(check -> checkToAssertions(check, exp, path)).collect(Collectors.toList());
     }
@@ -73,20 +78,19 @@ public class CheckUpperBound {
 
     private static class Arg {
         private final TypeContext context;
-        private final int depth;
 
-        private Arg(TypeContext context, int depth) {
+        private Arg(TypeContext context) {
             this.context = context;
-            this.depth = depth;
         }
 
         public Arg withParameters(TypeContext newParameters) {
-            return new Arg(this.context.append(newParameters), depth);
+            return new Arg(this.context.append(newParameters));
         }
     }
 
     // This return an empty list a lot of the time, that is because these tests are only designed to test the upper-bound. E.g. that in a union, all the cases can actually happen.
-    // TODO: Think long and hard of other cases where upper-bound tests make sense.
+    // All the lower-bound tests are created else-where.
+
     private final class CheckUpperBoundTypeVisitor implements TypeVisitorWithArgument<List<TypeCheck>, Arg> {
 
         @Override
@@ -96,7 +100,7 @@ public class CheckUpperBound {
 
         @Override
         public List<TypeCheck> visit(ClassType t, Arg arg) {
-            return Collections.emptyList(); // TODO: Copy paste some stuff from interfaceType.
+            return Collections.emptyList();
         }
 
         @Override
@@ -106,7 +110,23 @@ public class CheckUpperBound {
 
         @Override
         public List<TypeCheck> visit(InterfaceType t, Arg arg) {
-            return Collections.emptyList(); // TODO: Make a test, where this is tested (more depth needed).
+            if (nativeTypes.contains(t)) {
+                return Collections.emptyList();
+            }
+
+            Pair<InterfaceType, TypeContext> pair = TypesUtil.constructSyntheticInterfaceWithBaseTypes(t, typeNames);
+            InterfaceType inter = pair.getLeft();
+            TypeContext typeContext = arg.context.append(pair.getRight());
+
+            int signatures = inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size();
+
+            if (signatures == 0) {
+                return Collections.singletonList(
+                        new SimpleTypeCheck(Check.not(Check.typeOf("function")), "didn't expect a function")
+                );
+            }
+
+            return Collections.emptyList();
         }
 
         @Override
@@ -129,7 +149,7 @@ public class CheckUpperBound {
         @Override
         public List<TypeCheck> visit(UnionType union, Arg arg) {
             return union.getElements().stream().map((type) -> {
-                TypeCheck check = checkType(arg, type);
+                TypeCheck check = checkType(arg, type, bench.options.checkDepthForUnions);
                 return new SimpleTypeCheck(check.getCheck(), "maybe " + check.getExpected());
             }).collect(Collectors.toList());
         }
@@ -199,7 +219,7 @@ public class CheckUpperBound {
         }
     }
 
-    private TypeCheck checkType(Arg arg, Type type) {
-        return CheckType.createIntersection(type.accept(new CheckType.CreateTypeCheckVisitor(nativeTypes, indexer, typeNames), new CheckType.Arg(arg.context, arg.depth)));
+    private TypeCheck checkType(Arg arg, Type type, int depth) {
+        return CheckType.createIntersection(type.accept(new CheckType.CreateTypeCheckVisitor(nativeTypes, indexer, typeNames), new CheckType.Arg(arg.context, depth)));
     }
 }

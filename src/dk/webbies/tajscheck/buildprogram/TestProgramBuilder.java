@@ -311,7 +311,7 @@ public class TestProgramBuilder {
         return Util.concat(
                 checkDependencies(test),
                 testCode,
-                bench.useTAJS ? new CheckUpperBound(nativeTypes, typeNames, typeParameterIndexer).checkType(product, test.getTypeContext(), identifier("result"), test.getPath()) : Collections.emptyList(),
+                bench.useTAJS ? new CheckUpperBound(nativeTypes, typeNames, typeParameterIndexer, bench).checkType(product, test.getTypeContext(), identifier("result"), test.getPath()) : Collections.emptyList(),
                 Collections.singletonList(saveResultStatement)
         );
     }

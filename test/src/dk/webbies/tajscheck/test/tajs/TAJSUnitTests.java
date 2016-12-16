@@ -219,15 +219,16 @@ public class TAJSUnitTests {
         StringBuilder builder = new StringBuilder();
         for (Map.Entry<String, Collection<AssertionResult>> entry : result.toMap().entrySet()) {
             for (AssertionResult tajsResult : entry.getValue()) {
-                if (tajsResult.result.isSometimesFalse() || tajsResult.result == BooleanResult.SOMETIMES_TRUE_SOMETIMES_FALSE) {
+                if (tajsResult.result.isSometimesFalse()) {
                     builder
                             .append("Found assertion error on path ").append(entry.getKey()).append("\n")
-                            .append("Expected: ").append(tajsResult.expected).append("\n")
-                            .append("But got: ").append(tajsResult.actual.toString()).append("\n");
-                    builder.append("\n");
+                            .append("    Assertion failed with: ").append(tajsResult.result.pretty).append("\n")
+                            .append("    Expected: ").append(tajsResult.expected).append("\n")
+                            .append("    But got: ").append(tajsResult.actual.toString()).append("\n");
                     if (tajsResult.result == BooleanResult.SOMETIMES_TRUE_SOMETIMES_FALSE) {
-                        System.out.println("This is however not the case for some other executions of the same assert.");
+                        System.out.println("    This is however not the case for some other executions of the same assert.\n");
                     }
+                    builder.append("\n");
                 }
             }
         }

@@ -21,7 +21,7 @@ public class TypeContext {
         this.classType = null;
     }
 
-    TypeContext(Map<TypeParameterType, Type> map, ClassType classType) {
+    private TypeContext(Map<TypeParameterType, Type> map, ClassType classType) {
         this.map = map;
         this.classType = classType;
     }
