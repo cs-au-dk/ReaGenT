@@ -76,6 +76,22 @@ public class RunBenchmarks {
     }
 
     @Test
+    public void coverage() throws Exception {
+        Main.writeFullDriver(benchmark);
+        String out;
+        try {
+            out = Main.genCoverage(benchmark, 60 * 1000);
+        } catch (TimeoutException e) {
+            // this is ok, it happens.
+            System.out.println("Timeout!");
+            return;
+        }
+        System.out.println(out);
+
+        assert !out.trim().isEmpty();
+    }
+
+    @Test
     public void sanityCheck() throws Exception {
         Benchmark bench = this.benchmark.withLoadMethod(BOOTSTRAP);
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.

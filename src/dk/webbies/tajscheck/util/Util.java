@@ -28,8 +28,20 @@ import java.util.stream.StreamSupport;
 public class Util {
     private static final boolean alwaysRecreate = false;
     public static String runNodeScript(String args, long timeout) throws IOException, TimeoutException {
+        return runNodeScript(args, null, timeout);
+    }
+
+    public static String runNodeScript(String args, File dir) throws IOException {
+        try {
+            return runNodeScript(args, dir, -1);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String runScript(String args, File dir, long timeout) throws IOException, TimeoutException {
         if (args.endsWith("\"")) args = args.replace("\"", "");
-        Process process = Runtime.getRuntime().exec("node " + args);
+        Process process = Runtime.getRuntime().exec(args, null, dir);
 
         CountDownLatch latch = new CountDownLatch(2);
         StreamGobbler inputGobbler = new StreamGobbler(process.getInputStream(), latch);
@@ -55,6 +67,10 @@ public class Util {
         }
 
         return inputGobbler.getResult();
+    }
+
+    public static String runNodeScript(String args, File dir, long timeout) throws IOException, TimeoutException {
+        return runScript("node " + args, dir, timeout);
     }
 
     private static int waitForProcess(Process process, long timeout)

@@ -158,12 +158,16 @@ public class Main {
 
 
     public static String getTestFilePath(Benchmark bench, String fileName) {
+        String folder = getFolderPath(bench);
+
+        return folder + fileName;
+    }
+
+    private static String getFolderPath(Benchmark bench) {
         String jsPath = bench.jsFile;
         int lastIndex = jsPath.lastIndexOf('/');
 
-        String folder = jsPath.substring(0, lastIndex + 1);
-
-        return folder + fileName;
+        return jsPath.substring(0, lastIndex + 1);
     }
 
     private static String getRequirePath(Benchmark bench) {
@@ -180,10 +184,27 @@ public class Main {
         return Util.runNodeScript(path);
     }
 
+    public static String genCoverage(Benchmark bench) throws IOException {
+        try {
+            return genCoverage(bench, -1);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String genCoverage(Benchmark bench, long timeout) throws IOException, TimeoutException {
+        StringBuilder prefix = new StringBuilder();
+        int foldersDeep = getFolderPath(bench).split("/").length;
+        for (int i = 0; i < foldersDeep; i++) {
+            prefix.append("../");
+        }
+
+        return Util.runNodeScript(prefix + "node_modules/istanbul/lib/cli.js cover " + Main.TEST_FILE_NAME, new File(getFolderPath(bench)), timeout);
+    }
+
     public static String runFullDriver(Benchmark bench, long timeout) throws IOException, TimeoutException {
         String path = getTestFilePath(bench, TEST_FILE_NAME);
 
         return Util.runNodeScript(path, timeout);
     }
-
 }
