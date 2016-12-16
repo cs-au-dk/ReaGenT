@@ -21,12 +21,14 @@ import java.util.stream.Collectors;
 public class TestCreator {
 
     private final Set<Type> nativeTypes;
+    private Map<Type, String> typeNames;
     private final Type typeToTest;
     private final Benchmark bench;
     private final TypeParameterIndexer typeParameterIndexer;
 
-    public TestCreator(Set<Type> nativeTypes, Type typeToTest, Benchmark bench, TypeParameterIndexer typeParameterIndexer) {
+    public TestCreator(Set<Type> nativeTypes, Map<Type, String> typeNames, Type typeToTest, Benchmark bench, TypeParameterIndexer typeParameterIndexer) {
         this.nativeTypes = nativeTypes;
+        this.typeNames = typeNames;
         this.typeToTest = typeToTest;
         this.bench = bench;
         this.typeParameterIndexer = typeParameterIndexer;
@@ -336,8 +338,15 @@ public class TestCreator {
 
         @Override
         public Void visit(GenericType t, Arg arg) {
-            // TODO: Consider creating a special test if it is an array.
             TypeWithParameters withParameters = new TypeWithParameters(t, arg.getTypeContext());
+            if (typeNames.get(t).equals("Array")) {
+                assert t.getTypeParameters().size() == 1;
+                Type arrayType = arg.typeContext.get((TypeParameterType) t.getTypeParameters().iterator().next());
+                tests.add(new NumberIndexTest(t, arrayType, arg.path, arg.typeContext));
+                recurse(arrayType, arg.append("[numberIndexer]"));
+
+                return null;
+            }
             if (seen.contains(withParameters) || nativeTypes.contains(t)) {
                 return null;
             }
@@ -362,11 +371,11 @@ public class TestCreator {
 
             if (t.getDeclaredStringIndexType() != null) {
                 tests.add(new StringIndexTest(t, t.getDeclaredStringIndexType(), arg.path, arg.typeContext));
-                t.getDeclaredStringIndexType().accept(this, arg.append("[stringIndexer]"));
+                recurse(t.getDeclaredStringIndexType(), arg.append("[stringIndexer]"));
             }
             if (t.getDeclaredNumberIndexType() != null) {
                 tests.add(new NumberIndexTest(t, t.getDeclaredNumberIndexType(), arg.path, arg.typeContext));
-                t.getDeclaredNumberIndexType().accept(this, arg.append("[numberIndexer]"));
+                recurse(t.getDeclaredNumberIndexType(), arg.append("[numberIndexer]"));
             }
 
             Map<String, Type> properties = t.getDeclaredProperties();

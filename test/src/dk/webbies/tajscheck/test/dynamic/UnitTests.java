@@ -455,12 +455,22 @@ public class UnitTests {
                 .setCheckDepthForUnions(2)
                 .build();
 
-        RunResult result = parseDriverResult(runDriver(benchFromFolder("deepUnion", options), "foo"));
+        RunResult result = run("deepUnion", options, "foo");
 
         expect(result)
                 .forPath("module.foo()")
                 .expected("(((function or object) and field[foo]:(((function or object) and field[bar]:(boolean)))) or ((function or object) and field[foo]:(((function or object) and field[bar]:(string)))))")
                 .got(JSON, "{\"foo\":{\"bar\":123}}");
+    }
+
+    @Test
+    public void typeInArray() throws Exception {
+        RunResult result = run("typeInArray", "foo");
+
+        expect(result)
+                .forPath("module.foo().<>.[numberIndexer].bar.baz")
+                .expected("true")
+                .got(STRING, "false");
     }
 
 }

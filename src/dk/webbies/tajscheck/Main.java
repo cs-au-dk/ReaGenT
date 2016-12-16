@@ -65,7 +65,7 @@ public class Main {
 
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
 
-        List<Test> tests = new TestCreator(nativeTypes, typeToTest, orgBench, typeParameterIndexer).createTests(false);
+        List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, orgBench, typeParameterIndexer).createTests(false);
 
         if (tests.size() > 1000) {
             tests.removeAll(new IdentityHashSet<>(tests.subList(1000, tests.size())));
@@ -91,7 +91,7 @@ public class Main {
                 try {
                     System.out.println("Creating small driver for: " + path + "  " + (count + 1) + "/" + tests.size());
 
-                    List<Test> specificTests = new TestCreator(nativeTypes, typeToTest, bench, typeParameterIndexer).createTests();
+                    List<Test> specificTests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer).createTests();
                     specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest));
 
                     Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer).buildTestProgram(null);
@@ -127,7 +127,7 @@ public class Main {
 
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
 
-        List<Test> tests = new TestCreator(nativeTypes, typeToTest, bench, typeParameterIndexer).createTests();
+        List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer).createTests();
         tests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest));
 
         Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest, typeParameterIndexer).buildTestProgram(recording);
