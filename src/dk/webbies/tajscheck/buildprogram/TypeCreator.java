@@ -61,13 +61,15 @@ public class TypeCreator {
             for (Type type : test.getProduces()) {
                 testValueLocations.add(createProducedValueVariable(type, test.getTypeContext()));
             }
+        }
 
+        for (Test test : tests) {
             // Forcing all these to be created ahead of time
             for (Type dependsOn : test.getDependsOn()) {
                 constructType(dependsOn, test.getTypeContext());
             }
-
         }
+
     }
 
     public List<Integer> getTestProducesIndexes(Test test) {
