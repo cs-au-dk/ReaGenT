@@ -61,7 +61,7 @@ public class Main {
 
         Map<Type, String> typeNames = ParseDeclaration.getTypeNamesMap(spec);
 
-        Type typeToTest = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(orgBench.module);
+        Type typeToTest = getTypeToTest(orgBench, spec);
 
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
 
@@ -123,7 +123,7 @@ public class Main {
 
         Map<Type, String> typeNames = ParseDeclaration.getTypeNamesMap(spec);
 
-        Type typeToTest = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(bench.module);
+        Type typeToTest = getTypeToTest(bench, spec);
 
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
 
@@ -133,6 +133,27 @@ public class Main {
         Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest, typeParameterIndexer).buildTestProgram(recording);
 
         return AstToStringVisitor.toString(program);
+    }
+
+    private static Type getTypeToTest(Benchmark bench, SpecReader spec) {
+        Type result = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(bench.module);
+
+        if (bench.options.splitUnions) {
+            for (Type type : TypesUtil.collectAllTypes(result)) {
+                if (type instanceof InterfaceType) {
+                    InterfaceType inter = (InterfaceType) type;
+                    inter.setDeclaredCallSignatures(TypesUtil.splitSignatures(inter.getDeclaredCallSignatures()));
+                    inter.setDeclaredConstructSignatures(TypesUtil.splitSignatures(inter.getDeclaredConstructSignatures()));
+                } else if (type instanceof GenericType) {
+                    GenericType inter = (GenericType) type;
+                    inter.setDeclaredCallSignatures(TypesUtil.splitSignatures(inter.getDeclaredCallSignatures()));
+                    inter.setDeclaredConstructSignatures(TypesUtil.splitSignatures(inter.getDeclaredConstructSignatures()));
+                }
+            }
+        }
+
+
+        return result;
     }
 
 

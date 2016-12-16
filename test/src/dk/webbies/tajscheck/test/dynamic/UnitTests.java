@@ -10,8 +10,7 @@ import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.hamcrest.Matcher;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.OutputParser.*;
@@ -90,8 +89,27 @@ public class UnitTests {
             this.results = result;
         }
 
-        private ParseResultTester forPath(String path) {
-            results = results.stream().filter(result -> result.path.equals(path)).collect(Collectors.toList());
+        ParseResultTester forPath(String path) {
+            return forPath(Collections.singletonList(path));
+        }
+
+        ParseResultTester forPath(String... paths) {
+            return forPath(Arrays.asList(paths));
+        }
+
+        ParseResultTester forPath(List<String> pathsCollection) {
+            Set<String> paths = new HashSet<>(pathsCollection);
+            results = results.stream().filter(result -> paths.contains(result.path)).collect(Collectors.toList());
+
+            StringBuilder path = new StringBuilder();
+
+            Iterator<String> pathsIterator = pathsCollection.iterator();
+            while (pathsIterator.hasNext()) {
+                path.append(pathsIterator.next());
+                if (pathsIterator.hasNext()) {
+                    path.append(", ");
+                }
+            }
 
             assertThat("expected something on path: " + path, results.size(),is(not(equalTo(0))));
             return this;
@@ -199,8 +217,9 @@ public class UnitTests {
         RunResult result = run("optionalParameters", "foo");
 
         expect(result)
-                .forPath("module.foo(boolean, union, union)")
-                .expected("number");
+                .forPath("module.foo(boolean, undefined, undefined)", "module.foo(boolean, string, undefined)")
+                .expected("number")
+                .got(TYPEOF, "undefined");
     }
 
     @Test

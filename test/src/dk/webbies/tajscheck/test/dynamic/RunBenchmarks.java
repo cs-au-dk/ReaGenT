@@ -32,7 +32,9 @@ public class RunBenchmarks {
     @SuppressWarnings("WeakerAccess")
     public static final Map<String, Benchmark> benchmarks = new HashMap<>();
     static {
-        CheckOptions options = CheckOptions.defaultOptions();
+        CheckOptions options = CheckOptions.builder()
+                .setSplitUnions(false) // Because some of these benchmarks use an insane amount of overloads, so this can cause the size of the generated program to explode (about a factor 400x for moment).
+                .build();
         benchmarks.put("moment", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", "moment", REQUIRE, options));
         benchmarks.put("async", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/async/async.js", "test/benchmarks/async/async.d.ts", "async", REQUIRE, options));
         benchmarks.put("path.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pathjs/pathjs.js", "test/benchmarks/pathjs/pathjs.d.ts", "Path", BROWSER, options));

@@ -526,7 +526,7 @@ public class TestCreator {
         @Override
         public Void visit(UnionType union, Arg arg) {
             TypeWithParameters withParameters = new TypeWithParameters(union, arg.getTypeContext());
-            if (seen.contains(withParameters) || nativeTypes.contains(union)) {
+            if (seen.contains(withParameters)) { /* || nativeTypes.contains(union)) { sometimes union-types ends up in the native-types thing, i just test all of em. */
                 return null;
             }
             seen.add(withParameters);

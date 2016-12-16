@@ -222,7 +222,7 @@ public class TAJSUnitTests {
                 if (tajsResult.result.isSometimesFalse()) {
                     builder
                             .append("Found assertion error on path ").append(entry.getKey()).append("\n")
-                            .append("    Assertion failed with: ").append(tajsResult.result.pretty).append("\n")
+                            .append("    The assertion is: ").append(tajsResult.result.pretty).append("\n")
                             .append("    Expected: ").append(tajsResult.expected).append("\n")
                             .append("    But got: ").append(tajsResult.actual.toString()).append("\n");
                     if (tajsResult.result == BooleanResult.SOMETIMES_TRUE_SOMETIMES_FALSE) {
@@ -299,6 +299,18 @@ public class TAJSUnitTests {
     public void spuriousOverload() throws Exception {
         // I wanted to make a more complicated test, but since TAJS cannot see that (typeof [bool/number] !== "string"), it has to be quite simple.
         MultiMap<String, AssertionResult> result = run("spuriousOverload");
+
+        expect(result)
+                .forPath("Foo")
+                .expected("overload (a: string) to be called")
+                .toFail();
+
+    }
+
+    @Test
+    public void splitSignatures() throws Exception {
+        // I wanted to make a more complicated test, but since TAJS cannot see that (typeof [bool/number] !== "string"), it has to be quite simple.
+        MultiMap<String, AssertionResult> result = run("splitSignatures");
 
         expect(result)
                 .forPath("Foo")

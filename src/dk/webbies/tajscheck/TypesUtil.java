@@ -116,6 +116,12 @@ public class TypesUtil {
         return typeContext.append(generateParameterMap(type).getMap());
     }
 
+    static Set<Type> collectAllTypes(Type type) {
+        CollectAllTypesVisitor visitor = new CollectAllTypesVisitor();
+        visitor.accept(type);
+        return visitor.getSeen();
+    }
+
     static Set<Type> collectNativeTypes(SpecReader spec, SpecReader emptySpec) {
         CollectAllTypesVisitor nativeCollector = new CollectAllTypesVisitor();
         Map<String, Type> declaredProperties = ((InterfaceType) spec.getGlobal()).getDeclaredProperties();
@@ -189,6 +195,47 @@ public class TypesUtil {
         return new ArrayList<>();
     }
 
+    static List<Signature> splitSignatures(List<Signature> signatures) {
+        return signatures.stream().map(TypesUtil::splitSignature).reduce(new ArrayList<>(), Util::reduceList);
+    }
+
+    private static List<Signature> splitSignature(Signature signature) {
+        for (int i = 0; i < signature.getParameters().size(); i++) {
+            Signature.Parameter parameter = signature.getParameters().get(i);
+            if (parameter.getType() instanceof UnionType) {
+                List<Type> elements = ((UnionType) parameter.getType()).getElements();
+
+                List<Signature> result = new ArrayList<>();
+
+                for (Type element : elements) {
+                    Signature subSignature = cloneSignature(signature);
+                    Signature.Parameter newParameter = new Signature.Parameter();
+                    newParameter.setName(parameter.getName());
+                    newParameter.setType(element);
+
+                    subSignature.getParameters().set(i, newParameter);
+
+                    result.addAll(splitSignature(subSignature));
+                }
+                return result;
+            }
+        }
+        return Collections.singletonList(signature);
+    }
+
+    private static Signature cloneSignature(Signature signature) {
+        Signature result = new Signature();
+        result.setResolvedReturnType(signature.getResolvedReturnType());
+        result.setUnionSignatures(signature.getUnionSignatures());
+        result.setTarget(signature.getTarget());
+        result.setParameters(new ArrayList<>(signature.getParameters()));
+        result.setHasRestParameter(signature.isHasRestParameter());
+        result.setIsolatedSignatureType(signature.getIsolatedSignatureType());
+        result.setMinArgumentCount(signature.getMinArgumentCount());
+        result.setTypeParameters(signature.getTypeParameters());
+        return result;
+    }
+
 
     private static class CollectAllTypesVisitor implements TypeVisitor<Void> {
         private final Set<Type> seen = new HashSet<>();
@@ -204,7 +251,24 @@ public class TypesUtil {
 
         @Override
         public Void visit(ClassType t) {
-            throw new RuntimeException();
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+
+            t.getSignatures().forEach(this::acceptSignature);
+
+            t.getInstanceType().accept(this);
+
+            t.getBaseTypes().forEach(this::accept);
+
+            t.getStaticProperties().values().forEach(this::accept);
+
+            t.getTarget().accept(this);
+
+            t.getTypeArguments().forEach(this::accept);
+
+            return null;
         }
 
         @Override
@@ -254,7 +318,9 @@ public class TypesUtil {
         }
 
         private void acceptSignature(Signature sig) {
-            sig.getResolvedReturnType().accept(this);
+            if (sig.getResolvedReturnType() != null) {
+                sig.getResolvedReturnType().accept(this);
+            }
             sig.getParameters().stream().map(Signature.Parameter::getType).forEach(this::accept);
             if (sig.getTarget() != null) {
                 acceptSignature(sig.getTarget());
