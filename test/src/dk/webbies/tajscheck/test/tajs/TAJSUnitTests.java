@@ -112,11 +112,13 @@ public class TAJSUnitTests {
     static MultiMap<String, AssertionResult> run(String folderName) throws Exception {
         Benchmark bench = benchFromFolder(folderName);
 
-        String fullDriver = Main.generateFullDriver(bench);
+        return run(bench);
+    }
+
+    private static MultiMap<String, AssertionResult> run(Benchmark bench) throws Exception {
+        Main.writeFullDriver(bench);
 
         String filePath = Main.getTestFilePath(bench, Main.TEST_FILE_NAME);
-
-        Util.writeFile(filePath, fullDriver);
 
         MultiMap<String, AssertionResult> result = runTAJS(filePath);
 
@@ -226,7 +228,7 @@ public class TAJSUnitTests {
                             .append("    Expected: ").append(tajsResult.expected).append("\n")
                             .append("    But got: ").append(tajsResult.actual.toString()).append("\n");
                     if (tajsResult.result == BooleanResult.SOMETIMES_TRUE_SOMETIMES_FALSE) {
-                        System.out.println("    This is however not the case for some other executions of the same assert.\n");
+                        System.out.println("    Although the assertion definitely succeeds for in other contexts.\n");
                     }
                     builder.append("\n");
                 }
@@ -309,7 +311,6 @@ public class TAJSUnitTests {
 
     @Test
     public void splitSignatures() throws Exception {
-        // I wanted to make a more complicated test, but since TAJS cannot see that (typeof [bool/number] !== "string"), it has to be quite simple.
         MultiMap<String, AssertionResult> result = run("splitSignatures");
 
         expect(result)

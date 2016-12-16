@@ -10,13 +10,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertTrue;
+import static dk.webbies.tajscheck.test.tajs.AssertionResult.BooleanResult.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertThat;
 
 /**
  * Created by erik1 on 15-12-2016.
@@ -44,7 +44,7 @@ public class RunAllDynamicUnitTests {
     }
 
     @Test
-    public void santityCheckAnalysis() throws Exception {
+    public void sanityCheckAnalysis() throws Exception {
         // Trying to bootstrap the library with itself, here it is very spurious if any warning is emitted.
 
         Benchmark bench = UnitTests.benchFromFolder(folderName).withLoadMethod(Benchmark.LOAD_METHOD.BOOTSTRAP).withTAJS();
@@ -52,10 +52,12 @@ public class RunAllDynamicUnitTests {
 
         MultiMap<String, AssertionResult> result = TAJSUnitTests.runTAJS(Main.getTestFilePath(bench, Main.TEST_FILE_NAME));
 
-        String printedResult = TAJSUnitTests.prettyResult(result);
+        System.out.println(TAJSUnitTests.prettyResult(result));
 
-        System.out.println(printedResult);;
-
-        assertTrue(printedResult.isEmpty());
+        for (Map.Entry<String, Collection<AssertionResult>> entry : result.toMap().entrySet()) {
+            for (AssertionResult tajsResult : entry.getValue()) {
+                assertThat(tajsResult.result, is(not(DEFINITELY_FALSE)));
+            }
+        }
     }
 }
