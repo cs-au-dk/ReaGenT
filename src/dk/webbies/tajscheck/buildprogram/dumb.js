@@ -14,7 +14,9 @@
 }, 100);*/
 
 if (!isTAJS) {
-    dumbMessages(); // TODO: TAJS Seems unhappy about async, so doing this for now.
+    setTimeout(function () {
+        dumbMessages();
+    }, 100);
 
     function dumbMessages() {
         (function (assertionFailures, print) {
