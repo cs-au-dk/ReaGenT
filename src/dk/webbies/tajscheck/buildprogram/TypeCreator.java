@@ -311,6 +311,28 @@ public class TypeCreator {
 
         @Override
         public Statement visit(SimpleType simple, TypeContext typeContext) {
+            if (benchmark.useTAJS) {
+                switch (simple.getKind()) {
+                    case String:
+                        return Return(call(identifier("TAJS_make"), string("AnyStr")));
+                    case Any:
+                        throw new RuntimeException();
+                    case Boolean:
+                        return Return(call(identifier("TAJS_make"), string("AnyBool")));
+                    case Null:
+                        return Return(nullLiteral());
+                    case Number:
+                        return Return(call(identifier("TAJS_make"), string("AnyNum")));
+                    case Undefined:
+                    case Void:
+                        return Return(
+                                unary(Operator.VOID, number(0))
+                        );
+                    default:
+                        throw new RuntimeException("Cannot yet produce a simple: " + simple.getKind());
+                }
+            }
+
             switch (simple.getKind()) {
                 case String:
                     // Math.random().toString(36).substring(Math.random() * 20);
