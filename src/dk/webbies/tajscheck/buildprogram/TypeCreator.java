@@ -542,10 +542,34 @@ public class TypeCreator {
                     block(Util.withIndex(signatures).map(signaturePair -> {
                         int signatureIndex = signaturePair.getRight();
                         Signature signature = signaturePair.getLeft();
+                        List<Signature.Parameter> parameters = signature.getParameters();
+                        Statement checkRestArgs = block();
+
+                        if (signature.isHasRestParameter()) {
+                            ReferenceType restTypeArr = (ReferenceType) parameters.get(parameters.size() - 1).getType();
+
+                            assert "Array".equals(typeNames.get(restTypeArr.getTarget()));
+                            assert restTypeArr.getTypeArguments().size() == 1;
+
+                            Type restType = restTypeArr.getTypeArguments().iterator().next();
+
+                            checkRestArgs = ifThen(unary(Operator.NOT,
+                                    call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
+                                            function(block(
+                                                    Return(typeChecker.checkResultingType(restType, identifier("exp"), interName + ".[restArgs]", options.checkDepth))
+                                            ), "exp")
+                                    )),
+                                    Return(bool(false))
+                            );
+
+                            parameters = parameters.subList(0, parameters.size() - 1);
+                        }
+
                         return block(
                                 variable("signatureCorrect" + signatureIndex, call(function(block(
                                         checkNumberOfArgs(signature),
-                                        block(Util.withIndex(signature.getParameters()).map(parameterPair -> {
+                                        checkRestArgs,
+                                        block(Util.withIndex(parameters).map(parameterPair -> {
                                             Integer argIndex = parameterPair.getRight();
                                             Signature.Parameter arg = parameterPair.getLeft();
 

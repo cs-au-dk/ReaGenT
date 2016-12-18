@@ -508,7 +508,12 @@ public class UnitTests {
     public void genRestArgsWithOverloads() throws Exception {
         RunResult result = run("genRestArgsWithOverloads", "foo");
 
-        // TODO: Make assertions, only the Foo is supposed to fail, the BAR is ok.
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("Foo")
+                .expected("A valid overload")
+                .got(STRING, "string,1,4,7,false");
     }
 
     @Test
