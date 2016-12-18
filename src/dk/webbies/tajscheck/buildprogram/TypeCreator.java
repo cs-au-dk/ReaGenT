@@ -580,7 +580,7 @@ public class TypeCreator {
                                             identifier("assert"),
                                             binary(
                                                     member(identifier("foundSignatures"), "length"),
-                                                    Operator.EQUAL_EQUAL_EQUAL,
+                                                    Operator.NOT_EQUAL_EQUAL,
                                                     number(0)
                                             ),
                                             string(interName),
