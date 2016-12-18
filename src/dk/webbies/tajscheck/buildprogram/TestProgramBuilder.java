@@ -180,7 +180,7 @@ public class TestProgramBuilder {
                         ),
                         Return()
                 ),
-                new CheckType(nativeTypes, typeNames, typeParameterIndexer, new TypeContext()).assertResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
+                new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, new TypeContext()).assertResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
 
         )));
     }
@@ -212,7 +212,7 @@ public class TestProgramBuilder {
         assert produces.size() == typeCreator.getTestProducesIndexes(test).size();
 
         Statement saveResultStatement;
-        CheckType checkType = new CheckType(nativeTypes, typeNames, typeParameterIndexer, test.getTypeContext());
+        TypeChecker checkType = new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, test.getTypeContext());
         if (produces.size() == 1) {
             Type product = produces.iterator().next();
             int index = typeCreator.getTestProducesIndexes(test).iterator().next();

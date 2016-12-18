@@ -1,6 +1,6 @@
 package dk.webbies.tajscheck.buildprogram.typechecks;
 
-import dk.webbies.tajscheck.buildprogram.CheckType;
+import dk.webbies.tajscheck.buildprogram.TypeChecker;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 
 import java.util.List;
@@ -28,7 +28,7 @@ public class FieldTypeCheck implements TypeCheck {
 
     @Override
     public String getExpected() {
-        return "field[" + field + "]:(" + CheckType.createIntersectionDescription(fieldChecks) + ")";
+        return "field[" + field + "]:(" + TypeChecker.createIntersectionDescription(fieldChecks) + ")";
     }
 
     @Override

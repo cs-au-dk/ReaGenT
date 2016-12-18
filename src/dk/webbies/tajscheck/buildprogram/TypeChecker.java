@@ -22,13 +22,13 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
 /**
  * Created by erik1 on 03-11-2016.
  */
-public class CheckType {
+public class TypeChecker {
     private final Set<Type> nativeTypes;
     private Map<Type, String> typeNames;
     private TestProgramBuilder.TypeParameterIndexer typeParameterIndexer;
     private TypeContext typeContext;
 
-    public CheckType(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, TypeContext typeContext) {
+    public TypeChecker(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, TypeContext typeContext) {
         this.nativeTypes = nativeTypes;
         this.typeNames = typeNames;
         this.typeParameterIndexer = typeParameterIndexer;
@@ -434,7 +434,7 @@ public class CheckType {
             return createIntersection(checksLists.iterator().next());
         }
 
-        List<TypeCheck> checks = checksLists.stream().map(CheckType::createIntersection).collect(Collectors.toList());
+        List<TypeCheck> checks = checksLists.stream().map(TypeChecker::createIntersection).collect(Collectors.toList());
 
         StringBuilder expected = new StringBuilder("(");
         for (int i = 0; i < checks.size(); i++) {

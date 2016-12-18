@@ -128,6 +128,16 @@ function stringIndexCheck(obj, check) {
     return true;
 }
 
+function checkRestArgs(args, fromIndex, check) {
+    for (var i = fromIndex; i < args.length; i++) {
+        if (!check(args[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 // The below is library code, that enables me to only run the tests, that are actually able to run.
 
 var testsThatCanRun = []; // list of test-indexes

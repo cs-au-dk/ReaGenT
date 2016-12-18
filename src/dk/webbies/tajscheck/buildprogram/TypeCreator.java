@@ -475,7 +475,7 @@ public class TypeCreator {
             args.add("arg" + i);
         }
 
-        CheckType typeChecker = new CheckType(nativeTypes, typeNames, typeParameterIndexer, typeContext);
+        TypeChecker typeChecker = new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, typeContext);
 
         String interName = typeNames.get(inter);
         assert interName != null;
@@ -485,10 +485,35 @@ public class TypeCreator {
         if (signatures.size() == 1) {
             Signature signature = signatures.iterator().next();
 
-            // Currently changing nothing if it ended up not type-checking.
-            List<Statement> typeChecks = Util.zip(args.stream(), signature.getParameters().stream(), (argName, par) ->
+            List<Signature.Parameter> parameters = signature.getParameters();
+
+            List<Statement> typeChecks = new ArrayList<>();
+
+            if (signature.isHasRestParameter()) {
+                ReferenceType restTypeArr = (ReferenceType) parameters.get(parameters.size() - 1).getType();
+
+                assert "Array".equals(typeNames.get(restTypeArr.getTarget()));
+                assert restTypeArr.getTypeArguments().size() == 1;
+
+                Type restType = restTypeArr.getTypeArguments().iterator().next();
+
+                typeChecks.add(statement(call(
+                        identifier("assert"),
+                        call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
+                                function(block(
+                                        Return(typeChecker.checkResultingType(restType, identifier("exp"), interName + ".[restArgs]", options.checkDepth))
+                                ), "exp")
+                        ),
+                        string(interName + ".[restArgs]"),
+                        string("valid rest-args"),
+                        AstBuilder.expFromString("Array.prototype.slice.call(args)"))));
+
+                parameters = parameters.subList(0, parameters.size() - 1);
+            }
+
+            Util.zip(args.stream(), parameters.stream(), (argName, par) ->
                     typeChecker.assertResultingType(par.getType(), identifier(argName), interName + ".[" + argName + "]", options.checkDepth)
-            ).collect(Collectors.toList());
+            ).forEach(typeChecks::add);
 
             typeChecks.add(checkNumberOfArgs(signature));
 
@@ -497,10 +522,8 @@ public class TypeCreator {
                     // Currently not using the information whether or not the signature was correct. The assertion-errors has already been reported anyway.
                     variable(identifier("signatureCorrect"), call(function(
                             block(
-                                    Util.concat(
-                                            typeChecks,
-                                            Collections.singletonList(Return(bool(true)))
-                                    )
+                                    block(typeChecks),
+                                    Return(bool(true))
                             )
                     ))),
                     saveArgsAndReturnValue(signature, typeContext)
@@ -599,11 +622,13 @@ public class TypeCreator {
     }
 
     private Statement checkNumberOfArgs(Signature signature) {
+        // minArgsCondition
         BinaryExpression condition = binary(
                 member(identifier("args"), "length"),
                 Operator.GREATER_THAN_EQUAL,
                 number(signature.getMinArgumentCount()));
         if (!signature.isHasRestParameter()) {
+            // and maxArgsCondition
             condition = binary(
                     condition,
                     Operator.AND,

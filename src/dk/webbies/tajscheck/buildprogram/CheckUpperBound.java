@@ -220,6 +220,6 @@ public class CheckUpperBound {
     }
 
     private TypeCheck checkType(Arg arg, Type type, int depth) {
-        return CheckType.createIntersection(type.accept(new CheckType.CreateTypeCheckVisitor(nativeTypes, indexer, typeNames), new CheckType.Arg(arg.context, depth)));
+        return TypeChecker.createIntersection(type.accept(new TypeChecker.CreateTypeCheckVisitor(nativeTypes, indexer, typeNames), new TypeChecker.Arg(arg.context, depth)));
     }
 }

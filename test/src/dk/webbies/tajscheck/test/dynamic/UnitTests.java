@@ -8,6 +8,7 @@ import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.hamcrest.Matcher;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -63,7 +64,7 @@ public class UnitTests {
         return result;
     }
 
-    static void sanityCheck(Benchmark bench) throws Exception {
+    private static void sanityCheck(Benchmark bench) throws Exception {
         // Performing a soundness check of the benchmark.
         Main.writeFullDriver(bench.withLoadMethod(Benchmark.LOAD_METHOD.BOOTSTRAP));
         String output = Main.runFullDriver(bench);
@@ -492,4 +493,30 @@ public class UnitTests {
                 .got(STRING, "false");
     }
 
+    @Test
+    public void genRestArgs() throws Exception {
+        RunResult result = run("genRestArgs", "foo");
+
+        expect(result)
+                .forPath("Foo.[restArgs]")
+                .expected("valid rest-args")
+                .got(STRING, "string,1,4,7,false");
+    }
+
+    @Test
+    @Ignore
+    public void genRestArgsWithOverloads() throws Exception {
+        RunResult result = run("genRestArgsWithOverloads", "foo");
+
+        // TODO: Make assertions, only the Foo is supposed to fail, the BAR is ok.
+    }
+
+    @Test
+    @Ignore
+    public void testRestArgs() throws Exception {
+        RunResult result = run("testRestArgs", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+
+    }
 }
