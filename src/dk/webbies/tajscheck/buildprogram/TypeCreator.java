@@ -585,7 +585,7 @@ public class TypeCreator {
                                             ),
                                             string(interName),
                                             string("A valid overload"),
-                                            string("No valid overloads found!"))),
+                                            AstBuilder.expFromString("Array.prototype.slice.call(args)"))),
                                     Return()
                             )
                     ),
