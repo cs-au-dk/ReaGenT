@@ -692,7 +692,7 @@ public class TypeCreator {
 
             int valueIndex = createProducedValueVariable(restArgType, typeContext);
 
-            int saveFromIndex = parameters.size() - 1; // inclusive
+            int saveFromIndex = parameters.size(); // inclusive
 
             Expression indexToSave = AstBuilder.expFromString(saveFromIndex + " + (Math.random() * (arguments.length - " + saveFromIndex + ") | 0)");
 
