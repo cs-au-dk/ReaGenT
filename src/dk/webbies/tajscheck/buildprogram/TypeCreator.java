@@ -676,15 +676,43 @@ public class TypeCreator {
     }
 
     private BlockStatement saveArgsAndReturnValue(Signature signature, TypeContext typeContext) {
-        List<Statement> saveArgumentValues = Util.withIndex(
-                signature.getParameters().stream().map(par -> createProducedValueVariable(par.getType(), typeContext)),
+        List<Signature.Parameter> parameters = signature.getParameters();
+
+        List<Statement> saveArgumentValues = new ArrayList<>();
+
+        if (signature.isHasRestParameter()) {
+            Type restArgTypeArray = parameters.get(parameters.size() - 1).getType();
+            assert restArgTypeArray instanceof ReferenceType;
+            assert "Array".equals(typeNames.get(((ReferenceType) restArgTypeArray).getTarget()));
+            assert ((ReferenceType) restArgTypeArray).getTypeArguments().size() == 1;
+
+            Type restArgType = ((ReferenceType) restArgTypeArray).getTypeArguments().iterator().next();
+
+            parameters = parameters.subList(0, parameters.size() - 1);
+
+            int valueIndex = createProducedValueVariable(restArgType, typeContext);
+
+            int saveFromIndex = parameters.size() - 1; // inclusive
+
+            Expression indexToSave = AstBuilder.expFromString(saveFromIndex + " + (Math.random() * (arguments.length - " + saveFromIndex + ") | 0)");
+
+            saveArgumentValues.add(
+                    ifThen(
+                            binary(AstBuilder.expFromString("arguments.length"), Operator.GREATER_THAN, number(saveFromIndex)),
+                            statement(binary(identifier(VALUE_VARIABLE_PREFIX + valueIndex), Operator.EQUAL, arrayAccess(identifier("arguments"), indexToSave)))
+                    )
+            );
+        }
+
+        Util.withIndex(
+                parameters.stream().map(par -> createProducedValueVariable(par.getType(), typeContext)),
                 (valueIndex, argIndex) -> {
                     return block(
                             statement(binary(identifier(VALUE_VARIABLE_PREFIX + valueIndex), Operator.EQUAL, identifier("arg" + argIndex))),
                             statement(call(identifier("registerValue"), number(valueIndex)))
                     );
                 }
-        ).collect(Collectors.toList());
+        ).forEach(saveArgumentValues::add);
 
         return block(
                 block(saveArgumentValues),
