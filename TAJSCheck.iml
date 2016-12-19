@@ -6,9 +6,15 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test/src" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/test/async/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/accounting/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/accounting/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/async/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/async/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/lunr/coverage" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/lunr/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/moment/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/moment/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/pathjs/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/pathjs/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/pixi/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/underscore/smallDrivers" />

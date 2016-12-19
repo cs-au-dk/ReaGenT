@@ -516,7 +516,6 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore
     public void testRestArgs() throws Exception {
         RunResult result = run("testRestArgs", "foo");
 

@@ -14,12 +14,14 @@ public class MethodCallTest extends Test {
     private Type object;
     private final String propertyName;
     private List<Type> parameters;
+    private final boolean restArgs;
 
-    public MethodCallTest(Type object, Type function, String propertyName, List<Type> parameters, Type returnType, String path, TypeContext typeContext) {
+    public MethodCallTest(Type object, Type function, String propertyName, List<Type> parameters, Type returnType, String path, TypeContext typeContext, boolean restArgs) {
         super(Arrays.asList(object, function), parameters, returnType, path + PrettyTypes.parametersTypes(parameters), typeContext);
         this.object = object;
         this.propertyName = propertyName;
         this.parameters = parameters;
+        this.restArgs = restArgs;
     }
 
     public Type getObject() {
@@ -51,5 +53,9 @@ public class MethodCallTest extends Test {
     @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
+    }
+
+    public boolean isRestArgs() {
+        return restArgs;
     }
 }

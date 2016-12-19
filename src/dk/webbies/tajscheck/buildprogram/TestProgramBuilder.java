@@ -15,6 +15,7 @@ import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -84,7 +85,7 @@ public class TestProgramBuilder {
 
         Expression iterationsToRun;
         if (recording == null || recording.testSequence == null) {
-            iterationsToRun = number(1000);
+            iterationsToRun = number(10000);
         } else {
             iterationsToRun = member(identifier("recording"), "length");
             program.add(variable("recording", array()));
@@ -390,51 +391,72 @@ public class TestProgramBuilder {
 
         @Override
         public List<Statement> visit(MethodCallTest test) {
-            List<Statement> result = new ArrayList<>();
-
-            result.add(variable("base", getTypeExpression(test.getObject(), test.getTypeContext())));
-
-            List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
-                result.add(variable(identifier("argument_" + index), typeCreator.constructType(type, test.getTypeContext())));
-                return identifier("argument_" + index);
-            }).collect(Collectors.toList());
-
-            MethodCallExpression methodCall = methodCall(identifier("base"), test.getPropertyName(), parameters);
-
-            result.add(variable("result", methodCall));
-
-            return result;
+            return callFunction(test, test.getObject(), test.getParameters(), test.isRestArgs(), (base, parameters) ->
+                    methodCall(identifier("base"), test.getPropertyName(), parameters)
+            );
         }
 
         @Override
         public List<Statement> visit(ConstructorCallTest test) {
-            List<Statement> result = new ArrayList<>();
-
-            result.add(variable("base", getTypeExpression(test.getFunction(), test.getTypeContext())));
-
-            List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
-                result.add(variable(identifier("argument_" + index), typeCreator.constructType(type, test.getTypeContext())));
-                return identifier("argument_" + index);
-            }).collect(Collectors.toList());
-
-            Expression newCall = AstBuilder.newCall(identifier("base"), parameters);
-            result.add(variable("result", newCall));
-
-            return result;
+            return callFunction(test, test.getFunction(), test.getParameters(), test.isRestArgs(), AstBuilder::newCall);
         }
 
         @Override
         public List<Statement> visit(FunctionCallTest test) {
+            return callFunction(test, test.getFunction(), test.getParameters(), test.isRestArgs(), AstBuilder::call);
+        }
+
+        private List<Statement> callFunction(Test test, Type object, List<Type> orgParameterTypes, boolean restArgs, BiFunction<Expression, List<Expression>, Expression> callGenerator) {
+            if (restArgs) {
+                Type restArgArr = orgParameterTypes.get(orgParameterTypes.size() - 1);
+                assert restArgArr instanceof ReferenceType;
+                assert "Array".equals(typeNames.get(((ReferenceType) restArgArr).getTarget()));
+                assert ((ReferenceType) restArgArr).getTypeArguments().size() == 1;
+
+                Type restArgType = ((ReferenceType) restArgArr).getTypeArguments().iterator().next();
+
+                List<Type> parameterTypes = orgParameterTypes.subList(0, orgParameterTypes.size() - 1);
+
+                List<Integer> numberOfRestArgsList = Arrays.asList(0, 1, 3, 5);
+
+                return Collections.singletonList(
+                        switchCase(AstBuilder.expFromString("Math.random() * " + numberOfRestArgsList.size() + " | 0"),
+                                Util.withIndex(numberOfRestArgsList, (numberOfRestArgs, index) -> {
+                                    List<Type> parameterTypesWithRestArg = new ArrayList<Type>(parameterTypes);
+
+                                    for (int i = 0; i < numberOfRestArgs; i++) {
+                                        parameterTypesWithRestArg.add(restArgType);
+                                    }
+
+                                    return new Pair<Expression, Statement>(
+                                            number(index),
+                                            block(
+                                                    comment("restArgs with " + numberOfRestArgs + " extra arguments"),
+                                                    block(callFunction(test, object, parameterTypesWithRestArg, callGenerator)),
+                                                    breakStatement()
+                                            )
+                                    );
+                                }).collect(Collectors.toList())
+                        )
+                );
+
+
+            } else {
+                return callFunction(test, object, orgParameterTypes, callGenerator);
+            }
+        }
+
+        private List<Statement> callFunction(Test test, Type object, List<Type> parameterTypes, BiFunction<Expression, List<Expression>, Expression> callGenerator) {
             List<Statement> result = new ArrayList<>();
 
-            result.add(variable("base", getTypeExpression(test.getFunction(), test.getTypeContext())));
+            result.add(variable("base", getTypeExpression(object, test.getTypeContext())));
 
-            List<Expression> parameters = Util.withIndex(test.getParameters(), (type, index) -> {
+            List<Expression> parameters = Util.withIndex(parameterTypes, (type, index) -> {
                 result.add(variable(identifier("argument_" + index), typeCreator.constructType(type, test.getTypeContext())));
                 return identifier("argument_" + index);
             }).collect(Collectors.toList());
 
-            Expression newCall = AstBuilder.call(identifier("base"), parameters);
+            Expression newCall = callGenerator.apply(identifier("base"), parameters);
             result.add(variable("result", newCall));
 
             return result;

@@ -13,11 +13,13 @@ import java.util.List;
 public class ConstructorCallTest extends Test {
     private final Type function;
     private List<Type> parameters;
+    private final boolean restArgs;
 
-    public ConstructorCallTest(Type function, List<Type> parameters, Type returnType, String path, TypeContext typeContext) {
+    public ConstructorCallTest(Type function, List<Type> parameters, Type returnType, String path, TypeContext typeContext, boolean restArgs) {
         super(Collections.singletonList(function), parameters, returnType, path + "new" + PrettyTypes.parametersTypes(parameters), typeContext);
         this.function = function;
         this.parameters = parameters;
+        this.restArgs = restArgs;
     }
 
 
@@ -44,5 +46,9 @@ public class ConstructorCallTest extends Test {
     @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
+    }
+
+    public boolean isRestArgs() {
+        return restArgs;
     }
 }

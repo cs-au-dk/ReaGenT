@@ -148,7 +148,7 @@ public class TestCreator {
                 List<Type> parameters = callSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                 findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters, negativeTypesSeen, nativeTypes);
                 result.add(
-                        new FunctionCallTest(type, parameters, callSignature.getResolvedReturnType(), path, typeContext)
+                        new FunctionCallTest(type, parameters, callSignature.getResolvedReturnType(), path, typeContext, callSignature.isHasRestParameter())
                 );
 
                 visitor.recurse(callSignature.getResolvedReturnType(), new Arg(path + "()", typeContext, depth + 1).withTopLevelFunctions());
@@ -159,7 +159,7 @@ public class TestCreator {
                 List<Type> parameters = constructSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                 findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters, negativeTypesSeen, nativeTypes);
                 result.add(
-                        new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, typeContext)
+                        new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, typeContext, constructSignature.isHasRestParameter())
                 );
 
                 visitor.recurse(constructSignature.getResolvedReturnType(), new Arg(path + "new()", typeContext, depth + 1).withTopLevelFunctions());
@@ -326,7 +326,7 @@ public class TestCreator {
             }
 
             for (Signature signature : t.getSignatures()) {
-                tests.add(new ConstructorCallTest(t, signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList()), t.getInstanceType(), arg.path, arg.typeContext));
+                tests.add(new ConstructorCallTest(t, signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList()), t.getInstanceType(), arg.path, arg.typeContext, signature.isHasRestParameter()));
             }
 
             recurse(t.getInstanceType(), arg.append("new()"));
@@ -404,7 +404,7 @@ public class TestCreator {
                 for (Signature signature : callSignatures) {
                     List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                     findPositiveTypesInParameters(this, arg.append(key), parameters, this.negativeTypesSeen, TestCreator.this.nativeTypes);
-                    tests.add(new MethodCallTest(baseType, propertyType, key, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext()));
+                    tests.add(new MethodCallTest(baseType, propertyType, key, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext(), signature.isHasRestParameter()));
 
                     recurse(signature.getResolvedReturnType(), arg.append(key + "()").addDepth().withTopLevelFunctions());
                 }
@@ -413,7 +413,7 @@ public class TestCreator {
                 for (Signature signature : constructSignatures) {
                     List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                     findPositiveTypesInParameters(this, arg.append(key), parameters, this.negativeTypesSeen, TestCreator.this.nativeTypes);
-                    tests.add(new ConstructorCallTest(propertyType, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext()));
+                    tests.add(new ConstructorCallTest(propertyType, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext(), signature.isHasRestParameter()));
 
                     recurse(signature.getResolvedReturnType(), arg.append(key + "new()").addDepth().withTopLevelFunctions());
                 }
