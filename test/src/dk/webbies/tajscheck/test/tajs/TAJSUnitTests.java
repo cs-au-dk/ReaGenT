@@ -1,25 +1,11 @@
 package dk.webbies.tajscheck.test.tajs;
 
-import dk.brics.tajs.analysis.nativeobjects.JSGlobal;
-import dk.brics.tajs.flowgraph.AbstractNode;
-import dk.brics.tajs.lattice.Context;
 import dk.brics.tajs.lattice.Value;
-import dk.brics.tajs.monitoring.CompositeMonitoring;
-import dk.brics.tajs.monitoring.IAnalysisMonitoring;
-import dk.brics.tajs.monitoring.Monitoring;
-import dk.brics.tajs.monitoring.OrdinaryExitReachableChecker;
-import dk.brics.tajs.options.Options;
-import dk.brics.tajs.test.Misc;
-import dk.brics.tajs.util.ExperimentalAnalysisVariables;
-import dk.brics.tajs.util.Pair;
-import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
-import dk.webbies.tajscheck.test.tajs.AssertionResult.BooleanResult;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
-import dk.webbies.tajscheck.util.Util;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.junit.Ignore;
@@ -38,95 +24,6 @@ import static org.junit.Assert.assertTrue;
  * Created by erik1 on 12-12-2016.
  */
 public class TAJSUnitTests {
-    public static MultiMap<String, AssertionResult> runTAJS(String file) {
-        dk.brics.tajs.Main.reset();
-
-        Options.get().enableTest();
-        Options.get().enableDeterminacy();
-        Options.get().enablePolyfillES6Collections();
-        Options.get().enableEs6MiscPolyfill();
-        Options.get().enableConsoleModel();
-        Options.get().enableIncludeDom();
-
-        IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(new Monitoring(), new OrdinaryExitReachableChecker());
-
-//        Misc.init();
-//        Misc.captureSystemOutput();
-
-        Misc.run(new String[]{file}, monitoring);
-
-        Map<Pair<AbstractNode, Context>, Set<Pair<String, Value>>> recordings = ExperimentalAnalysisVariables.get().get(JSGlobal.TAJSRecordKey.instance);
-
-        return createResult(recordings.values());
-    }
-
-    private static MultiMap<String, AssertionResult> createResult(Collection<Set<Pair<String, Value>>> values) {
-        ArrayListMultiMap<String, Value> collectedValues = new ArrayListMultiMap<>();
-
-        for (Set<Pair<String, Value>> value : values) {
-            for (Pair<String, Value> pair : value) {
-                collectedValues.put(pair.getFirst(), pair.getSecond());
-            }
-        }
-
-        // Left string is path, right string is expected
-        Map<Pair<String, String>, AssertionResult> result = new HashMap<>();
-
-        for (Map.Entry<String, Collection<Value>> entry : collectedValues.toMap().entrySet()) {
-            String key = entry.getKey();
-            String[] split = key.split(" \\| ");
-
-            assertThat(split.length, anyOf(is(2), is(3)));
-
-            String path = split[0];
-            String expected = split[1];
-
-            Pair<String, String> pairKey = Pair.make(path, expected);
-            if (!result.containsKey(pairKey)) {
-                result.put(pairKey, new AssertionResult());
-            }
-
-            AssertionResult partResult = result.get(pairKey);
-            partResult.expected = expected;
-            if (split.length == 2) {
-                partResult.result = BooleanResult.parse(entry.getValue());
-            } else {
-                partResult.actual = Value.join(entry.getValue());
-            }
-        }
-
-        MultiMap<String, AssertionResult> actualResult = new ArrayListMultiMap<>();
-
-        for (Map.Entry<Pair<String, String>, AssertionResult> entry : result.entrySet()) {
-            actualResult.put(entry.getKey().getFirst(), entry.getValue());
-        }
-
-        return actualResult;
-    }
-
-    private static Benchmark benchFromFolder(String folderName) {
-        CheckOptions options = CheckOptions.defaultOptions();
-        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE, options).withTAJS();
-    }
-
-    static MultiMap<String, AssertionResult> run(String folderName) throws Exception {
-        Benchmark bench = benchFromFolder(folderName);
-
-        return run(bench);
-    }
-
-    private static MultiMap<String, AssertionResult> run(Benchmark bench) throws Exception {
-        Main.writeFullDriver(bench);
-
-        String filePath = Main.getTestFilePath(bench, Main.TEST_FILE_NAME);
-
-        MultiMap<String, AssertionResult> result = runTAJS(filePath);
-
-        System.out.println(prettyResult(result));
-
-        return result;
-    }
-
     private static class SimpleEntry<K, T> implements Map.Entry<K, T> {
         private final K key;
         private T value;
@@ -152,6 +49,17 @@ public class TAJSUnitTests {
             this.value = value;
             return old;
         }
+    }
+
+    static MultiMap<String, AssertionResult> run(String folderName) throws Exception {
+        Benchmark bench = benchFromFolder(folderName);
+
+        return TAJSUtil.run(bench);
+    }
+
+    private static Benchmark benchFromFolder(String folderName) {
+        CheckOptions options = CheckOptions.defaultOptions();
+        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE, options).useTAJS();
     }
 
     private class TAJSResultTester {
@@ -215,26 +123,6 @@ public class TAJSUnitTests {
 
             return this;
         }
-    }
-
-    static String prettyResult(MultiMap<String, AssertionResult> result) {
-        StringBuilder builder = new StringBuilder();
-        for (Map.Entry<String, Collection<AssertionResult>> entry : result.toMap().entrySet()) {
-            for (AssertionResult tajsResult : entry.getValue()) {
-                if (tajsResult.result.isSometimesFalse()) {
-                    builder
-                            .append("Found assertion error on path ").append(entry.getKey()).append("\n")
-                            .append("    The assertion is: ").append(tajsResult.result.pretty).append("\n")
-                            .append("    Expected: ").append(tajsResult.expected).append("\n")
-                            .append("    But got: ").append(tajsResult.actual.toString()).append("\n");
-                    if (tajsResult.result == BooleanResult.SOMETIMES_TRUE_SOMETIMES_FALSE) {
-                        System.out.println("    Although the assertion definitely succeeds for in other contexts.\n");
-                    }
-                    builder.append("\n");
-                }
-            }
-        }
-        return builder.toString();
     }
 
     private TAJSResultTester expect(MultiMap<String, AssertionResult> result) {

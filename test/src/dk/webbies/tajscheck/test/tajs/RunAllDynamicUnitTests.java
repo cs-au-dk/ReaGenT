@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck.test.tajs;
 
-import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
 import dk.webbies.tajscheck.util.MultiMap;
@@ -40,19 +39,16 @@ public class RunAllDynamicUnitTests {
     public void runSmallDriver() throws Exception {
         MultiMap<String, AssertionResult> result = TAJSUnitTests.run("../unit/" + folderName);
 
-        System.out.println(TAJSUnitTests.prettyResult(result));
+        System.out.println(TAJSUtil.prettyResult(result));
     }
 
     @Test
     public void sanityCheckAnalysis() throws Exception {
         // Trying to bootstrap the library with itself, here it is very spurious if any warning is emitted.
 
-        Benchmark bench = UnitTests.benchFromFolder(folderName).withLoadMethod(Benchmark.LOAD_METHOD.BOOTSTRAP).withTAJS();
-        Main.writeFullDriver(bench);
+        Benchmark bench = UnitTests.benchFromFolder(folderName).withLoadMethod(Benchmark.LOAD_METHOD.BOOTSTRAP).useTAJS();
 
-        MultiMap<String, AssertionResult> result = TAJSUnitTests.runTAJS(Main.getTestFilePath(bench, Main.TEST_FILE_NAME));
-
-        System.out.println(TAJSUnitTests.prettyResult(result));
+        MultiMap<String, AssertionResult> result = TAJSUtil.run(bench);
 
         for (Map.Entry<String, Collection<AssertionResult>> entry : result.toMap().entrySet()) {
             for (AssertionResult tajsResult : entry.getValue()) {

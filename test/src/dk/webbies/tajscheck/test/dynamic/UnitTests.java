@@ -504,7 +504,6 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore
     public void genRestArgsWithOverloads() throws Exception {
         RunResult result = run("genRestArgsWithOverloads", "foo");
 

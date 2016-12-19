@@ -316,7 +316,10 @@ public class TypeCreator {
                     case String:
                         return Return(call(identifier("TAJS_make"), string("AnyStr")));
                     case Any:
-                        throw new RuntimeException();
+                        // TODO: Something better here?
+                        return Return(
+                                object(new ObjectLiteral.Property("__isAnyMarker", object()))
+                        );
                     case Boolean:
                         return Return(call(identifier("TAJS_make"), string("AnyBool")));
                     case Null:

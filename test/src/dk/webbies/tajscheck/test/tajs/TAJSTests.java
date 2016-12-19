@@ -10,7 +10,8 @@ import org.junit.runners.Suite;
 
 @Suite.SuiteClasses({
         TAJSUnitTests.class,
-        RunAllDynamicUnitTests.class
+        RunAllDynamicUnitTests.class,
+        AnalyzeBenchmarks.class
 })
 public class TAJSTests {
 }

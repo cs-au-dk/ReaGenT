@@ -56,7 +56,7 @@ public class Benchmark {
                 options);
     }
 
-    public Benchmark withTAJS() {
+    public Benchmark useTAJS() {
         return new Benchmark(
                 this.environment,
                 this.jsFile,
