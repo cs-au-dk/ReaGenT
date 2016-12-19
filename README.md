@@ -20,4 +20,4 @@ Afterwards, look in the test/unit folder, there is a lot of tests, most of which
 Each test is a folder, containing 3 files: 
 - `declaration.d.ts`, containing a sample declaration for a library
 - `implementation.js`, containing the corresponding library implementation
-- `test.js` our driver, which loads `implementation.js`, and tests that it behaves correectly. 
+- `test.js` our driver, which loads `implementation.js`, and tests that it behaves correctly. 
