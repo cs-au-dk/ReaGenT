@@ -7,6 +7,8 @@ A sound dynamic/static check of TypeScript declaration files.
     - IntelliJ
     - TypeScript 2.1 or later
  - Getting the submodules `git submodule update --init --remote`
+ - Checkout the `erik-experiments` branch in the TAJS-private submodule. 
+ - Checkout the `v2` branch in the ts-spec-reader submodule.
  - Set up ts-spec-reader: 
     - `cd ts-spec-reader`
     - `npm install`
