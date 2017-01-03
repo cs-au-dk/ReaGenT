@@ -69,7 +69,7 @@ public class Benchmark {
     }
 
     public enum LOAD_METHOD {
-        REQUIRE,
+        LOAD_LOCAL,
         BROWSER,
         BOOTSTRAP
     }
