@@ -8,7 +8,6 @@ import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.hamcrest.Matcher;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -37,7 +36,7 @@ public class UnitTests {
     }
 
     static Benchmark benchFromFolder(String folderName, CheckOptions options) {
-        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.REQUIRE, options);
+        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.LOAD_METHOD.LOAD_LOCAL, options);
     }
 
     private String runDriver(String folderName, String seed) throws Exception {
@@ -521,5 +520,12 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size(), is(0));
 
+    }
+
+    @Test
+    public void propertyWithUnderscore() throws Exception {
+        RunResult result = run("propertyWithUnderscore", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
     }
 }

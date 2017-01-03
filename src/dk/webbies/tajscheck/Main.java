@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
 
@@ -138,8 +139,8 @@ public class Main {
     private static Type getTypeToTest(Benchmark bench, SpecReader spec) {
         Type result = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(bench.module);
 
-        if (bench.options.splitUnions) {
-            for (Type type : TypesUtil.collectAllTypes(result)) {
+        for (Type type : TypesUtil.collectAllTypes(result)) {
+            if (bench.options.splitUnions) {
                 if (type instanceof InterfaceType) {
                     InterfaceType inter = (InterfaceType) type;
                     inter.setDeclaredCallSignatures(TypesUtil.splitSignatures(inter.getDeclaredCallSignatures()));
@@ -150,10 +151,33 @@ public class Main {
                     inter.setDeclaredConstructSignatures(TypesUtil.splitSignatures(inter.getDeclaredConstructSignatures()));
                 }
             }
+
+            if (type instanceof InterfaceType) {
+                ((InterfaceType) type).setDeclaredProperties(fixUnderscoreNames(((InterfaceType) type).getDeclaredProperties()));
+            } else if (type instanceof GenericType) {
+                ((GenericType) type).setDeclaredProperties(fixUnderscoreNames(((GenericType) type).getDeclaredProperties()));
+            }
         }
 
 
+
+
         return result;
+    }
+
+    private static Map<String, Type> fixUnderscoreNames(Map<String, Type> declaredProperties) {
+        return declaredProperties.entrySet().stream().collect(Collectors.toMap(
+                entry -> fixUnderscoreName(entry.getKey()),
+                Map.Entry::getValue
+        ));
+    }
+
+    private static String fixUnderscoreName(String key) {
+        // For some reason, everything with two or more underscore in the beginning, gets an extra underscore. I have a test that fails if this behaviour changes.
+        if (key.startsWith("___")) {
+            return key.substring(1, key.length());
+        }
+        return key;
     }
 
 
