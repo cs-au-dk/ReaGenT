@@ -8,12 +8,18 @@ public final class CheckOptions {
     public final int checkDepthForUnions;
     public final boolean checkHeap;
     public final boolean splitUnions;
+    private Builder builder;
 
     private CheckOptions(Builder builder) {
         this.checkDepth = builder.checkDepth;
         this.checkDepthForUnions = builder.checkDepthForUnions;
         this.checkHeap = builder.checkHeap;
         this.splitUnions = builder.splitUnions;
+        this.builder = builder;
+    }
+
+    public Builder getBuilder() {
+        return this.builder;
     }
 
     public static CheckOptions defaultOptions() {
