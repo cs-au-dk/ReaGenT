@@ -72,7 +72,7 @@ public class CheckUpperBound {
         }
 
         Expression checkExpression = CheckToExpression.generate(typeCheck.getCheck(), exp);
-        return statement(call(identifier("assert"), checkExpression, string(path), string(typeCheck.getExpected()), exp));
+        return statement(call(identifier("assert"), checkExpression, string(path), string(typeCheck.getExpected()), exp, identifier("i")));
     }
 
 

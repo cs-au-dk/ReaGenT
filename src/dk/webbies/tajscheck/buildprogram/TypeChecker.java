@@ -81,7 +81,7 @@ public class TypeChecker {
         assert typeCheck instanceof SimpleTypeCheck;
         // assert(cond, path, expected, actual)
         Expression checkExpression = CheckToExpression.generate(typeCheck.getCheck(), exp);
-        CallExpression assertCall = call(identifier("assert"), checkExpression, string(path), string(typeCheck.getExpected()), exp);
+        CallExpression assertCall = call(identifier("assert"), checkExpression, string(path), string(typeCheck.getExpected()), exp, identifier("i"));
         return ifThen(
                 unary(Operator.NOT, assertCall),
                 block(

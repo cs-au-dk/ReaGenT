@@ -260,7 +260,8 @@ public class TestProgramBuilder {
                                                     ),
                                                     string(test.getPath()),
                                                     string(checkType.getTypeDescription(createUnionType(produces), bench.options.checkDepthForUnions)),
-                                                    identifier("result")
+                                                    identifier("result"),
+                                                    identifier("i")
                                             )
                                     ),
                                     Return()

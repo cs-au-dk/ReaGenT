@@ -35,37 +35,47 @@ if (!isTAJS) {
                 return a < b;
             });
 
+            var createFailDescription = function (expected, actual, iteration) {
+                var failDescription = path + ": (iteration: " + iteration + ")\n";
+                failDescription += "    Here i expected: " + expected + ", but instead i got: \n";
+                failDescription += "        typeof: " + typeof actual + "\n";
+                try {
+                    failDescription += "        toString: " + actual + "\n";
+                } catch (e) {
+                    failDescription += "        toString: [ERROR] \n";
+                }
+                try {
+                    var json = JSON.stringify(actual);
+                    if (json.length < 200) {
+                        failDescription += "        JSON: " + json + "\n";
+                    } else {
+                        failDescription += "        JSON: LONG!\n";
+                    }
+                } catch (e) {
+                }
+                // failDescription += "        sequence: " + failure.sequence.toString() + "\n";
+                failDescription += "\n";
+                return failDescription;
+            };
             for (var i = 0; i < paths.length; i++) {
                 var path = paths[i];
 
                 var failures = assertionsByPath[path];
-                var failStrings = new Set();
+                var failStrings = [];
+                var seen = new Set();
                 for (var j = 0; j < failures.length; j++) {
                     var failure = failures[j];
 
-                    var failDescription = path+ ":\n";
-                    failDescription += "    Here i expected: " + failure.expected + ", but instead i got: \n";
-                    var actual = failure.actual;
-                    failDescription += "        typeof: " + typeof actual + "\n";
-                    try {
-                        failDescription += "        toString: " + actual + "\n";
-                    } catch (e) {
-                        failDescription += "        toString: [ERROR] \n";
+                    var key = createFailDescription(failure.expected, failure.actual, 0);
+                    if (seen.has(key)) {
+                        continue;
                     }
-                    try {
-                        var json = JSON.stringify(actual);
-                        if (json.length < 200) {
-                            failDescription += "        JSON: " + json + "\n";
-                        } else {
-                            failDescription += "        JSON: LONG!\n";
-                        }
-                    } catch (e) { }
-                    // failDescription += "        sequence: " + failure.sequence.toString() + "\n";
-                    failDescription += "\n";
-                    failStrings.add(failDescription);
+                    seen.add(key);
+
+                    var failDescription = createFailDescription(failure.expected, failure.actual, failure.iteration);
+                    failStrings.push(failDescription);
                 }
 
-                failStrings = Array.from(failStrings);
                 for (var j = 0; j < failStrings.length; j++) {
                     print(failStrings[j]);
                 }

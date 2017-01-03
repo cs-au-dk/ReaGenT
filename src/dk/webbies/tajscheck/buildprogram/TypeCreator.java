@@ -509,7 +509,9 @@ public class TypeCreator {
                         ),
                         string(interName + ".[restArgs]"),
                         string("valid rest-args"),
-                        AstBuilder.expFromString("Array.prototype.slice.call(args)"))));
+                        AstBuilder.expFromString("Array.prototype.slice.call(args)"),
+                        identifier("i")
+                )));
 
                 parameters = parameters.subList(0, parameters.size() - 1);
             }
@@ -587,7 +589,13 @@ public class TypeCreator {
                                         Return(bool(true))
                                 )))),
                                 benchmark.useTAJS ? statement(
-                                        call(identifier("assert"), identifier("signatureCorrect" + signatureIndex), string(interName), string("overload " + PrettyTypes.parameters(signature.getParameters()) + " to be called"), string("it was not called"))
+                                        call(
+                                                identifier("assert"),
+                                                identifier("signatureCorrect" + signatureIndex),
+                                                string(interName),
+                                                string("overload " + PrettyTypes.parameters(signature.getParameters()) + " to be called"), string("it was not called"),
+                                                identifier("i")
+                                        )
                                 ): block(),
                                 ifThen(
                                         identifier("signatureCorrect" + signatureIndex),
@@ -612,7 +620,9 @@ public class TypeCreator {
                                             ),
                                             string(interName),
                                             string("A valid overload"),
-                                            AstBuilder.expFromString("Array.prototype.slice.call(args)"))),
+                                            AstBuilder.expFromString("Array.prototype.slice.call(args)"),
+                                            identifier("i")
+                                    )),
                                     Return()
                             )
                     ),

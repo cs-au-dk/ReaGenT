@@ -85,8 +85,11 @@ public class OutputParser {
     private static TypeError parseSingleResult(List<String> lines) {
         assert lines.size() == 5 || lines.size() == 4;
 
-        assert lines.get(0).lastIndexOf(':') == lines.get(0).length() - 1;
-        String path = lines.get(0).substring(0, lines.get(0).length() - 1);
+        String header = lines.get(0);
+        assert header.substring(header.lastIndexOf('('), header.length()).startsWith("(iteration: ");
+        header = header.substring(0, header.lastIndexOf('(') - 1);
+        assert header.lastIndexOf(':') == header.length() - 1;
+        String path = header.substring(0, header.length() - 1);
 
         String expectFinish = ", but instead i got: ";
         assert lines.get(1).endsWith(expectFinish);

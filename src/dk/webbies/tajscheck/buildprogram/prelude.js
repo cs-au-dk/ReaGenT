@@ -92,7 +92,7 @@ function loadLibrary(path) {
 var assertionFailures = [];
 var no_value = {};
 var testOrderRecording = [];
-function assert(cond, path, expected, actual) {
+function assert(cond, path, expected, actual, iteration) {
     if (isTAJS) {
         TAJS_record(path + " | " + expected, cond);
         TAJS_record(path + " | " + expected + " | value", actual);
@@ -101,7 +101,8 @@ function assert(cond, path, expected, actual) {
             path: path,
             expected: expected,
             actual: actual,
-            sequence: testOrderRecording.slice()
+            sequence: testOrderRecording.slice(),
+            iteration: iteration
         });
     }
     return cond;
