@@ -13,10 +13,10 @@ public class AssertionResult {
     Value actual;
 
     public enum BooleanResult {
-        DEFINITELY_FALSE("definitely false"),
-        DEFINITELY_TRUE("definitely true"),
-        SOMETIMES_TRUE("sometimes true"),
-        SOMETIMES_FALSE("sometimes false"),
+        DEFINITELY_FALSE("always false"),
+        DEFINITELY_TRUE("always true"),
+        SOMETIMES_TRUE("sometimes true (otherwise unknown)"),
+        SOMETIMES_FALSE("sometimes false (otherwise unknown)"),
         SOMETIMES_TRUE_SOMETIMES_FALSE("sometimes true, sometimes false"),
         ALWAYS_UNKNOWN("always unknown");
 
