@@ -24,6 +24,15 @@ public class OutputParser {
             this.toString = toString;
             this.JSON = JSON;
         }
+
+        @Override
+        public String toString() {
+            return path + "\n" +
+                    "    Here i expected: " + expected + ", but instead i got: \n" +
+                    "        typeof: " + typeof + "\n" +
+                    "        toString: " + toString + "\n" +
+                    "        JSON: " + JSON;
+        }
     }
 
     public static final class RunResult {
