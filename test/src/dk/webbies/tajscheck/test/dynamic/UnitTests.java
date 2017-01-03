@@ -157,6 +157,10 @@ public class UnitTests {
         return parseDriverResult(runDriver(name, seed));
     }
 
+    private RunResult run(Benchmark benchmark, String seed) throws Exception {
+        return parseDriverResult(runDriver(benchmark, seed));
+    }
+
     private RunResult run(String name, CheckOptions options, String seed) throws Exception {
         return parseDriverResult(runDriver(name, options, seed));
     }
@@ -525,6 +529,13 @@ public class UnitTests {
     @Test
     public void propertyWithUnderscore() throws Exception {
         RunResult result = run("propertyWithUnderscore", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+    }
+
+    @Test
+    public void myFixedMomentHasNoError() throws Exception {
+        RunResult result = run(RunBenchmarks.benchmarks.get("fixedMoment"), null);
 
         assertThat(result.typeErrors.size(), is(0));
     }

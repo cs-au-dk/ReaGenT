@@ -67,7 +67,7 @@ public class TestProgramBuilder {
         List<Statement> program = new ArrayList<>();
 
         // var initialRandomness = Math.random()
-        if (recording == null) {
+        if (recording == null || recording.seed == null) {
             program.add(variable("initialRandomness", methodCall(identifier("Math"), "random")));
         } else {
             program.add(variable("initialRandomness", string(recording.seed)));
