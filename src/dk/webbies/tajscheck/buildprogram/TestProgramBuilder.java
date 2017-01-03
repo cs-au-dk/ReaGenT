@@ -158,7 +158,7 @@ public class TestProgramBuilder {
                     statement(call(function(block(program))))
             );
         } else {
-            assert bench.load_method == Benchmark.LOAD_METHOD.REQUIRE || bench.load_method == Benchmark.LOAD_METHOD.BOOTSTRAP;
+            assert bench.load_method == Benchmark.LOAD_METHOD.LOAD_LOCAL || bench.load_method == Benchmark.LOAD_METHOD.BOOTSTRAP;
             return statement(call(function(block(program))));
         }
 
@@ -214,7 +214,9 @@ public class TestProgramBuilder {
 
         Statement saveResultStatement;
         TypeChecker checkType = new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, test.getTypeContext());
-        if (produces.size() == 1) {
+        if (produces.size() == 0) {
+            saveResultStatement = block();
+        } else if (produces.size() == 1) {
             Type product = produces.iterator().next();
             int index = typeCreator.getTestProducesIndexes(test).iterator().next();
             saveResultStatement = block(
@@ -301,7 +303,9 @@ public class TestProgramBuilder {
          */
 
         Type product;
-        if (test.getProduces().size() == 1) {
+        if (test.getProduces().size() == 0) {
+            product = null;
+        } else if (test.getProduces().size() == 1) {
             product = test.getProduces().iterator().next();
         } else {
             UnionType union = new UnionType();
@@ -312,7 +316,7 @@ public class TestProgramBuilder {
         return Util.concat(
                 checkDependencies(test),
                 testCode,
-                bench.useTAJS ? new CheckUpperBound(nativeTypes, typeNames, typeParameterIndexer, bench).checkType(product, test.getTypeContext(), identifier("result"), test.getPath()) : Collections.emptyList(),
+                bench.useTAJS && product != null ? new CheckUpperBound(nativeTypes, typeNames, typeParameterIndexer, bench).checkType(product, test.getTypeContext(), identifier("result"), test.getPath()) : Collections.emptyList(),
                 Collections.singletonList(saveResultStatement)
         );
     }
@@ -369,7 +373,7 @@ public class TestProgramBuilder {
         @Override
         public List<Statement> visit(LoadModuleTest test) {
             switch (bench.load_method) {
-                case REQUIRE:
+                case LOAD_LOCAL:
                     return Collections.singletonList(
                             variable(
                                     identifier("result"),
