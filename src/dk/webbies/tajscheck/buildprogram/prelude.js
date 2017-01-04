@@ -88,7 +88,7 @@ function loadLibrary(path) {
 }
 
 var assertionFailures = [];
-var no_value = {};
+var no_value = {noValueMarker: true};
 var testOrderRecording = [];
 function assert(cond, path, expected, actual, iteration) {
     if (isTAJS) {
