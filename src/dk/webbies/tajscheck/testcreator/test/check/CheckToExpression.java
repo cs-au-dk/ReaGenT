@@ -97,6 +97,11 @@ public class CheckToExpression implements CheckVisitorWithArgument<Expression, E
         ), "exp"));
     }
 
+    @Override
+    public Expression visit(ExpressionCheck check, Expression expression) {
+        return check.getExpression();
+    }
+
     public static Expression generate(Check check, Expression exp) {
         return check.accept(new CheckToExpression(), exp);
     }

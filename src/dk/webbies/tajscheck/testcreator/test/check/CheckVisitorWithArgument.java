@@ -25,4 +25,6 @@ public interface CheckVisitorWithArgument<T, A> {
     T visit(NumberIndexCheck check, A a);
 
     T visit(StringIndexCheck check, A a);
+
+    T visit(ExpressionCheck check, A a);
 }

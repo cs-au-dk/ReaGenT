@@ -75,4 +75,7 @@ public interface Check {
         return new StringIndexCheck(subCheck);
     }
 
+    static ExpressionCheck expression(Expression expression) {
+        return new ExpressionCheck(expression);
+    }
 }
