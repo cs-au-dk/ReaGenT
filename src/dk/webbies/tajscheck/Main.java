@@ -12,6 +12,11 @@ import dk.webbies.tajscheck.testcreator.test.LoadModuleTest;
 import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.util.IdentityHashSet;
 import dk.webbies.tajscheck.util.Util;
+import dk.webbies.tajscheck.util.selenium.SeleniumDriver;
+import org.apache.http.HttpException;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONString;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,9 +73,9 @@ public class Main {
 
         List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, orgBench, typeParameterIndexer).createTests(false);
 
-        if (tests.size() > 1000) {
-            tests.removeAll(new IdentityHashSet<>(tests.subList(1000, tests.size())));
-            System.err.println("Artifically limiting the amount of small drivers to 1000");
+        if (tests.size() > 100) {
+            tests.removeAll(new IdentityHashSet<>(tests.subList(100, tests.size())));
+            System.err.println("Artifically limiting the amount of small drivers to 100");
         }
 
         int counter = 0;
@@ -139,6 +144,10 @@ public class Main {
     private static Type getTypeToTest(Benchmark bench, SpecReader spec) {
         Type result = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(bench.module);
 
+        if (result == null) {
+            throw new RuntimeException("Module: " + bench.module + " not found in benchmark");
+        }
+
         for (Type type : TypesUtil.collectAllTypes(result)) {
             if (bench.options.splitUnions) {
                 if (type instanceof InterfaceType) {
@@ -203,9 +212,28 @@ public class Main {
         return "./" + jsFile;
     }
 
-    public static String runFullDriver(Benchmark bench) throws IOException {
-        String path = getTestFilePath(bench, TEST_FILE_NAME);
-        return Util.runNodeScript(path);
+    public static String runBenchmark(Benchmark bench, long timeout) throws IOException, TimeoutException {
+        switch (bench.run_method) {
+            case BOOTSTRAP:
+            case NODE:
+                String path = getTestFilePath(bench, TEST_FILE_NAME);
+
+                return Util.runNodeScript(path, timeout);
+            case BROWSER:
+                try {
+                    String rawResult = SeleniumDriver.executeScript(Util.readFile(getTestFilePath(bench, TEST_FILE_NAME)));
+                    JSONObject json = new JSONObject("{res: " + rawResult + "}"); // Ugly, but works.
+                    String result = json.getString("res");
+                    return result;
+                } catch (HttpException e) {
+                    throw new RuntimeException(e);
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            default:
+                throw new RuntimeException("Unknown run method: " + bench.run_method);
+        }
+
     }
 
     public static String genCoverage(Benchmark bench) throws IOException {
@@ -217,6 +245,9 @@ public class Main {
     }
 
     public static String genCoverage(Benchmark bench, long timeout) throws IOException, TimeoutException {
+        if (bench.run_method == Benchmark.RUN_METHOD.BROWSER) {
+            throw new RuntimeException("Coverage currently doesn't work for benchmarks executed in a browser environment");
+        }
         StringBuilder prefix = new StringBuilder();
         int foldersDeep = getFolderPath(bench).split("/").length;
         for (int i = 0; i < foldersDeep; i++) {
@@ -226,9 +257,11 @@ public class Main {
         return Util.runNodeScript(prefix + "node_modules/istanbul/lib/cli.js cover " + Main.TEST_FILE_NAME, new File(getFolderPath(bench)), timeout);
     }
 
-    public static String runFullDriver(Benchmark bench, long timeout) throws IOException, TimeoutException {
-        String path = getTestFilePath(bench, TEST_FILE_NAME);
-
-        return Util.runNodeScript(path, timeout);
+    public static String runBenchmark(Benchmark bench) throws IOException {
+        try {
+            return runBenchmark(bench, -1);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
