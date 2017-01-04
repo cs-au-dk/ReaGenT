@@ -156,6 +156,11 @@ public class JavaScriptParser {
         }
 
         public FunctionExpression toTSCreateAST() {
+            if (this.getErrors().size() > 0) {
+                for (SyntaxMesssage messsage : this.getErrors()) {
+                    System.out.println(messsage.getMessage());
+                }
+            }
             AstTransformer transformer = new AstTransformer(environment);
             List<Statement> body = this.programAST.sourceElements.stream().map(transformer::convert).map(JavaScriptParser::toStatement).collect(Collectors.toList());
             if (body.isEmpty()) {
