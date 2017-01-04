@@ -5,6 +5,11 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import dk.webbies.tajscheck.paser.AST.Statement;
+import dk.webbies.tajscheck.paser.AstToStringVisitor;
+import dk.webbies.tajscheck.paser.JavaScriptParser;
+import dk.webbies.tajscheck.util.Util;
+import org.hamcrest.core.Is;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -12,11 +17,12 @@ import org.junit.runners.Parameterized;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
-import static dk.webbies.tajscheck.benchmarks.Benchmark.LOAD_METHOD.BOOTSTRAP;
-import static dk.webbies.tajscheck.benchmarks.Benchmark.LOAD_METHOD.BROWSER;
-import static dk.webbies.tajscheck.benchmarks.Benchmark.LOAD_METHOD.LOAD_LOCAL;
+import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
+import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BROWSER;
+import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.NODE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
 
 /**
  * Created by erik1 on 22-11-2016.
@@ -35,14 +41,14 @@ public class RunBenchmarks {
         CheckOptions options = CheckOptions.builder()
                 .setSplitUnions(false) // Because some of these benchmarks use an insane amount of overloads, so this can cause the size of the generated program to explode (about a factor 400x for moment).
                 .build();
-        benchmarks.put("moment", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", "moment", LOAD_LOCAL, options));
-        benchmarks.put("async", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/async/async.js", "test/benchmarks/async/async.d.ts", "async", LOAD_LOCAL, options));
+        benchmarks.put("moment", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", "moment", NODE, options));
+        benchmarks.put("async", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/async/async.js", "test/benchmarks/async/async.d.ts", "async", NODE, options));
         benchmarks.put("path.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pathjs/pathjs.js", "test/benchmarks/pathjs/pathjs.d.ts", "Path", BROWSER, options));
-        benchmarks.put("accounting.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/accounting/accounting.js", "test/benchmarks/accounting/accounting.d.ts", "accounting", LOAD_LOCAL, options));
-        benchmarks.put("lunr.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lunr/lunr.js", "test/benchmarks/lunr/lunr.d.ts", "lunr", LOAD_LOCAL, options));
-//        benchmarks.put("PIXI.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pixi/pixi.js", "test/benchmarks/pixi/pixi.d.ts", "PIXI", LOAD_LOCAL, options)); // Commented out because big.
+        benchmarks.put("accounting.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/accounting/accounting.js", "test/benchmarks/accounting/accounting.d.ts", "accounting", NODE, options));
+        benchmarks.put("lunr.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lunr/lunr.js", "test/benchmarks/lunr/lunr.d.ts", "lunr", NODE, options));
+//        benchmarks.put("PIXI.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pixi/pixi.js", "test/benchmarks/pixi/pixi.d.ts", "PIXI", NODE, options)); // Commented out because big.
 
-        benchmarks.put("fixedMoment", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", "moment", LOAD_LOCAL,
+        benchmarks.put("fixedMoment", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", "moment", NODE,
                 options
                         .getBuilder()
                         .setCheckDepth(2)
@@ -50,6 +56,10 @@ public class RunBenchmarks {
                         .build()
         ));
 
+
+        benchmarks.put("ace.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/ace/ace.js", "test/benchmarks/ace/ace.d.ts", "ace", BROWSER, options));
+        benchmarks.put("jQuery.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jquery/jquery.js", "test/benchmarks/jquery/jquery.d.ts", "jQuery", BROWSER, options.getBuilder().setIterationsToRun(500).build()));
+        // TODO: Get dependencies to work, and after that angular.
     }
 
     @Parameterized.Parameters(name = "{0}")
@@ -69,10 +79,13 @@ public class RunBenchmarks {
 
     @Test
     public void runFullDriver() throws Exception {
+        // Write the driver
         Main.writeFullDriver(benchmark);
+
+        // Run the driver
         String out;
         try {
-            out = Main.runFullDriver(benchmark, 20 * 1000);
+            out = Main.runBenchmark(benchmark, 20 * 1000);
         } catch (TimeoutException e) {
             // this is ok, it happens.
             System.out.println("Timeout!");
@@ -82,6 +95,7 @@ public class RunBenchmarks {
 
         System.out.println(out.split("\n")[0]);
 
+        // Parse and print the result
         OutputParser.RunResult result = OutputParser.parseDriverResult(out);
 
         result.typeErrors.sort(Comparator.comparing(o -> o.path));
@@ -105,6 +119,9 @@ public class RunBenchmarks {
 
     @Test
     public void coverage() throws Exception {
+        if (benchmark.run_method == BROWSER) {
+            return;
+        }
         Main.writeFullDriver(benchmark);
         String out;
         try {
@@ -121,12 +138,29 @@ public class RunBenchmarks {
 
     @Test
     public void sanityCheck() throws Exception {
-        Benchmark bench = this.benchmark.withLoadMethod(BOOTSTRAP);
+        Benchmark bench = this.benchmark.withRunMethod(BOOTSTRAP);
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
-        String output = Main.runFullDriver(bench);
+        String output = Main.runBenchmark(bench);
         System.out.println(output);
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 
         assertThat(result.typeErrors.size(), is(0));
+    }
+
+    @Test
+    public void testParsing() throws Exception {
+        // A sanitycheck that JavaScript parsing+printing is idempotent.
+        String script = Util.readFile(benchmark.jsFile);
+
+        JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
+        Statement iteration1Ast = parser.parse("name", script).toTSCreateAST().getBody();
+
+        String iteration1String = AstToStringVisitor.toString(iteration1Ast);
+
+        Statement iteration2Ast = parser.parse("name", iteration1String).toTSCreateAST().getBody();
+
+        String iteration2String = AstToStringVisitor.toString(iteration2Ast);
+
+        assertThat(iteration1String, Is.is(equalTo(iteration2String)));
     }
 }
