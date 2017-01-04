@@ -5,7 +5,10 @@ import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Created by erik1 on 01-11-2016.
@@ -85,6 +88,15 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             case UNSIGNED_RIGHT_SHIFT_EQUAL:
                 write(">>>=");
                 break;
+            case RIGHT_SHIFT_EQUAL:
+                write(">>=");
+                break;
+            case RIGHT_SHIFT:
+                write(">>");
+                break;
+            case UNSIGNED_RIGHT_SHIFT:
+                write(">>>");
+                break;
             case DIV:
                 write("/");
                 break;
@@ -93,6 +105,18 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
                 break;
             case NOT_EQUAL:
                 write("!=");
+                break;
+            case BITWISE_OR_EQUAL:
+                write("|=");
+                break;
+            case BITWISE_AND_EQUAL:
+                write("&=");
+                break;
+            case MINUS_EQUAL:
+                write("-=");
+                break;
+            case MOD_EQUAL:
+                write("%=");
                 break;
             default:
                 throw new RuntimeException("Yet unhandled operator: " + binOp.getOperator());
@@ -113,15 +137,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
     @Override
     public Void visit(CallExpression call) {
-        if (call.getFunction() instanceof Identifier || call.getFunction() instanceof MemberExpression || call.getFunction() instanceof DynamicAccessExpression) {
-            call.getFunction().accept(this);
-        } else if (call.getFunction() instanceof FunctionExpression || call.getFunction() instanceof BinaryExpression) {
-            write("(");
-            call.getFunction().accept(this);
-            write(")");
-        } else {
-            throw new RuntimeException();
-        }
+        writeParenthesizedExpression(call.getFunction());
         writeArgs(call.getArgs());
 
         return null;
@@ -192,7 +208,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
     @Override
     public Void visit(MemberExpression memberExpression) {
-        memberExpression.getExpression().accept(this);
+        writeParenthesizedExpression(memberExpression.getExpression());
         write(".");
         write(memberExpression.getProperty());
         return null;
@@ -200,7 +216,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
     @Override
     public Void visit(DynamicAccessExpression exp) {
-        exp.getOperand().accept(this);
+        writeParenthesizedExpression(exp.getOperand());
         write("[");
         exp.getLookupKey().accept(this);
         write("]");
@@ -263,8 +279,25 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
     @Override
     public Void visit(StringLiteral stringLiteral) {
+        if (stringLiteral.location != null) {
+            write(stringLiteral.toString());
+            return null;
+        }
         write("\"");
-        write(stringLiteral.getString().replace("\"", "\\\""));
+        List<String> collect = Arrays.stream(stringLiteral.getString().split(Pattern.quote("\\\""))).map(str -> str.replace("\"", "\\\"")).collect(Collectors.toList());
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < collect.size(); i++) {
+            builder.append(collect.get(i));
+            if (i != collect.size() - 1) {
+                builder.append("\\\"");
+            }
+        }
+        if (collect.size() == 0) {
+            builder.append("\\\"");
+        }
+
+        write(builder.toString());
         write("\"");
         return null;
     }
@@ -306,6 +339,18 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             case MINUS:
                 write("-");
                 break;
+            case DELETE:
+                write("delete ");
+                break;
+            case PRE_MINUS_MINUS:
+                write("--");
+                break;
+            case PRE_PLUS_PLUS:
+                write("++");
+                break;
+            case BITWISE_NOT:
+                write("~");
+                break;
             default:
                 throw new RuntimeException("Yet unknown operator: " + unary.getOperator());
         }
@@ -314,7 +359,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
     }
 
     private void writeParenthesizedExpression(Expression exp) {
-        if (exp instanceof BinaryExpression || exp instanceof UnaryExpression || exp instanceof ConditionalExpression) {
+        if (exp instanceof BinaryExpression || exp instanceof UnaryExpression || exp instanceof ConditionalExpression || exp instanceof FunctionExpression) {
             write("(");
             exp.accept(this);
             write(")");
@@ -581,6 +626,12 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
     }
 
     @Override
+    public Void visit(LabeledStatement labeledStatement) {
+        write(labeledStatement.getName() + ":");
+        labeledStatement.getStatement().accept(this); // Not perfect, but good enough.
+        return null;
+    }
+    @Override
     public Void visit(ForInStatement forinStatement) {
         if (forinStatement.getInitializer() instanceof BlockStatement && ((BlockStatement) forinStatement.getInitializer()).getStatements().size() == 1) {
             forinStatement = new ForInStatement(
@@ -622,6 +673,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
     @Override
     public Void visit(TryStatement tryStatement) {
+        assert tryStatement.getCatchBlock() != null || tryStatement.getFinallyBlock() != null;
         ident();
 
         write("try {\n");
@@ -630,12 +682,14 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
         writeAsBlock(tryStatement.getTryBlock());
         ident--;
 
-        ident();
-        write("} catch(" + tryStatement.getCatchBlock().getException().getName() + ") { \n");
+        if (tryStatement.getCatchBlock() != null) {
+            ident();
+            write("} catch(" + tryStatement.getCatchBlock().getException().getName() + ") { \n");
 
-        ident++;
-        writeAsBlock(tryStatement.getCatchBlock().getBody());
-        ident--;
+            ident++;
+            writeAsBlock(tryStatement.getCatchBlock().getBody());
+            ident--;
+        }
         ident();
         write("} ");
         if (tryStatement.getFinallyBlock() != null) {
@@ -653,11 +707,6 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
     @Override
     public Void visit(CatchStatement catchStatement) {
-        throw new RuntimeException();
-    }
-
-    @Override
-    public Void visit(LabeledStatement labeledStatement) {
         throw new RuntimeException();
     }
 
