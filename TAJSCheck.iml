@@ -9,8 +9,12 @@
       <excludeFolder url="file://$MODULE_DIR$/test/async/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/accounting/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/accounting/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/ace/coverage" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/ace/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/async/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/async/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/jquery/coverage" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/jquery/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/lunr/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/lunr/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/moment/coverage" />
@@ -28,5 +32,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="benchmark-collector-reader" level="project" />
     <orderEntry type="module" module-name="TAJS-private" />
+    <orderEntry type="library" name="selenium-server-standalone-3.0.1" level="project" />
   </component>
 </module>
