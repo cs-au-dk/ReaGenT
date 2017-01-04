@@ -27,7 +27,7 @@ import java.util.stream.StreamSupport;
  */
 public class Util {
     private static final boolean alwaysRecreate = false;
-    public static String runNodeScript(String args, long timeout) throws IOException, TimeoutException {
+    public static String runNodeScript(String args, int timeout) throws IOException, TimeoutException {
         return runNodeScript(args, null, timeout);
     }
 
@@ -39,7 +39,7 @@ public class Util {
         }
     }
 
-    public static String runScript(String args, File dir, long timeout) throws IOException, TimeoutException {
+    public static String runScript(String args, File dir, int timeout) throws IOException, TimeoutException {
         if (args.endsWith("\"")) args = args.replace("\"", "");
         Process process = Runtime.getRuntime().exec(args, null, dir);
 
@@ -69,11 +69,11 @@ public class Util {
         return inputGobbler.getResult();
     }
 
-    public static String runNodeScript(String args, File dir, long timeout) throws IOException, TimeoutException {
+    public static String runNodeScript(String args, File dir, int timeout) throws IOException, TimeoutException {
         return runScript("node " + args, dir, timeout);
     }
 
-    private static int waitForProcess(Process process, long timeout)
+    private static int waitForProcess(Process process, int timeout)
             throws IOException, InterruptedException, TimeoutException {
         Worker worker = new Worker(process);
         worker.start();

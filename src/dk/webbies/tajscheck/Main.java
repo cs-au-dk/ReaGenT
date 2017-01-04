@@ -212,7 +212,7 @@ public class Main {
         return "./" + jsFile;
     }
 
-    public static String runBenchmark(Benchmark bench, long timeout) throws IOException, TimeoutException {
+    public static String runBenchmark(Benchmark bench, int timeout) throws IOException, TimeoutException {
         switch (bench.run_method) {
             case BOOTSTRAP:
             case NODE:
@@ -241,7 +241,7 @@ public class Main {
         }
     }
 
-    public static String genCoverage(Benchmark bench, long timeout) throws IOException, TimeoutException {
+    public static String genCoverage(Benchmark bench, int timeout) throws IOException, TimeoutException {
         if (bench.run_method == Benchmark.RUN_METHOD.BROWSER) {
             throw new RuntimeException("Coverage currently doesn't work for benchmarks executed in a browser environment");
         }

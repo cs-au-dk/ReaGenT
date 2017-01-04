@@ -53,7 +53,7 @@ public class SeleniumDriver {
         }
     }
 
-    public static String executeScript(String script, long timeout) throws IOException, HttpException, TimeoutException {
+    public static String executeScript(String script, int timeout) throws IOException, HttpException, TimeoutException {
         setDriverPath();
 
         ChromeDriver driver = new ChromeDriver(buldCapabilities());
@@ -75,7 +75,7 @@ public class SeleniumDriver {
         driver.get(getEmptyPageUrl(scriptFile.getAbsolutePath(), port));
 
         if (timeout > 0) {
-            socket.setSoTimeout((int) timeout);
+            socket.setSoTimeout(timeout);
         }
 
         String message;
