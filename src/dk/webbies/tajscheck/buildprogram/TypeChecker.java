@@ -179,7 +179,7 @@ public class TypeChecker {
             if (TypesUtil.isEmptyInterface(t)) {
                 return Collections.singletonList(new SimpleTypeCheck(Check.alwaysTrue(), "[any]"));
             }
-            if (nativeTypes.contains(t)) {
+            if (nativeTypes.contains(t) && !typeNames.get(t).startsWith("window.")) {
                 switch (typeNames.get(t)) {
                     case "Function":
                         return Collections.singletonList(new SimpleTypeCheck(Check.typeOf("function"), "function"));
@@ -212,7 +212,18 @@ public class TypeChecker {
                     case "MouseEvent":
                     case "PointerEvent":
                     case "TouchEvent":
+                    case "ErrorEvent":
+                    case "ProgressEvent":
+                    case "Document":
+                    case "Element":
+                    case "Text":
+                    case "DocumentFragment":
+                    case "Node":
+                    case "XMLDocument":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(typeNames.get(t))), typeNames.get(t)));
+                    case "EventListener":
+                    case "EventListenerObject":
+                        break; // Checking the type manually.
                     default:
                         throw new RuntimeException(typeNames.get(t));
                 }
