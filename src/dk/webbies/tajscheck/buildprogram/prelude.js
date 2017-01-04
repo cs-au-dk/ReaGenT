@@ -7,8 +7,6 @@ if (!isTAJS) { // Skipping all the deterministic randomness of TAJS is doing som
     // var random = eval("(Math.seedrandom(initialRandomness + ''), Math.random)");
     Math.seedrandom(initialRandomness + '');
 
-    console.log("Initial random: " + JSON.stringify(initialRandomness));
-
     // Ensuring randomness of some crypto, from https://github.com/chromium/web-page-replay/blob/master/deterministic.js
     if (typeof(crypto) == 'object' &&
         typeof(crypto.getRandomValues) == 'function') {
@@ -117,6 +115,21 @@ var printedWarnings = [];
 var printedErrors = [];
 
 var print = console.log;
+
+var isBrowser = new Function("try {return this===window;}catch(e){ return false;}");
+
+var savedConsoleLog = [];
+
+if (isBrowser()) {
+    var orgPrint = console.log;
+    print = function (message) {
+        orgPrint(message);
+        savedConsoleLog.push(message);
+    };
+}
+
+print("Initial random: " + JSON.stringify(initialRandomness));
+
 var warn = function (message) {
     printedWarnings.push(message);
 };

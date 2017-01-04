@@ -100,6 +100,10 @@ if (!isTAJS) {
                 }
             }
 
+            if (isBrowser()) {
+                sendResultToChecker(savedConsoleLog.join("\n"));
+            }
+
         })(assertionFailures, print);
     }
 }
