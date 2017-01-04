@@ -460,10 +460,6 @@ public class Util {
         return isInteger.test(str);
     }
 
-    public static String tsCheck(String jsFile, String declaration) throws IOException {
-        return Util.runNodeScript("node_modules/tscheck/tscheck.js " + jsFile + " " + declaration);
-    }
-
     public static String toFixed(double number, int decimals) {
         return toFixed(number, decimals, '.');
     }
