@@ -85,7 +85,7 @@ public class TestProgramBuilder {
 
         Expression iterationsToRun;
         if (recording == null || recording.testSequence == null) {
-            iterationsToRun = number(10000);
+            iterationsToRun = number(bench.options.iterationsToRun);
         } else {
             iterationsToRun = member(identifier("recording"), "length");
             program.add(variable("recording", array()));
@@ -151,14 +151,14 @@ public class TestProgramBuilder {
 
         program.add(AstBuilder.programFromFile(this.getClass().getResource("dumb.js")));
 
-        if (bench.load_method == Benchmark.LOAD_METHOD.BROWSER) {
+        if (bench.run_method == Benchmark.RUN_METHOD.BROWSER) {
             BlockStatement dependency = new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse(bench.jsFile, Util.readFile(bench.jsFile)).toTSCreateAST().getBody();
             return block(
                     dependency,
                     statement(call(function(block(program))))
             );
         } else {
-            assert bench.load_method == Benchmark.LOAD_METHOD.LOAD_LOCAL || bench.load_method == Benchmark.LOAD_METHOD.BOOTSTRAP;
+            assert bench.run_method == Benchmark.RUN_METHOD.NODE || bench.run_method == Benchmark.RUN_METHOD.BOOTSTRAP;
             return statement(call(function(block(program))));
         }
 
@@ -373,8 +373,8 @@ public class TestProgramBuilder {
 
         @Override
         public List<Statement> visit(LoadModuleTest test) {
-            switch (bench.load_method) {
-                case LOAD_LOCAL:
+            switch (bench.run_method) {
+                case NODE:
                     return Collections.singletonList(
                             variable(
                                     identifier("result"),
