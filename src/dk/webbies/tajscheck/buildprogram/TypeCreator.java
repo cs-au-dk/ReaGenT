@@ -68,7 +68,11 @@ public class TypeCreator {
             for (Type dependsOn : test.getDependsOn()) {
                 constructType(dependsOn, test.getTypeContext());
             }
+            for (Type type : test.getTypeToTest()) {
+                getType(type, test.getTypeContext());
+            }
         }
+        finish();
 
     }
 
@@ -864,6 +868,26 @@ public class TypeCreator {
             int value = typeIndexes.size();
             typeIndexes.put(key, value);
 
+            if (finished) {
+                throw new RuntimeException("Already finished");
+            }
+
+            getTypeFunctionQueue.add(key);
+
+            return value;
+        }
+    }
+
+    private final List<TypeWithParameters> getTypeFunctionQueue = new ArrayList<>();
+    private boolean finished = false;
+
+    private void finish() {
+        finished = true;
+        for (TypeWithParameters key : getTypeFunctionQueue) {
+            Type type = key.getType();
+            TypeContext typeContext = key.getTypeContext();
+            int value = typeIndexes.get(key);
+
             Collection<Integer> values = valueLocations.keySet().stream()
                     .filter(candidate -> type.equals(candidate.getType()) && typeContext.equals(candidate.getTypeContext()))
                     .map(valueLocations::get)
@@ -886,9 +910,8 @@ public class TypeCreator {
                     )
             );
             functions.add(getTypeFunction);
-
-            return value;
         }
+
     }
 
     private final Set<Integer> hasCreateTypeFunction = new HashSet<>();
@@ -898,6 +921,10 @@ public class TypeCreator {
             return;
         }
         hasCreateTypeFunction.add(index);
+
+        if (finished) {
+            throw new RuntimeException("Already finished");
+        }
 
         TypeWithParameters typeWithParameters = typeIndexes.inverse().get(index);
         Type type = typeWithParameters.getType();

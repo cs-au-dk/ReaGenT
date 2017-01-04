@@ -315,7 +315,6 @@ public class TestProgramBuilder {
         }
 
         return Util.concat(
-                checkDependencies(test),
                 testCode,
                 bench.useTAJS && product != null ? new CheckUpperBound(nativeTypes, typeNames, typeParameterIndexer, bench).checkType(product, test.getTypeContext(), identifier("result"), test.getPath()) : Collections.emptyList(),
                 Collections.singletonList(saveResultStatement)
@@ -326,24 +325,6 @@ public class TestProgramBuilder {
         UnionType union = new UnionType();
         union.setElements(types);
         return union;
-    }
-
-    private Collection<Statement> checkDependencies(Test test) {
-        List<Statement> result = new ArrayList<>();
-
-        TypeContext typeContext = test.getTypeContext();
-
-        test.getTypeToTest().stream().map((type) ->
-                ifThen(
-                        binary(
-                                typeCreator.getType(type, typeContext),
-                                Operator.EQUAL_EQUAL_EQUAL,
-                                identifier(VARIABLE_NO_VALUE)
-                        ),
-                        Return()
-                )).forEach(result::add);
-
-        return result;
     }
 
     /**

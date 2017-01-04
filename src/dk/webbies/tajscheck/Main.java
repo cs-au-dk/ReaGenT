@@ -98,7 +98,7 @@ public class Main {
                     System.out.println("Creating small driver for: " + path + "  " + (count + 1) + "/" + tests.size());
 
                     List<Test> specificTests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer).createTests();
-                    specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest));
+                    specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
 
                     Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer).buildTestProgram(null);
 
@@ -134,7 +134,7 @@ public class Main {
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
 
         List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer).createTests();
-        tests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest));
+        tests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
 
         Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest, typeParameterIndexer).buildTestProgram(recording);
 

@@ -2,6 +2,7 @@ package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.TypeContext;
+import dk.webbies.tajscheck.benchmarks.Benchmark;
 
 import java.util.Collections;
 
@@ -12,8 +13,14 @@ public class LoadModuleTest extends Test {
     private final String module;
     private Type moduleType;
 
-    public LoadModuleTest(String module, Type moduleType) {
-        super(Collections.emptyList(), Collections.emptyList(), moduleType, "require(\"" + module + "\")", new TypeContext());
+    public LoadModuleTest(String module, Type moduleType, Benchmark benchmark) {
+        super(
+                Collections.emptyList(),
+                benchmark.run_method == Benchmark.RUN_METHOD.BOOTSTRAP ? Collections.singletonList(moduleType) : Collections.emptyList(),
+                moduleType,
+                "require(\"" + module + "\")",
+                new TypeContext()
+        );
         this.module = module;
         this.moduleType = moduleType;
     }
