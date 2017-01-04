@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/qunit/1.18.0/qunit.css"/>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h2>This is the TSCreate / TSInfer (whatever the names ends up being) page for running JavaScript in a browser. </h2>
+    <h2>Running script: <span id="pathThinghy"></span></h2>
+
+    <script>
+        (function () {
+            Object.defineProperty(window, 'sendResultToChecker', {
+                enumerable: false,
+                configurable: false,
+                writable: false,
+                value: function (json) {
+                    var port = Number(getParameter("port"));
+                    var xhttp = new XMLHttpRequest();
+                    xhttp.open("POST", "http://localhost:" + port, true);
+                    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                    xhttp.send(JSON.stringify(json));
+                }
+            });
+
+            // TODO: There is not option to use this yet
+            Object.defineProperty(window, 'createStartDumpButton', {
+                enumerable: false,
+                configurable: false,
+                writable: false,
+                value: function (callback) {
+                    var button = document.createElement("button");
+                    button.appendChild(document.createTextNode("Click me when the script is done"));
+                    button.style.padding = "20px";
+                    button.style.fontSize = "20px";
+                    button.addEventListener("click", function ()  {
+                        callback();
+                    });
+                    document.body.insertBefore(button,document.body.childNodes[0]);
+                }
+            });
+
+
+            var src = getParameter("script");
+            if (!src || src == "Not found") {
+                throw new Error("No script found in URL");
+            }
+
+            document.getElementById("pathThinghy").innerHTML = src;
+
+            var head = document.getElementsByTagName('head').item(0);
+            var script = document.createElement('script');
+            script.setAttribute('type', 'text/javascript');
+            script.setAttribute('src', "file:///" + src);
+            head.appendChild(script);
+
+
+            function getParameter(key) {
+                var result = "Not found",
+                        tmp = [];
+                location.search
+                        .substr(1)
+                        .split("&")
+                        .forEach(function (item) {
+                            tmp = item.split("=");
+                            if (tmp[0] === key) result = decodeURIComponent(tmp[1]);
+                        });
+                return result;
+            }
+        })();
+    </script>
+
+    <div id="qunit"></div>
+</body>
+</html>
