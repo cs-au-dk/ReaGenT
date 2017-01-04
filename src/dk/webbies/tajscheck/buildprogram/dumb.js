@@ -40,7 +40,8 @@ if (!isTAJS) {
                 failDescription += "    Here i expected: " + expected + ", but instead i got: \n";
                 failDescription += "        typeof: " + typeof actual + "\n";
                 try {
-                    failDescription += "        toString: " + actual + "\n";
+                    var string = JSON.stringify(actual + "");
+                    failDescription += "        toString: " + string.substring(1, string.length - 1) + "\n";
                 } catch (e) {
                     failDescription += "        toString: [ERROR] \n";
                 }
