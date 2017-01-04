@@ -59,7 +59,12 @@ public class RunBenchmarks {
 
         benchmarks.put("ace.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/ace/ace.js", "test/benchmarks/ace/ace.d.ts", "ace", BROWSER, options));
         benchmarks.put("jQuery.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jquery/jquery.js", "test/benchmarks/jquery/jquery.d.ts", "jQuery", BROWSER, options.getBuilder().setIterationsToRun(500).build()));
-        // TODO: Get dependencies to work, and after that angular.
+
+
+        benchmarks.put("angular.js",
+                new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/angular1/angular1.js", "test/benchmarks/angular1/angular1.d.ts", "angular", BROWSER, options)
+                .addDependency(benchmarks.get("jQuery.js"))
+        );
     }
 
     @Parameterized.Parameters(name = "{0}")
@@ -154,6 +159,8 @@ public class RunBenchmarks {
 
         JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
         Statement iteration1Ast = parser.parse("name", script).toTSCreateAST().getBody();
+
+        System.out.println("First parsing complete");
 
         String iteration1String = AstToStringVisitor.toString(iteration1Ast);
 

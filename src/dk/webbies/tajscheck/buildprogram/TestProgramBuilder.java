@@ -152,9 +152,16 @@ public class TestProgramBuilder {
         program.add(AstBuilder.programFromFile(this.getClass().getResource("dumb.js")));
 
         if (bench.run_method == Benchmark.RUN_METHOD.BROWSER) {
-            BlockStatement dependency = new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse(bench.jsFile, Util.readFile(bench.jsFile)).toTSCreateAST().getBody();
+            List<Statement> scripts = new ArrayList<>();
+            for (Benchmark dependency : bench.getDependencies()) {
+                String dependencyScript = Util.readFile(dependency.jsFile);
+                scripts.add(AstBuilder.stmtFromString(dependencyScript));
+            }
+
+            scripts.add(AstBuilder.stmtFromString(Util.readFile(bench.jsFile)));
+
             return block(
-                    dependency,
+                    block(scripts),
                     statement(call(function(block(program))))
             );
         } else {

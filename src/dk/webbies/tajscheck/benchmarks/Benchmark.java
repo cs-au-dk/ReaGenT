@@ -2,8 +2,10 @@ package dk.webbies.tajscheck.benchmarks;
 
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Created by erik1 on 01-11-2016.
@@ -17,12 +19,13 @@ public class Benchmark {
     public final RUN_METHOD run_method;
     public final boolean useTAJS;
     public final CheckOptions options;
+    private final List<Benchmark> dependencies;
 
     public Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, RUN_METHOD load_method, CheckOptions options) {
-        this(environment, jsFile, dTSFile, module, load_method, null, false, options);
+        this(environment, jsFile, dTSFile, module, load_method, null, false, options, new ArrayList<>());
     }
 
-    private Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, RUN_METHOD load_method, Collection<String> pathsToTest, boolean withTAJS, CheckOptions options) {
+    private Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, RUN_METHOD load_method, Collection<String> pathsToTest, boolean withTAJS, CheckOptions options, List<Benchmark> dependencies) {
         this.environment = environment;
         this.jsFile = jsFile;
         this.dTSFile = dTSFile;
@@ -31,6 +34,7 @@ public class Benchmark {
         this.run_method = load_method;
         this.useTAJS = withTAJS;
         this.options = options;
+        this.dependencies = dependencies;
     }
 
     public Benchmark withPathsToTest(Collection<String> pathsToTest) {
@@ -41,7 +45,7 @@ public class Benchmark {
                 this.module,
                 run_method, Collections.unmodifiableCollection(pathsToTest),
                 this.useTAJS,
-                options);
+                options, dependencies);
     }
 
     public Benchmark withRunMethod(RUN_METHOD method) {
@@ -53,7 +57,7 @@ public class Benchmark {
                 method,
                 this.pathsToTest,
                 this.useTAJS,
-                options);
+                options, dependencies);
     }
 
     public Benchmark useTAJS() {
@@ -65,7 +69,21 @@ public class Benchmark {
                 this.run_method,
                 this.pathsToTest,
                 true,
-                options);
+                options, dependencies);
+    }
+
+    public Benchmark addDependency(Benchmark benchmark) {
+        assert this.run_method == RUN_METHOD.BROWSER; // <- Only works for this one.
+        if (benchmark == null) {
+            throw new RuntimeException();
+        }
+        Benchmark clone = withRunMethod(this.run_method);// <- Clone
+        clone.dependencies.add(benchmark);
+        return clone;
+    }
+
+    public List<Benchmark> getDependencies() {
+        return Collections.unmodifiableList(dependencies);
     }
 
     public enum RUN_METHOD {

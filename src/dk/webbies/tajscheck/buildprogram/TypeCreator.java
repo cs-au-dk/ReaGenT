@@ -104,6 +104,9 @@ public class TypeCreator {
         if (type instanceof InterfaceType) {
             List<Type> baseTypes = ((InterfaceType) type).getBaseTypes();
             baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext));
+        } else if (type instanceof IntersectionType) {
+            List<Type> baseTypes = ((IntersectionType) type).getElements();
+            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext));
         } else if (type instanceof ReferenceType) {
             putProducedValueIndex(index, ((ReferenceType) type).getTarget(), TypesUtil.generateParameterMap((ReferenceType) type, typeContext));
         } else if (type instanceof GenericType) {
@@ -194,7 +197,11 @@ public class TypeCreator {
         public Statement visit(GenericType type, TypeContext typeContext) {
             assert type.getTypeParameters().equals(type.getTypeArguments());
             if (nativeTypes.contains(type)) {
-                return constructTypeFromName(typeNames.get(type), typeContext);
+                try {
+                    return constructTypeFromName(typeNames.get(type), typeContext);
+                } catch (ProduceManuallyException e) {
+                    // continue
+                }
             }
 
             return type.toInterface().accept(this, typeContext);
@@ -203,7 +210,11 @@ public class TypeCreator {
         @Override
         public Statement visit(InterfaceType type, TypeContext typeContext) {
             if (nativeTypes.contains(type) && !TypesUtil.isEmptyInterface(type) && !typeNames.get(type).startsWith("window.")) {
-                return constructTypeFromName(typeNames.get(type), typeContext);
+                try {
+                    return constructTypeFromName(typeNames.get(type), typeContext);
+                } catch (ProduceManuallyException e) {
+                    // continue
+                }
             }
 
             Pair<InterfaceType, TypeContext> pair = TypesUtil.constructSyntheticInterfaceWithBaseTypes(type, typeNames);
@@ -735,10 +746,14 @@ public class TypeCreator {
     }
 
 
-    private Statement constructTypeFromName(String name, TypeContext typeContext) {
+    private Statement constructTypeFromName(String name, TypeContext typeContext) throws ProduceManuallyException {
         if (name == null) {
             throw new NullPointerException();
         }
+        if (name.startsWith("global.")) {
+            name = name.substring("global.".length(), name.length());
+        }
+
         switch (name) {
             case "Object":
                 return constructNewInstanceOfType(SpecReader.makeEmptySyntheticInterfaceType(), typeContext);
@@ -827,10 +842,62 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return XMLDocument.load()");
             case "Document":
                 return AstBuilder.stmtFromString("return document");
+            case "Window":
+                return AstBuilder.stmtFromString("return window");
+            case "DragEvent":
+                return AstBuilder.stmtFromString("return new DragEvent(12)");
+            case "Navigator":
+                return AstBuilder.stmtFromString("return window.navigator");
+            case "MSCredentials":
+                return AstBuilder.stmtFromString("return new MSCredentials()");
+            case "Storage":
+                return AstBuilder.stmtFromString("return window.localStorage");
+            case "ApplicationCache":
+                return AstBuilder.stmtFromString("return window.applicationCache");
+            case "BarProp":
+                return AstBuilder.stmtFromString("return window.locationbar");
+            case "IDBFactory":
+                return AstBuilder.stmtFromString("return window.indexedDB");
+            case "Location":
+                return AstBuilder.stmtFromString("return window.location");
+            case "MediaQueryList":
+                return AstBuilder.stmtFromString("return window.matchMedia(123)");
+            case "URL":
+                return AstBuilder.stmtFromString("return new URL(\"http://google.com\")");
+            case "Screen":
+                return AstBuilder.stmtFromString("return window.screen");
+            case "Blob":
+                return AstBuilder.stmtFromString("return new Blob()");
+            case "History":
+                return AstBuilder.stmtFromString("return window.history");
+            case "Crypto":
+                return AstBuilder.stmtFromString("return window.crypto");
+            case "Console":
+                return AstBuilder.stmtFromString("return console");
+            case "StyleMedia":
+                return AstBuilder.stmtFromString("return window.styleMedia");
+            case "Selection":
+                return AstBuilder.stmtFromString("return window.getSelection()");
+            case "Performance":
+                return AstBuilder.stmtFromString("return window.performance");
+            case "CSSRuleList":
+            case "CSSStyleDeclaration":
+                // Hacky, i know.
+                return AstBuilder.stmtFromString("return (function () {var tmp = {}; tmp.__proto__  = " + name + "; return tmp})();");
+            case "EventListener":
+            case "EventListenerObject":
+            case "WebKitPoint":
+            case "ErrorEventHandler":
+                throw new ProduceManuallyException();
             default:
                 throw new RuntimeException("Unknown: " + name);
         }
+
     }
+
+    private final class ProduceManuallyException extends Exception {
+    }
+
 
 
     private Statement constructNewInstanceOfType(Type type, TypeContext typeContext) {

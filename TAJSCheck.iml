@@ -11,6 +11,7 @@
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/accounting/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/ace/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/ace/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/angular1/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/async/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/async/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/fixedMoment/coverage" />

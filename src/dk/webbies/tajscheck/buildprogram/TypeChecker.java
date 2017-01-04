@@ -180,7 +180,13 @@ public class TypeChecker {
                 return Collections.singletonList(new SimpleTypeCheck(Check.alwaysTrue(), "[any]"));
             }
             if (nativeTypes.contains(t) && !typeNames.get(t).startsWith("window.")) {
-                switch (typeNames.get(t)) {
+                String name = typeNames.get(t);
+
+                if (name.startsWith("global.")) {
+                    name = name.substring("global.".length(), name.length());
+                }
+
+                switch (name) {
                     case "Function":
                         return Collections.singletonList(new SimpleTypeCheck(Check.typeOf("function"), "function"));
                     case "String":
@@ -220,9 +226,37 @@ public class TypeChecker {
                     case "DocumentFragment":
                     case "Node":
                     case "XMLDocument":
-                        return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(typeNames.get(t))), typeNames.get(t)));
+                    case "DragEvent":
+                    case "MessageEvent":
+                    case "UIEvent":
+                    case "KeyboardEvent":
+                    case "DeviceOrientationEvent":
+                    case "PageTransitionEvent":
+                    case "WheelEvent":
+                    case "DeviceMotionEvent":
+                    case "PopStateEvent":
+                    case "FocusEvent":
+                    case "BeforeUnloadEvent":
+                    case "StorageEvent":
+                    case "HashChangeEvent":
+                    case "Window":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
+                    case "MSPointerEvent":
+                    case "MSGestureEvent":
+                    case "DeviceLightEvent":
+                    case "MediaStreamErrorEvent":
+                        // Checking both that the type exists, and that it is an instance of.
+                        return Collections.singletonList(new SimpleTypeCheck(Check.and(Check.expression(
+                                binary(member(identifier("window"), name), Operator.INSTANCEOF, string("function"))
+                        ), Check.instanceOf(identifier(name))), name));
                     case "EventListener":
                     case "EventListenerObject":
+                    case "ScrollToOptions":
+                    case "ScrollOptions":
+                    case "WebKitPoint":
+                    case "FrameRequestCallback":
+                    case "ObjectURLOptions":
+                    case "BlobPropertyBag":
                         break; // Checking the type manually.
                     default:
                         throw new RuntimeException(typeNames.get(t));
