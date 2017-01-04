@@ -13,6 +13,8 @@
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/ace/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/async/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/async/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/fixedMoment/coverage" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/fixedMoment/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/jquery/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/jquery/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/lunr/coverage" />

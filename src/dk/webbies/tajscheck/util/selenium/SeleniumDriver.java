@@ -18,14 +18,19 @@ import org.openqa.selenium.logging.LogType;
 import org.openqa.selenium.logging.LoggingPreferences;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.service.DriverCommandExecutor;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 
@@ -48,7 +53,7 @@ public class SeleniumDriver {
         }
     }
 
-    public static String executeScript(String script) throws IOException, HttpException {
+    public static String executeScript(String script, long timeout) throws IOException, HttpException, TimeoutException {
         setDriverPath();
 
         ChromeDriver driver = new ChromeDriver(buldCapabilities());
@@ -60,7 +65,7 @@ public class SeleniumDriver {
             FileWriter out = new FileWriter(scriptFile);
             IOUtils.write(script.getBytes(), out);
             out.close();
-        } catch (IOException e) {throw new RuntimeException();}
+        } catch (IOException e) {throw new RuntimeException(e);}
 
         ServerSocket socket = new ServerSocket(0);
         int port = socket.getLocalPort();
@@ -69,7 +74,21 @@ public class SeleniumDriver {
 
         driver.get(getEmptyPageUrl(scriptFile.getAbsolutePath(), port));
 
-        String message = getResponse(socket);
+        if (timeout > 0) {
+            socket.setSoTimeout((int) timeout);
+        }
+
+        String message;
+        try {
+            message = getResponse(socket);
+        } catch (SocketTimeoutException e) {
+            socket.close();
+
+            driver.quit();
+            throw new TimeoutException("Timeout running the browser");
+        }
+
+        socket.close();
 
         driver.close();
         driver.quit();

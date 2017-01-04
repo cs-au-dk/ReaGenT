@@ -221,13 +221,10 @@ public class Main {
                 return Util.runNodeScript(path, timeout);
             case BROWSER:
                 try {
-                    String rawResult = SeleniumDriver.executeScript(Util.readFile(getTestFilePath(bench, TEST_FILE_NAME)));
+                    String rawResult = SeleniumDriver.executeScript(Util.readFile(getTestFilePath(bench, TEST_FILE_NAME)), timeout);
                     JSONObject json = new JSONObject("{res: " + rawResult + "}"); // Ugly, but works.
-                    String result = json.getString("res");
-                    return result;
-                } catch (HttpException e) {
-                    throw new RuntimeException(e);
-                } catch (JSONException e) {
+                    return json.getString("res");
+                } catch (HttpException | JSONException e) {
                     throw new RuntimeException(e);
                 }
             default:
