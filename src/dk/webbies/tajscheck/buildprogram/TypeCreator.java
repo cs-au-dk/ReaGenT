@@ -198,7 +198,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(InterfaceType type, TypeContext typeContext) {
-            if (nativeTypes.contains(type) && !TypesUtil.isEmptyInterface(type)) {
+            if (nativeTypes.contains(type) && !TypesUtil.isEmptyInterface(type) && !typeNames.get(type).startsWith("window.")) {
                 return constructTypeFromName(typeNames.get(type), typeContext);
             }
 
@@ -806,6 +806,23 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"2d\").createPattern()");
             case "XMLHttpRequest":
                 return AstBuilder.stmtFromString("return new XMLHttpRequest()");
+            case "EventTarget":
+                return AstBuilder.stmtFromString("return document"); // Not good, but good enough.
+            case "Element":
+            case "Node":
+                return AstBuilder.stmtFromString("return document.createElement(\"div\")");
+            case "ErrorEvent":
+                return AstBuilder.stmtFromString("return new ErrorEvent(\"foo\")");
+            case "XMLHttpRequestUpload":
+                return AstBuilder.stmtFromString("return new XMLHttpRequest().upload");
+            case "Text":
+                return AstBuilder.stmtFromString("return document.createTextNode(\"foo\")");
+            case "DocumentFragment":
+                return AstBuilder.stmtFromString("return new DocumentFragment()");
+            case "XMLDocument":
+                return AstBuilder.stmtFromString("return XMLDocument.load()");
+            case "Document":
+                return AstBuilder.stmtFromString("return document");
             default:
                 throw new RuntimeException("Unknown: " + name);
         }
