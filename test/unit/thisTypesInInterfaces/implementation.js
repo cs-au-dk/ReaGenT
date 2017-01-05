@@ -10,21 +10,19 @@ export module module {
     function baz(): Bar;
 }*/
 
+var Foo = function () {
+    this.foo = function () {
+        return new Foo(); // <- Wrong.
+    }
+};
+var Bar = function () {
+    Foo.call(this);
+    this.bar = this;
+};
 module.exports = {
+    Foo: Foo,
+    Bar: Bar,
     baz: function () {
-        function Foo() {
-            this.foo = function () {
-                return new Foo(); // <- Wrong.
-            }
-        }
-
-        function Bar() {
-            Foo.call(this);
-            this.bar = function () {
-                return this;
-            }
-        }
-
-        return bar;
+        return new Bar();
     }
 };

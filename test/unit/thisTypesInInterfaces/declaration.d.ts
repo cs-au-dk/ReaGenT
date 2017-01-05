@@ -1,7 +1,7 @@
 
 export module module {
     interface Foo {
-        foo: this;
+        foo(): this;
     }
     interface Bar extends Foo {
         bar: this;

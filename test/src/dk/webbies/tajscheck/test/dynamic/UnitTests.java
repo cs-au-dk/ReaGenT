@@ -603,12 +603,11 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore // TODO: Get this to work!
     public void thisTypesInInterfaces() throws Exception {
         RunResult result = run("thisTypesInInterfaces", "foo");
 
         expect(result)
-                .forPath("module.baz().foo.bar")
+                .forPath("(module.baz().bar, module.baz().bar.bar)")
                 .expected("object")
                 .got(TYPEOF, "undefined");
     }
