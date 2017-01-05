@@ -106,7 +106,7 @@ public class Main {
                     List<Test> specificTests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer, hasThisTypes, reachableTypeParameters).createTests();
                     specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
 
-                    Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer, reachableTypeParameters).buildTestProgram(null);
+                    Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer, reachableTypeParameters, hasThisTypes).buildTestProgram(null);
 
                     String filePath = getTestFilePath(bench, "smallDrivers/small_driver_" + count + ".js");
 
@@ -146,7 +146,7 @@ public class Main {
         List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer, hasThisTypes, reachableTypeParameters).createTests();
         tests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
 
-        Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest, typeParameterIndexer, reachableTypeParameters).buildTestProgram(recording);
+        Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest, typeParameterIndexer, reachableTypeParameters, hasThisTypes).buildTestProgram(recording);
 
         return AstToStringVisitor.toString(program);
     }

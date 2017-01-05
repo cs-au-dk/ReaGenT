@@ -23,7 +23,7 @@ public class TypesUtil {
         this.bench = bench;
     }
 
-    public static InterfaceType classToInterface(ClassType t) {
+    public static InterfaceType classToInterface(ClassType t, Set<Type> hasThisTypes) {
         InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
 
         for (Signature signature : t.getSignatures()) {
@@ -54,7 +54,7 @@ public class TypesUtil {
         interfaceType.setBaseTypes(
                 t.getBaseTypes().stream().map(base -> {
                     if (base instanceof ClassType) {
-                        return classToInterface((ClassType) base);
+                        return classToInterface((ClassType) base, hasThisTypes);
                     } else {
                         return base;
                     }
@@ -70,6 +70,10 @@ public class TypesUtil {
         // Target and typeArguments are out. But they are pretty much ignored in GenericType anyway (which is similar).
 
         interfaceType.setTypeParameters(t.getTypeParameters());
+
+        if (hasThisTypes.contains(t)) {
+            hasThisTypes.add(interfaceType);
+        }
 
         return interfaceType;
     }
@@ -586,6 +590,7 @@ public class TypesUtil {
                 for (Type baseType : ((GenericType) type).getBaseTypes()) {
                     reverseBaseTypeMap.put(baseType, type);
                 }
+                reverseBaseTypeMap.put(((GenericType) type).toInterface(), type);
             } else if (type instanceof InterfaceType) {
                 for (Type baseType : ((InterfaceType) type).getBaseTypes()) {
                     reverseBaseTypeMap.put(baseType, type);
@@ -594,8 +599,12 @@ public class TypesUtil {
                 for (Type baseType : ((ClassType) type).getBaseTypes()) {
                     reverseBaseTypeMap.put(baseType, type);
                 }
+                reverseBaseTypeMap.put(((ClassType) type).getInstanceType(), type);
             } else if (type instanceof ReferenceType) {
                 reverseBaseTypeMap.put(((ReferenceType) type).getTarget(), type);
+            } else if (type instanceof ClassInstanceType) {
+                InterfaceType instanceType = ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType();
+                reverseBaseTypeMap.put(instanceType, type);
             }
         }
 
@@ -607,13 +616,17 @@ public class TypesUtil {
             List<Type> copy = new ArrayList<>(addQueue);
             addQueue.clear();
             for (Type type : copy) {
+                if (result.contains(type)) {
+                    continue;
+                }
                 if (type instanceof ClassInstanceType) {
                     addQueue.add(((ClassInstanceType) type).getClassType());
                 } else if (type instanceof ReferenceType) {
                     addQueue.add(((ReferenceType) type).getTarget());
-                }
-                if (result.contains(type)) {
-                    continue;
+                } else if (type instanceof ClassType) {
+                    addQueue.add(((ClassType) type).getInstanceType());
+                } else if (type instanceof GenericType) {
+                    addQueue.add(((GenericType) type).toInterface());
                 }
                 result.add(type);
                 addQueue.addAll(reverseBaseTypeMap.get(type));

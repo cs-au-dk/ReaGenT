@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck.typeutil;
 
-import dk.au.cs.casa.typescript.types.ClassType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -16,31 +15,40 @@ import java.util.*;
 public class TypeContext {
     private final Map<TypeParameterType, Type> map;
     private final Set<TypeParameterType> persistent;
-    private final ClassType classType;
+    private final Type thisType;
     public final Benchmark bench;
 
     public TypeContext(Benchmark bench) {
         this.bench = bench;
         this.map = Collections.emptyMap();
         this.persistent = Collections.emptySet();
-        this.classType = null;
+        this.thisType = null;
     }
 
-    private TypeContext(Map<TypeParameterType, Type> map, Set<TypeParameterType> persistent, ClassType classType, Benchmark bench) {
+    private TypeContext(Map<TypeParameterType, Type> map, Set<TypeParameterType> persistent, Type classType, Benchmark bench) {
         this.map = map;
         this.persistent = persistent;
-        this.classType = classType;
+        this.thisType = classType;
         this.bench = bench;
     }
 
     public TypeContext append(Map<TypeParameterType, Type> newParameters) {
         Map<TypeParameterType, Type> newMap = new HashMap<>(this.map);
         newMap.putAll(newParameters);
-        return new TypeContext(newMap, persistent, this.classType, bench);
+        return new TypeContext(newMap, persistent, this.thisType, bench);
     }
 
-    public TypeContext withClass(ClassType classType) {
-        return new TypeContext(this.map, persistent, classType, bench);
+    public TypeContext withClass(Type thisType) {
+        if (thisType == null || this.thisType == null) {
+            return new TypeContext(this.map, persistent, thisType, bench);
+        }
+        Set<Type> baseTypes = Util.getAllBaseTypes(this.thisType, new HashSet<>());
+
+        if (baseTypes.contains(thisType)) {
+            return this;
+        } else {
+            return new TypeContext(this.map, persistent, thisType, bench);
+        }
     }
 
     public boolean containsKey(TypeParameterType parameter) {
@@ -67,8 +75,8 @@ public class TypeContext {
         return map;
     }
 
-    public ClassType getClassType() {
-        return classType;
+    public Type getThisType() {
+        return thisType;
     }
 
     public Set<Map.Entry<TypeParameterType, Type>> entrySet() {
@@ -83,7 +91,7 @@ public class TypeContext {
         Set<TypeParameterType> persistent = new HashSet<>(this.persistent);
         persistent.addAll(newPersistent);
 
-        return new TypeContext(this.map, persistent, this.classType, bench);
+        return new TypeContext(this.map, persistent, this.thisType, bench);
     }
 
     @Override
@@ -94,20 +102,20 @@ public class TypeContext {
         TypeContext that = (TypeContext) o;
 
         if (!map.equals(that.map)) return false;
-        return classType != null ? classType.equals(that.classType) : that.classType == null;
+        return thisType != null ? thisType.equals(that.thisType) : that.thisType == null;
     }
 
     @Override
     public int hashCode() {
         int result = map.hashCode();
-        result = 31 * result + (classType != null ? classType.hashCode() : 0);
+        result = 31 * result + (thisType != null ? thisType.hashCode() : 0);
         return result;
     }
 
     public TypeContext remove(TypeParameterType typeParameter) {
         Map<TypeParameterType, Type> newMap = new HashMap<>(this.map);
         assert newMap.remove(typeParameter) != null;
-        return new TypeContext(newMap, persistent, this.classType, bench);
+        return new TypeContext(newMap, persistent, this.thisType, bench);
     }
 
     public TypeContext cleanTypeParameters(Type baseType, MultiMap<Type, TypeParameterType> reachableTypeParameterMap) {

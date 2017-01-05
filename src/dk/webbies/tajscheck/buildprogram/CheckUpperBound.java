@@ -207,7 +207,7 @@ public class CheckUpperBound {
 
         @Override
         public List<TypeCheck> visit(ThisType t, Arg arg) {
-            return arg.context.getClassType().getInstanceType().accept(this, arg);
+            return arg.context.getThisType().accept(this, arg);
         }
 
         @Override

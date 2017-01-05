@@ -42,15 +42,17 @@ public class TypeCreator {
     private TypeParameterIndexer typeParameterIndexer;
     private ArrayList<Statement> functions = new ArrayList<>();
     private final MultiMap<Type, TypeParameterType> reachableTypeParameters;
+    private final Set<Type> hasThisTypes;
 
     private static final String GET_TYPE_PREFIX = "getType_";
     private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
     private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
-    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests, Benchmark benchmark, MultiMap<Type, TypeParameterType> reachableTypeParameters) {
+    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests, Benchmark benchmark, MultiMap<Type, TypeParameterType> reachableTypeParameters, Set<Type> hasThisTypes) {
         this.options = benchmark.options;
         this.benchmark = benchmark;
         this.reachableTypeParameters = reachableTypeParameters;
+        this.hasThisTypes = hasThisTypes;
         this.valueLocations = new ArrayListMultiMap<>();
         this.typeNames = typeNames;
         this.nativeTypes = nativeTypes;
@@ -104,6 +106,10 @@ public class TypeCreator {
     private void putProducedValueIndex(int index, Type type, TypeContext typeContext) {
         valueLocations.put(new TypeWithContext(type, typeContext), index);
 
+        if (typeContext.getThisType() != null) {
+            putProducedValueIndex(index, type, typeContext.withClass(null));
+        }
+
         TypeContext newContext = typeContext.cleanTypeParameters(type, reachableTypeParameters);
         if (!newContext.equals(typeContext)) {
             putProducedValueIndex(index, type, newContext);
@@ -121,12 +127,13 @@ public class TypeCreator {
             putProducedValueIndex(index, ((GenericType) type).toInterface(), typeContext);
         } else if (type instanceof ClassType) {
             List<Type> baseTypes = ((ClassType) type).getBaseTypes();
-            valueLocations.put(new TypeWithContext(type, typeContext.withClass((ClassType) type)), index);
-            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext.withClass((ClassType) type)));
+            valueLocations.put(new TypeWithContext(type, typeContext.withClass(((ClassType) type).getInstanceType())), index);
+            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext.withClass(((ClassType) type).getInstanceType())));
         } else if (type instanceof ClassInstanceType) {
             putProducedValueIndex(index, ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType(), typeContext);
         } else if (type instanceof ThisType) {
-            putProducedValueIndex(index, typeContext.getClassType().getInstanceType(), typeContext);
+            Type thisType = typeContext.getThisType();
+            putProducedValueIndex(index, thisType != null ? thisType : ((ThisType) type).getConstraint(), typeContext);
         } else if (type instanceof TypeParameterType) {
             if (typeContext.get((TypeParameterType) type) != null) {
                 TypeWithContext lookup = typeContext.get((TypeParameterType) type);
@@ -201,11 +208,15 @@ public class TypeCreator {
 
         @Override
         public Statement visit(ClassType t, TypeContext typeContext) {
-            InterfaceType type = TypesUtil.classToInterface(t);
+            InterfaceType type = TypesUtil.classToInterface(t, hasThisTypes);
 
             typeNames.put(type, typeNames.get(t));
 
-            return type.accept(this, typeContext.withClass(t));
+            if (hasThisTypes.contains(t) || benchmark.options.disableSizeOptimization) {
+                typeContext.withClass(t.getInstanceType());
+            }
+
+            return type.accept(this, typeContext);
         }
 
         @Override
@@ -230,6 +241,10 @@ public class TypeCreator {
                 } catch (ProduceManuallyException e) {
                     // continue
                 }
+            }
+
+            if (hasThisTypes.contains(type) || benchmark.options.disableSizeOptimization) {
+                typeContext = typeContext.withClass(type);
             }
 
             Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(type, typeNames);
@@ -483,7 +498,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(ThisType t, TypeContext typeContext) {
-            return typeContext.getClassType().getInstanceType().accept(this, typeContext);
+            return typeContext.getThisType().accept(this, typeContext);
         }
 
         @Override

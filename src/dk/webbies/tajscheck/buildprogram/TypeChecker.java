@@ -461,7 +461,7 @@ public class TypeChecker {
 
         @Override
         public List<TypeCheck> visit(ThisType t, Arg arg) {
-            return arg.typeContext.getClassType().getInstanceType().accept(this, arg);
+            return arg.typeContext.getThisType().accept(this, arg);
         }
 
         @Override

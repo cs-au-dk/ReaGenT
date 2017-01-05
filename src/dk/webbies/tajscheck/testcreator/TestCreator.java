@@ -274,7 +274,7 @@ public class TestCreator {
             return new Arg(this.path, this.typeContext, this.depth + 1, this.withTopLevelFunctions);
         }
 
-        public Arg withClassType(ClassType classType) {
+        public Arg withClassType(Type classType) {
             return new Arg(this.path, this.typeContext.withClass(classType), this.depth, this.withTopLevelFunctions);
         }
 
@@ -334,7 +334,7 @@ public class TestCreator {
             seen.add(withParameters);
 
             if (hasThisTypes.contains(t) || bench.options.disableSizeOptimization) {
-                arg = arg.withClassType(t);
+                arg = arg.withClassType(t.getInstanceType());
             }
 
             assert t.getTarget().equals(t) || (t.getTarget() instanceof ClassInstanceType && ((ClassInstanceType) t.getTarget()).getClassType().equals(t));
@@ -373,9 +373,26 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            InterfaceType result = t.toInterface();
+            if (hasThisTypes.contains(t) || bench.options.disableSizeOptimization) {
+                arg = arg.withClassType(t);
+            }
 
-            recurse(result, arg);
+            for (Type base : t.getBaseTypes()) {
+                recurse(base, arg);
+            }
+
+            if (t.getDeclaredStringIndexType() != null) {
+                tests.add(new StringIndexTest(t, t.getDeclaredStringIndexType(), arg.path, arg.typeContext));
+                recurse(t.getDeclaredStringIndexType(), arg.append("[stringIndexer]"));
+            }
+            if (t.getDeclaredNumberIndexType() != null) {
+                tests.add(new NumberIndexTest(t, t.getDeclaredNumberIndexType(), arg.path, arg.typeContext));
+                recurse(t.getDeclaredNumberIndexType(), arg.append("[numberIndexer]"));
+            }
+
+            Map<String, Type> properties = t.getDeclaredProperties();
+            visitProperties(t, arg, properties);
+
             return null;
         }
 
@@ -388,7 +405,13 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            t.getBaseTypes().forEach(base -> recurse(base, arg));
+            if (hasThisTypes.contains(t) || bench.options.disableSizeOptimization) {
+                arg = arg.withClassType(t);
+            }
+
+            for (Type base : t.getBaseTypes()) {
+                recurse(base, arg);
+            }
 
             if (t.getDeclaredStringIndexType() != null) {
                 tests.add(new StringIndexTest(t, t.getDeclaredStringIndexType(), arg.path, arg.typeContext));
@@ -656,7 +679,7 @@ public class TestCreator {
 
         @Override
         public Void visit(ThisType t, Arg arg) {
-            return arg.typeContext.getClassType().getInstanceType().accept(this, arg);
+            return arg.typeContext.getThisType().accept(this, arg);
         }
 
         @Override
@@ -893,7 +916,7 @@ public class TestCreator {
 
         @Override
         public Void visit(ThisType t, Arg arg) {
-            return arg.getTypeContext().getClassType().getInstanceType().accept(this, arg);
+            return arg.getTypeContext().getThisType().accept(this, arg);
         }
 
         @Override

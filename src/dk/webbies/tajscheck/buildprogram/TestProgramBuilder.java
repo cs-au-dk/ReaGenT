@@ -52,7 +52,7 @@ public class TestProgramBuilder {
         }
     }
 
-    public TestProgramBuilder(Benchmark bench, Set<Type> nativeTypes, Map<Type, String> typeNames, List<Test> tests, Type moduleType, TypeParameterIndexer typeParameterIndexer, MultiMap<Type, TypeParameterType> reachableTypeParameters) {
+    public TestProgramBuilder(Benchmark bench, Set<Type> nativeTypes, Map<Type, String> typeNames, List<Test> tests, Type moduleType, TypeParameterIndexer typeParameterIndexer, MultiMap<Type, TypeParameterType> reachableTypeParameters, Set<Type> hasThisTypes) {
         this.bench = bench;
         this.tests = new ArrayList<>(tests);
         this.nativeTypes = nativeTypes;
@@ -60,7 +60,7 @@ public class TestProgramBuilder {
         this.moduleType = moduleType;
         this.typeParameterIndexer = typeParameterIndexer;
 
-        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer, tests, bench, reachableTypeParameters);
+        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer, tests, bench, reachableTypeParameters, hasThisTypes);
     }
 
     public Statement buildTestProgram(ExecutionRecording recording) throws IOException {

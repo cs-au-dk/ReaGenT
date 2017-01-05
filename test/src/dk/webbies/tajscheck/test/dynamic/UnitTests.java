@@ -8,6 +8,7 @@ import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.hamcrest.Matcher;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -599,5 +600,22 @@ public class UnitTests {
         RunResult result = run("complexThisTypes", "foo");
 
         assertThat(result.typeErrors.size(), is(greaterThan(0)));
+    }
+
+    @Test
+    @Ignore
+    public void thisTypesInInterfaces() throws Exception {
+        RunResult result = run("thisTypesInInterfaces", "foo");
+
+        expect(result)
+                .forPath("module.baz().foo.bar")
+                .expected("object")
+                .got(TYPEOF, "undefined");
+    }
+
+    @Test
+    public void complexThisTypes2() throws Exception {
+        // Actually just a test that i don't get a null-pointer while constructing the sanity-driver.
+        sanityCheck(benchFromFolder("complexThisTypes2"));
     }
 }
