@@ -100,6 +100,9 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             case LEFT_SHIFT:
                 write("<<");
                 break;
+            case LEFT_SHIFT_EQUAL:
+                write("<<=");
+                break;
             case DIV:
                 write("/");
                 break;
@@ -120,6 +123,9 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
                 break;
             case MOD_EQUAL:
                 write("%=");
+                break;
+            case BITWISE_XOR:
+                write('^');
                 break;
             default:
                 throw new RuntimeException("Yet unhandled operator: " + binOp.getOperator());
@@ -740,6 +746,10 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
     private void write(String s) {
         this.builder.append(s);
+    }
+
+    private void write(char c) {
+        this.builder.append(c);
     }
 
     private void writeLn(String s) {

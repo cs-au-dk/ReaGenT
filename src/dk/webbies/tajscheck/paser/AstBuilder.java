@@ -253,7 +253,7 @@ public class AstBuilder {
 
     public static BlockStatement stmtFromString(String program){
         // Packing and unpacking, to allow top-level return-statements.
-        BlockStatement body = new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse("filename", "function foo() {" + program + "}").toTSCreateAST().getBody();
+        BlockStatement body = new JavaScriptParser(ParseDeclaration.Environment.ES5Core).parse("filename", "function foo() {\n" + program + "\n}").toTSCreateAST().getBody();
         return ((FunctionExpression)((ExpressionStatement)body.getStatements().iterator().next()).getExpression()).getBody();
     }
 
