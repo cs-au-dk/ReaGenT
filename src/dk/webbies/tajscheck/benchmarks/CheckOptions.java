@@ -10,6 +10,7 @@ public final class CheckOptions {
     public final boolean splitUnions;
     private Builder builder;
     public final int iterationsToRun;
+    public final boolean disableSizeOptimization;
 
     private CheckOptions(Builder builder) {
         this.checkDepth = builder.checkDepth;
@@ -17,6 +18,7 @@ public final class CheckOptions {
         this.checkHeap = builder.checkHeap;
         this.splitUnions = builder.splitUnions;
         this.iterationsToRun = builder.iterationsToRun;
+        this.disableSizeOptimization = builder.disableSizeOptimization;
         this.builder = builder;
     }
 
@@ -36,9 +38,10 @@ public final class CheckOptions {
     public static final class Builder {
         private int checkDepth = 0;
         private int checkDepthForUnions = 1;
-        public boolean checkHeap = false;
-        public boolean splitUnions = true;
-        public int iterationsToRun = 10000;
+        private boolean checkHeap = false;
+        private boolean splitUnions = true;
+        private int iterationsToRun = 10000;
+        private boolean disableSizeOptimization = false;
 
         public CheckOptions build() {
             return new CheckOptions(this);
@@ -66,6 +69,11 @@ public final class CheckOptions {
 
         public Builder setIterationsToRun(int iterationsToRun) {
             this.iterationsToRun = iterationsToRun;
+            return this;
+        }
+
+        public Builder setDisableSizeOptimization(boolean disableSizeOptimization) {
+            this.disableSizeOptimization = disableSizeOptimization;
             return this;
         }
     }
