@@ -16,7 +16,7 @@ public class ConstructorCallTest extends Test {
     private final boolean restArgs;
 
     public ConstructorCallTest(Type function, List<Type> parameters, Type returnType, String path, TypeContext typeContext, boolean restArgs) {
-        super(Collections.singletonList(function), parameters, returnType, path + "new" + PrettyTypes.parametersTypes(parameters), typeContext);
+        super(Collections.singletonList(function), parameters, returnType, path + ".new" + PrettyTypes.parametersTypes(parameters), typeContext);
         this.function = function;
         this.parameters = parameters;
         this.restArgs = restArgs;
