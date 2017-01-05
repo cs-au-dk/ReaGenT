@@ -539,4 +539,48 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size(), is(0));
     }
+
+    @Test
+    public void testIfDriverIsTooBig() throws Exception {
+        String driver = Main.generateFullDriver(benchFromFolder("unnecessaryBigDriver"));
+
+        System.out.println(driver);
+
+        assertThat(driver, not(containsString("\"module.b2World.new().RayCastAll().<>.[numberIndexer].GetDensity()\"")));
+
+    }
+
+    @Test
+    public void genericClass3() throws Exception {
+        RunResult result = run("genericClass3", "foo");
+
+        expect(result)
+                .forPath("module.createNumberContainer().<>.value")
+                .expected("number")
+                .got(STRING, "a string");
+    }
+
+    @Test
+    public void genericClass4() throws Exception {
+        RunResult result = run("genericClass4", "foo");
+
+        assertThat(result.errors.size(), is(0));
+
+    }
+
+    @Test
+    public void sanityCheckComplex() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck"));
+
+    }
+
+    @Test
+    public void sanityCheckComplex2() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck2"));
+    }
+
+    @Test
+    public void sanityCheckComplex3() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck3"));
+    }
 }
