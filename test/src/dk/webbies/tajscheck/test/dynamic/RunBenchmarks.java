@@ -48,7 +48,7 @@ public class RunBenchmarks {
         benchmarks.put("path.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pathjs/pathjs.js", "test/benchmarks/pathjs/pathjs.d.ts", "Path", BROWSER, options));
         benchmarks.put("accounting.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/accounting/accounting.js", "test/benchmarks/accounting/accounting.d.ts", "accounting", NODE, options));
         benchmarks.put("lunr.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lunr/lunr.js", "test/benchmarks/lunr/lunr.d.ts", "lunr", NODE, options));
-//        benchmarks.put("PIXI.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pixi/pixi.js", "test/benchmarks/pixi/pixi.d.ts", "PIXI", NODE, options)); // Commented out because big.
+        benchmarks.put("PIXI.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pixi/pixi.js", "test/benchmarks/pixi/pixi.d.ts", "PIXI", BROWSER, options));
 
         benchmarks.put("fixedMoment", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", "moment", NODE,
                 options
@@ -150,7 +150,13 @@ public class RunBenchmarks {
     public void sanityCheck() throws Exception {
         Benchmark bench = this.benchmark.withRunMethod(BOOTSTRAP);
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
-        String output = Main.runBenchmark(bench);
+        String output;
+        try {
+            output = Main.runBenchmark(bench, 60 * 1000);
+        } catch (TimeoutException e) {
+            System.out.println("Timeout");
+            return;
+        }
         System.out.println(output);
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 
