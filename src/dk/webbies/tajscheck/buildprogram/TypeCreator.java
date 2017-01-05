@@ -361,7 +361,6 @@ public class TypeCreator {
                     case String:
                         return Return(call(identifier("TAJS_make"), string("AnyStr")));
                     case Any:
-                        // TODO: Something better here?
                         return Return(
                                 object(new ObjectLiteral.Property("__isAnyMarker", object()))
                         );

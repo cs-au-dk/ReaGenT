@@ -132,12 +132,6 @@ public class TypeContext {
             reachable.addAll(reachableTypeParameterMap.get(type));
         }
 
-        /*Set<TypeParameterType> expensiveReachable = TypesUtil.collectAllTypes(baseType).stream().filter(TypeParameterType.class::isInstance).map(TypeParameterType.class::cast).collect(Collectors.toSet());
-
-        if (!reachable.equals(expensiveReachable)) {
-//            System.out.println(); // TODO: Test this.
-        }*/
-
         clone.map.keySet().retainAll(reachable);
 
         return clone;

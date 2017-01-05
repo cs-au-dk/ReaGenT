@@ -437,6 +437,8 @@ public class TypesUtil {
             }
             seen.add(t);
 
+            t.getConstraint().accept(this);
+
             return null;
         }
 
