@@ -14,8 +14,6 @@ public interface CheckVisitorWithArgument<T, A> {
 
     T visit(EqualityCheck check, A a);
 
-    T visit(TrueCheck trueFilter, A a);
-
     T visit(InstanceOfCheck check, A a);
 
     T visit(FieldCheck check, A a);

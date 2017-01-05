@@ -58,11 +58,6 @@ public class CheckToExpression implements CheckVisitorWithArgument<Expression, E
     }
 
     @Override
-    public Expression visit(TrueCheck trueFilter, Expression expression) {
-        return bool(true);
-    }
-
-    @Override
     public Expression visit(InstanceOfCheck check, Expression expression) {
         return binary(
                 expression,

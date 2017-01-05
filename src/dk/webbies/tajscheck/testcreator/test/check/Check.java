@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.testcreator.test.check;
 
 import dk.webbies.tajscheck.paser.AST.Expression;
+import dk.webbies.tajscheck.paser.AstBuilder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -39,8 +40,8 @@ public interface Check {
         return new EqualityCheck(exp);
     }
 
-    static TrueCheck alwaysTrue() {
-        return new TrueCheck();
+    static Check alwaysTrue() {
+        return expression(AstBuilder.bool(true));
     }
 
     default OrCheck or(Check other) {
