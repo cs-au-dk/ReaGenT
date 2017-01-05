@@ -7,10 +7,10 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
-import dk.webbies.tajscheck.PrettyTypes;
-import dk.webbies.tajscheck.TypeContext;
-import dk.webbies.tajscheck.TypeWithParameters;
-import dk.webbies.tajscheck.TypesUtil;
+import dk.webbies.tajscheck.typeutil.PrettyTypes;
+import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.TypeWithContext;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.paser.AST.*;
@@ -32,8 +32,8 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
  * Created by erik1 on 03-11-2016.
  */
 public class TypeCreator {
-    private final BiMap<TypeWithParameters, Integer> typeIndexes;
-    private final MultiMap<TypeWithParameters, Integer> valueLocations;
+    private final BiMap<TypeWithContext, Integer> typeIndexes;
+    private final MultiMap<TypeWithContext, Integer> valueLocations;
     private final Map<Test, List<Integer>> testValueLocations = new IdentityHashMap<>();
     private final CheckOptions options;
     private Benchmark benchmark;
@@ -41,14 +41,16 @@ public class TypeCreator {
     private Set<Type> nativeTypes;
     private TypeParameterIndexer typeParameterIndexer;
     private ArrayList<Statement> functions = new ArrayList<>();
+    private final MultiMap<Type, TypeParameterType> reachableTypeParameters;
 
     private static final String GET_TYPE_PREFIX = "getType_";
     private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
     private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
-    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests, Benchmark benchmark) {
+    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests, Benchmark benchmark, MultiMap<Type, TypeParameterType> reachableTypeParameters) {
         this.options = benchmark.options;
         this.benchmark = benchmark;
+        this.reachableTypeParameters = reachableTypeParameters;
         this.valueLocations = new ArrayListMultiMap<>();
         this.typeNames = typeNames;
         this.nativeTypes = nativeTypes;
@@ -82,7 +84,7 @@ public class TypeCreator {
 
 
     public Collection<Integer> getValueIndex(Type type, TypeContext context) {
-        return valueLocations.get(new TypeWithParameters(type, context));
+        return valueLocations.get(new TypeWithContext(type, context));
     }
 
     private int valueCounter = 0;
@@ -100,7 +102,13 @@ public class TypeCreator {
     }
 
     private void putProducedValueIndex(int index, Type type, TypeContext typeContext) {
-        valueLocations.put(new TypeWithParameters(type, typeContext), index);
+        valueLocations.put(new TypeWithContext(type, typeContext), index);
+
+        TypeContext newContext = typeContext.cleanTypeParameters(type, reachableTypeParameters);
+        if (!newContext.equals(typeContext)) {
+            putProducedValueIndex(index, type, newContext);
+        }
+
         if (type instanceof InterfaceType) {
             List<Type> baseTypes = ((InterfaceType) type).getBaseTypes();
             baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext));
@@ -108,12 +116,12 @@ public class TypeCreator {
             List<Type> baseTypes = ((IntersectionType) type).getElements();
             baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext));
         } else if (type instanceof ReferenceType) {
-            putProducedValueIndex(index, ((ReferenceType) type).getTarget(), TypesUtil.generateParameterMap((ReferenceType) type, typeContext));
+            putProducedValueIndex(index, ((ReferenceType) type).getTarget(), new TypesUtil(benchmark).generateParameterMap((ReferenceType) type, typeContext));
         } else if (type instanceof GenericType) {
             putProducedValueIndex(index, ((GenericType) type).toInterface(), typeContext);
         } else if (type instanceof ClassType) {
             List<Type> baseTypes = ((ClassType) type).getBaseTypes();
-            valueLocations.put(new TypeWithParameters(type, typeContext.withClass((ClassType) type)), index);
+            valueLocations.put(new TypeWithContext(type, typeContext.withClass((ClassType) type)), index);
             baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext.withClass((ClassType) type)));
         } else if (type instanceof ClassInstanceType) {
             putProducedValueIndex(index, ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType(), typeContext);
@@ -217,7 +225,7 @@ public class TypeCreator {
                 }
             }
 
-            Pair<InterfaceType, TypeContext> pair = TypesUtil.constructSyntheticInterfaceWithBaseTypes(type, typeNames);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(type, typeNames);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
@@ -321,7 +329,7 @@ public class TypeCreator {
                 assert type.getTarget() instanceof ClassInstanceType;
                 target = ((ClassType) ((ClassInstanceType) type.getTarget()).getClassType()).getInstanceType();
             }
-            return constructNewInstanceOfType(target, TypesUtil.generateParameterMap(type, typeContext));
+            return constructNewInstanceOfType(target, new TypesUtil(benchmark).generateParameterMap(type, typeContext));
         }
 
         @Override
@@ -413,7 +421,8 @@ public class TypeCreator {
                     return constructNewInstanceOfType(intersection, typeContext);
                 }
 
-                return constructNewInstanceOfType(typeContext.get(type), typeContext);
+                TypeWithContext lookup = typeContext.get(type);
+                return constructNewInstanceOfType(lookup.getType(), lookup.getTypeContext());
             }
             String markerField = typeParameterIndexer.getMarkerField(type);
             return block(
@@ -431,7 +440,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(SymbolType t, TypeContext typeContext) {
-            Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), new TypeContext());
+            Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), new TypeContext(benchmark));
             return Return(call(identifier("Symbol"), constructString));
         }
 
@@ -773,7 +782,7 @@ public class TypeCreator {
             case "Error":
                 return Return(newCall(identifier("Error")));
             case "RegExp":
-                Expression constructString = call(function(constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), new TypeContext())));
+                Expression constructString = call(function(constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), new TypeContext(benchmark))));
                 return Return(newCall(identifier("RegExp"), constructString));
             case "String":
                 return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), typeContext);
@@ -923,12 +932,12 @@ public class TypeCreator {
     }
 
     public CallExpression constructType(int index) {
-        TypeWithParameters typeWithParameters = typeIndexes.inverse().get(index);
+        TypeWithContext typeWithParameters = typeIndexes.inverse().get(index);
         return constructType(typeWithParameters.getType(), typeWithParameters.getTypeContext());
     }
 
     private int getTypeIndex(Type type, TypeContext typeContext) {
-        TypeWithParameters key = new TypeWithParameters(type, typeContext);
+        TypeWithContext key = new TypeWithContext(type, typeContext);
         if (typeIndexes.containsKey(key)) {
             return typeIndexes.get(key);
         } else {
@@ -945,20 +954,15 @@ public class TypeCreator {
         }
     }
 
-    private final List<TypeWithParameters> getTypeFunctionQueue = new ArrayList<>();
+    private final List<TypeWithContext> getTypeFunctionQueue = new ArrayList<>();
     private boolean finished = false;
 
     private void finish() {
         finished = true;
-        for (TypeWithParameters key : getTypeFunctionQueue) {
-            Type type = key.getType();
-            TypeContext typeContext = key.getTypeContext();
+        for (TypeWithContext key : getTypeFunctionQueue) {
             int value = typeIndexes.get(key);
 
-            Collection<Integer> values = valueLocations.keySet().stream()
-                    .filter(candidate -> type.equals(candidate.getType()) && typeContext.equals(candidate.getTypeContext()))
-                    .map(valueLocations::get)
-                    .reduce(new ArrayList<>(), Util::reduceCollection);
+            Collection<Integer> values = valueLocations.get(key);
 
             Statement returnTypeStatement;
 
@@ -993,7 +997,7 @@ public class TypeCreator {
             throw new RuntimeException("Already finished");
         }
 
-        TypeWithParameters typeWithParameters = typeIndexes.inverse().get(index);
+        TypeWithContext typeWithParameters = typeIndexes.inverse().get(index);
         Type type = typeWithParameters.getType();
         TypeContext typeContext = typeWithParameters.getTypeContext();
 

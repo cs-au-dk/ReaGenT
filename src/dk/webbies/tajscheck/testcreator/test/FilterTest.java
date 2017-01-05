@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.TypeContext;
+import dk.webbies.tajscheck.typeutil.TypeContext;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;

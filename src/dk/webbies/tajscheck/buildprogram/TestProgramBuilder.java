@@ -3,13 +3,13 @@ package dk.webbies.tajscheck.buildprogram;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.*;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
-import dk.webbies.tajscheck.paser.JavaScriptParser;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
+import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
@@ -52,7 +52,7 @@ public class TestProgramBuilder {
         }
     }
 
-    public TestProgramBuilder(Benchmark bench, Set<Type> nativeTypes, Map<Type, String> typeNames, List<Test> tests, Type moduleType, TypeParameterIndexer typeParameterIndexer) {
+    public TestProgramBuilder(Benchmark bench, Set<Type> nativeTypes, Map<Type, String> typeNames, List<Test> tests, Type moduleType, TypeParameterIndexer typeParameterIndexer, MultiMap<Type, TypeParameterType> reachableTypeParameters) {
         this.bench = bench;
         this.tests = new ArrayList<>(tests);
         this.nativeTypes = nativeTypes;
@@ -60,7 +60,7 @@ public class TestProgramBuilder {
         this.moduleType = moduleType;
         this.typeParameterIndexer = typeParameterIndexer;
 
-        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer, tests, bench);
+        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer, tests, bench, reachableTypeParameters);
     }
 
     public Statement buildTestProgram(ExecutionRecording recording) throws IOException {
@@ -181,14 +181,14 @@ public class TestProgramBuilder {
                                 binary(
                                         identifier("module"),
                                         Operator.EQUAL,
-                                        typeCreator.getType(moduleType, new TypeContext())
+                                        typeCreator.getType(moduleType, new TypeContext(bench))
                                 ),
                                 Operator.EQUAL_EQUAL_EQUAL,
                                 identifier(VARIABLE_NO_VALUE)
                         ),
                         Return()
                 ),
-                new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, new TypeContext()).assertResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
+                new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, new TypeContext(bench)).assertResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
 
         )));
     }

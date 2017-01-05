@@ -22,8 +22,9 @@ import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.au.cs.casa.typescript.types.TypeVisitorWithArgument;
 import dk.au.cs.casa.typescript.types.UnionType;
 import dk.au.cs.casa.typescript.types.UnresolvedType;
-import dk.webbies.tajscheck.TypeContext;
-import dk.webbies.tajscheck.TypesUtil;
+import dk.webbies.tajscheck.TypeWithContext;
+import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
@@ -114,7 +115,7 @@ public class CheckUpperBound {
                 return Collections.emptyList();
             }
 
-            Pair<InterfaceType, TypeContext> pair = TypesUtil.constructSyntheticInterfaceWithBaseTypes(t, typeNames);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(bench).constructSyntheticInterfaceWithBaseTypes(t, typeNames);
             InterfaceType inter = pair.getLeft();
             TypeContext typeContext = arg.context.append(pair.getRight());
 
@@ -131,7 +132,7 @@ public class CheckUpperBound {
 
         @Override
         public List<TypeCheck> visit(ReferenceType t, Arg arg) {
-            TypeContext newParameters = TypesUtil.generateParameterMap(t);
+            TypeContext newParameters = new TypesUtil(bench).generateParameterMap(t);
 
             return t.getTarget().accept(this, arg.withParameters(newParameters));
         }
@@ -162,7 +163,8 @@ public class CheckUpperBound {
         @Override
         public List<TypeCheck> visit(TypeParameterType t, Arg arg) {
             if (arg.context.containsKey(t)) {
-                return arg.context.get(t).accept(this, arg);
+                TypeWithContext lookup = arg.context.get(t);
+                return lookup.getType().accept(this, new Arg(lookup.getTypeContext()));
             } else {
                 return Collections.emptyList();
             }

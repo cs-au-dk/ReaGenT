@@ -1,15 +1,16 @@
 package dk.webbies.tajscheck;
 
 import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tajscheck.typeutil.TypeContext;
 
 /**
  * Created by erik1 on 11-11-2016.
  */
-public class TypeWithParameters {
+public class TypeWithContext {
     private final Type type;
     private final TypeContext typeContext;
 
-    public TypeWithParameters(Type type, TypeContext typeContext) {
+    public TypeWithContext(Type type, TypeContext typeContext) {
         this.type = type;
         this.typeContext = typeContext;
     }
@@ -27,7 +28,7 @@ public class TypeWithParameters {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        TypeWithParameters that = (TypeWithParameters) o;
+        TypeWithContext that = (TypeWithContext) o;
 
         if (!type.equals(that.type)) return false;
         return typeContext.equals(that.typeContext);

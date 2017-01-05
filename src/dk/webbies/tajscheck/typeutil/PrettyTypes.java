@@ -1,4 +1,4 @@
-package dk.webbies.tajscheck;
+package dk.webbies.tajscheck.typeutil;
 
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.util.Util;

@@ -1,8 +1,11 @@
-package dk.webbies.tajscheck;
+package dk.webbies.tajscheck.typeutil;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
+import dk.webbies.tajscheck.util.ArrayListMultiMap;
+import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
@@ -13,6 +16,12 @@ import java.util.stream.Collectors;
  * Created by erik1 on 01-11-2016.
  */
 public class TypesUtil {
+    private final Benchmark bench;
+
+    public TypesUtil(Benchmark bench) {
+        this.bench = bench;
+    }
+
     public static InterfaceType classToInterface(ClassType t) {
         InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
 
@@ -64,7 +73,7 @@ public class TypesUtil {
         return interfaceType;
     }
 
-    public static TypeContext generateParameterMap(ReferenceType ref) {
+    public TypeContext generateParameterMap(ReferenceType ref) {
         List<Type> arguments = ref.getTypeArguments();
         Map<TypeParameterType, Type> parameterMap = new HashMap<>();
 
@@ -77,7 +86,7 @@ public class TypesUtil {
         for (int i = 0; i < arguments.size(); i++) {
             parameterMap.put(parameters.get(i), arguments.get(i));
         }
-        return new TypeContext().append(parameterMap);
+        return new TypeContext(bench).append(parameterMap);
     }
 
     private static void assertAboutTarget(Type untypedTarget) {
@@ -112,17 +121,23 @@ public class TypesUtil {
         }
     }
 
-    public static TypeContext generateParameterMap(ReferenceType type, TypeContext typeContext) {
+    public TypeContext generateParameterMap(ReferenceType type, TypeContext typeContext) {
         return typeContext.append(generateParameterMap(type).getMap());
     }
 
-    static Set<Type> collectAllTypes(Type type) {
+    public static Set<Type> collectAllTypes(Collection<Type> types) {
         CollectAllTypesVisitor visitor = new CollectAllTypesVisitor();
-        visitor.accept(type);
+        for (Type type : types) {
+            visitor.accept(type);
+        }
         return visitor.getSeen();
     }
 
-    static Set<Type> collectNativeTypes(SpecReader spec, SpecReader emptySpec) {
+    public static Set<Type> collectAllTypes(Type type) {
+        return collectAllTypes(Collections.singletonList(type));
+    }
+
+    public static Set<Type> collectNativeTypes(SpecReader spec, SpecReader emptySpec) {
         CollectAllTypesVisitor nativeCollector = new CollectAllTypesVisitor();
         Map<String, Type> declaredProperties = ((InterfaceType) spec.getGlobal()).getDeclaredProperties();
 
@@ -170,7 +185,8 @@ public class TypesUtil {
             constraints.add(markerConstraint);
         }
 
-        Type type = typeContext.get(firstType);
+        // The TypeContexts are not used for anything here, so it is ok to ignore them.
+        Type type = typeContext.get(firstType).getType();
 
         Set<Type> seen = new HashSet<>();
 
@@ -189,13 +205,13 @@ public class TypesUtil {
                 markerConstraint.getDeclaredProperties().put(markerField, new BooleanLiteral(true));
                 constraints.add(markerConstraint);
             }
-            type = typeContext.get((TypeParameterType)type);
+            type = typeContext.get((TypeParameterType)type).getType();
         }
 
         return new ArrayList<>();
     }
 
-    static List<Signature> splitSignatures(List<Signature> signatures) {
+    public static List<Signature> splitSignatures(List<Signature> signatures) {
         return signatures.stream().map(TypesUtil::splitSignature).reduce(new ArrayList<>(), Util::reduceList);
     }
 
@@ -290,6 +306,7 @@ public class TypesUtil {
             }
             t.getTarget().accept(this);
             t.getTypeArguments().forEach(this::accept);
+            t.toInterface().accept(this);
             return null;
         }
 
@@ -509,9 +526,9 @@ public class TypesUtil {
         }
     }
 
-    public static Pair<InterfaceType, TypeContext> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter, Map<Type, String> typeNames) {
+    public Pair<InterfaceType, TypeContext> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter, Map<Type, String> typeNames) {
         if (inter.getBaseTypes().isEmpty()) {
-            return new Pair<>(inter, new TypeContext());
+            return new Pair<>(inter, new TypeContext(bench));
         }
 //        assert inter.getTypeParameters().isEmpty(); // This should only happen when constructed from a generic/reference type, and in that case we have handled the TypeParameters.
         Map<TypeParameterType, Type> newParameters = new HashMap<>();
@@ -525,7 +542,7 @@ public class TypesUtil {
         typeNames.put(result, typeNames.get(inter));
         inter.getBaseTypes().forEach(subType -> {
             if (subType instanceof ReferenceType) {
-                newParameters.putAll(TypesUtil.generateParameterMap((ReferenceType) subType).getMap());
+                newParameters.putAll(generateParameterMap((ReferenceType) subType).getMap());
                 subType = ((ReferenceType) subType).getTarget();
             }
             if (subType instanceof GenericType) {
@@ -553,6 +570,52 @@ public class TypesUtil {
                 result.getDeclaredProperties().put(entry.getKey(), entry.getValue());
             }
         });
-        return new Pair<>(result, new TypeContext().append(newParameters));
+        return new Pair<>(result, new TypeContext(bench).append(newParameters));
     }
+
+
+    public static Set<Type> findHasThisTypes(Type global) {
+        Set<Type> allTypes = TypesUtil.collectAllTypes(global);
+
+        MultiMap<Type, Type> reverseBaseTypeMap = new ArrayListMultiMap<>();
+
+        for (Type type : allTypes) {
+            if (type instanceof GenericType) {
+                for (Type baseType : ((GenericType) type).getBaseTypes()) {
+                    reverseBaseTypeMap.put(baseType, type);
+                }
+            } else if (type instanceof InterfaceType) {
+                for (Type baseType : ((InterfaceType) type).getBaseTypes()) {
+                    reverseBaseTypeMap.put(baseType, type);
+                }
+            } else if (type instanceof ClassType) {
+                for (Type baseType : ((ClassType) type).getBaseTypes()) {
+                    reverseBaseTypeMap.put(baseType, type);
+                }
+            }
+        }
+
+        Set<Type> result = new HashSet<>();
+
+        List<Type> addQueue = allTypes.stream().filter(ThisType.class::isInstance).map(type -> ((ThisType)type).getConstraint()).collect(Collectors.toList());
+
+        while (!addQueue.isEmpty()) {
+            List<Type> copy = new ArrayList<>(addQueue);
+            addQueue.clear();
+            for (Type type : copy) {
+                if (type instanceof ClassInstanceType) {
+                    addQueue.add(((ClassInstanceType) type).getClassType());
+                }
+                if (result.contains(type)) {
+                    continue;
+                }
+                result.add(type);
+                addQueue.addAll(reverseBaseTypeMap.get(type));
+            }
+        }
+
+
+        return result;
+    }
+
 }

@@ -4,8 +4,9 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
-import dk.webbies.tajscheck.TypeContext;
-import dk.webbies.tajscheck.TypesUtil;
+import dk.webbies.tajscheck.TypeWithContext;
+import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
@@ -331,7 +332,7 @@ public class TypeChecker {
             if (nativeTypes.contains(t.getTarget()) && !(t.getTarget() instanceof TupleType)) {
                 throw new RuntimeException(typeNames.get(t));
             }
-            return t.getTarget().accept(this, arg.withParameters(arg.typeContext.append(TypesUtil.generateParameterMap(t))));
+            return t.getTarget().accept(this, arg.withParameters(arg.typeContext.append(new TypesUtil(arg.typeContext.bench).generateParameterMap(t))));
         }
 
         @Override
@@ -393,7 +394,8 @@ public class TypeChecker {
                     constraintsIntersection.setElements(constraints);
                     return constraintsIntersection.accept(this, arg);
                 }
-                return typeContext.get(parameter).accept(this, arg);
+                TypeWithContext lookup = typeContext.get(parameter);
+                return lookup.getType().accept(this, arg.withParameters(lookup.getTypeContext()));
             }
 
             List<TypeCheck> checks = new ArrayList<>(parameter.getConstraint().accept(this, arg));

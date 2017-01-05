@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test/src" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/ts-spec-reader/deserializers/java/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/cache" />
       <excludeFolder url="file://$MODULE_DIR$/test/async/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/accounting/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/accounting/smallDrivers" />
@@ -14,6 +15,7 @@
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/angular1/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/async/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/async/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/box2dweb/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/fixedMoment/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/fixedMoment/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/jquery/coverage" />

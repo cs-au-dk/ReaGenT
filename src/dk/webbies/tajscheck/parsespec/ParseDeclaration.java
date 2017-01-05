@@ -358,6 +358,8 @@ public class ParseDeclaration {
             seen.add(t);
             addName(t, arg.path);
 
+            queue.add(arg.append("[constraint]", t.getConstraint()));
+
             return null;
         }
 

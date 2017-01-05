@@ -319,6 +319,7 @@ public class Util {
                 throw new ClassCastException("Cannot cast : " + t + " to class " + clazz.getName());
             }
         }
+        //noinspection unchecked
         return (ColS) list;
     }
 

@@ -10,13 +10,15 @@ import dk.webbies.tajscheck.paser.AstToStringVisitor;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.testcreator.test.LoadModuleTest;
 import dk.webbies.tajscheck.testcreator.TestCreator;
+import dk.webbies.tajscheck.typeutil.TypeParametersReachableFrom;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.IdentityHashSet;
+import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
 import dk.webbies.tajscheck.util.selenium.SeleniumDriver;
 import org.apache.http.HttpException;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONString;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,7 +73,11 @@ public class Main {
 
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
 
-        List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, orgBench, typeParameterIndexer).createTests(false);
+        Set<Type> hasThisTypes = TypesUtil.findHasThisTypes(typeToTest);
+
+        MultiMap<Type, TypeParameterType> reachableTypeParameters= TypeParametersReachableFrom.createMap(typeToTest);
+
+        List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, orgBench, typeParameterIndexer, hasThisTypes, reachableTypeParameters).createTests(false);
 
         if (tests.size() > 100) {
             tests.removeAll(new IdentityHashSet<>(tests.subList(100, tests.size())));
@@ -97,10 +103,10 @@ public class Main {
                 try {
                     System.out.println("Creating small driver for: " + path + "  " + (count + 1) + "/" + tests.size());
 
-                    List<Test> specificTests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer).createTests();
+                    List<Test> specificTests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer, hasThisTypes, reachableTypeParameters).createTests();
                     specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
 
-                    Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer).buildTestProgram(null);
+                    Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer, reachableTypeParameters).buildTestProgram(null);
 
                     String filePath = getTestFilePath(bench, "smallDrivers/small_driver_" + count + ".js");
 
@@ -131,12 +137,16 @@ public class Main {
 
         Type typeToTest = getTypeToTest(bench, spec);
 
+        MultiMap<Type, TypeParameterType> reachableTypeParameters= TypeParametersReachableFrom.createMap(typeToTest);
+
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
 
-        List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer).createTests();
+        Set<Type> hasThisTypes = TypesUtil.findHasThisTypes(typeToTest);
+
+        List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer, hasThisTypes, reachableTypeParameters).createTests();
         tests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
 
-        Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest, typeParameterIndexer).buildTestProgram(recording);
+        Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest, typeParameterIndexer, reachableTypeParameters).buildTestProgram(recording);
 
         return AstToStringVisitor.toString(program);
     }
