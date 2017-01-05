@@ -48,7 +48,11 @@ public class TypeContext {
     }
 
     public TypeWithContext get(TypeParameterType parameter) {
-        return new TypeWithContext(map.get(parameter), this.addPersistent(parameter));
+        Type type = map.get(parameter);
+        if (type == null) {
+            return null;
+        }
+        return new TypeWithContext(type, this.addPersistent(parameter));
     }
 
     private TypeContext addPersistent(TypeParameterType parameterType) {

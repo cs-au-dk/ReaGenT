@@ -19,6 +19,7 @@ import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.Expe
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.TYPEOF;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 
 /**
  * Created by erik1 on 23-11-2016.
@@ -579,8 +580,24 @@ public class UnitTests {
         sanityCheck(benchFromFolder("complexSanityCheck2"));
     }
 
-    @Test
+    @Test(expected = AssertionError.class)
     public void sanityCheckComplex3() throws Exception {
+        // The TypeScript type system is unsound, this is a test of that.
         sanityCheck(benchFromFolder("complexSanityCheck3"));
+    }
+
+    @Test
+    public void thisTypes2() throws Exception {
+        // This is just a test that it is able to generate an application, without crashing.
+        String program = Main.generateFullDriver(benchFromFolder("thisTypes2"));
+
+        assertThat(program, is(not(equalTo(""))));
+    }
+
+    @Test
+    public void complexThisTypes() throws Exception {
+        RunResult result = run("complexThisTypes", "foo");
+
+        assertThat(result.typeErrors.size(), is(greaterThan(0)));
     }
 }

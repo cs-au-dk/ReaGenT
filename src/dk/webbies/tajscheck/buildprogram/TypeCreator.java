@@ -127,7 +127,14 @@ public class TypeCreator {
             putProducedValueIndex(index, ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType(), typeContext);
         } else if (type instanceof ThisType) {
             putProducedValueIndex(index, typeContext.getClassType().getInstanceType(), typeContext);
-        } else if (type instanceof TypeParameterType || type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType || type instanceof NeverType || type instanceof SymbolType) {
+        } else if (type instanceof TypeParameterType) {
+            if (typeContext.get((TypeParameterType) type) != null) {
+                TypeWithContext lookup = typeContext.get((TypeParameterType) type);
+                putProducedValueIndex(index, lookup.getType(), lookup.getTypeContext());
+            } else {
+                // Do nothing
+            }
+        } else if (type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType || type instanceof NeverType || type instanceof SymbolType) {
             // Do nothing.
         } else {
             throw new RuntimeException(type.getClass().getName());

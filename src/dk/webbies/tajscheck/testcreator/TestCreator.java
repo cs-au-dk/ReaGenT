@@ -343,6 +343,7 @@ public class TestCreator {
                 recurse(baseType, arg);
             }
 
+            assert !t.getSignatures().isEmpty();
             for (Signature signature : t.getSignatures()) {
                 tests.add(new ConstructorCallTest(t, signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList()), t.getInstanceType(), arg.path, arg.typeContext, signature.isHasRestParameter()));
             }
@@ -465,7 +466,7 @@ public class TestCreator {
                 }
                 return;
             }
-            if (propertyType instanceof SimpleType || propertyType instanceof StringLiteral || propertyType instanceof BooleanLiteral || propertyType instanceof NumberLiteral) {
+            if (propertyType instanceof SimpleType || propertyType instanceof StringLiteral || propertyType instanceof BooleanLiteral || propertyType instanceof NumberLiteral || propertyType instanceof ThisType) {
                 return;
             }
 
@@ -703,6 +704,8 @@ public class TestCreator {
             negativeTypesSeen.add(new TypeWithContext(t, arg.getTypeContext()));
 
             t.getInstanceType().accept(this, arg.append("new()"));
+
+            assert !t.getSignatures().isEmpty();
 
             for (Signature signature : t.getSignatures()) {
                 for (int i = 0; i < signature.getParameters().size(); i++) {

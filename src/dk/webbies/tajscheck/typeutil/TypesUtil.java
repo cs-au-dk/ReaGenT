@@ -2,6 +2,7 @@ package dk.webbies.tajscheck.typeutil;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
@@ -186,7 +187,8 @@ public class TypesUtil {
         }
 
         // The TypeContexts are not used for anything here, so it is ok to ignore them.
-        Type type = typeContext.get(firstType).getType();
+        TypeWithContext lookup = typeContext.get(firstType);
+        Type type = lookup != null ? lookup.getType() : null;
 
         Set<Type> seen = new HashSet<>();
 
@@ -592,6 +594,8 @@ public class TypesUtil {
                 for (Type baseType : ((ClassType) type).getBaseTypes()) {
                     reverseBaseTypeMap.put(baseType, type);
                 }
+            } else if (type instanceof ReferenceType) {
+                reverseBaseTypeMap.put(((ReferenceType) type).getTarget(), type);
             }
         }
 
@@ -605,6 +609,8 @@ public class TypesUtil {
             for (Type type : copy) {
                 if (type instanceof ClassInstanceType) {
                     addQueue.add(((ClassInstanceType) type).getClassType());
+                } else if (type instanceof ReferenceType) {
+                    addQueue.add(((ReferenceType) type).getTarget());
                 }
                 if (result.contains(type)) {
                     continue;
