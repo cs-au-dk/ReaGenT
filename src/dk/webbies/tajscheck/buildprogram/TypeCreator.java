@@ -104,10 +104,21 @@ public class TypeCreator {
     }
 
     private void putProducedValueIndex(int index, Type type, TypeContext typeContext) {
+        putProducedValueIndex(index, type, typeContext, false);
+    }
+
+    private void putProducedValueIndex(int index, Type type, TypeContext typeContext, boolean touchedThisTypes) {
         valueLocations.put(new TypeWithContext(type, typeContext), index);
 
-        if (typeContext.getThisType() != null) {
-            putProducedValueIndex(index, type, typeContext.withClass(null));
+        if (!touchedThisTypes) {
+            if (typeContext.getThisType() != null) {
+                putProducedValueIndex(index, type, typeContext.withClass(null), true);
+            }
+            if (typeContext.getThisType() == null) {
+                if (hasThisTypes.contains(type)) {
+                    putProducedValueIndex(index, type, typeContext.withClass(type), true);
+                }
+            }
         }
 
         TypeContext newContext = typeContext.cleanTypeParameters(type, reachableTypeParameters);
@@ -212,7 +223,7 @@ public class TypeCreator {
 
             typeNames.put(type, typeNames.get(t));
 
-            if (hasThisTypes.contains(t) || benchmark.options.disableSizeOptimization) {
+            if (hasThisTypes.contains(t)) {
                 typeContext.withClass(t.getInstanceType());
             }
 
@@ -243,7 +254,7 @@ public class TypeCreator {
                 }
             }
 
-            if (hasThisTypes.contains(type) || benchmark.options.disableSizeOptimization) {
+            if (hasThisTypes.contains(type)) {
                 typeContext = typeContext.withClass(type);
             }
 

@@ -60,7 +60,9 @@ public class TestCreator {
             CreateTestQueueElement element = queue.poll();
             Arg arg = element.arg;
 
-            arg = arg.replaceTypeContext(arg.typeContext.cleanTypeParameters(element.type, reachableTypeParameters));
+            if (!bench.options.disableSizeOptimization) {
+                arg = arg.replaceTypeContext(arg.typeContext.cleanTypeParameters(element.type, reachableTypeParameters));
+            }
 
             if (arg.withTopLevelFunctions) {
                 topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, arg.depth));
@@ -333,7 +335,7 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            if (hasThisTypes.contains(t) || bench.options.disableSizeOptimization) {
+            if (hasThisTypes.contains(t)) {
                 arg = arg.withClassType(t.getInstanceType());
             }
 
@@ -373,7 +375,7 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            if (hasThisTypes.contains(t) || bench.options.disableSizeOptimization) {
+            if (hasThisTypes.contains(t)) {
                 arg = arg.withClassType(t);
             }
 
@@ -405,7 +407,7 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            if (hasThisTypes.contains(t) || bench.options.disableSizeOptimization) {
+            if (hasThisTypes.contains(t)) {
                 arg = arg.withClassType(t);
             }
 
