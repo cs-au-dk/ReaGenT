@@ -603,7 +603,7 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore
+    @Ignore // TODO: Get this to work!
     public void thisTypesInInterfaces() throws Exception {
         RunResult result = run("thisTypesInInterfaces", "foo");
 
@@ -617,5 +617,43 @@ public class UnitTests {
     public void complexThisTypes2() throws Exception {
         // Actually just a test that i don't get a null-pointer while constructing the sanity-driver.
         sanityCheck(benchFromFolder("complexThisTypes2"));
+    }
+
+    @Test
+    public void genericsAreOptimized() throws Exception {
+        CheckOptions options = CheckOptions.builder().setDisableSizeOptimization(false).build();
+        RunResult optimized = run(benchFromFolder("genericsAreOptimized", options), "seed");
+
+        assertThat(optimized.typeErrors.size(), is(1));
+
+
+        options = CheckOptions.builder().setDisableSizeOptimization(true).build();
+        RunResult unOptimzed = run(benchFromFolder("genericsAreOptimized", options), "seed");
+
+        assertThat(unOptimzed.typeErrors.size(), is(2));
+    }
+
+    @Test
+    public void genericsWithNoOptimization2() throws Exception {
+        CheckOptions options = CheckOptions.builder().setDisableSizeOptimization(true).build();
+        RunResult result = run(benchFromFolder("genericsWithNoOptimization2", options), "seed");
+
+        assertThat(result.typeErrors.size(), is(greaterThan(0)));
+    }
+
+
+    @Test
+    public void genericsWithNoOptimization() throws Exception {
+        CheckOptions options = CheckOptions.builder().setDisableSizeOptimization(true).build();
+        RunResult result = run(benchFromFolder("genericsWithNoOptimization", options), "seed");
+
+        assertThat(result.typeErrors.size(), is(1));
+    }
+
+    @Test
+    public void thisTypesInInterfaces2() throws Exception {
+        RunResult result = run("thisTypesInInterfaces2", "foo");
+
+        assertThat(result.typeErrors.size(), is(greaterThan(0)));
     }
 }
