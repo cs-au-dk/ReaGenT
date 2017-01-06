@@ -56,6 +56,8 @@ public class TestCreator {
 
         queue.add(new CreateTestQueueElement(typeToTest, new Arg(module, new TypeContext(bench), 0)));
 
+        Set<TypeWithContext> seenTopLevel = new HashSet<>();
+
         while (!queue.isEmpty()) {
             CreateTestQueueElement element = queue.poll();
             Arg arg = element.arg;
@@ -64,8 +66,14 @@ public class TestCreator {
                 arg = arg.replaceTypeContext(arg.typeContext.cleanTypeParameters(element.type, reachableTypeParameters));
             }
 
+
             if (arg.withTopLevelFunctions) {
-                topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, arg.depth));
+                TypeWithContext withParameters = new TypeWithContext(element.type, arg.getTypeContext());
+                if (!seenTopLevel.contains(withParameters)) {
+                    topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, arg.depth));
+                }
+                seenTopLevel.add(withParameters);
+
             }
             element.type.accept(visitor, arg.noTopLevelFunctions());
         }
@@ -173,7 +181,7 @@ public class TestCreator {
                         new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, typeContext, constructSignature.isHasRestParameter())
                 );
 
-                visitor.recurse(constructSignature.getResolvedReturnType(), new Arg(path + "new()", typeContext, depth + 1).withTopLevelFunctions());
+                visitor.recurse(constructSignature.getResolvedReturnType(), new Arg(path + ".new()", typeContext, depth + 1).withTopLevelFunctions());
             }
             return result;
         }
@@ -183,7 +191,7 @@ public class TestCreator {
     private void findPositiveTypesInParameters(CreateTestVisitor visitor, Arg arg, List<Type> parameters, Set<TypeWithContext> negativeTypesSeen, Set<Type> nativeTypes) {
         for (int i = 0; i < parameters.size(); i++) {
             Type parameter = parameters.get(i);
-            findPositiveTypes(visitor, parameter, arg.append("[arg" + i + "]"), negativeTypesSeen, nativeTypes);
+            findPositiveTypes(visitor, parameter, arg.append("[arg" + i + "]"), nativeTypes);
         }
     }
 
@@ -491,7 +499,7 @@ public class TestCreator {
                 }
                 return;
             }
-            if (propertyType instanceof SimpleType || propertyType instanceof StringLiteral || propertyType instanceof BooleanLiteral || propertyType instanceof NumberLiteral || propertyType instanceof ThisType) {
+            if (propertyType instanceof SimpleType || propertyType instanceof StringLiteral || propertyType instanceof BooleanLiteral || propertyType instanceof NumberLiteral || propertyType instanceof ThisType || propertyType instanceof TupleType) {
                 return;
             }
 
@@ -699,8 +707,8 @@ public class TestCreator {
         }
     }
 
-    private void findPositiveTypes(CreateTestVisitor visitor, Type type, Arg arg, Set<TypeWithContext> negativeTypesSeen, Set<Type> nativeTypes) {
-        type.accept(new FindPositiveTypesVisitor(visitor, negativeTypesSeen, nativeTypes, bench), arg);
+    private void findPositiveTypes(CreateTestVisitor visitor, Type type, Arg arg, Set<Type> nativeTypes) {
+        type.accept(new FindPositiveTypesVisitor(visitor, visitor.negativeTypesSeen, nativeTypes, bench, hasThisTypes), arg);
     }
 
     private static class FindPositiveTypesVisitor implements TypeVisitorWithArgument<Void, Arg> {
@@ -708,12 +716,14 @@ public class TestCreator {
         private Set<TypeWithContext> negativeTypesSeen;
         private Set<Type> nativeTypes;
         private final Benchmark bench;
+        private Set<Type> hasThisTypes;
 
-        public FindPositiveTypesVisitor(CreateTestVisitor createTestVisitor, Set<TypeWithContext> negativeTypesSeen, Set<Type> nativeTypes, Benchmark bench) {
+        public FindPositiveTypesVisitor(CreateTestVisitor createTestVisitor, Set<TypeWithContext> negativeTypesSeen, Set<Type> nativeTypes, Benchmark bench, Set<Type> hasThisTypes) {
             this.visitor = createTestVisitor;
             this.negativeTypesSeen = negativeTypesSeen;
             this.nativeTypes = nativeTypes;
             this.bench = bench;
+            this.hasThisTypes = hasThisTypes;
         }
 
         @Override
@@ -764,6 +774,10 @@ public class TestCreator {
             }
             negativeTypesSeen.add(new TypeWithContext(t, arg.getTypeContext()));
 
+            if (hasThisTypes.contains(t)) {
+                arg = arg.withClassType(t);
+            }
+
             assert t.getTypeParameters().equals(t.getTypeArguments()); // If this fails, look at the other visitor.
             t.toInterface().accept(this, arg);
             return null;
@@ -775,6 +789,10 @@ public class TestCreator {
                 return null;
             }
             negativeTypesSeen.add(new TypeWithContext(t, arg.getTypeContext()));
+
+            if (hasThisTypes.contains(t)) {
+                arg = arg.withClassType(t);
+            }
 
             for (Signature signature : Util.concat(t.getDeclaredCallSignatures(), t.getDeclaredConstructSignatures())) {
                 for (int i = 0; i < signature.getParameters().size(); i++) {
