@@ -956,6 +956,8 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return window.getSelection()");
             case "Performance":
                 return AstBuilder.stmtFromString("return window.performance");
+            case "SVGGElement":
+                return AstBuilder.stmtFromString("return document.createElementNS(\"http://www.w3.org/2000/svg\", \"g\")");
             case "CSSRuleList":
             case "CSSStyleDeclaration":
                 // Hacky, i know.
