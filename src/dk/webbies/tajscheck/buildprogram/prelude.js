@@ -150,6 +150,7 @@ for (var key in console) {
 }
 
 function RuntimeError(message) {
+    message = " " + message;
     this.message = message;
     Error.call(this, message);
 }
