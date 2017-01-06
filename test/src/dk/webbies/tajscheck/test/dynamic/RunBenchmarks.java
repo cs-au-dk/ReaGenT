@@ -70,6 +70,8 @@ public class RunBenchmarks {
 
 
         benchmarks.put("box2dweb", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/box2dweb/box2dweb.js", "test/benchmarks/box2dweb/box2dweb.d.ts", "Box2D", BROWSER, options));
+
+        benchmarks.put("underscore", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/underscore/underscore.js", "test/benchmarks/underscore/underscore.d.ts", "_", NODE, CheckOptions.defaultOptions()));
     }
 
     @Parameterized.Parameters(name = "{0}")
@@ -130,6 +132,9 @@ public class RunBenchmarks {
 
     @Test
     public void coverage() throws Exception {
+        if (benchmark.dTSFile.contains("underscore.d.ts")) {
+            return; // Too big, node runs out of memory parsing the thing.
+        }
         if (benchmark.run_method == BROWSER) {
             return;
         }
@@ -151,6 +156,7 @@ public class RunBenchmarks {
     public void sanityCheck() throws Exception {
         Benchmark bench = this.benchmark.withRunMethod(BOOTSTRAP);
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
+        System.out.println("Driver written");
         String output;
         try {
             output = Main.runBenchmark(bench, 60 * 1000);
