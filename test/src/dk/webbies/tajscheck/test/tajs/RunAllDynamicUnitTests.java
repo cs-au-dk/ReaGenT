@@ -27,7 +27,8 @@ public class RunAllDynamicUnitTests {
     @Parameterized.Parameter
     public String folderName;
 
-    private static final Set<String> blackList = new HashSet<>(Arrays.asList("genericIndexedAccess", "mappedTypes"));
+    // unit-tests that for some reason cannot run (like, there is no implementation.js, because it isn't used).
+    private static final Set<String> blackList = new HashSet<>(Arrays.asList("genericIndexedAccess", "mappedTypes", "complexSanityCheck", "complexSanityCheck2", "complexSanityCheck3", "complexThisTypes2", "thisTypes2", "unnecessaryBigDriver"));
 
     @SuppressWarnings("ConstantConditions")
     @Parameterized.Parameters(name = "{0}")

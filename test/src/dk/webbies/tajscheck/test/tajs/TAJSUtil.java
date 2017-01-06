@@ -38,7 +38,7 @@ public class TAJSUtil {
         Options.get().enablePolyfillES6Collections();
         Options.get().enableEs6MiscPolyfill();
         Options.get().enableConsoleModel();
-        Options.get().enableIncludeDom();
+        Options.get().enableUnevalizer();
 
         IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(new Monitoring(), new OrdinaryExitReachableChecker());
 
