@@ -317,13 +317,21 @@ public class TypeChecker {
         @Override
         public List<TypeCheck> visit(ReferenceType t, Arg arg) {
             if ("Array".equals(typeNames.get(t.getTarget()))) {
-                TypeCheck indexCheck = createIntersection(t.getTypeArguments().get(0).accept(this, arg));
-
-                return Arrays.asList(
+                List<TypeCheck> result = new ArrayList<>(Arrays.asList(
                         expectNotNull(),
-                        new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "Array"),
-                        new SimpleTypeCheck(Check.arrayIndexCheck(indexCheck.getCheck()), "(arrayIndex: " + indexCheck.getExpected() + ")")
-                );
+                        new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "Array")
+                ));
+
+                if (arg.depthRemaining > 0) {
+                    arg = arg.decreaseDepth();
+                    TypeCheck indexCheck = createIntersection(t.getTypeArguments().get(0).accept(this, arg));
+
+                    result.add(
+                            new SimpleTypeCheck(Check.arrayIndexCheck(indexCheck.getCheck()), "(arrayIndex: " + indexCheck.getExpected() + ")")
+                    );
+                }
+
+                return result;
             }
 
             if (nativeTypes.contains(t)) {

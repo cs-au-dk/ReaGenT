@@ -148,7 +148,14 @@ public class TypeCreator {
         } else if (type instanceof TypeParameterType) {
             if (typeContext.get((TypeParameterType) type) != null) {
                 TypeWithContext lookup = typeContext.get((TypeParameterType) type);
-                putProducedValueIndex(index, lookup.getType(), lookup.getTypeContext());
+                List<Type> recursiveDefinition = TypesUtil.findRecursiveDefinition((TypeParameterType) type, typeContext, typeParameterIndexer);
+                if (recursiveDefinition.isEmpty()) {
+                    putProducedValueIndex(index, lookup.getType(), lookup.getTypeContext());
+                } else {
+                    for (Type constraint : recursiveDefinition) {
+                        putProducedValueIndex(index, constraint, typeContext);
+                    }
+                }
             } else {
                 // Do nothing
             }

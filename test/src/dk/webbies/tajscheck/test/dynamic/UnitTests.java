@@ -333,7 +333,7 @@ public class UnitTests {
 
     @Test
     public void arrayType() throws Exception {
-        RunResult result = run("arrayType", "foo");
+        RunResult result = run(benchFromFolder("arrayType", CheckOptions.builder().setCheckDepth(2).build()), "foo");
 
         expect(result)
                 .forPath("module.foo()")
@@ -608,7 +608,7 @@ public class UnitTests {
 
         expect(result)
                 .forPath("(module.baz().bar, module.baz().bar.bar)")
-                .expected("object")
+                .expected("(function or object)")
                 .got(TYPEOF, "undefined");
     }
 
@@ -654,5 +654,13 @@ public class UnitTests {
         RunResult result = run("thisTypesInInterfaces2", "foo");
 
         assertThat(result.typeErrors.size(), is(greaterThan(0)));
+    }
+
+    @Test
+    @Ignore
+    public void thisTypesAreOptimized() throws Exception {
+        RunResult result = run("thisTypesAreOptimized", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
     }
 }
