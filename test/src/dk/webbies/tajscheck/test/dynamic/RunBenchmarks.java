@@ -71,7 +71,30 @@ public class RunBenchmarks {
 
         benchmarks.put("box2dweb", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/box2dweb/box2dweb.js", "test/benchmarks/box2dweb/box2dweb.d.ts", "Box2D", BROWSER, options));
 
+        // The TypeScript parser breaks.
+//        benchmarks.put("createjs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/createjs/createjs.js", "test/benchmarks/createjs/createjs.d.ts", "createjs", BROWSER, CheckOptions.defaultOptions()));
+
         benchmarks.put("underscore", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/underscore/underscore.js", "test/benchmarks/underscore/underscore.d.ts", "_", NODE, CheckOptions.defaultOptions()));
+
+        // Blows up in complexity, mostly because underscore. Test again if d3 is fixed.
+        /*benchmarks.put("backbone",
+                new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER, CheckOptions.defaultOptions())
+                .addDependency(benchmarks.get("underscore"))
+        );*/
+
+        // TODO: Seems to go in a infinite loop with generics, investigate and fix.
+//        benchmarks.put("d3", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", "d3", BROWSER, CheckOptions.defaultOptions()));
+
+
+
+        benchmarks.put("handlebars", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", "Handlebars", BROWSER, CheckOptions.defaultOptions()));
+
+        // On hold, to difficult to distinquish between what is a native type, and what isn't. (Because Ember overrides everything!)
+//        benchmarks.put("ember", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/ember/ember.js", "test/benchmarks/ember/ember.d.ts", "Ember", BROWSER, CheckOptions.defaultOptions()));
+
+        // TODO: I dont know
+//        benchmarks.put("fabric.js", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/fabric/fabric.js", "test/benchmarks/fabric/fabric.d.ts", "fabric", BROWSER, CheckOptions.defaultOptions()));
+
     }
 
     @Parameterized.Parameters(name = "{0}")
