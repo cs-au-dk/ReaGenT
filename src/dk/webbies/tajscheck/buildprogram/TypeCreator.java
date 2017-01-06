@@ -226,15 +226,38 @@ public class TypeCreator {
 
         @Override
         public Statement visit(ClassType t, TypeContext typeContext) {
-            InterfaceType type = TypesUtil.classToInterface(t, hasThisTypes);
-
-            typeNames.put(type, typeNames.get(t));
-
             if (hasThisTypes.contains(t)) {
-                typeContext.withClass(t.getInstanceType());
+                typeContext = typeContext.withClass(t.getInstanceType());
             }
 
-            return type.accept(this, typeContext);
+            assert t.getSignatures().size() > 0;
+
+            List<Statement> program = new ArrayList<>();
+
+            List<Signature> signatures = t.getSignatures().stream().map(sig -> TypesUtil.createConstructorSignature(t, sig)).collect(Collectors.toList());
+            program.add(variable("result", createFunction(signatures, typeContext, typeNames.get(t))));
+
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, hasThisTypes), typeNames);
+            InterfaceType inter = pair.getLeft();
+            typeContext = typeContext.append(pair.getRight());
+
+            if (inter.getDeclaredNumberIndexType() != null) {
+                program.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result"), typeNames.get(t).hashCode()));
+            }
+
+            if (inter.getDeclaredStringIndexType() != null) {
+                program.addAll(addStringIndexerType(inter.getDeclaredStringIndexType(), typeContext, identifier("result"), inter.getDeclaredProperties().keySet(), typeNames.get(t).hashCode()));
+            }
+
+            List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
+
+            for (Pair<String, Type> property : properties) {
+                program.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, constructType(property.getRight(), typeContext))));
+            }
+
+            program.add(Return(identifier("result")));
+
+            return block(program);
         }
 
         @Override
@@ -530,8 +553,15 @@ public class TypeCreator {
     }
 
     private FunctionExpression createFunction(InterfaceType inter, TypeContext typeContext) {
-        List<Signature> signatures = Util.concat(inter.getDeclaredCallSignatures(), inter.getDeclaredConstructSignatures());
+        List<Signature> signatures = TypesUtil.removeDuplicateSignatures(Util.concat(inter.getDeclaredCallSignatures(), inter.getDeclaredConstructSignatures()));
 
+        String interName = typeNames.get(inter);
+        assert interName != null;
+
+        return createFunction(signatures, typeContext, interName);
+    }
+
+    private FunctionExpression createFunction(List<Signature> signatures, TypeContext typeContext, String path) {
         assert signatures.size() > 0;
 
         int maxArgs = signatures.stream().map(Signature::getParameters).map(List::size).reduce(0, Math::max);
@@ -543,8 +573,6 @@ public class TypeCreator {
 
         TypeChecker typeChecker = new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, typeContext);
 
-        String interName = typeNames.get(inter);
-        assert interName != null;
 
         assert !signatures.isEmpty();
 
@@ -567,10 +595,10 @@ public class TypeCreator {
                         identifier("assert"),
                         call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
                                 function(block(
-                                        Return(typeChecker.checkResultingType(restType, identifier("exp"), interName + ".[restArgs]", options.checkDepth))
+                                        Return(typeChecker.checkResultingType(restType, identifier("exp"), path + ".[restArgs]", options.checkDepth))
                                 ), "exp")
                         ),
-                        string(interName + ".[restArgs]"),
+                        string(path + ".[restArgs]"),
                         string("valid rest-args"),
                         AstBuilder.expFromString("Array.prototype.slice.call(args)"),
                         identifier("i")
@@ -580,7 +608,7 @@ public class TypeCreator {
             }
 
             Util.zip(args.stream(), parameters.stream(), (argName, par) ->
-                    typeChecker.assertResultingType(par.getType(), identifier(argName), interName + ".[" + argName + "]", options.checkDepth)
+                    typeChecker.assertResultingType(par.getType(), identifier(argName), path + ".[" + argName + "]", options.checkDepth)
             ).forEach(typeChecks::add);
 
             typeChecks.add(checkNumberOfArgs(signature));
@@ -624,7 +652,7 @@ public class TypeCreator {
                             checkRestArgs = ifThen(unary(Operator.NOT,
                                     call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
                                             function(block(
-                                                    Return(typeChecker.checkResultingType(restType, identifier("exp"), interName + ".[restArgs]", options.checkDepth))
+                                                    Return(typeChecker.checkResultingType(restType, identifier("exp"), path + ".[restArgs]", options.checkDepth))
                                             ), "exp")
                                     )),
                                     Return(bool(false))
@@ -642,7 +670,7 @@ public class TypeCreator {
                                             Signature.Parameter arg = parameterPair.getLeft();
 
                                             return block(
-                                                    variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(arg.getType(), identifier("arg" + argIndex), interName + ".[arg" + argIndex + "]", options.checkDepth)),
+                                                    variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(arg.getType(), identifier("arg" + argIndex), path + ".[arg" + argIndex + "]", options.checkDepth)),
                                                     ifThen(
                                                             unary(Operator.NOT, identifier("arg" + argIndex + "Correct")),
                                                             Return(bool(false))
@@ -655,7 +683,7 @@ public class TypeCreator {
                                         call(
                                                 identifier("assert"),
                                                 identifier("signatureCorrect" + signatureIndex),
-                                                string(interName),
+                                                string(path),
                                                 string("overload " + PrettyTypes.parameters(signature.getParameters()) + " to be called"), string("it was not called"),
                                                 identifier("i")
                                         )
@@ -681,7 +709,7 @@ public class TypeCreator {
                                                     Operator.NOT_EQUAL_EQUAL,
                                                     number(0)
                                             ),
-                                            string(interName),
+                                            string(path),
                                             string("A valid overload"),
                                             AstBuilder.expFromString("Array.prototype.slice.call(args)"),
                                             identifier("i")
@@ -697,7 +725,7 @@ public class TypeCreator {
                             ),
                             block(
                                     comment("Call error, the application was imprecise, and couldn't identity the correct overload"),
-                                    throwStatement(newCall(identifier(RUNTIME_ERROR_NAME), binary(string("Could not find correct overload for function: " + interName + " results: "), Operator.PLUS, methodCall(identifier("foundSignatures"), "toString"))))
+                                    throwStatement(newCall(identifier(RUNTIME_ERROR_NAME), binary(string("Could not find correct overload for function: " + path + " results: "), Operator.PLUS, methodCall(identifier("foundSignatures"), "toString"))))
                             )
                     ),
                     comment("Save the arguments, and returns the value, of the correct overload. "),

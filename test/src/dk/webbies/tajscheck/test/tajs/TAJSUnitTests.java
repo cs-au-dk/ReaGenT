@@ -70,14 +70,14 @@ public class TAJSUnitTests {
         }
 
         private TAJSResultTester forPath(String path) {
-            results = results.toMap().entrySet().stream().filter(entry -> entry.getKey().equals(path)).collect(ArrayListMultiMap.collector());
+            results = results.asMap().entrySet().stream().filter(entry -> entry.getKey().equals(path)).collect(ArrayListMultiMap.collector());
 
             MatcherAssert.assertThat("expected something on path: " + path, results.size(),is(not(equalTo(0))));
             return this;
         }
 
         private TAJSResultTester got(Predicate<Value> matcher) {
-            for (Collection<AssertionResult> values : results.toMap().values()) {
+            for (Collection<AssertionResult> values : results.asMap().values()) {
                 for (AssertionResult value : values) {
                     assertTrue(matcher.test(value.actual));
                 }
@@ -91,7 +91,7 @@ public class TAJSUnitTests {
         }
 
         TAJSResultTester expected(Matcher<String> matcher) {
-            results = results.toMap().entrySet().stream().map(entry -> {
+            results = results.asMap().entrySet().stream().map(entry -> {
                 Collection<AssertionResult> value = entry.getValue().stream().filter(result ->
                         matcher.matches(result.expected)
                 ).collect(Collectors.toList());
@@ -105,7 +105,7 @@ public class TAJSUnitTests {
         }
 
         TAJSResultTester toPass() {
-            for (Collection<AssertionResult> values : results.toMap().values()) {
+            for (Collection<AssertionResult> values : results.asMap().values()) {
                 for (AssertionResult value : values) {
                     assertTrue(value.result.isSometimesTrue());
                 }
@@ -115,7 +115,7 @@ public class TAJSUnitTests {
         }
 
         TAJSResultTester toFail() {
-            for (Collection<AssertionResult> values : results.toMap().values()) {
+            for (Collection<AssertionResult> values : results.asMap().values()) {
                 for (AssertionResult value : values) {
                     assertTrue(value.result.isSometimesFalse());
                 }

@@ -51,7 +51,7 @@ public class RunAllDynamicUnitTests {
 
         MultiMap<String, AssertionResult> result = TAJSUtil.run(bench);
 
-        for (Map.Entry<String, Collection<AssertionResult>> entry : result.toMap().entrySet()) {
+        for (Map.Entry<String, Collection<AssertionResult>> entry : result.asMap().entrySet()) {
             for (AssertionResult tajsResult : entry.getValue()) {
                 assertThat(tajsResult.result, is(not(DEFINITELY_FALSE)));
             }

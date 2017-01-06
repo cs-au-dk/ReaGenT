@@ -4,8 +4,7 @@ declare module module {
     }
 
     export class b2CircleShape extends b2Shape {
-        constructor(radius: number);
-        public GetRadius(radius: number): void;
+        public GetRadius(): void;
         public Set(other: b2CircleShape): void;
     }
 

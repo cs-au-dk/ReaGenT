@@ -53,7 +53,7 @@ public class ArrayListMultiMap<K, T> implements MultiMap<K, T> {
     }
 
     @Override
-    public Map<K, Collection<T>> toMap() {
+    public Map<K, Collection<T>> asMap() {
         return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
@@ -66,7 +66,7 @@ public class ArrayListMultiMap<K, T> implements MultiMap<K, T> {
 
     @Override
     public void putAll(MultiMap<K, T> map) {
-        for (Map.Entry<K, Collection<T>> entry : map.toMap().entrySet()) {
+        for (Map.Entry<K, Collection<T>> entry : map.asMap().entrySet()) {
             putAll(entry.getKey(), entry.getValue());
         }
     }

@@ -71,6 +71,13 @@ public class UnitTests {
         String output = Main.runBenchmark(bench);
         RunResult result = OutputParser.parseDriverResult(output);
 
+        if (result.errors.size() > 0) {
+            System.out.println("--- ERRORS ---");
+            for (String error : result.errors) {
+                System.out.println(error);
+            }
+        }
+
         if (!result.typeErrors.isEmpty()) {
             System.out.println(output);
         }

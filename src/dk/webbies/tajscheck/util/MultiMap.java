@@ -18,7 +18,7 @@ public interface MultiMap <K, T> {
 
     boolean containsKey(K key);
 
-    Map<K, Collection<T>> toMap();
+    Map<K, Collection<T>> asMap();
 
     void putAll(K key, Collection<T> value);
 

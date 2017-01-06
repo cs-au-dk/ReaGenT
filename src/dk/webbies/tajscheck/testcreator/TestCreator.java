@@ -215,7 +215,7 @@ public class TestCreator {
             TestNoPathContainer key = new TestNoPathContainer(test);
             multimap.put(key, key);
         });
-        return multimap.toMap().entrySet().stream().map(entry -> {
+        return multimap.asMap().entrySet().stream().map(entry -> {
             if (entry.getValue().size() == 1) {
                 return entry.getValue().iterator().next().getTest();
             } else {

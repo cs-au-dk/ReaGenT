@@ -27,15 +27,7 @@ public class TypesUtil {
         InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
 
         for (Signature signature : t.getSignatures()) {
-            Signature constructor = new Signature();
-            constructor.setHasRestParameter(signature.isHasRestParameter());
-            constructor.setIsolatedSignatureType(signature.getIsolatedSignatureType());
-            constructor.setMinArgumentCount(signature.getMinArgumentCount());
-            constructor.setParameters(signature.getParameters());
-            constructor.setTarget(signature.getTarget());
-            constructor.setTypeParameters(signature.getTypeParameters());
-            constructor.setUnionSignatures(signature.getUnionSignatures());
-            constructor.setResolvedReturnType(t.getInstanceType());
+            Signature constructor = createConstructorSignature(t, signature);
             interfaceType.getDeclaredConstructSignatures().add(constructor);
         }
         if (t.getSignatures().isEmpty()) {
@@ -76,6 +68,19 @@ public class TypesUtil {
         }
 
         return interfaceType;
+    }
+
+    public static Signature createConstructorSignature(ClassType t, Signature signature) {
+        Signature constructor = new Signature();
+        constructor.setHasRestParameter(signature.isHasRestParameter());
+        constructor.setIsolatedSignatureType(signature.getIsolatedSignatureType());
+        constructor.setMinArgumentCount(signature.getMinArgumentCount());
+        constructor.setParameters(signature.getParameters());
+        constructor.setTarget(signature.getTarget());
+        constructor.setTypeParameters(signature.getTypeParameters());
+        constructor.setUnionSignatures(signature.getUnionSignatures());
+        constructor.setResolvedReturnType(t.getInstanceType());
+        return constructor;
     }
 
     public TypeContext generateParameterMap(ReferenceType ref) {
@@ -256,6 +261,73 @@ public class TypesUtil {
         result.setMinArgumentCount(signature.getMinArgumentCount());
         result.setTypeParameters(signature.getTypeParameters());
         return result;
+    }
+
+    public static List<Signature> removeDuplicateSignatures(List<Signature> signatures) {
+        return signatures.stream().map(SignatureComparisonContainer::new).distinct().map(SignatureComparisonContainer::getSignature).collect(Collectors.toList());
+    }
+
+    private static final class SignatureComparisonContainer {
+        private final Signature signature;
+
+        private SignatureComparisonContainer(Signature signature) {
+            this.signature = signature;
+        }
+
+        public Signature getSignature() {
+            return signature;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            SignatureComparisonContainer that = (SignatureComparisonContainer) o;
+
+            Signature sig1 = this.signature;
+            Signature sig2 = that.signature;
+            if (sig1.getTypeParameters().size() != sig2.getTypeParameters().size()) {
+                return false;
+            }
+            for (int i = 0; i < sig1.getTypeParameters().size(); i++) {
+                if (!sig1.getTypeParameters().get(i).equals(sig2.getTypeParameters().get(i))) {
+                    return false;
+                }
+            }
+
+            if (sig1.getParameters().size() != sig2.getParameters().size()) {
+                return false;
+            }
+            for (int i = 0; i < sig1.getParameters().size(); i++) {
+                if (!sig1.getParameters().get(i).equals(sig2.getParameters().get(i))) {
+                    return false;
+                }
+            }
+
+            if (!Objects.equals(sig1.getResolvedReturnType(), sig2.getResolvedReturnType())) {
+                return false;
+            }
+
+            if (sig1.getMinArgumentCount() != sig2.getMinArgumentCount()) {
+                return false;
+            }
+
+            if (sig1.isHasRestParameter() != sig2.isHasRestParameter()) {
+                return false;
+            }
+
+            if (!Objects.equals(sig1.getTarget(), sig2.getTarget())) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1337;
+        }
     }
 
 

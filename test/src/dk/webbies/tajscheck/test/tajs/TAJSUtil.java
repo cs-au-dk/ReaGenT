@@ -7,7 +7,6 @@ import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.Options;
 import dk.brics.tajs.test.Misc;
-import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.AnalysisLimitationException;
 import dk.brics.tajs.util.ExperimentalAnalysisVariables;
 import dk.brics.tajs.util.Pair;
@@ -85,7 +84,7 @@ public class TAJSUtil {
         // Left string is path, right string is expected
         Map<Pair<String, String>, AssertionResult> result = new HashMap<>();
 
-        for (Map.Entry<String, Collection<Value>> entry : collectedValues.toMap().entrySet()) {
+        for (Map.Entry<String, Collection<Value>> entry : collectedValues.asMap().entrySet()) {
             String key = entry.getKey();
             String[] split = key.split(" \\| ");
 
@@ -135,7 +134,7 @@ public class TAJSUtil {
 
     public static String prettyResult(MultiMap<String, AssertionResult> result) {
         StringBuilder builder = new StringBuilder();
-        for (Map.Entry<String, Collection<AssertionResult>> entry : result.toMap().entrySet()) {
+        for (Map.Entry<String, Collection<AssertionResult>> entry : result.asMap().entrySet()) {
             for (AssertionResult tajsResult : entry.getValue()) {
                 if (tajsResult.result.isSometimesFalse()) {
                     builder

@@ -11,6 +11,9 @@ public class TypeWithContext {
     private final TypeContext typeContext;
 
     public TypeWithContext(Type type, TypeContext typeContext) {
+        if (type == null) {
+            throw new NullPointerException();
+        }
         this.type = type;
         this.typeContext = typeContext;
     }
