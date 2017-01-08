@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.buildprogram;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.*;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.*;
@@ -40,9 +41,17 @@ public class TestProgramBuilder {
 
 
     public static final class TypeParameterIndexer {
+        private final boolean combineAllUnconstrainedGenerics;
         private final Map<TypeParameterType, Integer> map = new HashMap<>();
 
+        public TypeParameterIndexer(CheckOptions options) {
+            this.combineAllUnconstrainedGenerics = options.combineAllUnconstrainedGenerics;
+        }
+
         public String getMarkerField(TypeParameterType t) {
+            if (combineAllUnconstrainedGenerics) {
+                return "_isUnconstrainedGeneric";
+            }
             if (map.containsKey(t)) {
                 return "typeParameterMarker_" + map.get(t);
             } else {

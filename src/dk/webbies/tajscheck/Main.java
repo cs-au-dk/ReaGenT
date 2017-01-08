@@ -71,7 +71,7 @@ public class Main {
 
         Type typeToTest = getTypeToTest(orgBench, spec);
 
-        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
+        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer(orgBench.options);
 
         Set<Type> hasThisTypes = TypesUtil.findHasThisTypes(typeToTest);
 
@@ -139,7 +139,7 @@ public class Main {
 
         MultiMap<Type, TypeParameterType> reachableTypeParameters= TypeParametersReachableFrom.createMap(typeToTest);
 
-        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer();
+        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer(bench.options);
 
         Set<Type> hasThisTypes = TypesUtil.findHasThisTypes(typeToTest);
 
