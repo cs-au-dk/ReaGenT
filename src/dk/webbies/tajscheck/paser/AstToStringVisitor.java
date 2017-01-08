@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static dk.webbies.tajscheck.paser.AstBuilder.*;
+
 /**
  * Created by erik1 on 01-11-2016.
  */
@@ -241,7 +243,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
     @Override
     public Void visit(NewExpression call) {
         write("new ");
-        call.getOperand().accept(this);
+        writeParenthesizedExpression(call.getOperand());
         writeArgs(call.getArgs());
 
         return null;
@@ -270,9 +272,36 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             for (int i = 0; i < object.getProperties().size(); i++) {
                 ObjectLiteral.Property property = object.getProperties().get(i);
                 ident();
-                AstBuilder.string(property.name).accept(this);
-                write(": ");
-                property.expression.accept(this);
+                Expression expression = property.expression;
+                if (expression instanceof SetterExpression) {
+                    SetterExpression setter = (SetterExpression) expression;
+                    write("set ");
+                    string(property.name).accept(this);
+                    write(" (");
+                    write(setter.getParameter().getName());
+                    write(")");
+                    write(" {\n");
+                    ident++;
+                    writeAsBlock(setter.getBody());
+                    ident--;
+                    ident();
+                    write("}");
+                } else if (expression instanceof GetterExpression) {
+                    GetterExpression getter = (GetterExpression) expression;
+                    write("get ");
+                    string(property.name).accept(this);
+                    write(" ()");
+                    write(" {\n");
+                    ident++;
+                    writeAsBlock(getter.getBody());
+                    ident--;
+                    ident();
+                    write("}");
+                } else {
+                    string(property.name).accept(this);
+                    write(": ");
+                    expression.accept(this);
+                }
                 if (i != object.getProperties().size() - 1) {
                     write(", ");
                 }

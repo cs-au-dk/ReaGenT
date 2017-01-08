@@ -151,21 +151,33 @@ public class AstTransformer {
                         properties.add(new Property(value, (Expression) convert(prop.value)));
                     }
                 } else if (untypedProp instanceof GetAccessorTree) {
-                    if (environment.ESversion < 6) {
-                        throw new RuntimeException(loc.toString());
-                    }
                     GetAccessorTree prop = (GetAccessorTree) untypedProp;
                     Token name = prop.propertyName;
                     BlockStatement body = (BlockStatement) convert(prop.body);
-                    properties.add(new Property(name.asIdentifier().value, new GetterExpression(prop.body.location, body)));
-                } else if (untypedProp instanceof SetAccessorTree) {
-                    if (environment.ESversion < 6) {
-                        throw new RuntimeException();
+                    if (name instanceof LiteralToken) {
+                        String nameString = name.asLiteral().value;
+                        assert nameString.charAt(0) == '"';
+                        assert nameString.charAt(nameString.length() - 1) == '"';
+                        nameString = nameString.substring(1, nameString.length() - 1);
+                        properties.add(new Property(nameString, new GetterExpression(prop.body.location, body)));
+                    } else {
+                        assert name instanceof IdentifierToken;
+                        properties.add(new Property(name.asIdentifier().value, new GetterExpression(prop.body.location, body)));
                     }
+                } else if (untypedProp instanceof SetAccessorTree) {
                     SetAccessorTree prop = (SetAccessorTree) untypedProp;
                     Token name = prop.propertyName;
                     BlockStatement converted = (BlockStatement) convert(prop.body);
-                    properties.add(new Property(name.asIdentifier().value, new SetterExpression(prop.body.location, converted, new Identifier(prop.location, prop.parameter.value))));
+                    if (name instanceof LiteralToken) {
+                        String nameString = name.asLiteral().value;
+                        assert nameString.charAt(0) == '"';
+                        assert nameString.charAt(nameString.length() - 1) == '"';
+                        nameString = nameString.substring(1, nameString.length() - 1);
+                        properties.add(new Property(nameString, new SetterExpression(prop.body.location, converted, new Identifier(prop.location, prop.parameter.value))));
+                    } else {
+                        assert name instanceof IdentifierToken;
+                        properties.add(new Property(name.asIdentifier().value, new SetterExpression(prop.body.location, converted, new Identifier(prop.location, prop.parameter.value))));
+                    }
                 } else {
                     throw new UnsupportedOperationException("Don't know " + untypedProp.getClass().getSimpleName() + " here");
                 }

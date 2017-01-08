@@ -16,13 +16,31 @@ import static org.hamcrest.core.IsEqual.equalTo;
 public class TestParsing {
     @Test
     public void testEscapedQuotes() throws Exception {
-        JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
-        Statement statement = parser.parse("name", "var test = \"\\\\[\" + whitespace + \"*(\" + identifier + \")(?:\" + whitespace +\n" +
+        testParse(
+                "var test = \"\\\\[\" + whitespace + \"*(\" + identifier + \")(?:\" + whitespace +\n" +
                 "                    // Operator (capture 2)\n" +
                 "                    \"*([*^$|!~]?=)\" + whitespace +\n" +
                 "                    // \"Attribute values must be CSS identifiers [capture 5] or strings [capture 3 or capture 4]\"\n" +
                 "                    \"*(?:'((?:\\\\\\\\.|[^\\\\\\\\'])*)'|\\\"((?:\\\\\\\\.|[^\\\\\\\\\\\"])*)\\\"|(\" + identifier + \"))|)\" + whitespace +\n" +
-                "                    \"*\\\\]\"").toTSCreateAST().getBody().getStatements().iterator().next();
+                "                    \"*\\\\]\""
+        );
+
+    }
+
+    @Test
+    public void testNewOnExpression() throws Exception {
+        testParse(
+                "new ((function () {\n" +
+                "\n" +
+                "\n" +
+                "})());"
+        );
+    }
+
+    private void testParse(String content) {
+        JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
+
+        Statement statement = parser.parse("name", content).toTSCreateAST().getBody().getStatements().iterator().next();
 
         String stringyfied = AstToStringVisitor.toString(statement);
 
@@ -35,6 +53,5 @@ public class TestParsing {
         assertThat(stringyfied, is(equalTo(stringyfied2)));
 
         System.out.println(stringyfied);
-
     }
 }
