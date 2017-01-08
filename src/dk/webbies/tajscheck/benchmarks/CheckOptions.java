@@ -11,6 +11,7 @@ public final class CheckOptions {
     private Builder builder;
     public final int iterationsToRun;
     public final boolean disableSizeOptimization;
+    public final boolean combineAllUnconstrainedGenerics;
 
     private CheckOptions(Builder builder) {
         this.checkDepth = builder.checkDepth;
@@ -19,6 +20,7 @@ public final class CheckOptions {
         this.splitUnions = builder.splitUnions;
         this.iterationsToRun = builder.iterationsToRun;
         this.disableSizeOptimization = builder.disableSizeOptimization;
+        this.combineAllUnconstrainedGenerics = builder.combineAllUnconstrainedGenerics;
         this.builder = builder;
     }
 
@@ -42,6 +44,7 @@ public final class CheckOptions {
         private boolean splitUnions = true;
         private int iterationsToRun = 10000;
         private boolean disableSizeOptimization = false;
+        public boolean combineAllUnconstrainedGenerics = true;
 
         public CheckOptions build() {
             return new CheckOptions(this);
@@ -49,6 +52,11 @@ public final class CheckOptions {
 
         public Builder setCheckDepth(int checkDepth) {
             this.checkDepth = checkDepth;
+            return this;
+        }
+
+        public Builder setCombineAllUnconstrainedGenerics(boolean combineAllUnconstrainedGenerics) {
+            this.combineAllUnconstrainedGenerics = combineAllUnconstrainedGenerics;
             return this;
         }
 
