@@ -192,6 +192,8 @@ public class TypeChecker {
                         return Collections.singletonList(new SimpleTypeCheck(Check.typeOf("function"), "function"));
                     case "String":
                         return new SimpleType(SimpleTypeKind.String).accept(this, arg);
+                    case "Boolean":
+                        return new SimpleType(SimpleTypeKind.Boolean).accept(this, arg);
                     case "Number":
                         return new SimpleType(SimpleTypeKind.Number).accept(this, arg);
                     case "Object":
@@ -241,6 +243,8 @@ public class TypeChecker {
                     case "StorageEvent":
                     case "HashChangeEvent":
                     case "Window":
+                    case "SVGElement":
+                    case "EventTarget":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "MSPointerEvent":
                     case "MSGestureEvent":
