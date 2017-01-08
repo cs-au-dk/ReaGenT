@@ -5,6 +5,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
+import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
@@ -148,29 +149,11 @@ public class TypesUtil {
     }
 
     public static Set<Type> collectNativeTypes(SpecReader spec, SpecReader emptySpec) {
-        CollectAllTypesVisitor nativeCollector = new CollectAllTypesVisitor();
-        Map<String, Type> declaredProperties = ((InterfaceType) spec.getGlobal()).getDeclaredProperties();
+        Map<Type, String> specNames = ParseDeclaration.getTypeNamesMap(spec);
 
-        Set<String> nativeProperties = ((InterfaceType) emptySpec.getGlobal()).getDeclaredProperties().keySet();
+        Set<String> nativeNames = new HashSet<>(ParseDeclaration.getTypeNamesMap(emptySpec).values());
 
-        for (Map.Entry<String, Type> entry : declaredProperties.entrySet()) {
-            if (!nativeProperties.contains(entry.getKey())) {
-                continue;
-            }
-            entry.getValue().accept(nativeCollector);
-        }
-
-        Set<String> nativeTypes = ((SpecReader.Node) emptySpec.getNamedTypes()).getChildren().keySet();
-
-        Map<String, SpecReader.TypeNameTree> children = ((SpecReader.Node) spec.getNamedTypes()).getChildren();
-        for (Map.Entry<String, SpecReader.TypeNameTree> entry : children.entrySet()) {
-            if (!nativeTypes.contains(entry.getKey())) {
-                continue;
-            }
-            nativeCollector.acceptTypeTree(entry.getValue());
-        }
-
-        return nativeCollector.getSeen();
+        return specNames.entrySet().stream().filter(entry -> nativeNames.contains(entry.getValue())).map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 
     public static boolean isEmptyInterface(InterfaceType type) {
