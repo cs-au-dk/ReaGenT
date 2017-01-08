@@ -137,9 +137,7 @@ public class TypeCreator {
         } else if (type instanceof GenericType) {
             putProducedValueIndex(index, ((GenericType) type).toInterface(), typeContext);
         } else if (type instanceof ClassType) {
-            List<Type> baseTypes = ((ClassType) type).getBaseTypes();
             valueLocations.put(new TypeWithContext(type, typeContext.withClass(((ClassType) type).getInstanceType())), index);
-            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext.withClass(((ClassType) type).getInstanceType())));
         } else if (type instanceof ClassInstanceType) {
             putProducedValueIndex(index, ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType(), typeContext);
         } else if (type instanceof ThisType) {
@@ -276,7 +274,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(InterfaceType type, TypeContext typeContext) {
-            if (nativeTypes.contains(type) && !TypesUtil.isEmptyInterface(type) && !typeNames.get(type).startsWith("window.")) {
+            if (nativeTypes.contains(type) && !TypesUtil.isEmptyInterface(type) && typeNames.get(type) != null &&  !typeNames.get(type).startsWith("window.")) {
                 try {
                     return constructTypeFromName(typeNames.get(type), typeContext);
                 } catch (ProduceManuallyException e) {
