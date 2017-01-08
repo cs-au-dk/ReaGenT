@@ -293,7 +293,7 @@ public class TypeCreator {
             typeContext = typeContext.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
 
-            int numberOfSignatures = type.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size();
+            int numberOfSignatures = inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size();
 
             List<Statement> program = new ArrayList<>();
             if (numberOfSignatures == 0) {
@@ -835,6 +835,8 @@ public class TypeCreator {
                 return constructNewInstanceOfType(SpecReader.makeEmptySyntheticInterfaceType(), typeContext);
             case "Number":
                 return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.Number), typeContext);
+            case "Boolean":
+                return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.Boolean), typeContext);
             case "Date":
                 return Return(newCall(identifier("Date")));
             case "Function":
@@ -956,7 +958,7 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return window.getSelection()");
             case "Performance":
                 return AstBuilder.stmtFromString("return window.performance");
-            case "SVGGElement":
+            case "SVGElement":
                 return AstBuilder.stmtFromString("return document.createElementNS(\"http://www.w3.org/2000/svg\", \"g\")");
             case "CSSRuleList":
             case "CSSStyleDeclaration":
