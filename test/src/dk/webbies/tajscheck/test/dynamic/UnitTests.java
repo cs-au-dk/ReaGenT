@@ -602,7 +602,6 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore // TODO: This fails, it is not supposed to.
     public void complexSanityCheck4() throws Exception {
         sanityCheck(benchFromFolder("complexSanityCheck4"));
     }
@@ -610,6 +609,11 @@ public class UnitTests {
     @Test
     public void complexSanityCheck5() throws Exception {
         sanityCheck(benchFromFolder("complexSanityCheck5"));
+    }
+
+    @Test
+    public void complexSanityCheck6() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck6"));
     }
 
     @Test
