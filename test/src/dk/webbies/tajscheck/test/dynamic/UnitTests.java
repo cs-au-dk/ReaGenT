@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.OutputParser.*;
+import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.NODE;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.JSON;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.TYPEOF;
@@ -80,6 +81,10 @@ public class UnitTests {
 
         if (!result.typeErrors.isEmpty()) {
             System.out.println(output);
+        }
+
+        for (TypeError typeError : result.typeErrors) {
+            System.out.println(typeError);
         }
 
         assertThat(result.typeErrors.size(), is(0));
@@ -544,7 +549,9 @@ public class UnitTests {
 
     @Test
     public void myFixedMomentHasNoError() throws Exception {
-        RunResult result = run(RunBenchmarks.benchmarks.get("fixedMoment"), null);
+        Benchmark benchmark = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", "moment", NODE, CheckOptions.builder().setSplitUnions(false).build());
+
+        RunResult result = run(benchmark, null);
 
         assertThat(result.typeErrors.size(), is(0));
     }
@@ -578,20 +585,25 @@ public class UnitTests {
     }
 
     @Test
-    public void sanityCheckComplex() throws Exception {
+    public void complexSanityCheck() throws Exception {
         sanityCheck(benchFromFolder("complexSanityCheck"));
 
     }
 
     @Test
-    public void sanityCheckComplex2() throws Exception {
+    public void complexSanityCheck2() throws Exception {
         sanityCheck(benchFromFolder("complexSanityCheck2"));
     }
 
     @Test(expected = AssertionError.class)
-    public void sanityCheckComplex3() throws Exception {
+    public void complexSanityCheck3() throws Exception {
         // The TypeScript type system is unsound, this is a test of that.
         sanityCheck(benchFromFolder("complexSanityCheck3"));
+    }
+
+    @Test
+    public void complexSanityCheck5() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck5"));
     }
 
     @Test
