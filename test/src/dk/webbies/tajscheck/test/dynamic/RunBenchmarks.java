@@ -89,10 +89,6 @@ public class RunBenchmarks {
 
         benchmarks.put("handlebars", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", "Handlebars", BROWSER, CheckOptions.defaultOptions()));
 
-        // On hold, to difficult to distinquish between what is a native type, and what isn't. (Because Ember overrides everything!)
-//        benchmarks.put("ember", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/ember/ember.js", "test/benchmarks/ember/ember.d.ts", "Ember", BROWSER, CheckOptions.defaultOptions()));
-
-
         benchmarks.put("Hammer.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", "Hammer", BROWSER, CheckOptions.defaultOptions()));
 
         benchmarks.put("jasmine", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jasmine/jasmine.js", "test/benchmarks/jasmine/jasmine.d.ts", "jasmine", BROWSER, CheckOptions.defaultOptions()));
@@ -100,6 +96,8 @@ public class RunBenchmarks {
         benchmarks.put("knockout", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/knockout/knockout.js", "test/benchmarks/knockout/knockout.d.ts", "ko", BROWSER, CheckOptions.defaultOptions()));
 
         benchmarks.put("fabric.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fabric/fabric.js", "test/benchmarks/fabric/fabricModule.d.ts", "fabric", BROWSER, CheckOptions.defaultOptions()));
+
+        benchmarks.put("ember", new Benchmark(ParseDeclaration.Environment.ES5DOM, "test/benchmarks/ember/ember.js", "test/benchmarks/ember/ember.d.ts", "Ember", BROWSER, CheckOptions.defaultOptions()));
 
     }
 
