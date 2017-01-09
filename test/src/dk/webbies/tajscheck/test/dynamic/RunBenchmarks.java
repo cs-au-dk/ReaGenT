@@ -76,7 +76,7 @@ public class RunBenchmarks {
 
         benchmarks.put("underscore", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/underscore/underscore.js", "test/benchmarks/underscore/underscore.d.ts", "_", NODE, CheckOptions.defaultOptions()));
 
-        // Blows up in complexity, mostly because underscore. Test again if d3 is fixed.
+        // Blows up in complexity, not sure why. (Option to disable all generics?)
         /*benchmarks.put("backbone",
                 new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER, CheckOptions.defaultOptions())
                 .addDependency(benchmarks.get("underscore"))
