@@ -161,12 +161,23 @@ public class TypeChecker {
                     case "XMLHttpRequest":
                     case "Uint16Array":
                     case "Uint32Array":
+                    case "Selection":
+                    case "Array": // TODO: Construct the ReferenceType
                         return Collections.singletonList(
                                 new SimpleTypeCheck(
                                         Check.instanceOf(identifier(typeNames.get(t))),
                                         typeNames.get(t)
                                 )
                         );
+                    case "NodeListOf": // TODO: Check the generic type.
+                        return Collections.singletonList(
+                                new SimpleTypeCheck(
+                                        Check.instanceOf(identifier("HTMLCollection")),
+                                        "NodeListOf"
+                                )
+                        );
+                    case "ArrayLike":
+                        break; // Check manually.
                     default:
                         throw new RuntimeException(typeNames.get(t));
 
@@ -245,6 +256,9 @@ public class TypeChecker {
                     case "Window":
                     case "SVGElement":
                     case "EventTarget":
+                    case "SVGGElement":
+                    case "TouchList":
+                    case "SVGSVGElement":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "MSPointerEvent":
                     case "MSGestureEvent":
@@ -262,6 +276,7 @@ public class TypeChecker {
                     case "FrameRequestCallback":
                     case "ObjectURLOptions":
                     case "BlobPropertyBag":
+                    case "CanvasPathMethods":
                         break; // Checking the type manually.
                     default:
                         throw new RuntimeException(typeNames.get(t));
@@ -341,7 +356,7 @@ public class TypeChecker {
             if (nativeTypes.contains(t)) {
                 throw new RuntimeException();
             }
-            if (nativeTypes.contains(t.getTarget()) && !(t.getTarget() instanceof TupleType)) {
+            if (nativeTypes.contains(t.getTarget()) && !(t.getTarget() instanceof TupleType) && !(typeNames.get(t) != null && typeNames.get(t).startsWith("window."))) {
                 throw new RuntimeException(typeNames.get(t));
             }
             return t.getTarget().accept(this, arg.withParameters(arg.typeContext.append(new TypesUtil(arg.typeContext.bench).generateParameterMap(t))));
