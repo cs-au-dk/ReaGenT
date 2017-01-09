@@ -82,11 +82,6 @@ public class RunBenchmarks {
                 .addDependency(benchmarks.get("underscore"))
         );*/
 
-        // TODO: Seems to go in a infinite loop with generics, investigate and fix.
-//        benchmarks.put("d3", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", "d3", BROWSER, CheckOptions.defaultOptions()));
-
-
-
         benchmarks.put("handlebars", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", "Handlebars", BROWSER, CheckOptions.defaultOptions()));
 
         benchmarks.put("Hammer.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", "Hammer", BROWSER, CheckOptions.defaultOptions()));
@@ -98,6 +93,8 @@ public class RunBenchmarks {
         benchmarks.put("fabric.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fabric/fabric.js", "test/benchmarks/fabric/fabricModule.d.ts", "fabric", BROWSER, CheckOptions.defaultOptions()));
 
         benchmarks.put("ember", new Benchmark(ParseDeclaration.Environment.ES5DOM, "test/benchmarks/ember/ember.js", "test/benchmarks/ember/ember.d.ts", "Ember", BROWSER, CheckOptions.defaultOptions()));
+
+        benchmarks.put("d3", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", "d3", BROWSER, CheckOptions.defaultOptions()));
 
     }
 
