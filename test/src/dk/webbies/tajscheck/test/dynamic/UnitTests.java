@@ -700,4 +700,11 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size(), is(0));
     }
+
+    @Test
+    public void staticFieldsInheritedInClass() throws Exception {
+        RunResult result = run("staticFieldsInheritedInClass", "foo");
+
+        assertThat(result.typeErrors.size(), is(0)); // It actually contains an error, according to the TypeScript language, it is just an error we choose not to check for.
+    }
 }
