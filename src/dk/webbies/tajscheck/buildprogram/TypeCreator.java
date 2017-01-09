@@ -16,10 +16,7 @@ import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.Test;
-import dk.webbies.tajscheck.util.ArrayListMultiMap;
-import dk.webbies.tajscheck.util.MultiMap;
-import dk.webbies.tajscheck.util.Pair;
-import dk.webbies.tajscheck.util.Util;
+import dk.webbies.tajscheck.util.*;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.*;
@@ -107,7 +104,15 @@ public class TypeCreator {
         putProducedValueIndex(index, type, typeContext, false);
     }
 
+
+    private final Set<Tuple4<Integer, Type, TypeContext, Boolean>> seenPutValue = new HashSet<>();
     private void putProducedValueIndex(int index, Type type, TypeContext typeContext, boolean touchedThisTypes) {
+        Tuple4<Integer, Type, TypeContext, Boolean> seenKey = new Tuple4<>(index, type, typeContext, touchedThisTypes);
+        if (seenPutValue.contains(seenKey)) {
+            return;
+        }
+        seenPutValue.add(seenKey);
+
         valueLocations.put(new TypeWithContext(type, typeContext), index);
 
         if (!touchedThisTypes) {
@@ -582,12 +587,7 @@ public class TypeCreator {
             List<Statement> typeChecks = new ArrayList<>();
 
             if (signature.isHasRestParameter()) {
-                ReferenceType restTypeArr = (ReferenceType) parameters.get(parameters.size() - 1).getType();
-
-                assert "Array".equals(typeNames.get(restTypeArr.getTarget()));
-                assert restTypeArr.getTypeArguments().size() == 1;
-
-                Type restType = restTypeArr.getTypeArguments().iterator().next();
+                Type restType = getArrayType(parameters.get(parameters.size() - 1).getType());
 
                 typeChecks.add(statement(call(
                         identifier("assert"),
@@ -640,12 +640,7 @@ public class TypeCreator {
                         Statement checkRestArgs = block();
 
                         if (signature.isHasRestParameter()) {
-                            ReferenceType restTypeArr = (ReferenceType) parameters.get(parameters.size() - 1).getType();
-
-                            assert "Array".equals(typeNames.get(restTypeArr.getTarget()));
-                            assert restTypeArr.getTypeArguments().size() == 1;
-
-                            Type restType = restTypeArr.getTypeArguments().iterator().next();
+                            Type restType = getArrayType(parameters.get(parameters.size() - 1).getType());
 
                             checkRestArgs = ifThen(unary(Operator.NOT,
                                     call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
@@ -685,7 +680,7 @@ public class TypeCreator {
                                                 string("overload " + PrettyTypes.parameters(signature.getParameters()) + " to be called"), string("it was not called"),
                                                 identifier("i")
                                         )
-                                ): block(),
+                                ) : block(),
                                 ifThen(
                                         identifier("signatureCorrect" + signatureIndex),
                                         statement(methodCall(identifier("foundSignatures"), "push", number(signatureIndex)))
@@ -780,16 +775,11 @@ public class TypeCreator {
         List<Statement> saveArgumentValues = new ArrayList<>();
 
         if (signature.isHasRestParameter()) {
-            Type restArgTypeArray = parameters.get(parameters.size() - 1).getType();
-            assert restArgTypeArray instanceof ReferenceType;
-            assert "Array".equals(typeNames.get(((ReferenceType) restArgTypeArray).getTarget()));
-            assert ((ReferenceType) restArgTypeArray).getTypeArguments().size() == 1;
-
-            Type restArgType = ((ReferenceType) restArgTypeArray).getTypeArguments().iterator().next();
+            Type restType = getArrayType(parameters.get(parameters.size() - 1).getType());
 
             parameters = parameters.subList(0, parameters.size() - 1);
 
-            int valueIndex = createProducedValueVariable(restArgType, typeContext);
+            int valueIndex = createProducedValueVariable(restType, typeContext);
 
             int saveFromIndex = parameters.size(); // inclusive
 
@@ -819,6 +809,28 @@ public class TypeCreator {
         );
     }
 
+    private Type getArrayType(Type array) {
+        Type restType;
+        if (array instanceof ReferenceType) {
+            ReferenceType restTypeArr = (ReferenceType) array;
+
+            assert "Array".equals(typeNames.get(restTypeArr.getTarget()));
+            assert restTypeArr.getTypeArguments().size() == 1;
+
+            restType = restTypeArr.getTypeArguments().iterator().next();
+        } else {
+            assert array instanceof GenericType;
+
+            GenericType restTypeArr = (GenericType) array;
+
+            assert "Array".equals(typeNames.get(restTypeArr.getTarget()));
+            assert restTypeArr.getTypeArguments().size() == 1;
+
+            restType = restTypeArr.getTypeArguments().iterator().next();
+        }
+        return restType;
+    }
+
 
     private Statement constructTypeFromName(String name, TypeContext typeContext) throws ProduceManuallyException {
         if (name == null) {
@@ -829,6 +841,8 @@ public class TypeCreator {
         }
 
         switch (name) {
+            case "Array":
+                return AstBuilder.stmtFromString("return []"); // TODO: Could be better
             case "Object":
                 return constructNewInstanceOfType(SpecReader.makeEmptySyntheticInterfaceType(), typeContext);
             case "Number":
@@ -874,6 +888,7 @@ public class TypeCreator {
             case "WebGLRenderbuffer":
                 return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createRenderbuffer()");
             case "CanvasRenderingContext2D":
+            case "CanvasPathMethods":
                 return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"2d\")");
             case "MouseEvent":
                 return AstBuilder.stmtFromString("return new MouseEvent(null)");
@@ -957,9 +972,17 @@ public class TypeCreator {
             case "Performance":
                 return AstBuilder.stmtFromString("return window.performance");
             case "SVGElement":
+            case "SVGGElement":
                 return AstBuilder.stmtFromString("return document.createElementNS(\"http://www.w3.org/2000/svg\", \"g\")");
+            case "SVGSVGElement":
+                return AstBuilder.stmtFromString("return document.createElementNS(\"http://www.w3.org/2000/svg\", \"svg\")");
+            case "Range":
+                return AstBuilder.stmtFromString("return new Range()");
+            case "ProgressEvent":
+                return AstBuilder.stmtFromString("return new ProgressEvent(1)");
             case "CSSRuleList":
             case "CSSStyleDeclaration":
+            case "TouchList":
                 // Hacky, i know.
                 return AstBuilder.stmtFromString("return (function () {var tmp = {}; tmp.__proto__  = " + name + "; return tmp})();");
             case "EventListener":
@@ -975,8 +998,6 @@ public class TypeCreator {
 
     private final class ProduceManuallyException extends Exception {
     }
-
-
 
     private Statement constructNewInstanceOfType(Type type, TypeContext typeContext) {
         return type.accept(new ConstructNewInstanceVisitor(), typeContext);
