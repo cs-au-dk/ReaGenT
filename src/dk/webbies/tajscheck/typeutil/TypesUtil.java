@@ -12,6 +12,7 @@ import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -251,7 +252,7 @@ public class TypesUtil {
     }
 
     public static Type getNativeBase(Type type, Set<Type> nativeTypes, Map<Type, String> typeNames) {
-        List<Type> nativeBaseTypes = getAllBaseTypes(type, new HashSet<>()).stream().filter(t -> {
+        Predicate<Type> isNativeType = t -> {
             if (t instanceof InterfaceType && TypesUtil.isEmptyInterface((InterfaceType) t)) {
                 return false;
             }
@@ -262,17 +263,23 @@ public class TypesUtil {
                 return true;
             }
             return false;
-        }).collect(Collectors.toList());
+        };
+        List<Type> nativeBaseTypes = getAllBaseTypes(type, new HashSet<>(), Util.not(isNativeType)).stream().filter(isNativeType).collect(Collectors.toList());
 
         if (nativeBaseTypes.size() == 0) {
             return null;
         } else if (nativeBaseTypes.size() == 1) {
             return nativeBaseTypes.iterator().next();
         }
+        getAllBaseTypes(type, new HashSet<>(), Util.not(isNativeType));
         throw new RuntimeException(nativeBaseTypes.stream().map(typeNames::get).collect(Collectors.toList()).toString());
     }
 
     public static Set<Type> getAllBaseTypes(Type type, Set<Type> acc) {
+        return getAllBaseTypes(type, acc, (subType) -> true);
+    }
+
+    public static Set<Type> getAllBaseTypes(Type type, Set<Type> acc, Predicate<Type> shouldContinue) {
         if (acc.contains(type)) {
             return acc;
         }
@@ -287,13 +294,17 @@ public class TypesUtil {
             type = ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType();
         }
         if (type instanceof InterfaceType) {
-            for (Type base : ((InterfaceType) type).getBaseTypes()) {
-                getAllBaseTypes(base, acc);
+            if (shouldContinue.test(type)) {
+                for (Type base : ((InterfaceType) type).getBaseTypes()) {
+                    getAllBaseTypes(base, acc, shouldContinue);
+                }
             }
         }
         if (type instanceof ClassType) {
-            for (Type base : ((ClassType) type).getBaseTypes()) {
-                getAllBaseTypes(base, acc);
+            if (shouldContinue.test(type)) {
+                for (Type base : ((ClassType) type).getBaseTypes()) {
+                    getAllBaseTypes(base, acc, shouldContinue);
+                }
             }
         }
 
@@ -353,6 +364,12 @@ public class TypesUtil {
         }
         if (baseType instanceof UnionType) {
             return ((UnionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep));
+        }
+        if (baseType instanceof TupleType) {
+            return ((TupleType) baseType).getElementTypes().stream().anyMatch(element -> isThisTypeVisible(element, deep));
+        }
+        if (baseType instanceof IndexedAccessType) {
+            return isThisTypeVisible(((IndexedAccessType) baseType).getIndexType(), deep) || isThisTypeVisible(((IndexedAccessType) baseType).getObjectType(), deep);
         }
         throw new RuntimeException(baseType.getClass().getSimpleName());
     }
