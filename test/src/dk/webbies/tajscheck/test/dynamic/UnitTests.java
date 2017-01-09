@@ -692,4 +692,12 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size(), is(1));
     }
+
+    @Test
+    @Ignore
+    public void extendsArray() throws Exception {
+        RunResult result = run("extendsArray", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+    }
 }
