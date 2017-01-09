@@ -989,6 +989,8 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return new Range()");
             case "ProgressEvent":
                 return AstBuilder.stmtFromString("return new ProgressEvent(1)");
+            case "NodeList":
+                return AstBuilder.stmtFromString("return document.childNodes");
             case "CSSRuleList":
             case "CSSStyleDeclaration":
             case "TouchList":
