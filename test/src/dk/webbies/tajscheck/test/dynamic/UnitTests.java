@@ -7,6 +7,7 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -38,7 +39,7 @@ public class UnitTests {
         return benchFromFolder(folderName, CheckOptions.defaultOptions());
     }
 
-    static Benchmark benchFromFolder(String folderName, CheckOptions options) {
+    private static Benchmark benchFromFolder(String folderName, CheckOptions options) {
         return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.RUN_METHOD.NODE, options);
     }
 
@@ -104,20 +105,23 @@ public class UnitTests {
         }
 
         ParseResultTester forPath(String path) {
+            return forPath(Collections.singletonList(containsString(path)));
+        }
+
+        ParseResultTester forPath(Matcher<String> path) {
             return forPath(Collections.singletonList(path));
         }
 
         ParseResultTester forPath(String... paths) {
-            return forPath(Arrays.asList(paths));
+            return forPath(Arrays.stream(paths).map(CoreMatchers::containsString).collect(Collectors.toList()));
         }
 
-        ParseResultTester forPath(List<String> pathsCollection) {
-            Set<String> paths = new HashSet<>(pathsCollection);
-            results = results.stream().filter(result -> paths.contains(result.path)).collect(Collectors.toList());
+        ParseResultTester forPath(List<Matcher<String>> paths) {
+            results = results.stream().filter(candidate -> paths.stream().anyMatch(matcher -> matcher.matches(candidate.path))).collect(Collectors.toList());
 
             StringBuilder path = new StringBuilder();
 
-            Iterator<String> pathsIterator = pathsCollection.iterator();
+            Iterator<Matcher<String>> pathsIterator = paths.iterator();
             while (pathsIterator.hasNext()) {
                 path.append(pathsIterator.next());
                 if (pathsIterator.hasNext()) {
@@ -125,7 +129,7 @@ public class UnitTests {
                 }
             }
 
-            assertThat("expected something on path: " + path, results.size(),is(not(equalTo(0))));
+            assertThat("expected something on path: " + paths, results.size(),is(not(equalTo(0))));
             return this;
         }
 
@@ -686,7 +690,6 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore
     public void thisTypesAreOptimized() throws Exception {
         RunResult result = run("thisTypesAreOptimized", "foo");
 

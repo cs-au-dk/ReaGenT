@@ -117,11 +117,11 @@ public class TypeCreator {
 
         if (!touchedThisTypes) {
             if (typeContext.getThisType() != null) {
-                putProducedValueIndex(index, type, typeContext.withClass(null), true);
+                putProducedValueIndex(index, type, typeContext.withThisType(null), true);
             }
             if (typeContext.getThisType() == null) {
-                if (hasThisTypes.contains(type)) {
-                    putProducedValueIndex(index, type, typeContext.withClass(type), true);
+                if (hasThisTypes.contains(type) && !(type instanceof ClassType)) {
+                    putProducedValueIndex(index, type, typeContext.withThisType(type), true);
                 }
             }
         }
@@ -142,9 +142,13 @@ public class TypeCreator {
         } else if (type instanceof GenericType) {
             putProducedValueIndex(index, ((GenericType) type).toInterface(), typeContext);
         } else if (type instanceof ClassType) {
-            valueLocations.put(new TypeWithContext(type, typeContext.withClass(((ClassType) type).getInstanceType())), index);
+            valueLocations.put(new TypeWithContext(type, typeContext.withThisType(((ClassType) type).getInstanceType())), index);
         } else if (type instanceof ClassInstanceType) {
-            putProducedValueIndex(index, ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType(), typeContext);
+            ClassInstanceType instanceType = (ClassInstanceType) type;
+            putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext);
+            if (hasThisTypes.contains(instanceType.getClassType())) {
+                putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext.withThisType(instanceType));
+            }
         } else if (type instanceof ThisType) {
             Type thisType = typeContext.getThisType();
             putProducedValueIndex(index, thisType != null ? thisType : ((ThisType) type).getConstraint(), typeContext);
@@ -230,7 +234,7 @@ public class TypeCreator {
         @Override
         public Statement visit(ClassType t, TypeContext typeContext) {
             if (hasThisTypes.contains(t)) {
-                typeContext = typeContext.withClass(t.getInstanceType());
+                typeContext = typeContext.withThisType(t.getInstanceType());
             }
 
             assert t.getSignatures().size() > 0;
@@ -288,7 +292,7 @@ public class TypeCreator {
             }
 
             if (hasThisTypes.contains(type)) {
-                typeContext = typeContext.withClass(type);
+                typeContext = typeContext.withThisType(type);
             }
 
             Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(type, typeNames);

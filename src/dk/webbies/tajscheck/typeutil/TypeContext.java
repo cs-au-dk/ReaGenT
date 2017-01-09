@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.typeutil;
 
+import dk.au.cs.casa.typescript.types.ThisType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -38,7 +39,7 @@ public class TypeContext {
         return new TypeContext(newMap, persistent, this.thisType, bench);
     }
 
-    public TypeContext withClass(Type thisType) {
+    public TypeContext withThisType(Type thisType) {
         if (thisType == null || this.thisType == null) {
             return new TypeContext(this.map, persistent, thisType, bench);
         }
@@ -138,7 +139,12 @@ public class TypeContext {
 
         clone.map.keySet().retainAll(reachable);
 
+        if (clone.thisType != null) {
+            if (!TypesUtil.isThisTypeVisible(baseType) && clone.map.values().stream().noneMatch(ThisType.class::isInstance)) {
+                clone = clone.withThisType(null);
+            }
+        }
+
         return clone;
     }
-
 }

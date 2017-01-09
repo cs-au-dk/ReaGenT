@@ -284,8 +284,8 @@ public class TestCreator {
             return new Arg(this.path, this.typeContext, this.depth + 1, this.withTopLevelFunctions);
         }
 
-        public Arg withClassType(Type classType) {
-            return new Arg(this.path, this.typeContext.withClass(classType), this.depth, this.withTopLevelFunctions);
+        public Arg withThisType(Type classType) {
+            return new Arg(this.path, this.typeContext.withThisType(classType), this.depth, this.withTopLevelFunctions);
         }
 
         public Arg replaceTypeContext(TypeContext newContext) {
@@ -344,13 +344,13 @@ public class TestCreator {
             seen.add(withParameters);
 
             if (hasThisTypes.contains(t)) {
-                arg = arg.withClassType(t.getInstanceType());
+                arg = arg.withThisType(t.getInstanceType());
             }
 
             assert t.getTarget().equals(t) || (t.getTarget() instanceof ClassInstanceType && ((ClassInstanceType) t.getTarget()).getClassType().equals(t));
 
             for (Type baseType : t.getBaseTypes()) {
-                recurse(baseType, arg);
+                recurse(baseType, arg.withThisType(null));
             }
 
             assert !t.getSignatures().isEmpty();
@@ -360,7 +360,7 @@ public class TestCreator {
 
             recurse(t.getInstanceType(), arg.append("new()"));
 
-            visitProperties(t, arg, t.getStaticProperties());
+            visitProperties(t, arg.withThisType(null), t.getStaticProperties());
 
             return null;
         }
@@ -384,7 +384,7 @@ public class TestCreator {
             seen.add(withParameters);
 
             if (hasThisTypes.contains(t)) {
-                arg = arg.withClassType(t);
+                arg = arg.withThisType(t);
             }
 
             for (Type base : t.getBaseTypes()) {
@@ -416,7 +416,7 @@ public class TestCreator {
             seen.add(withParameters);
 
             if (hasThisTypes.contains(t)) {
-                arg = arg.withClassType(t);
+                arg = arg.withThisType(t);
             }
 
             for (Type base : t.getBaseTypes()) {
@@ -775,7 +775,7 @@ public class TestCreator {
             negativeTypesSeen.add(new TypeWithContext(t, arg.getTypeContext()));
 
             if (hasThisTypes.contains(t)) {
-                arg = arg.withClassType(t);
+                arg = arg.withThisType(t);
             }
 
             assert t.getTypeParameters().equals(t.getTypeArguments()); // If this fails, look at the other visitor.
@@ -791,7 +791,7 @@ public class TestCreator {
             negativeTypesSeen.add(new TypeWithContext(t, arg.getTypeContext()));
 
             if (hasThisTypes.contains(t)) {
-                arg = arg.withClassType(t);
+                arg = arg.withThisType(t);
             }
 
             for (Signature signature : Util.concat(t.getDeclaredCallSignatures(), t.getDeclaredConstructSignatures())) {

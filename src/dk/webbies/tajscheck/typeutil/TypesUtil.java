@@ -300,6 +300,63 @@ public class TypesUtil {
         return acc;
     }
 
+    public static boolean isThisTypeVisible(Type baseType) {
+        return isThisTypeVisible(baseType, true);
+    }
+
+    public static boolean isThisTypeVisible(Type baseType, boolean deep) {
+        assert !(baseType instanceof ClassType); // <- this shouldn't happen. It could, and it would be sound, but it is better optimized if it never happens.
+        if (baseType instanceof ClassInstanceType) {
+            baseType = ((ClassType) ((ClassInstanceType) baseType).getClassType()).getInstanceType();
+        }
+        if (baseType instanceof ReferenceType) {
+            if (((ReferenceType) baseType).getTypeArguments().stream().anyMatch(ThisType.class::isInstance)) {
+                return true;
+            }
+            baseType = ((ReferenceType) baseType).getTarget();
+        }
+        if (baseType instanceof GenericType) {
+            baseType = ((GenericType) baseType).toInterface();
+        }
+        if (baseType instanceof ClassInstanceType) {
+            baseType = ((ClassType) ((ClassInstanceType) baseType).getClassType()).getInstanceType();
+        }
+        if (baseType instanceof InterfaceType) {
+            InterfaceType inter = (InterfaceType) baseType;
+
+            for (Signature signature : Util.concat(inter.getDeclaredCallSignatures(), inter.getDeclaredConstructSignatures())) {
+                if (signature.getParameters().stream().map(Signature.Parameter::getType).anyMatch(par -> isThisTypeVisible(par, false))) {
+                    return true;
+                }
+                if (isThisTypeVisible(signature.getResolvedReturnType(), false)) {
+                    return true;
+                }
+            }
+
+
+            if (!deep) {
+                return false;
+            }
+            for (Type type : inter.getDeclaredProperties().values()) {
+                if (isThisTypeVisible(type, false)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (baseType instanceof SimpleType || baseType instanceof BooleanLiteral || baseType instanceof StringLiteral || baseType instanceof NumberLiteral || baseType instanceof TypeParameterType) {
+            return false;
+        }
+
+        if (baseType instanceof ThisType) {
+            return true;
+        }
+        if (baseType instanceof UnionType) {
+            return ((UnionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep));
+        }
+        throw new RuntimeException(baseType.getClass().getSimpleName());
+    }
+
     private static final class SignatureComparisonContainer {
         private final Signature signature;
 
