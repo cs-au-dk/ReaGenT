@@ -117,7 +117,7 @@ public class UnitTests {
         }
 
         ParseResultTester forPath(List<Matcher<String>> paths) {
-            results = results.stream().filter(candidate -> paths.stream().anyMatch(matcher -> matcher.matches(candidate.path))).collect(Collectors.toList());
+            results = results.stream().filter(candidate -> paths.stream().allMatch(matcher -> matcher.matches(candidate.path))).collect(Collectors.toList());
 
             StringBuilder path = new StringBuilder();
 
