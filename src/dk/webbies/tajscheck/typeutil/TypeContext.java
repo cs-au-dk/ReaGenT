@@ -101,14 +101,18 @@ public class TypeContext {
 
         TypeContext that = (TypeContext) o;
 
-        if (!map.equals(that.map)) return false;
-        return thisType != null ? thisType.equals(that.thisType) : that.thisType == null;
+        if (map != null ? !map.equals(that.map) : that.map != null) return false;
+        if (persistent != null ? !persistent.equals(that.persistent) : that.persistent != null) return false;
+        if (thisType != null ? !thisType.equals(that.thisType) : that.thisType != null) return false;
+        return bench != null ? bench.equals(that.bench) : that.bench == null;
     }
 
     @Override
     public int hashCode() {
-        int result = map.hashCode();
+        int result = map != null ? map.hashCode() : 0;
+        result = 31 * result + (persistent != null ? persistent.hashCode() : 0);
         result = 31 * result + (thisType != null ? thisType.hashCode() : 0);
+        result = 31 * result + (bench != null ? bench.hashCode() : 0);
         return result;
     }
 
