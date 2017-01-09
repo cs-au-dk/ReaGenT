@@ -527,7 +527,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(IntersectionType t, TypeContext typeContext) {
-            return throwStatement(newCall(identifier(RUNTIME_ERROR_NAME), string("Not implemented yet, intersectionTypes")));
+            return Return(call(identifier("extend"), t.getElements().stream().map(element -> constructType(element, typeContext)).collect(Collectors.toList())));
         }
 
         @Override

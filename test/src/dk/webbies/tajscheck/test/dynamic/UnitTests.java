@@ -707,4 +707,14 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size(), is(0)); // It actually contains an error, according to the TypeScript language, it is just an error we choose not to check for.
     }
+
+    @Test
+    public void intersectionTypes() throws Exception {
+        RunResult result = run("intersectionTypes", "foo");
+
+        expect(result)
+                .forPath("module.foo(intersection)")
+                .expected("false")
+                .got(STRING, "true");
+    }
 }

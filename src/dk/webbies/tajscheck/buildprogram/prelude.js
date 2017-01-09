@@ -126,6 +126,10 @@ if (isBrowser()) {
         orgPrint(message);
         savedConsoleLog.push(message);
     };
+
+    window.onbeforeunload = function() {
+        return "Please don't navigate away.";
+    }
 }
 
 print("Initial random: " + JSON.stringify(initialRandomness));
@@ -157,6 +161,34 @@ function RuntimeError(message) {
 RuntimeError.prototype = Object.create(Error.prototype);
 
 // Utility functions.
+
+function extend() {
+    var result = {};
+    var changedBase = false;
+    for (var i = 0; i < arguments.length; i++) {
+        var obj = arguments[i];
+        if (obj.__proto__.constructor != Object) {
+            if (changedBase) {
+                throw new RuntimeError("Cannot construct this IntersectionType")
+            }
+            changedBase = true;
+            result = obj;
+        }
+    }
+
+
+    for (var i = 0; i < arguments.length; i++) {
+        var obj = arguments[i];
+        if (obj !== result) {
+            for (var key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    result[key] = obj[key];
+                }
+            }
+        }
+    }
+    return result;
+}
 
 function arrayIndexCheck(obj, check) {
     if (typeof obj.length !== "number" || obj.length < 0) {
