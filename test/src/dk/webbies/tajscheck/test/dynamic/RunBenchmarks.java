@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.test.dynamic;
 
+import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
@@ -72,29 +73,29 @@ public class RunBenchmarks {
         benchmarks.put("box2dweb", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/box2dweb/box2dweb.js", "test/benchmarks/box2dweb/box2dweb.d.ts", "Box2D", BROWSER, options));
 
         // The TypeScript parser breaks.
-//        benchmarks.put("createjs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/createjs/createjs.js", "test/benchmarks/createjs/createjs.d.ts", "createjs", BROWSER, CheckOptions.defaultOptions()));
+//        benchmarks.put("createjs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/createjs/createjs.js", "test/benchmarks/createjs/createjs.d.ts", "createjs", BROWSER, options));
 
-        benchmarks.put("underscore", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/underscore/underscore.js", "test/benchmarks/underscore/underscore.d.ts", "_", NODE, CheckOptions.defaultOptions()));
+        benchmarks.put("underscore", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/underscore/underscore.js", "test/benchmarks/underscore/underscore.d.ts", "_", NODE, options));
 
         // Blows up in complexity, not sure why. (Option to disable all generics?)
         /*benchmarks.put("backbone",
-                new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER, CheckOptions.defaultOptions())
+                new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER, options)
                 .addDependency(benchmarks.get("underscore"))
         );*/
 
-        benchmarks.put("handlebars", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", "Handlebars", BROWSER, CheckOptions.defaultOptions()));
+        benchmarks.put("handlebars", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", "Handlebars", BROWSER, options));
 
-        benchmarks.put("Hammer.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", "Hammer", BROWSER, CheckOptions.defaultOptions()));
+        benchmarks.put("Hammer.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", "Hammer", BROWSER, options));
 
-        benchmarks.put("jasmine", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jasmine/jasmine.js", "test/benchmarks/jasmine/jasmine.d.ts", "jasmine", BROWSER, CheckOptions.defaultOptions()));
+        benchmarks.put("jasmine", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jasmine/jasmine.js", "test/benchmarks/jasmine/jasmine.d.ts", "jasmine", BROWSER, options));
 
-        benchmarks.put("knockout", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/knockout/knockout.js", "test/benchmarks/knockout/knockout.d.ts", "ko", BROWSER, CheckOptions.defaultOptions()));
+        benchmarks.put("knockout", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/knockout/knockout.js", "test/benchmarks/knockout/knockout.d.ts", "ko", BROWSER, options));
 
-        benchmarks.put("fabric.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fabric/fabric.js", "test/benchmarks/fabric/fabricModule.d.ts", "fabric", BROWSER, CheckOptions.defaultOptions()));
+        benchmarks.put("fabric.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fabric/fabric.js", "test/benchmarks/fabric/fabricModule.d.ts", "fabric", BROWSER, options));
 
-        benchmarks.put("ember", new Benchmark(ParseDeclaration.Environment.ES5DOM, "test/benchmarks/ember/ember.js", "test/benchmarks/ember/ember.d.ts", "Ember", BROWSER, CheckOptions.defaultOptions()));
+        benchmarks.put("ember", new Benchmark(ParseDeclaration.Environment.ES5DOM, "test/benchmarks/ember/ember.js", "test/benchmarks/ember/ember.d.ts", "Ember", BROWSER, options));
 
-        benchmarks.put("d3", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", "d3", BROWSER, CheckOptions.defaultOptions()));
+        benchmarks.put("d3", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", "d3", BROWSER, options));
 
     }
 
@@ -157,13 +158,10 @@ public class RunBenchmarks {
     @Test
     public void coverage() throws Exception {
         if (benchmark.dTSFile.contains("underscore.d.ts")) {
-            return; // Too big, node runs out of memory parsing the thing.
-        }
-        if (benchmark.run_method == BROWSER) {
-            return;
+            return; // Too big, node runs out of memory generating the instrumented version.
         }
         Main.writeFullDriver(benchmark);
-        String out;
+        Map<String, CoverageResult> out;
         try {
             out = Main.genCoverage(benchmark, 60 * 1000);
         } catch (TimeoutException e) {
@@ -171,9 +169,9 @@ public class RunBenchmarks {
             System.out.println("Timeout!");
             return;
         }
-        System.out.println(out);
+        System.out.println("Coverage for " + benchmark.dTSFile);
 
-        assert !out.trim().isEmpty();
+        System.out.println(out);
     }
 
     @Test

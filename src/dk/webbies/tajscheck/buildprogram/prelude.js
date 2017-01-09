@@ -132,6 +132,23 @@ if (isBrowser()) {
     }
 }
 
+var runsWithCoverage = (function () {
+    try {
+        if (__coverage__) {
+            return true;
+        }
+    } catch (ignored) {
+        return false;
+    }
+})();
+
+var printForReal = print;
+if (runsWithCoverage) {
+    print = function () {
+        // Nothing.
+    }
+}
+
 print("Initial random: " + JSON.stringify(initialRandomness));
 
 var warn = function (message) {

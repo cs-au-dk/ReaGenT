@@ -101,9 +101,20 @@ if (!isTAJS) {
                 }
             }
 
-            if (isBrowser()) {
-                sendResultToChecker(savedConsoleLog.join("\n"));
+            if (runsWithCoverage) {
+                if (isBrowser()) {
+                    sendResultToChecker(JSON.stringify(__coverage__));
+                } else {
+                    printForReal(JSON.stringify(__coverage__));
+                }
+            } else {
+                if (isBrowser()) {
+                    sendResultToChecker(savedConsoleLog.join("\n"));
+                } else {
+                    // This is already handled just fine
+                }
             }
+
 
         })(assertionFailures, print);
     }

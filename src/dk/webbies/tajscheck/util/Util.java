@@ -13,10 +13,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -38,6 +35,10 @@ public class Util {
         } catch (TimeoutException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static String runScript(String args, int timeout) throws IOException, TimeoutException {
+        return runScript(args, null, timeout);
     }
 
     public static String runScript(String args, File dir, int timeout) throws IOException, TimeoutException {
@@ -91,6 +92,22 @@ public class Util {
         } finally {
             process.destroy();
         }
+    }
+
+    public static <T> List<T> toTypedList(Iterator keys, Class<T> clazz) {
+        List<T> result = new ArrayList<>();
+        while (keys.hasNext()) {
+            result.add(clazz.cast(keys.next()));
+        }
+        return result;
+    }
+
+    public static <S, T, R> Function<Map.Entry<S,T>,Map.Entry<R, T>> mapKey(Function<S, R> mapper) {
+        return (entry) -> new AbstractMap.SimpleEntry<>(mapper.apply(entry.getKey()), entry.getValue());
+    }
+
+    public static <S, T, R> Function<Map.Entry<S,T>,Map.Entry<S, R>> mapValue(Function<T, R> mapper) {
+        return (entry) -> new AbstractMap.SimpleEntry<>(entry.getKey(), mapper.apply(entry.getValue()));
     }
 
     private static class Worker extends Thread {
@@ -332,11 +349,11 @@ public class Util {
         return new String(Files.readAllBytes(Paths.get(path)));
     }
 
-    public static void writeFile(String filename, String data) throws Exception {
+    public static void writeFile(String filename, String data) throws IOException {
         writeFile(filename, data, 0);
     }
 
-    private static void writeFile(String filename, String data, int tries) throws Exception {
+    private static void writeFile(String filename, String data, int tries) throws IOException{
         try {
             BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(filename)));
             IOUtils.write(data, fileOut);
@@ -345,12 +362,20 @@ public class Util {
             if (tries > 10) {
                 throw e;
             }
-            Thread.sleep(100);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e1) {
+                throw new RuntimeException(e);
+            }
 
             //noinspection ResultOfMethodCallIgnored
             new File(filename).delete();
 
-            Thread.sleep(100);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e1) {
+                throw new RuntimeException(e);
+            }
 
             writeFile(filename, data, tries + 1);
         }
@@ -512,5 +537,13 @@ public class Util {
 
     public static <T> T gen(Supplier<T> method) {
         return method.get();
+    }
+
+    public static <T> int indexOf(T[] list, Predicate<T> test) {
+        return indexOf(Arrays.asList(list), test);
+    }
+
+    private static <T> int indexOf(List<T> list, Predicate<T> test) {
+        return withIndex(list).filter(pair -> test.test(pair.getLeft())).map(Pair::getRight).findFirst().get();
     }
 }

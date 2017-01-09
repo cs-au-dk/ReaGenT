@@ -29,6 +29,7 @@ public class TestProgramBuilder {
     public static final String VARIABLE_NO_VALUE = "no_value";
     public static final String VALUE_VARIABLE_PREFIX = "value_";
     public static final String RUNTIME_ERROR_NAME = "RuntimeError";
+    public static final String END_OF_LIBRARY_MARKER = "-!-!-!- END OF LIBRARY MAKER -!-!-!- ";
 
     private final Benchmark bench;
     private final List<Test> tests;
@@ -168,6 +169,7 @@ public class TestProgramBuilder {
             }
 
             scripts.add(AstBuilder.stmtFromString(Util.readFile(bench.jsFile)));
+            scripts.add(comment(END_OF_LIBRARY_MARKER));
 
             return block(
                     block(scripts),

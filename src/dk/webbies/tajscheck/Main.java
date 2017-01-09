@@ -36,6 +36,7 @@ import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
  */
 public class Main {
     public static final String TEST_FILE_NAME = "test.js";
+    public static final String COVERAGE_FILE_NAME = "coverage.js";
 
     public static void writeFullDriver(Benchmark bench) throws Exception {
         writeFullDriver(bench, null);
@@ -217,27 +218,40 @@ public class Main {
     }
 
     public static String runBenchmark(Benchmark bench, int timeout) throws IOException, TimeoutException {
-        switch (bench.run_method) {
+        String testFilePath = getTestFilePath(bench, TEST_FILE_NAME);
+        Benchmark.RUN_METHOD run_method = bench.run_method;
+        return runBenchmark(testFilePath, run_method, timeout);
+    }
+
+    private static String runBenchmark(String testFilePath, Benchmark.RUN_METHOD run_method) throws IOException {
+        try {
+            return runBenchmark(testFilePath, run_method, -1);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String runBenchmark(String testFilePath, Benchmark.RUN_METHOD run_method, int timeout) throws IOException, TimeoutException {
+        switch (run_method) {
             case BOOTSTRAP:
             case NODE:
-                String path = getTestFilePath(bench, TEST_FILE_NAME);
+                String path = testFilePath;
 
                 return Util.runNodeScript(path, timeout);
             case BROWSER:
                 try {
-                    String rawResult = SeleniumDriver.executeScript(Util.readFile(getTestFilePath(bench, TEST_FILE_NAME)), timeout);
+                    String rawResult = SeleniumDriver.executeScript(Util.readFile(testFilePath), timeout);
                     JSONObject json = new JSONObject("{res: " + rawResult + "}"); // Ugly, but works.
                     return json.getString("res");
                 } catch (HttpException | JSONException e) {
                     throw new RuntimeException(e);
                 }
             default:
-                throw new RuntimeException("Unknown run method: " + bench.run_method);
+                throw new RuntimeException("Unknown run method: " + run_method);
         }
-
     }
 
-    public static String genCoverage(Benchmark bench) throws IOException {
+    public static Map<String, CoverageResult> genCoverage(Benchmark bench) throws IOException {
         try {
             return genCoverage(bench, -1);
         } catch (TimeoutException e) {
@@ -245,17 +259,37 @@ public class Main {
         }
     }
 
-    public static String genCoverage(Benchmark bench, int timeout) throws IOException, TimeoutException {
-        if (bench.run_method == Benchmark.RUN_METHOD.BROWSER) {
-            throw new RuntimeException("Coverage currently doesn't work for benchmarks executed in a browser environment");
-        }
-        StringBuilder prefix = new StringBuilder();
-        int foldersDeep = getFolderPath(bench).split("/").length;
-        for (int i = 0; i < foldersDeep; i++) {
-            prefix.append("../");
+    public static Map<String, CoverageResult> genCoverage(Benchmark bench, int timeout) throws IOException, TimeoutException {
+        if (bench.run_method != Benchmark.RUN_METHOD.BROWSER) {
+            StringBuilder prefix = new StringBuilder();
+            int foldersDeep = getFolderPath(bench).split("/").length;
+            for (int i = 0; i < foldersDeep; i++) {
+                prefix.append("../");
+            }
+
+            Util.runNodeScript(prefix + "node_modules/istanbul/lib/cli.js cover " + Main.TEST_FILE_NAME, new File(getFolderPath(bench)), timeout);
+
+            return CoverageResult.parse(Util.readFile(getTestFilePath(bench, "coverage/coverage.json")));
         }
 
-        return Util.runNodeScript(prefix + "node_modules/istanbul/lib/cli.js cover " + Main.TEST_FILE_NAME, new File(getFolderPath(bench)), timeout);
+
+        String instrumented = Util.runNodeScript("node_modules/istanbul/lib/cli.js instrument " + getTestFilePath(bench, TEST_FILE_NAME), timeout);
+
+        String coverageFileName = getTestFilePath(bench, COVERAGE_FILE_NAME);
+        Util.writeFile(coverageFileName, instrumented);
+
+        String coverageResult = runBenchmark(coverageFileName, bench.run_method, timeout);
+
+        Map<String, CoverageResult> result = CoverageResult.parse(coverageResult);
+        assert result.size() == 1;
+
+        // TODO: More generally split into files (to include dependencies).
+        String[] testFile = Util.readFile(getTestFilePath(bench, TEST_FILE_NAME)).split("\n");
+        int splitLine = 1 + Util.indexOf(testFile, (str) -> str.contains(TestProgramBuilder.END_OF_LIBRARY_MARKER));
+
+        String jsName = bench.jsFile.substring(bench.jsFile.lastIndexOf('/') + 1, bench.jsFile.length());
+
+        return result.values().iterator().next().split(splitLine, jsName, TEST_FILE_NAME);
     }
 
     public static String runBenchmark(Benchmark bench) throws IOException {

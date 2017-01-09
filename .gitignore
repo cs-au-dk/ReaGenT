@@ -1,5 +1,6 @@
 # Custom entries for the TAJSCheck project:
-tests/*/test.js
+tests/**/test.js
+tests/**/coverage.js
 tests/*/out.txt
 cache/*
 node_modules/*
