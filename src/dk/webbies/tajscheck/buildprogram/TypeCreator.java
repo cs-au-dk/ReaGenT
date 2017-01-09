@@ -300,8 +300,12 @@ public class TypeCreator {
 
             List<Statement> program = new ArrayList<>();
             if (numberOfSignatures == 0) {
-                // TODO: Check for named native types, that can be used to extend from.
-                program.add(variable("result", object()));
+                Type nativebase = TypesUtil.getNativeBase(type, nativeTypes, typeNames);
+                if (nativebase != null) {
+                    program.add(variable("result", constructType(nativebase, typeContext)));
+                } else {
+                    program.add(variable("result", object()));
+                }
             } else {
                 program.add(variable("result", createFunction(inter, typeContext)));
             }

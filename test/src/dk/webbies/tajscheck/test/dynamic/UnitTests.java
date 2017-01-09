@@ -694,7 +694,6 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore
     public void extendsArray() throws Exception {
         RunResult result = run("extendsArray", "foo");
 

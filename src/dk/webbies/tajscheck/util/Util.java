@@ -93,34 +93,6 @@ public class Util {
         }
     }
 
-    public static Set<Type> getAllBaseTypes(Type type, Set<Type> acc) {
-        if (acc.contains(type)) {
-            return acc;
-        }
-        acc.add(type);
-        if (type instanceof ReferenceType) {
-            type = ((ReferenceType) type).getTarget();
-        }
-        if (type instanceof GenericType) {
-            type = ((GenericType) type).toInterface();
-        }
-        if (type instanceof ClassInstanceType) {
-            type = ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType();
-        }
-        if (type instanceof InterfaceType) {
-            for (Type base : ((InterfaceType) type).getBaseTypes()) {
-                getAllBaseTypes(base, acc);
-            }
-        }
-        if (type instanceof ClassType) {
-            for (Type base : ((ClassType) type).getBaseTypes()) {
-                getAllBaseTypes(base, acc);
-            }
-        }
-
-        return acc;
-    }
-
     private static class Worker extends Thread {
         private final Process process;
         private Integer exit;

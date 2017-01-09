@@ -42,7 +42,7 @@ public class TypeContext {
         if (thisType == null || this.thisType == null) {
             return new TypeContext(this.map, persistent, thisType, bench);
         }
-        Set<Type> baseTypes = Util.getAllBaseTypes(this.thisType, new HashSet<>());
+        Set<Type> baseTypes = TypesUtil.getAllBaseTypes(this.thisType, new HashSet<>());
 
         if (baseTypes.contains(thisType)) {
             return this;

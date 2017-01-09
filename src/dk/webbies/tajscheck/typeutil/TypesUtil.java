@@ -250,6 +250,56 @@ public class TypesUtil {
         return signatures.stream().map(SignatureComparisonContainer::new).distinct().map(SignatureComparisonContainer::getSignature).collect(Collectors.toList());
     }
 
+    public static Type getNativeBase(Type type, Set<Type> nativeTypes, Map<Type, String> typeNames) {
+        List<Type> nativeBaseTypes = getAllBaseTypes(type, new HashSet<>()).stream().filter(t -> {
+            if (t instanceof InterfaceType && TypesUtil.isEmptyInterface((InterfaceType) t)) {
+                return false;
+            }
+            if (nativeTypes.contains(t)) {
+                return true;
+            }
+            if (t instanceof ReferenceType && nativeTypes.contains(((ReferenceType) t).getTarget())) {
+                return true;
+            }
+            return false;
+        }).collect(Collectors.toList());
+
+        if (nativeBaseTypes.size() == 0) {
+            return null;
+        } else if (nativeBaseTypes.size() == 1) {
+            return nativeBaseTypes.iterator().next();
+        }
+        throw new RuntimeException(nativeBaseTypes.stream().map(typeNames::get).collect(Collectors.toList()).toString());
+    }
+
+    public static Set<Type> getAllBaseTypes(Type type, Set<Type> acc) {
+        if (acc.contains(type)) {
+            return acc;
+        }
+        acc.add(type);
+        if (type instanceof ReferenceType) {
+            type = ((ReferenceType) type).getTarget();
+        }
+        if (type instanceof GenericType) {
+            type = ((GenericType) type).toInterface();
+        }
+        if (type instanceof ClassInstanceType) {
+            type = ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType();
+        }
+        if (type instanceof InterfaceType) {
+            for (Type base : ((InterfaceType) type).getBaseTypes()) {
+                getAllBaseTypes(base, acc);
+            }
+        }
+        if (type instanceof ClassType) {
+            for (Type base : ((ClassType) type).getBaseTypes()) {
+                getAllBaseTypes(base, acc);
+            }
+        }
+
+        return acc;
+    }
+
     private static final class SignatureComparisonContainer {
         private final Signature signature;
 
