@@ -1,14 +1,13 @@
 # Custom entries for the TAJSCheck project:
 tests/**/test.js
-tests/**/coverage.js
 tests/*/out.txt
 cache/*
-node_modules/*
 paper/*
 test/**/test.js
 test/**/small_driver*
 ts-spec-reader/node_modules/*
 test/**/coverage/*
+test/benchmarks/*/coverage.js
 
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template
@@ -69,7 +68,6 @@ fabric.properties
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-.gitignore
 node_modules/
 src/CLI.js
 src/CLI.js.map
