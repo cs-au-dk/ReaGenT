@@ -42,12 +42,9 @@ public class Main {
     }
 
     public static void writeFullDriver(Benchmark bench, ExecutionRecording recording) throws Exception {
-        System.out.println("Generating test program for " + bench.dTSFile);
         String programString = generateFullDriver(bench, recording);
 
         Util.writeFile(getTestFilePath(bench, TEST_FILE_NAME), programString);
-
-//        System.out.println(programString);
     }
 
     public static String createRecordedProgram(Benchmark bench, ExecutionRecording recording) throws Exception {
