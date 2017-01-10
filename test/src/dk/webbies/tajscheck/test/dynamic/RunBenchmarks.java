@@ -9,6 +9,7 @@ import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.paser.AstToStringVisitor;
 import dk.webbies.tajscheck.paser.JavaScriptParser;
+import dk.webbies.tajscheck.test.TestParsing;
 import dk.webbies.tajscheck.util.Util;
 import org.hamcrest.core.Is;
 import org.junit.Ignore;
@@ -231,19 +232,7 @@ public class RunBenchmarks {
     @Test
     public void testParsing() throws Exception {
         // A sanitycheck that JavaScript parsing+printing is idempotent.
-        String script = Util.readFile(benchmark.jsFile);
-
-        JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
-        Statement iteration1Ast = parser.parse("name", script).toTSCreateAST().getBody();
-
-        System.out.println("First parsing complete");
-
-        String iteration1String = AstToStringVisitor.toString(iteration1Ast);
-
-        Statement iteration2Ast = parser.parse("name", iteration1String).toTSCreateAST().getBody();
-
-        String iteration2String = AstToStringVisitor.toString(iteration2Ast);
-
-        assertThat(iteration1String, Is.is(equalTo(iteration2String)));
+        System.out.println(benchmark.jsFile);
+        TestParsing.testFile(benchmark.jsFile);
     }
 }

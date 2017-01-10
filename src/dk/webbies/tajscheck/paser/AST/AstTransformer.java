@@ -74,7 +74,7 @@ public class AstTransformer {
                     }
                 } catch (NumberFormatException e) {
                     System.err.println("Couldn't get a proper number value for: " + ((LiteralToken) literal).value + " using a mock integer instead.");
-                    return new NumberLiteral(loc, -1);
+                    return new UnaryExpression(loc, Operator.MINUS, new NumberLiteral(loc, 1));
                 }
             } else {
                 switch (literal.type) {

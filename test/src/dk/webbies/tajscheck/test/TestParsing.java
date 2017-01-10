@@ -4,7 +4,11 @@ import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.paser.AstToStringVisitor;
 import dk.webbies.tajscheck.paser.JavaScriptParser;
+import dk.webbies.tajscheck.util.Util;
+import org.hamcrest.core.Is;
 import org.junit.Test;
+
+import java.io.IOException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -37,21 +41,24 @@ public class TestParsing {
         );
     }
 
-    private void testParse(String content) {
+    public static void testFile(String file) throws IOException {
+        String script = Util.readFile(file);
+
+        testParse(script);
+    }
+
+    private static void testParse(String content) {
         JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
+        Statement iteration1Ast = parser.parse("name", content).toTSCreateAST().getBody();
 
-        Statement statement = parser.parse("name", content).toTSCreateAST().getBody().getStatements().iterator().next();
+        System.out.println("First parsing complete");
 
-        String stringyfied = AstToStringVisitor.toString(statement);
+        String iteration1String = AstToStringVisitor.toString(iteration1Ast);
 
-        System.out.println(stringyfied);
+        Statement iteration2Ast = parser.parse("name", iteration1String).toTSCreateAST().getBody();
 
-        JavaScriptParser.ParseResult iteration2 = parser.parse("someName", stringyfied);
+        String iteration2String = AstToStringVisitor.toString(iteration2Ast);
 
-        String stringyfied2 = AstToStringVisitor.toString(iteration2.toTSCreateAST().getBody().getStatements().iterator().next());
-
-        assertThat(stringyfied, is(equalTo(stringyfied2)));
-
-        System.out.println(stringyfied);
+        assertThat(iteration1String, Is.is(equalTo(iteration2String)));
     }
 }
