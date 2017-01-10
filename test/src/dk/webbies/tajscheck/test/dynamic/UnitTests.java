@@ -719,4 +719,9 @@ public class UnitTests {
                 .expected("false")
                 .got(STRING, "true");
     }
+
+    @Test
+    public void complexSanityCheck7() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck7"));
+    }
 }
