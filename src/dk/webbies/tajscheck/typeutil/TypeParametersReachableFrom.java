@@ -237,10 +237,7 @@ public class TypeParametersReachableFrom {
 
         @Override
         public Void visit(ClassInstanceType t, Set<TypeParameterType> mapped) {
-            t.getClassType().accept(this, mapped);
-
-            // TODO: Try to use this thing instead, and see if anything breaks.
-//            ((ClassType)t.getClassType()).getInstanceType().accept(this, mapped);
+            ((ClassType)t.getClassType()).getInstanceType().accept(this, mapped);
 
             return null;
         }

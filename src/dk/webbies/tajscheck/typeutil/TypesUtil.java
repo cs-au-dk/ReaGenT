@@ -117,7 +117,7 @@ public class TypesUtil {
         }
     }
 
-    private static List<Type> getTypeParameters(Type target) {
+    public static List<Type> getTypeParameters(Type target) {
         if (target instanceof GenericType) {
             return ((GenericType) target).getTypeParameters();
         } else if (target instanceof InterfaceType) {
@@ -316,7 +316,9 @@ public class TypesUtil {
     }
 
     public static boolean isThisTypeVisible(Type baseType, boolean deep) {
-        assert !(baseType instanceof ClassType); // <- this shouldn't happen. It could, and it would be sound, but it is better optimized if it never happens.
+        if (baseType instanceof ClassType) {
+            return false; // A classType is the "static" context, and not an "instance" context, therefore no this-types are visible.
+        }
         if (baseType instanceof ClassInstanceType) {
             baseType = ((ClassType) ((ClassInstanceType) baseType).getClassType()).getInstanceType();
         }
