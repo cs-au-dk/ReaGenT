@@ -991,11 +991,14 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return new ProgressEvent(1)");
             case "NodeList":
                 return AstBuilder.stmtFromString("return document.childNodes");
+            case "HTMLScriptElement":
+                return AstBuilder.stmtFromString("return document.createElement(\"script\")");
             case "CSSRuleList":
             case "CSSStyleDeclaration":
             case "TouchList":
+            case "DataTransfer":
                 // Hacky, i know.
-                return AstBuilder.stmtFromString("return (function () {var tmp = {}; tmp.__proto__  = " + name + "; return tmp})();");
+                return AstBuilder.stmtFromString("return (function () {var tmp = {}; tmp.__proto__  = " + name + ".prototype; return tmp})();");
             case "EventListener":
             case "EventListenerObject":
             case "WebKitPoint":

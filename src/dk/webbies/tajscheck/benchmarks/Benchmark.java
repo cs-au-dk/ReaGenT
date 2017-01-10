@@ -72,13 +72,19 @@ public class Benchmark {
                 options, dependencies);
     }
 
-    public Benchmark addDependency(Benchmark benchmark) {
+    public Benchmark addDependencies(Benchmark... benchmarks) {
         assert this.run_method == RUN_METHOD.BROWSER; // <- Only works for this one.
-        if (benchmark == null) {
+        if (benchmarks.length == 0) {
             throw new RuntimeException();
         }
         Benchmark clone = withRunMethod(this.run_method);// <- Clone
-        clone.dependencies.add(benchmark);
+        for (Benchmark benchmark : benchmarks) {
+            if (benchmark == null) {
+                throw new RuntimeException();
+            }
+            clone.dependencies.add(benchmark);
+        }
+
         return clone;
     }
 

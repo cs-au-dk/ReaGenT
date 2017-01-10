@@ -73,20 +73,7 @@ public class RunBenchmarks {
 
         benchmarks.put("box2dweb", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/box2dweb/box2dweb.js", "test/benchmarks/box2dweb/box2dweb.d.ts", "Box2D", BROWSER, options));
 
-        // The TypeScript parser breaks on the below.
-//        benchmarks.put("createjs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/createjs/createjs.js", "test/benchmarks/createjs/createjs.d.ts", "createjs", BROWSER, options));
-//        benchmarks.put("vue", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/vue/vue.js", "test/benchmarks/vue/index.d.ts", "Vue", BROWSER, options));
-//        benchmarks.put("three", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/three/three.js", "test/benchmarks/three/three.d.ts", "THREE", BROWSER, options));
-//        benchmarks.put("photoswipe", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/photoswipe/photoswipe.js", "test/benchmarks/photoswipe/photoswipe.d.ts", "PhotoSwipe", BROWSER, options));
-//        benchmarks.put("leaflet", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/leaflet/leaflet.js", "test/benchmarks/leaflet/leaflet.d.ts", "leaflet", BROWSER, options));
-
         benchmarks.put("underscore", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/underscore/underscore.js", "test/benchmarks/underscore/underscore.d.ts", "_", NODE, options));
-
-        // Blows up in complexity, not sure why. (Option to disable all generics?)
-        /*benchmarks.put("backbone",
-                new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER, options)
-                .addDependencies(benchmarks.get("underscore"))
-        );*/
 
         benchmarks.put("handlebars", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", "Handlebars", BROWSER, options));
 
@@ -101,14 +88,6 @@ public class RunBenchmarks {
         benchmarks.put("ember", new Benchmark(ParseDeclaration.Environment.ES5DOM, "test/benchmarks/ember/ember.js", "test/benchmarks/ember/ember.d.ts", "Ember", BROWSER, options));
 
         benchmarks.put("d3", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", "d3", BROWSER, options));
-
-        // TODO: StackOverflow in FindPositiveTypesVisitor (<- use this to implement some delta-debugger thing).
-        benchmarks.put("lodash", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lodash/lodash.js", "test/benchmarks/lodash/lodash.d.ts", "_", NODE, options));
-
-        // TODO: Causes the sanityCheck to timeout! (use the delta-debugger made for lodash).
-        benchmarks.put("p2", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/p2/p2.js", "test/benchmarks/p2/p2.d.ts", "p2", BROWSER, options));
-
-        benchmarks.clear();
 
         Benchmark webcomponents = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/webcomponents/webcomponents.js", "test/benchmarks/webcomponents/webcomponents.d.ts", "webcomponents", BROWSER, options);
         benchmarks.put("webcomponents", webcomponents);
@@ -125,8 +104,24 @@ public class RunBenchmarks {
         benchmarks.put("requirejs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/requirejs/require.js", "test/benchmarks/requirejs/requirejs.d.ts", "requirejs", BROWSER, options));
         benchmarks.put("sugar", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/sugar/sugar.js", "test/benchmarks/sugar/sugar.d.ts", "sugarjs", BROWSER, options));
 
+        // The TypeScript parser breaks on the below. TODO: Do something?
+//        benchmarks.put("createjs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/createjs/createjs.js", "test/benchmarks/createjs/createjs.d.ts", "createjs", BROWSER, options));
+//        benchmarks.put("vue", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/vue/vue.js", "test/benchmarks/vue/index.d.ts", "Vue", BROWSER, options));
+//        benchmarks.put("three", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/three/three.js", "test/benchmarks/three/three.d.ts", "THREE", BROWSER, options));
+//        benchmarks.put("photoswipe", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/photoswipe/photoswipe.js", "test/benchmarks/photoswipe/photoswipe.d.ts", "PhotoSwipe", BROWSER, options));
+//        benchmarks.put("leaflet", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/leaflet/leaflet.js", "test/benchmarks/leaflet/leaflet.d.ts", "leaflet", BROWSER, options));
 
+        // Blows up in complexity, not sure why. (Option to disable all generics?)
+        /*benchmarks.put("backbone",
+                new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER, options)
+                .addDependencies(benchmarks.get("underscore"))
+        );*/
 
+        // TODO: StackOverflow in FindPositiveTypesVisitor (<- use this to implement some delta-debugger thing).
+//        benchmarks.put("lodash", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lodash/lodash.js", "test/benchmarks/lodash/lodash.d.ts", "_", NODE, options));
+
+        // TODO: Causes the sanityCheck to timeout! (use the delta-debugger made for lodash).
+//        benchmarks.put("p2", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/p2/p2.js", "test/benchmarks/p2/p2.d.ts", "p2", BROWSER, options));
 
     }
 

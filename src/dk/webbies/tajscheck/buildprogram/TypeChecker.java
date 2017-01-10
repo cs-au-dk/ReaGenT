@@ -259,7 +259,11 @@ public class TypeChecker {
                     case "SVGGElement":
                     case "TouchList":
                     case "SVGSVGElement":
+                    case "HTMLScriptElement":
+                    case "DataTransfer":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
+                    case "StyleMedia":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(expFromString("window.styleMedia.__proto__.constructor")), name));
                     case "MSPointerEvent":
                     case "MSGestureEvent":
                     case "DeviceLightEvent":
