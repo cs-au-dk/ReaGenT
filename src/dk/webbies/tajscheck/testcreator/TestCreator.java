@@ -8,9 +8,7 @@ import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder.TypeParameterIndexer;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
-import dk.webbies.tajscheck.util.ArrayListMultiMap;
-import dk.webbies.tajscheck.util.MultiMap;
-import dk.webbies.tajscheck.util.Util;
+import dk.webbies.tajscheck.util.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -291,6 +289,28 @@ public class TestCreator {
         public Arg replaceTypeContext(TypeContext newContext) {
             return new Arg(this.path, newContext, this.depth, this.withTopLevelFunctions);
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Arg arg = (Arg) o;
+
+            if (depth != arg.depth) return false;
+            if (withTopLevelFunctions != arg.withTopLevelFunctions) return false;
+            if (path != null ? !path.equals(arg.path) : arg.path != null) return false;
+            return typeContext != null ? typeContext.equals(arg.typeContext) : arg.typeContext == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = path != null ? path.hashCode() : 0;
+            result = 31 * result + (typeContext != null ? typeContext.hashCode() : 0);
+            result = 31 * result + depth;
+            result = 31 * result + (withTopLevelFunctions ? 1 : 0);
+            return result;
+        }
     }
 
     private static final class CreateTestQueueElement implements Comparable<CreateTestQueueElement> {
@@ -446,13 +466,19 @@ public class TestCreator {
 
                 tests.add(new MemberAccessTest(t, type, key, arg.path, arg.getTypeContext()));
 
-                addMethodCallTest(t, arg, key, type);
+                addMethodCallTest(t, arg, key, type, new HashSet<>());
 
                 recurse(type, arg.append(key));
             }
         }
 
-        private void addMethodCallTest(Type baseType, Arg arg, String key, Type propertyType) {
+        private void addMethodCallTest(Type baseType, Arg arg, String key, Type propertyType, Set<Tuple3<Type, TypeContext, Type>> seen) {
+            Tuple3<Type, TypeContext, Type> seenKey = new Tuple3<>(baseType, arg.typeContext, propertyType);
+            if (seen.contains(seenKey)) {
+                return;
+            }
+            seen.add(seenKey);
+
             if (propertyType instanceof InterfaceType) {
                 List<Signature> callSignatures = ((InterfaceType) propertyType).getDeclaredCallSignatures();
                 for (Signature signature : callSignatures) {
@@ -475,7 +501,7 @@ public class TestCreator {
             }
 
             if (propertyType instanceof GenericType) {
-                addMethodCallTest(baseType, arg, key, ((GenericType) propertyType).toInterface());
+                addMethodCallTest(baseType, arg, key, ((GenericType) propertyType).toInterface(), seen);
                 return;
             }
             if (propertyType instanceof ClassType) {
@@ -484,18 +510,18 @@ public class TestCreator {
             if (propertyType  instanceof TypeParameterType) {
                 TypeParameterType typeParameterType = (TypeParameterType) propertyType ;
                 if (typeParameterType.getConstraint() != null) {
-                    addMethodCallTest(baseType, arg, key, ((TypeParameterType) propertyType ).getConstraint());
+                    addMethodCallTest(baseType, arg, key, ((TypeParameterType) propertyType ).getConstraint(), seen);
                 }
                 List<Type> recursiveDefinition = TypesUtil.findRecursiveDefinition(typeParameterType, arg.typeContext, typeParameterIndexer);
                 if (!recursiveDefinition.isEmpty()) {
                     for (Type subType : recursiveDefinition) {
-                        addMethodCallTest(baseType, arg, key, subType);
+                        addMethodCallTest(baseType, arg, key, subType, seen);
                     }
                     return;
                 }
                 if (arg.typeContext.containsKey(typeParameterType)) {
                     TypeWithContext lookup = arg.typeContext.get(typeParameterType);
-                    addMethodCallTest(baseType, arg.withParameters(lookup.getTypeContext()), key, lookup.getType());
+                    addMethodCallTest(baseType, arg.withParameters(lookup.getTypeContext()), key, lookup.getType(), seen);
                 }
                 return;
             }
@@ -507,7 +533,7 @@ public class TestCreator {
                 TypeContext newParameters = new TypesUtil(bench).generateParameterMap((ReferenceType) propertyType);
                 Type subType = ((ReferenceType) propertyType).getTarget();
                 Arg newArg = arg.append("<>").withParameters(newParameters);
-                addMethodCallTest(baseType, newArg, key, subType);
+                addMethodCallTest(baseType, newArg, key, subType, seen);
                 return;
             }
 
@@ -519,7 +545,7 @@ public class TestCreator {
                 List<Type> elements = ((UnionType) propertyType).getElements();
                 for (int i = 0; i < elements.size(); i++) {
                     Type type = elements.get(i);
-                    addMethodCallTest(baseType, arg.append("[union" + i + "]"), key, type);
+                    addMethodCallTest(baseType, arg.append("[union" + i + "]"), key, type, seen);
                 }
                 return;
             }
@@ -528,7 +554,7 @@ public class TestCreator {
                 List<Type> elements = ((IntersectionType) propertyType).getElements();
                 for (int i = 0; i < elements.size(); i++) {
                     Type type = elements.get(i);
-                    addMethodCallTest(baseType, arg.append("[intersection" + i + "]"), key, type);
+                    addMethodCallTest(baseType, arg.append("[intersection" + i + "]"), key, type, seen);
                 }
                 return;
             }
@@ -552,8 +578,9 @@ public class TestCreator {
             return null;
         }
 
-        private void recurse(Type type, Arg arg) {
+        private Void recurse(Type type, Arg arg) {
             queue.add(new CreateTestQueueElement(type, arg));
+            return null;
         }
 
         @Override
@@ -689,7 +716,7 @@ public class TestCreator {
 
         @Override
         public Void visit(ThisType t, Arg arg) {
-            return arg.typeContext.getThisType().accept(this, arg);
+            return recurse(arg.typeContext.getThisType(), arg);
         }
 
         @Override
