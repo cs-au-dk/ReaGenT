@@ -704,6 +704,13 @@ public class UnitTests {
     }
 
     @Test
+    public void extendsArray2() throws Exception {
+        RunResult result = run("extendsArray2", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+    }
+
+    @Test
     public void staticFieldsInheritedInClass() throws Exception {
         RunResult result = run("staticFieldsInheritedInClass", "foo");
 
@@ -723,5 +730,17 @@ public class UnitTests {
     @Test
     public void complexSanityCheck7() throws Exception {
         sanityCheck(benchFromFolder("complexSanityCheck7"));
+    }
+
+    @Test
+    public void genericsBustStack() throws Exception {
+        Main.generateFullDriver(benchFromFolder("genericsBustStack"));
+    }
+
+    @Test
+    public void genericsBustStackRuntime() throws Exception {
+        RunResult result = run("genericsBustStackRuntime", "foo");
+
+        assertThat(result.typeErrors.size(), is(greaterThan(0)));
     }
 }

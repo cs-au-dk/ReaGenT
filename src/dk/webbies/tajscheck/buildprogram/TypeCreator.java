@@ -241,26 +241,52 @@ public class TypeCreator {
 
             List<Statement> program = new ArrayList<>();
 
+            Identifier cacheId = identifier(CONSTRUCTED_VARIABLE_CACHE_PREFIX + constructed_value_cache_counter++);
+            valueVariableDeclarationList.add(variable(cacheId, identifier(VARIABLE_NO_VALUE)));
+            program.add(
+                    ifThen(
+                            binary(cacheId, Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
+                            Return(cacheId)
+                    )
+            );
+
             List<Signature> signatures = t.getSignatures().stream().map(sig -> TypesUtil.createConstructorSignature(t, sig)).collect(Collectors.toList());
             program.add(variable("result", createFunction(signatures, typeContext, typeNames.get(t))));
+
+            program.add(variable("prevCacheValue", cacheId));
+            program.add(statement(binary(cacheId, Operator.EQUAL, identifier("result"))));
+
+            List<Statement> addProperties = new ArrayList<>();
 
             Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, hasThisTypes), typeNames);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
 
             if (inter.getDeclaredNumberIndexType() != null) {
-                program.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result"), typeNames.get(t).hashCode()));
+                addProperties.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result"), typeNames.get(t).hashCode()));
             }
 
             if (inter.getDeclaredStringIndexType() != null) {
-                program.addAll(addStringIndexerType(inter.getDeclaredStringIndexType(), typeContext, identifier("result"), inter.getDeclaredProperties().keySet(), typeNames.get(t).hashCode()));
+                addProperties.addAll(addStringIndexerType(inter.getDeclaredStringIndexType(), typeContext, identifier("result"), inter.getDeclaredProperties().keySet(), typeNames.get(t).hashCode()));
             }
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
 
             for (Pair<String, Type> property : properties) {
-                program.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, constructType(property.getRight(), typeContext))));
+                addProperties.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, constructType(property.getRight(), typeContext))));
             }
+
+            program.add(
+                    tryCatch(
+                            block(addProperties),
+                            catchBlock(identifier("e"),
+                                    block(
+                                            statement(binary(cacheId, Operator.EQUAL, identifier("prevCacheValue"))),
+                                            throwStatement(identifier("e"))
+                                    )
+                            )
+                    )
+            );
 
             program.add(Return(identifier("result")));
 
@@ -300,9 +326,25 @@ public class TypeCreator {
             typeContext = typeContext.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
 
+            List<Statement> program = new ArrayList<>();
+
+            Identifier cacheId = identifier(CONSTRUCTED_VARIABLE_CACHE_PREFIX + constructed_value_cache_counter++);
+            valueVariableDeclarationList.add(variable(cacheId, identifier(VARIABLE_NO_VALUE)));
+            program.add(
+                    ifThen(
+                            binary(
+                                    binary(cacheId, Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
+                                    Operator.AND,
+                                    binary(call(identifier("random")), Operator.GREATER_THAN, number(0.8)) // Only sometimes.
+                            ),
+                            Return(cacheId)
+                    )
+            );
+
+
             int numberOfSignatures = inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size();
 
-            List<Statement> program = new ArrayList<>();
+
             if (numberOfSignatures == 0) {
                 Type nativebase = TypesUtil.getNativeBase(type, nativeTypes, typeNames);
                 if (nativebase != null) {
@@ -314,19 +356,36 @@ public class TypeCreator {
                 program.add(variable("result", createFunction(inter, typeContext)));
             }
 
+            program.add(variable("prevCacheValue", cacheId));
+            program.add(statement(binary(cacheId, Operator.EQUAL, identifier("result"))));
+
+            List<Statement> addProperties = new ArrayList<>();
+
             if (inter.getDeclaredNumberIndexType() != null) {
-                program.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result"), typeNames.get(type).hashCode()));
+                addProperties.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result"), typeNames.get(type).hashCode()));
             }
 
             if (inter.getDeclaredStringIndexType() != null) {
-                program.addAll(addStringIndexerType(inter.getDeclaredStringIndexType(), typeContext, identifier("result"), inter.getDeclaredProperties().keySet(), typeNames.get(type).hashCode()));
+                addProperties.addAll(addStringIndexerType(inter.getDeclaredStringIndexType(), typeContext, identifier("result"), inter.getDeclaredProperties().keySet(), typeNames.get(type).hashCode()));
             }
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
 
             for (Pair<String, Type> property : properties) {
-                program.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, constructType(property.getRight(), typeContext))));
+                addProperties.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, constructType(property.getRight(), typeContext))));
             }
+
+            program.add(
+                    tryCatch(
+                            block(addProperties),
+                            catchBlock(identifier("e"),
+                                    block(
+                                            statement(binary(cacheId, Operator.EQUAL, identifier("prevCacheValue"))),
+                                            throwStatement(identifier("e"))
+                                    )
+                            )
+                    )
+            );
 
             program.add(Return(identifier("result")));
 
@@ -535,7 +594,42 @@ public class TypeCreator {
 
         @Override
         public Statement visit(IntersectionType t, TypeContext typeContext) {
-            return Return(call(identifier("extend"), t.getElements().stream().map(element -> constructType(element, typeContext)).collect(Collectors.toList())));
+            List<CallExpression> constructSubTypes = t.getElements().stream().map(element -> constructType(element, typeContext)).collect(Collectors.toList());
+            List<Statement> program = new ArrayList<>();
+
+            // TODO: Put these things in a factory thing, that is then shared between InterfaceType, ClassType and IntersectionType (also add it to unionType, and look around for other types that might need it).
+            Identifier cacheId = identifier(CONSTRUCTED_VARIABLE_CACHE_PREFIX + constructed_value_cache_counter++);
+            valueVariableDeclarationList.add(variable(cacheId, identifier(VARIABLE_NO_VALUE)));
+            program.add(
+                    ifThen(
+                            binary(
+                                    binary(cacheId, Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
+                                    Operator.AND,
+                                    binary(call(identifier("random")), Operator.GREATER_THAN, number(0.8)) // Only sometimes.
+                            ),
+                            Return(cacheId)
+                    )
+            );
+
+            program.add(variable("result", object()));
+
+            program.add(variable("prevCacheValue", cacheId));
+            program.add(statement(binary(cacheId, Operator.EQUAL, identifier("result"))));
+
+            program.add(tryCatch(
+                    block(
+                            statement(call(identifier("extend"), Util.concat(Collections.singletonList(identifier("result")), constructSubTypes))),
+                            Return(identifier("result"))
+                    ),
+                    catchBlock(identifier("e"),
+                            block(
+                                    statement(binary(cacheId, Operator.EQUAL, identifier("prevCacheValue"))),
+                                    throwStatement(identifier("e"))
+                            )
+                    )
+            ));
+
+            return block(program);
         }
 
         @Override
@@ -1091,6 +1185,8 @@ public class TypeCreator {
 
     private final Set<Integer> hasCreateTypeFunction = new HashSet<>();
 
+    private static final String CONSTRUCTED_VARIABLE_CACHE_PREFIX = "constructed_cache_";
+    private int constructed_value_cache_counter = 0;
     private void addConstructInstanceFunction(int index) {
         if (hasCreateTypeFunction.contains(index)) {
             return;

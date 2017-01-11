@@ -19,6 +19,6 @@ module.exports = {
         return result;
     },
     bar: function (c) {
-        return c.marker && (c instanceof Array);
+        return c.marker && c instanceof Array;
     }
 };
