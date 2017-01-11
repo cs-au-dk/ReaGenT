@@ -520,9 +520,9 @@ public class Util {
     }
 
     @SafeVarargs
-    public static <T> List<T> concat(Collection<T>... collections) {
+    public static <T> List<T> concat(Collection<? extends T>... collections) {
         ArrayList<T> result = new ArrayList<>();
-        for (Collection<T> collection : collections) {
+        for (Collection<? extends T> collection : collections) {
             if (collection == null) {
                 continue;
             }

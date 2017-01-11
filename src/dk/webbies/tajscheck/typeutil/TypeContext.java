@@ -131,7 +131,7 @@ public class TypeContext {
 
         Set<TypeParameterType> reachable = new HashSet<>();
 
-        ArrayList<Type> typesToTest = new ArrayList<>(Util.concat(Util.cast(Type.class, persistent), Collections.singletonList(baseType), map.values()));
+        ArrayList<Type> typesToTest = new ArrayList<>(Util.concat(persistent, Collections.singletonList(baseType), map.values()));
 
         for (Type type : typesToTest) {
             reachable.addAll(reachableTypeParameterMap.get(type));
