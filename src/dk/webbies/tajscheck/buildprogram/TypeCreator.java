@@ -239,24 +239,9 @@ public class TypeCreator {
 
             assert t.getSignatures().size() > 0;
 
-            List<Statement> program = new ArrayList<>();
-
-            Identifier cacheId = identifier(CONSTRUCTED_VARIABLE_CACHE_PREFIX + constructed_value_cache_counter++);
-            valueVariableDeclarationList.add(variable(cacheId, identifier(VARIABLE_NO_VALUE)));
-            program.add(
-                    ifThen(
-                            binary(cacheId, Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
-                            Return(cacheId)
-                    )
-            );
+            List<Statement> addProperties = new ArrayList<>();
 
             List<Signature> signatures = t.getSignatures().stream().map(sig -> TypesUtil.createConstructorSignature(t, sig)).collect(Collectors.toList());
-            program.add(variable("result", createFunction(signatures, typeContext, typeNames.get(t))));
-
-            program.add(variable("prevCacheValue", cacheId));
-            program.add(statement(binary(cacheId, Operator.EQUAL, identifier("result"))));
-
-            List<Statement> addProperties = new ArrayList<>();
 
             Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, hasThisTypes), typeNames);
             InterfaceType inter = pair.getLeft();
@@ -276,21 +261,11 @@ public class TypeCreator {
                 addProperties.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, constructType(property.getRight(), typeContext))));
             }
 
-            program.add(
-                    tryCatch(
-                            block(addProperties),
-                            catchBlock(identifier("e"),
-                                    block(
-                                            statement(binary(cacheId, Operator.EQUAL, identifier("prevCacheValue"))),
-                                            throwStatement(identifier("e"))
-                                    )
-                            )
-                    )
+            return createCachedConstruction(
+                    Return(createFunction(signatures, typeContext, typeNames.get(t))),
+                    block(addProperties),
+                    1
             );
-
-            program.add(Return(identifier("result")));
-
-            return block(program);
         }
 
         @Override
@@ -326,38 +301,19 @@ public class TypeCreator {
             typeContext = typeContext.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
 
-            List<Statement> program = new ArrayList<>();
-
-            Identifier cacheId = identifier(CONSTRUCTED_VARIABLE_CACHE_PREFIX + constructed_value_cache_counter++);
-            valueVariableDeclarationList.add(variable(cacheId, identifier(VARIABLE_NO_VALUE)));
-            program.add(
-                    ifThen(
-                            binary(
-                                    binary(cacheId, Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
-                                    Operator.AND,
-                                    binary(call(identifier("random")), Operator.GREATER_THAN, number(0.8)) // Only sometimes.
-                            ),
-                            Return(cacheId)
-                    )
-            );
-
-
             int numberOfSignatures = inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size();
 
-
+            Expression constructInitial;
             if (numberOfSignatures == 0) {
                 Type nativebase = TypesUtil.getNativeBase(type, nativeTypes, typeNames);
                 if (nativebase != null) {
-                    program.add(variable("result", constructType(nativebase, typeContext)));
+                    constructInitial = constructType(nativebase, typeContext);
                 } else {
-                    program.add(variable("result", object()));
+                    constructInitial = object();
                 }
             } else {
-                program.add(variable("result", createFunction(inter, typeContext)));
+                constructInitial = createFunction(inter, typeContext);
             }
-
-            program.add(variable("prevCacheValue", cacheId));
-            program.add(statement(binary(cacheId, Operator.EQUAL, identifier("result"))));
 
             List<Statement> addProperties = new ArrayList<>();
 
@@ -375,21 +331,12 @@ public class TypeCreator {
                 addProperties.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, constructType(property.getRight(), typeContext))));
             }
 
-            program.add(
-                    tryCatch(
-                            block(addProperties),
-                            catchBlock(identifier("e"),
-                                    block(
-                                            statement(binary(cacheId, Operator.EQUAL, identifier("prevCacheValue"))),
-                                            throwStatement(identifier("e"))
-                                    )
-                            )
-                    )
+
+            return createCachedConstruction(
+                    Return(constructInitial),
+                    block(addProperties),
+                    0.2
             );
-
-            program.add(Return(identifier("result")));
-
-            return block(program);
         }
 
         private Collection<Statement> addStringIndexerType(Type type, TypeContext context, Expression exp, Set<String> existingKeys, int seed) {
@@ -595,9 +542,17 @@ public class TypeCreator {
         @Override
         public Statement visit(IntersectionType t, TypeContext typeContext) {
             List<CallExpression> constructSubTypes = t.getElements().stream().map(element -> constructType(element, typeContext)).collect(Collectors.toList());
-            List<Statement> program = new ArrayList<>();
 
-            // TODO: Put these things in a factory thing, that is then shared between InterfaceType, ClassType and IntersectionType (also add it to unionType, and look around for other types that might need it).
+            ExpressionStatement populateResult = statement(call(identifier("extend"), Util.concat(Collections.singletonList(identifier("result")), constructSubTypes)));
+
+            return createCachedConstruction(
+                    Return(object()), populateResult,
+                    0.2
+            );
+        }
+
+        private Statement createCachedConstruction(Statement createInitialResult, Statement populateResult, double probability) {
+            List<Statement> program = new ArrayList<>();
             Identifier cacheId = identifier(CONSTRUCTED_VARIABLE_CACHE_PREFIX + constructed_value_cache_counter++);
             valueVariableDeclarationList.add(variable(cacheId, identifier(VARIABLE_NO_VALUE)));
             program.add(
@@ -605,20 +560,20 @@ public class TypeCreator {
                             binary(
                                     binary(cacheId, Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
                                     Operator.AND,
-                                    binary(call(identifier("random")), Operator.GREATER_THAN, number(0.8)) // Only sometimes.
+                                    binary(call(identifier("random")), Operator.LESS_THAN_EQUAL, number(probability))
                             ),
                             Return(cacheId)
                     )
             );
 
-            program.add(variable("result", object()));
+            program.add(variable("result", call(function(createInitialResult))));
 
             program.add(variable("prevCacheValue", cacheId));
             program.add(statement(binary(cacheId, Operator.EQUAL, identifier("result"))));
 
             program.add(tryCatch(
                     block(
-                            statement(call(identifier("extend"), Util.concat(Collections.singletonList(identifier("result")), constructSubTypes))),
+                            populateResult,
                             Return(identifier("result"))
                     ),
                     catchBlock(identifier("e"),
@@ -628,7 +583,6 @@ public class TypeCreator {
                             )
                     )
             ));
-
             return block(program);
         }
 
