@@ -419,6 +419,10 @@ public class TypeChecker {
             TypeContext typeContext = arg.typeContext;
 
             if (typeContext.containsKey(parameter)) {
+                if (arg.depthRemaining <= 0) {
+                    return Collections.emptyList();
+                }
+                arg = arg.decreaseDepth();
                 if (!TypesUtil.findRecursiveDefinition(parameter, typeContext, typeParameterIndexer).isEmpty()) {
                     List<Type> constraints = TypesUtil.findRecursiveDefinition(parameter, typeContext, typeParameterIndexer);
                     IntersectionType constraintsIntersection = new IntersectionType();
@@ -486,7 +490,7 @@ public class TypeChecker {
         @Override
         public List<TypeCheck> visit(NeverType t, Arg arg) {
             return Collections.singletonList(new SimpleTypeCheck(
-                    Check.equalTo(object()), "never" // equalTo check with an object will always fail.
+                    Check.equalTo(object()), "never" // equalTo check with a newly constructed object will always fail.
             ));
         }
 
