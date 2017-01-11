@@ -419,7 +419,7 @@ public class TypeChecker {
             TypeContext typeContext = arg.typeContext;
 
             if (typeContext.containsKey(parameter)) {
-                if (arg.depthRemaining <= 0) {
+                if (arg.depthRemaining <= -1) { // One level deeper than normal property-accesses, on purpose.
                     return Collections.emptyList();
                 }
                 arg = arg.decreaseDepth();
