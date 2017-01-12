@@ -508,8 +508,18 @@ public class TypeCreator {
             return block(
                     variable("result", constructType(type.getConstraint(), typeContext)),
                     ifThen(
-                            binary(unary(Operator.TYPEOF, identifier("result")), Operator.NOT_EQUAL_EQUAL, string("object")),
-                            throwStatement(newCall(identifier(RUNTIME_ERROR_NAME)))
+                            binary(
+                                    binary(unary(Operator.TYPEOF, identifier("result")), Operator.NOT_EQUAL_EQUAL, string("object")),
+                                    Operator.AND,
+                                    binary(unary(Operator.TYPEOF, identifier("result")), Operator.NOT_EQUAL_EQUAL, string("function"))
+                            ),
+                            throwStatement(newCall(identifier(RUNTIME_ERROR_NAME),
+                                    binary(
+                                            string("could not construct a TypeParameter that extends a "),
+                                            Operator.PLUS,
+                                            unary(Operator.TYPEOF, identifier("result"))
+                                    )
+                            ))
                     ),
                     statement(
                             binary(member(identifier("result"), markerField), Operator.EQUAL, bool(true))
