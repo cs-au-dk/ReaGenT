@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.OutputParser.*;
+import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
 import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.NODE;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.JSON;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
@@ -752,5 +753,13 @@ public class UnitTests {
         RunResult result = run("genericsBustStackRuntime", "foo");
 
         assertThat(result.typeErrors.size(), is(greaterThan(0)));
+    }
+
+    @Test
+    public void intersectionWithFunction() throws Exception {
+        RunResult result = run(benchFromFolder("intersectionWithFunction").withRunMethod(BOOTSTRAP), "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.errors, everyItem(is(equalTo("RuntimeError Cannot construct this IntersectionType")))); // <- this happens, it is ok, i cannot at runtime construct a type which is the intersection of two types.
     }
 }

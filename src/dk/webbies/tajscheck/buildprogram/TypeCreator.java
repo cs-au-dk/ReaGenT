@@ -553,7 +553,10 @@ public class TypeCreator {
         public Statement visit(IntersectionType t, TypeContext typeContext) {
             List<CallExpression> constructSubTypes = t.getElements().stream().map(element -> constructType(element, typeContext)).collect(Collectors.toList());
 
-            ExpressionStatement populateResult = statement(call(identifier("extend"), Util.concat(Collections.singletonList(identifier("result")), constructSubTypes)));
+            // This can theoretically break stuff (that i save to result again, instead of always putting everything in the existing result), but it most likely won't (the soundness-test should detect if we ever get a type that could break this thing). Also, I didn't manage to find a type that breaks this, but such a type most likely exists.
+            Statement populateResult = block(
+                    expressionStatement(binary(identifier("result"), Operator.EQUAL, call(identifier("extend"), Util.concat(Collections.singletonList(identifier("result")), constructSubTypes))))
+            );
 
             return createCachedConstruction(
                     Return(object()), populateResult,
@@ -584,6 +587,7 @@ public class TypeCreator {
             program.add(tryCatch(
                     block(
                             populateResult,
+                            statement(binary(cacheId, Operator.EQUAL, identifier("result"))),
                             Return(identifier("result"))
                     ),
                     catchBlock(identifier("e"),

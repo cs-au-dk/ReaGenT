@@ -179,10 +179,25 @@ RuntimeError.prototype = Object.create(Error.prototype);
 
 // Utility functions.
 
-function extend() {
-    var result = {};
+function extend(result) {
     var changedBase = false;
-    for (var i = 0; i < arguments.length; i++) {
+
+    if (arguments.length == 1) {
+        throw new RuntimeError("IntersectionType: nothing to intersect")
+    }
+
+    // A pre-check, to see if we are trying to construct the same primitive multiple times. In principle unsound, but it only happens (that i know of) when we have recursively defined intersection types, where there in reality is only one primitive, it is just duplicated.
+    var typesOfs = {};
+    for (var i = 1; i < arguments.length; i++) {
+        var type = typeof arguments[i];
+        var prevValue = typesOfs[type];
+        typesOfs[type] = prevValue ? prevValue + 1 : 1;
+    }
+    if (Object.keys(typesOfs).length == 1 && !typesOfs.object && !typesOfs.function) {
+        return arguments[1]; // <- Just returning the first of them, since they are kinda equal.
+    }
+
+    for (var i = 1; i < arguments.length; i++) {
         var obj = arguments[i];
         if (obj.__proto__.constructor != Object) {
             if (changedBase) {
@@ -194,7 +209,7 @@ function extend() {
     }
 
 
-    for (var i = 0; i < arguments.length; i++) {
+    for (var i = 1; i < arguments.length; i++) {
         var obj = arguments[i];
         if (obj !== result) {
             for (var key in obj) {
