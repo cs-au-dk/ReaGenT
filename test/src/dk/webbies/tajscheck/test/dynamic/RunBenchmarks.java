@@ -122,8 +122,11 @@ public class RunBenchmarks {
                 .addDependencies(benchmarks.get("underscore"))
         );
 
-        // TODO: Debug this one later. (FindPositives seem to run way to long)
-//        benchmarks.put("lodash", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lodash/lodash.js", "test/benchmarks/lodash/lodash.d.ts", "_", NODE, options));
+        benchmarks.put("lodash", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lodash/lodash.js", "test/benchmarks/lodash/lodash.d.ts", "_", NODE,
+                options.getBuilder()
+                        .setDisableGenerics(true)
+                        .build()
+        ));
 
         benchmarks.put("p2", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/p2/p2.js", "test/benchmarks/p2/p2.d.ts", "p2", BROWSER, options));
 
@@ -187,10 +190,11 @@ public class RunBenchmarks {
 
     @Test
     public void coverage() throws Exception {
-        if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts").anyMatch(file -> benchmark.dTSFile.contains(file))) {
+        if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts").anyMatch(benchmark.dTSFile::contains)) {
             return; // Too big, node runs out of memory generating the instrumented version.
         }
         Main.writeFullDriver(benchmark);
+        System.out.println("Wrote driver");
         Map<String, CoverageResult> out;
         try {
             out = Main.genCoverage(benchmark, 60 * 1000);
