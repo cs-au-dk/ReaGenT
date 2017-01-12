@@ -410,6 +410,9 @@ public class FreeGenericsFinder {
         if (baseType instanceof UnionType) {
             return ((UnionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep));
         }
+        if (baseType instanceof IntersectionType) {
+            return ((IntersectionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep));
+        }
         if (baseType instanceof TupleType) {
             return ((TupleType) baseType).getElementTypes().stream().anyMatch(element -> isThisTypeVisible(element, deep));
         }

@@ -691,6 +691,11 @@ public class UnitTests {
     }
 
     @Test
+    public void thisTypesInInterfaces3() throws Exception {
+        Main.writeFullDriver(benchFromFolder("thisTypesInInterfaces3"));
+    }
+
+    @Test
     public void thisTypesAreOptimized() throws Exception {
         RunResult result = run("thisTypesAreOptimized", "foo");
 
