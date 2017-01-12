@@ -13,6 +13,7 @@ import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.IdentityHashSet;
+import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import dk.webbies.tajscheck.util.selenium.SeleniumDriver;
 import org.apache.http.HttpException;
@@ -27,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
 
@@ -276,13 +278,23 @@ public class Main {
         Map<String, CoverageResult> result = CoverageResult.parse(coverageResult);
         assert result.size() == 1;
 
-        // TODO: More generally split into files (to include dependencies).
         String[] testFile = Util.readFile(getTestFilePath(bench, TEST_FILE_NAME)).split("\n");
-        int splitLine = 1 + Util.indexOf(testFile, (str) -> str.contains(TestProgramBuilder.END_OF_LIBRARY_MARKER));
+        List<Integer> splitLines = Util.withIndex(Stream.of(testFile)).filter(pair -> pair.getLeft().contains(START_OF_FILE_MARKER)).map(Pair::getRight).collect(Collectors.toList());
 
-        String jsName = bench.jsFile.substring(bench.jsFile.lastIndexOf('/') + 1, bench.jsFile.length());
+        Map<String, Pair<Integer, Integer>> splitRules = new HashMap<>();
+        for (int i = 0; i < splitLines.size(); i++) {
+            int splitLine = splitLines.get(i);
+            String jsName = testFile[splitLine].substring(("// " + START_OF_FILE_MARKER).length(), testFile[splitLine].length());
+            if (i != splitLines.size() - 1) {
+                splitRules.put(jsName, new Pair<>(splitLine, splitLines.get(i + 1)));
+            } else {
+                splitRules.put(jsName, new Pair<>(splitLine, testFile.length));
+            }
+        }
 
-        return result.values().iterator().next().split(splitLine, jsName, TEST_FILE_NAME);
+        assert result.size() == 1;
+
+        return result.get(TEST_FILE_NAME).split(splitRules);
     }
 
     public static String runBenchmark(Benchmark bench) throws IOException {

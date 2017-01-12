@@ -29,7 +29,7 @@ public class TestProgramBuilder {
     public static final String VARIABLE_NO_VALUE = "no_value";
     public static final String VALUE_VARIABLE_PREFIX = "value_";
     public static final String RUNTIME_ERROR_NAME = "RuntimeError";
-    public static final String END_OF_LIBRARY_MARKER = "-!-!-!- END OF LIBRARY MAKER -!-!-!- ";
+    public static final String START_OF_FILE_MARKER = "-!-!-!- START OF FILE MARKER -!-!-!-:";
 
     private final Benchmark bench;
     private final List<Test> tests;
@@ -165,11 +165,16 @@ public class TestProgramBuilder {
             List<Statement> scripts = new ArrayList<>();
             for (Benchmark dependency : bench.getDependencies()) {
                 String dependencyScript = Util.readFile(dependency.jsFile);
+                String jsName = dependency.jsFile.substring(dependency.jsFile.lastIndexOf('/') + 1, dependency.jsFile.length());
+                scripts.add(comment(START_OF_FILE_MARKER + jsName));
                 scripts.add(AstBuilder.stmtFromString(dependencyScript));
             }
 
+            scripts.add(comment(START_OF_FILE_MARKER + bench.jsFile.substring(bench.jsFile.lastIndexOf('/') + 1, bench.jsFile.length())));
+
             scripts.add(AstBuilder.stmtFromString(Util.readFile(bench.jsFile)));
-            scripts.add(comment(END_OF_LIBRARY_MARKER));
+
+            scripts.add(comment(START_OF_FILE_MARKER + Main.TEST_FILE_NAME));
 
             return block(
                     block(scripts),

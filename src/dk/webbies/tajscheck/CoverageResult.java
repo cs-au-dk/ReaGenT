@@ -128,6 +128,41 @@ public class CoverageResult {
         return resultMap;
     }
 
+    public Map<String, CoverageResult> split(Map<String, Pair<Integer, Integer>> splitRules) {
+        HashMap<String, CoverageResult> result = new HashMap<>();
+        for (Map.Entry<String, Pair<Integer, Integer>> ruleEntry : splitRules.entrySet()) {
+            String name = ruleEntry.getKey();
+            int start = ruleEntry.getValue().getLeft();
+            int end = ruleEntry.getValue().getRight();
+
+            Map<SourceLocation, Integer> statements = new HashMap<>();
+            Map<SourceLocation, Collection<Integer>> branches = new HashMap<>();
+            Map<SourceLocation, Integer> functions = new HashMap<>();
+
+            for (Map.Entry<SourceLocation, Integer> entry : this.statements.entrySet()) {
+                if (entry.getKey().start.line >= start && entry.getKey().start.line < end) {
+                    statements.put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            for (Map.Entry<SourceLocation, Collection<Integer>> entry : this.branches.entrySet()) {
+                if (entry.getKey().start.line >= start && entry.getKey().start.line < end) {
+                    branches.put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            for (Map.Entry<SourceLocation, Integer> entry : this.functions.entrySet()) {
+                if (entry.getKey().start.line >= start && entry.getKey().start.line < end) {
+                    functions.put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            result.put(name, new CoverageResult(statements, branches, functions));
+        }
+
+        return result;
+    }
+
     public static final class SourceLocation {
         public final SourcePosition start;
         public final SourcePosition end;
