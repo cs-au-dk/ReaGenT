@@ -162,20 +162,18 @@ public class TypeChecker {
                     case "Uint16Array":
                     case "Uint32Array":
                     case "Selection":
-                    case "Array": // TODO: Construct the ReferenceType
                         return Collections.singletonList(
                                 new SimpleTypeCheck(
                                         Check.instanceOf(identifier(typeNames.get(t))),
                                         typeNames.get(t)
                                 )
                         );
-                    case "NodeListOf": // TODO: Check the generic type.
-                        return Collections.singletonList(
-                                new SimpleTypeCheck(
-                                        Check.instanceOf(identifier("HTMLCollection")),
-                                        "NodeListOf"
-                                )
-                        );
+                    case "Array":
+                        assert t.getTypeArguments().size() == 1;
+                        return checkArrayThinghy(t.getTypeArguments().get(0), "Array", arg);
+                    case "NodeListOf":
+                        assert t.getTypeArguments().size() == 1;
+                        return checkArrayThinghy(t.getTypeArguments().get(0), "NodeList", arg);
                     case "ArrayLike":
                         break; // Check manually.
                     default:
@@ -341,21 +339,8 @@ public class TypeChecker {
         @Override
         public List<TypeCheck> visit(ReferenceType t, Arg arg) {
             if ("Array".equals(typeNames.get(t.getTarget()))) {
-                List<TypeCheck> result = new ArrayList<>(Arrays.asList(
-                        expectNotNull(),
-                        new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "Array")
-                ));
-
-                if (arg.depthRemaining > 0) {
-                    arg = arg.decreaseDepth();
-                    TypeCheck indexCheck = createIntersection(t.getTypeArguments().get(0).accept(this, arg));
-
-                    result.add(
-                            new SimpleTypeCheck(Check.arrayIndexCheck(indexCheck.getCheck()), "(arrayIndex: " + indexCheck.getExpected() + ")")
-                    );
-                }
-
-                return result;
+                Type indexType = t.getTypeArguments().get(0);
+                return checkArrayThinghy(indexType, "Array", arg);
             }
 
             if (nativeTypes.contains(t)) {
@@ -365,6 +350,24 @@ public class TypeChecker {
                 throw new RuntimeException(typeNames.get(t));
             }
             return t.getTarget().accept(this, arg.withParameters(arg.typeContext.append(new TypesUtil(arg.typeContext.getBenchmark()).generateParameterMap(t))));
+        }
+
+        private List<TypeCheck> checkArrayThinghy(Type indexType, String instance, Arg arg) {
+            List<TypeCheck> result = new ArrayList<>(Arrays.asList(
+                    expectNotNull(),
+                    new SimpleTypeCheck(Check.instanceOf(identifier(instance)), instance)
+            ));
+
+            if (arg.depthRemaining > 0) {
+                arg = arg.decreaseDepth();
+                TypeCheck indexCheck = createIntersection(indexType.accept(this, arg));
+
+                result.add(
+                        new SimpleTypeCheck(Check.arrayIndexCheck(indexCheck.getCheck()), "(arrayIndex: " + indexCheck.getExpected() + ")")
+                );
+            }
+
+            return result;
         }
 
         @Override

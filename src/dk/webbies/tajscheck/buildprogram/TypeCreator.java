@@ -265,7 +265,7 @@ public class TypeCreator {
             assert type.getTypeParameters().equals(type.getTypeArguments());
             if (nativeTypes.contains(type)) {
                 try {
-                    return constructTypeFromName(typeNames.get(type), typeContext);
+                    return constructTypeFromName(typeNames.get(type), typeContext, type.getTypeParameters());
                 } catch (ProduceManuallyException e) {
                     // continue
                 }
@@ -278,7 +278,7 @@ public class TypeCreator {
         public Statement visit(InterfaceType type, TypeContext typeContext) {
             if (nativeTypes.contains(type) && !TypesUtil.isEmptyInterface(type) && typeNames.get(type) != null &&  !typeNames.get(type).startsWith("window.")) {
                 try {
-                    return constructTypeFromName(typeNames.get(type), typeContext);
+                    return constructTypeFromName(typeNames.get(type), typeContext, type.getTypeParameters());
                 } catch (ProduceManuallyException e) {
                     // continue
                 }
@@ -370,27 +370,7 @@ public class TypeCreator {
         public Statement visit(ReferenceType type, TypeContext typeContext) {
             if ("Array".equals(typeNames.get(type.getTarget()))) {
                 Type indexType = type.getTypeArguments().iterator().next();
-                Expression constructElement = constructType(indexType, typeContext);
-
-
-                // An expression that returns an array with the correct type, with either 0, 1, 3, 4 or 5 elements in the array.
-                return Return(conditional(
-                        binary(call(identifier("random")), Operator.GREATER_THAN, number(0.8)),
-                        array(),
-                        conditional(
-                                binary(call(identifier("random")), Operator.GREATER_THAN, number(0.75)),
-                                array(constructElement),
-                                conditional(
-                                        binary(call(identifier("random")), Operator.GREATER_THAN, number(0.67)),
-                                        array(constructElement, constructElement, constructElement),
-                                        conditional(
-                                                binary(call(identifier("random")), Operator.GREATER_THAN, number(0.5)),
-                                                array(constructElement, constructElement, constructElement, constructElement),
-                                                array(constructElement, constructElement, constructElement, constructElement, constructElement)
-                                        )
-                                )
-                        )
-                ));
+                return constructArray(typeContext, indexType);
             }
 
             Type target;
@@ -622,6 +602,31 @@ public class TypeCreator {
             throw new RuntimeException();
         }
     }
+
+    private Statement constructArray(TypeContext typeContext, Type indexType) {
+        Expression constructElement = constructType(indexType, typeContext);
+
+
+        // An expression that returns an array with the correct type, with either 0, 1, 3, 4 or 5 elements in the array.
+        return Return(conditional(
+                binary(call(identifier("random")), Operator.GREATER_THAN, number(0.8)),
+                array(),
+                conditional(
+                        binary(call(identifier("random")), Operator.GREATER_THAN, number(0.75)),
+                        array(constructElement),
+                        conditional(
+                                binary(call(identifier("random")), Operator.GREATER_THAN, number(0.67)),
+                                array(constructElement, constructElement, constructElement),
+                                conditional(
+                                        binary(call(identifier("random")), Operator.GREATER_THAN, number(0.5)),
+                                        array(constructElement, constructElement, constructElement, constructElement),
+                                        array(constructElement, constructElement, constructElement, constructElement, constructElement)
+                                )
+                        )
+                )
+        ));
+    }
+
 
     private FunctionExpression createFunction(InterfaceType inter, TypeContext typeContext) {
         List<Signature> signatures = TypesUtil.removeDuplicateSignatures(Util.concat(inter.getDeclaredCallSignatures(), inter.getDeclaredConstructSignatures()));
@@ -900,7 +905,7 @@ public class TypeCreator {
     }
 
 
-    private Statement constructTypeFromName(String name, TypeContext typeContext) throws ProduceManuallyException {
+    private Statement constructTypeFromName(String name, TypeContext typeContext, List<Type> typeParameters) throws ProduceManuallyException {
         if (name == null) {
             throw new NullPointerException();
         }
@@ -910,7 +915,9 @@ public class TypeCreator {
 
         switch (name) {
             case "Array":
-                return AstBuilder.stmtFromString("return []"); // TODO: Could be better
+                assert typeParameters.size() == 1;
+
+                return constructArray(typeContext, typeParameters.get(0));
             case "Object":
                 return Return(constructType(SpecReader.makeEmptySyntheticInterfaceType(), typeContext));
             case "Number":
