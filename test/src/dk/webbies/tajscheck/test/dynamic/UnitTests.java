@@ -767,4 +767,23 @@ public class UnitTests {
         assertThat(result.typeErrors.size(), is(0));
         assertThat(result.errors, everyItem(is(equalTo("RuntimeError Cannot construct this IntersectionType")))); // <- this happens, it is ok, i cannot at runtime construct a type which is the intersection of two types.
     }
+
+    @Test
+    public void extendsArray3() throws Exception {
+        RunResult result = run("extendsArray3", "foo");
+
+        assertThat(result.typeErrors.size(), is(equalTo(1)));
+
+        expect(result)
+                .forPath("module.bar().<>.[numberIndexer].<>.[numberIndexer]")
+                .expected("string")
+                .got(TYPEOF, "number");
+    }
+
+    @Test
+    public void extendsArray4() throws Exception {
+        RunResult result = run("extendsArray4", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+    }
 }
