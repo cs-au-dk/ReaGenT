@@ -154,14 +154,7 @@ public class TypeCreator {
         } else if (type instanceof TypeParameterType) {
             if (typeContext.get((TypeParameterType) type) != null) {
                 TypeWithContext lookup = typeContext.get((TypeParameterType) type);
-                List<Type> recursiveDefinition = TypesUtil.findRecursiveDefinition((TypeParameterType) type, typeContext, typeParameterIndexer);
-                if (recursiveDefinition.isEmpty()) {
-                    putProducedValueIndex(index, lookup.getType(), lookup.getTypeContext());
-                } else {
-                    for (Type constraint : recursiveDefinition) {
-                        putProducedValueIndex(index, constraint, typeContext);
-                    }
-                }
+                putProducedValueIndex(index, lookup.getType(), lookup.getTypeContext());
             } else {
                 // Do nothing
             }
@@ -409,7 +402,7 @@ public class TypeCreator {
                 assert type.getTarget() instanceof ClassInstanceType;
                 target = ((ClassType) ((ClassInstanceType) type.getTarget()).getClassType()).getInstanceType();
             }
-            return constructNewInstanceOfType(target, new TypesUtil(benchmark).generateParameterMap(type, typeContext));
+            return Return(constructType(target, new TypesUtil(benchmark).generateParameterMap(type, typeContext)));
         }
 
         @Override
@@ -493,15 +486,16 @@ public class TypeCreator {
         @Override
         public Statement visit(TypeParameterType type, TypeContext typeContext) {
             if (typeContext.containsKey(type)) {
-                if (!TypesUtil.findRecursiveDefinition(type, typeContext, typeParameterIndexer).isEmpty()) {
+                List<Type> recursiveGenerics = TypesUtil.findRecursiveDefinition(type, typeContext, typeParameterIndexer);
+                if (!recursiveGenerics.isEmpty()) {
                     IntersectionType intersection = new IntersectionType();
-                    intersection.setElements(TypesUtil.findRecursiveDefinition(type, typeContext, typeParameterIndexer));
+                    intersection.setElements(recursiveGenerics);
 
-                    return constructNewInstanceOfType(intersection, typeContext);
+                    return Return(constructType(intersection, typeContext));
                 }
 
                 TypeWithContext lookup = typeContext.get(type);
-                return constructNewInstanceOfType(lookup.getType(), lookup.getTypeContext());
+                return Return(constructType(lookup.getType(), lookup.getTypeContext()));
             }
             String markerField = typeParameterIndexer.getMarkerField(type);
             return block(
@@ -550,6 +544,10 @@ public class TypeCreator {
 
         @Override
         public Statement visit(IntersectionType t, TypeContext typeContext) {
+            assert !t.getElements().isEmpty();
+            if (t.getElements().size() == 1) {
+                return Return(constructType(t.getElements().iterator().next(), typeContext));
+            }
             List<CallExpression> constructSubTypes = t.getElements().stream().map(element -> constructType(element, typeContext)).collect(Collectors.toList());
 
             // This can theoretically break stuff (that i save to result again, instead of always putting everything in the existing result), but it most likely won't (the soundness-test should detect if we ever get a type that could break this thing). Also, I didn't manage to find a type that breaks this, but such a type most likely exists.
@@ -914,11 +912,11 @@ public class TypeCreator {
             case "Array":
                 return AstBuilder.stmtFromString("return []"); // TODO: Could be better
             case "Object":
-                return constructNewInstanceOfType(SpecReader.makeEmptySyntheticInterfaceType(), typeContext);
+                return Return(constructType(SpecReader.makeEmptySyntheticInterfaceType(), typeContext));
             case "Number":
-                return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.Number), typeContext);
+                return Return(constructType(new SimpleType(SimpleTypeKind.Number), typeContext));
             case "Boolean":
-                return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.Boolean), typeContext);
+                return Return(constructType(new SimpleType(SimpleTypeKind.Boolean), typeContext));
             case "Date":
                 return Return(newCall(identifier("Date")));
             case "Function":
@@ -929,14 +927,14 @@ public class TypeCreator {
                 callSignature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
                 interfaceWithSimpleFunction.getDeclaredCallSignatures().add(callSignature);
                 typeNames.put(interfaceWithSimpleFunction, "Function");
-                return constructNewInstanceOfType(interfaceWithSimpleFunction, typeContext);
+                return Return(constructType(interfaceWithSimpleFunction, typeContext));
             case "Error":
                 return Return(newCall(identifier("Error")));
             case "RegExp":
-                Expression constructString = call(function(constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), TypeContext.create(benchmark))));
+                Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(benchmark));
                 return Return(newCall(identifier("RegExp"), constructString));
             case "String":
-                return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), typeContext);
+                return Return(constructType(new SimpleType(SimpleTypeKind.String), typeContext));
             case "HTMLCanvasElement":
                 return AstBuilder.stmtFromString("return document.createElement('canvas')");
             case "HTMLVideoElement":
@@ -1074,10 +1072,6 @@ public class TypeCreator {
     private final class ProduceManuallyException extends Exception {
     }
 
-    private Statement constructNewInstanceOfType(Type type, TypeContext typeContext) {
-        return type.accept(new ConstructNewInstanceVisitor(), typeContext);
-    }
-
     public CallExpression getType(Type type, TypeContext typeContext) {
         int index = getTypeIndex(type, typeContext);
 
@@ -1180,7 +1174,7 @@ public class TypeCreator {
                                                 binary(call(identifier("random")), Operator.GREATER_THAN, number(0.5))
                                         ),
                                         Return(identifier("existingValue")),
-                                        this.constructNewInstanceOfType(type, typeContext)
+                                        type.accept(new ConstructNewInstanceVisitor(), typeContext)
                                 )
                         )
                 )
