@@ -125,7 +125,7 @@ public class TypeCreator {
             }
         }
 
-        TypeContext newContext = typeContext.cleanTypeParameters(type, freeGenericsFinder);
+        TypeContext newContext = typeContext.optimizeTypeParameters(type, freeGenericsFinder);
         if (!newContext.equals(typeContext)) {
             putProducedValueIndex(index, type, newContext);
         }

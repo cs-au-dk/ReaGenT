@@ -40,6 +40,7 @@ public class DeltaDebug {
 
         write(filePath + ".smallest", array);
 
+        boolean progress = false;
         for (int sz = array.length >>> 1; sz > 0; sz >>>= 1) {
             System.out.println("  chunk size " + sz);
             int nchunks = (int) Math.floor(array.length / sz);
@@ -61,12 +62,18 @@ public class DeltaDebug {
                         write(filePath, array);
                     } else {
                         write(filePath + ".smallest", array);
+                        progress = true;
                     }
                 }
             }
         }
 
         write(filePath, array);
+
+        if (progress) {
+            debug(filePath, test);
+            return;
+        }
 
         System.out.println("Delta debugging complete. ");
     }
@@ -88,41 +95,29 @@ public class DeltaDebug {
         Util.writeFile(filePath, String.join("\n", Arrays.asList(file)));
     }
 
+    // TODO: Something with curly-brackets, next time i use this.
     public static void main(String[] args) throws IOException {
-        String file = "test/benchmarks/p2/p2.d.ts";
+        String file = "test/benchmarks/knockout/knockout.d.ts";
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
                 return test();
             } catch (IllegalArgumentException | StackOverflowError e) {
                 e.printStackTrace();
-                return false;
+                return true;
             } catch (Error | Exception e) {
                 e.printStackTrace();
                 return false;
+            } finally {
+                throw new RuntimeException();
             }
         });
     }
 
     private static boolean test() throws Exception {
-        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/p2/p2.js", "test/benchmarks/p2/p2.d.ts", "p2", BOOTSTRAP, CheckOptions.builder().setSplitUnions(false).setDisableGenerics(true).build());
-        Main.writeFullDriver(bench);
-        System.out.println("Driver written");
-        String output;
-        try {
-            output = Main.runBenchmark(bench, 2 * 60 * 1000);
-        } catch (TimeoutException e) {
-            System.out.println("Timeout");
-            return false;
-        }
-        OutputParser.RunResult result = OutputParser.parseDriverResult(output);
-
-        for (OutputParser.TypeError typeError : result.typeErrors) {
-            System.out.println(typeError);
-        }
-
-
-        return result.typeErrors.size() > 0;
+        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/knockout/knockout.js", "test/benchmarks/knockout/knockout.d.ts", "ko", BOOTSTRAP, CheckOptions.builder().setSplitUnions(false).build());
+        Main.generateFullDriver(bench);
+        return false;
     }
 
 

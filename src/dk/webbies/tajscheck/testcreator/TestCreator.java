@@ -59,7 +59,7 @@ public class TestCreator {
             TestQueueElement element = queue.poll();
             Arg arg = element.arg;
 
-            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(element.type, freeGenericsFinder));
+            arg = arg.withTypeContext(arg.typeContext.optimizeTypeParameters(element.type, freeGenericsFinder));
 
             if (arg.withTopLevelFunctions) {
                 topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, arg.depth, seenTopLevel));
@@ -725,7 +725,7 @@ public class TestCreator {
             TestQueueElement element = queue.poll();
             arg = element.arg;
 
-            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(element.type, freeGenericsFinder));
+            arg = arg.withTypeContext(arg.typeContext.optimizeTypeParameters(element.type, freeGenericsFinder));
 
             if (visitor.negativeTypesSeen.contains(new TypeWithContext(element.type, arg.typeContext))) {
                 continue;
@@ -734,6 +734,11 @@ public class TestCreator {
 
             element.type.accept(findPositiveVisitor, arg);
         }
+    }
+
+    // getContexts(visitor.negativeTypesSeen, element.type).stream().map(TypeContext::getMap).filter(map -> map.size() == 1).map(Map::entrySet).map(entries -> entries.iterator().next()).collect(Collectors.toList())
+    private static List<TypeContext> getContexts(Collection<TypeWithContext> list, Type type) {
+        return list.stream().filter(tc -> tc.getType().equals(type)).map(TypeWithContext::getTypeContext).collect(Collectors.toList());
     }
 
     private static class FindPositiveTypesVisitor implements TypeVisitorWithArgument<Void, Arg> {

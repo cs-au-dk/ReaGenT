@@ -58,7 +58,7 @@ public class NullTypeContext implements TypeContext {
     }
 
     @Override
-    public TypeContext cleanTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder) {
+    public TypeContext optimizeTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder) {
         return this;
     }
 
