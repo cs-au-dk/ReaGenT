@@ -155,14 +155,7 @@ public class TypeCreator {
         } else if (type instanceof TypeParameterType) {
             if (typeContext.get((TypeParameterType) type) != null) {
                 TypeWithContext lookup = typeContext.get((TypeParameterType) type);
-                List<Type> recursiveDefinition = TypesUtil.findRecursiveDefinition((TypeParameterType) type, typeContext, typeParameterIndexer);
-                if (recursiveDefinition.isEmpty()) {
-                    putProducedValueIndex(index, lookup.getType(), lookup.getTypeContext());
-                } else {
-                    for (Type constraint : recursiveDefinition) {
-                        putProducedValueIndex(index, constraint, typeContext);
-                    }
-                }
+                putProducedValueIndex(index, lookup.getType(), lookup.getTypeContext());
             } else {
                 // Do nothing
             }
@@ -494,13 +487,6 @@ public class TypeCreator {
         @Override
         public Statement visit(TypeParameterType type, TypeContext typeContext) {
             if (typeContext.containsKey(type)) {
-                if (!TypesUtil.findRecursiveDefinition(type, typeContext, typeParameterIndexer).isEmpty()) {
-                    IntersectionType intersection = new IntersectionType();
-                    intersection.setElements(TypesUtil.findRecursiveDefinition(type, typeContext, typeParameterIndexer));
-
-                    return constructNewInstanceOfType(intersection, typeContext);
-                }
-
                 TypeWithContext lookup = typeContext.get(type);
                 return constructNewInstanceOfType(lookup.getType(), lookup.getTypeContext());
             }
