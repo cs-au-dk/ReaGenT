@@ -43,34 +43,30 @@ public class TestCreator {
     public List<Test> createTests(boolean concatDuplicates) {
         String module = bench.module;
 
-        PriorityQueue<CreateTestQueueElement> queue = new PriorityQueue<>();
+        PriorityQueue<TestQueueElement> queue = new PriorityQueue<>();
 
         Set<TypeWithContext> negativeTypesSeen = new HashSet<>();
 
         CreateTestVisitor visitor = new CreateTestVisitor(queue, negativeTypesSeen);
 
-        List<Test> topLevelFunctionTests = new ArrayList<>();
-        topLevelFunctionTests.addAll(addTopLevelFunctionTests(typeToTest, module, new TypeContext(bench), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, 0));
-
-        queue.add(new CreateTestQueueElement(typeToTest, new Arg(module, new TypeContext(bench), 0)));
-
         Set<TypeWithContext> seenTopLevel = new HashSet<>();
 
+        List<Test> topLevelFunctionTests = new ArrayList<>();
+        topLevelFunctionTests.addAll(addTopLevelFunctionTests(typeToTest, module, new TypeContext(bench), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, 0, seenTopLevel));
+
+        queue.add(new TestQueueElement(typeToTest, new Arg(module, new TypeContext(bench), 0)));
+
         while (!queue.isEmpty()) {
-            CreateTestQueueElement element = queue.poll();
+            TestQueueElement element = queue.poll();
             Arg arg = element.arg;
 
             if (!bench.options.disableSizeOptimization) {
-                arg = arg.replaceTypeContext(arg.typeContext.cleanTypeParameters(element.type, reachableTypeParameters));
+                arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(element.type, reachableTypeParameters));
             }
 
 
             if (arg.withTopLevelFunctions) {
-                TypeWithContext withParameters = new TypeWithContext(element.type, arg.getTypeContext());
-                if (!seenTopLevel.contains(withParameters)) {
-                    topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, arg.depth));
-                }
-                seenTopLevel.add(withParameters);
+                topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, arg.depth, seenTopLevel));
 
             }
             element.type.accept(visitor, arg.noTopLevelFunctions());
@@ -91,7 +87,13 @@ public class TestCreator {
         }
     }
 
-    private List<Test> addTopLevelFunctionTests(Type type, String path, TypeContext typeContext, CreateTestVisitor visitor, Set<TypeWithContext> negativeTypesSeen, TypeParameterIndexer typeParameterIndexer, Set<Type> nativeTypes, int depth) {
+    private List<Test> addTopLevelFunctionTests(Type type, String path, TypeContext typeContext, CreateTestVisitor visitor, Set<TypeWithContext> negativeTypesSeen, TypeParameterIndexer typeParameterIndexer, Set<Type> nativeTypes, int depth, Set<TypeWithContext> seenTopLevel) {
+        TypeWithContext key = new TypeWithContext(type, typeContext);
+        if (seenTopLevel.contains(key)) {
+            return Collections.emptyList();
+        }
+        seenTopLevel.add(key);
+
         if (nativeTypes.contains(type)) {
             return new ArrayList<>();
         }
@@ -107,7 +109,7 @@ public class TestCreator {
         if (type instanceof IntersectionType) {
             List<Test> result = new ArrayList<>();
             for (Type subType : ((IntersectionType) type).getElements()) {
-                result.addAll(addTopLevelFunctionTests(subType, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth));
+                result.addAll(addTopLevelFunctionTests(subType, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
             }
 
             return result;
@@ -118,7 +120,7 @@ public class TestCreator {
             List<Type> element = ((UnionType) type).getElements();
             for (int i = 0; i < element.size(); i++) {
                 Type subType = element.get(i);
-                result.addAll(addTopLevelFunctionTests(subType, path + ".[union" + i + "]", typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth));
+                result.addAll(addTopLevelFunctionTests(subType, path + ".[union" + i + "]", typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
             }
             return result;
         }
@@ -127,19 +129,19 @@ public class TestCreator {
             List<Test> result = new ArrayList<>();
             TypeParameterType typeParameterType = (TypeParameterType) type;
             if (typeParameterType.getConstraint() != null) {
-                result.addAll(addTopLevelFunctionTests(((TypeParameterType) type).getConstraint(), path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth));
+                result.addAll(addTopLevelFunctionTests(((TypeParameterType) type).getConstraint(), path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
             }
             List<Type> recursiveDefinition = TypesUtil.findRecursiveDefinition(typeParameterType, typeContext, typeParameterIndexer);
             if (!recursiveDefinition.isEmpty()) {
                 for (Type subType : recursiveDefinition) {
-                    result.addAll(addTopLevelFunctionTests(subType, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth));
+                    result.addAll(addTopLevelFunctionTests(subType, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
                 }
                 return result;
 
             }
             if (typeContext.containsKey(typeParameterType)) {
                 TypeWithContext lookup = typeContext.get(typeParameterType);
-                result.addAll(addTopLevelFunctionTests(lookup.getType(), path, lookup.getTypeContext(), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth));
+                result.addAll(addTopLevelFunctionTests(lookup.getType(), path, lookup.getTypeContext(), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
             }
             return result;
         }
@@ -150,12 +152,12 @@ public class TestCreator {
             type = ((ReferenceType) type).getTarget();
             path = path + ".<>";
             typeContext = typeContext.append(newParameters);
-            return addTopLevelFunctionTests(type, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth);
+            return addTopLevelFunctionTests(type, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel);
         }
 
         if (type instanceof GenericType) {
             type = ((GenericType) type).toInterface();
-            return addTopLevelFunctionTests(type, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth);
+            return addTopLevelFunctionTests(type, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel);
         }
 
         if (type instanceof InterfaceType) {
@@ -286,7 +288,7 @@ public class TestCreator {
             return new Arg(this.path, this.typeContext.withThisType(classType), this.depth, this.withTopLevelFunctions);
         }
 
-        public Arg replaceTypeContext(TypeContext newContext) {
+        public Arg withTypeContext(TypeContext newContext) {
             return new Arg(this.path, newContext, this.depth, this.withTopLevelFunctions);
         }
 
@@ -313,11 +315,11 @@ public class TestCreator {
         }
     }
 
-    private static final class CreateTestQueueElement implements Comparable<CreateTestQueueElement> {
+    private static final class TestQueueElement implements Comparable<TestQueueElement> {
         private final Type type;
         private final Arg arg;
 
-        private CreateTestQueueElement(Type t, Arg arg) {
+        private TestQueueElement(Type t, Arg arg) {
             if (t == null || arg == null) {
                 throw new NullPointerException();
             }
@@ -326,7 +328,7 @@ public class TestCreator {
         }
 
         @Override
-        public int compareTo(CreateTestQueueElement o) {
+        public int compareTo(TestQueueElement o) {
             return Integer.compare(this.arg.depth, o.arg.depth);
         }
     }
@@ -336,10 +338,10 @@ public class TestCreator {
     private final class CreateTestVisitor implements TypeVisitorWithArgument<Void, Arg> {
         private final Set<TypeWithContext> seen = new HashSet<>();
         private final List<Test> tests = new ArrayList<>();
-        private final PriorityQueue<CreateTestQueueElement> queue;
+        private final PriorityQueue<TestQueueElement> queue;
         private Set<TypeWithContext> negativeTypesSeen;
 
-        private CreateTestVisitor(PriorityQueue<CreateTestQueueElement> queue, Set<TypeWithContext> negativeTypesSeen) {
+        private CreateTestVisitor(PriorityQueue<TestQueueElement> queue, Set<TypeWithContext> negativeTypesSeen) {
             this.queue = queue;
             this.negativeTypesSeen = negativeTypesSeen;
         }
@@ -579,7 +581,7 @@ public class TestCreator {
         }
 
         private Void recurse(Type type, Arg arg) {
-            queue.add(new CreateTestQueueElement(type, arg));
+            queue.add(new TestQueueElement(type, arg));
             return null;
         }
 
@@ -735,22 +737,52 @@ public class TestCreator {
     }
 
     private void findPositiveTypes(CreateTestVisitor visitor, Type type, Arg arg, Set<Type> nativeTypes) {
-        type.accept(new FindPositiveTypesVisitor(visitor, visitor.negativeTypesSeen, nativeTypes, bench, hasThisTypes), arg);
+        PriorityQueue<TestQueueElement> queue = new PriorityQueue<>();
+
+        FindPositiveTypesVisitor findPositiveVisitor = new FindPositiveTypesVisitor(visitor, nativeTypes, bench, hasThisTypes, reachableTypeParameters, queue);
+        queue.add(new TestQueueElement(type, arg));
+
+        while (!queue.isEmpty()) {
+            TestQueueElement element = queue.poll();
+            arg = element.arg;
+
+            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(element.type, reachableTypeParameters));
+
+            if (visitor.negativeTypesSeen.contains(new TypeWithContext(element.type, arg.typeContext))) {
+                continue;
+            }
+            visitor.negativeTypesSeen.add(new TypeWithContext(element.type, arg.typeContext));
+
+            element.type.accept(findPositiveVisitor, arg);
+        }
     }
 
     private static class FindPositiveTypesVisitor implements TypeVisitorWithArgument<Void, Arg> {
         private CreateTestVisitor visitor;
-        private Set<TypeWithContext> negativeTypesSeen;
         private Set<Type> nativeTypes;
         private final Benchmark bench;
         private Set<Type> hasThisTypes;
+        private final MultiMap<Type, TypeParameterType> reachableTypeParameters;
+        private PriorityQueue<TestQueueElement> queue;
 
-        public FindPositiveTypesVisitor(CreateTestVisitor createTestVisitor, Set<TypeWithContext> negativeTypesSeen, Set<Type> nativeTypes, Benchmark bench, Set<Type> hasThisTypes) {
+        public FindPositiveTypesVisitor(
+                CreateTestVisitor createTestVisitor,
+                Set<Type> nativeTypes,
+                Benchmark bench,
+                Set<Type> hasThisTypes,
+                MultiMap<Type, TypeParameterType> reachableTypeParameters,
+                PriorityQueue<TestQueueElement> queue) {
             this.visitor = createTestVisitor;
-            this.negativeTypesSeen = negativeTypesSeen;
             this.nativeTypes = nativeTypes;
             this.bench = bench;
             this.hasThisTypes = hasThisTypes;
+            this.reachableTypeParameters = reachableTypeParameters;
+            this.queue = queue;
+        }
+
+        private Void recurse(Type type, Arg arg) {
+            this.queue.add(new TestQueueElement(type, arg));
+            return null;
         }
 
         @Override
@@ -760,12 +792,11 @@ public class TestCreator {
 
         @Override
         public Void visit(ClassType t, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithContext(t, arg.getTypeContext())) || nativeTypes.contains(t)) {
+            if (nativeTypes.contains(t)) {
                 return null;
             }
-            negativeTypesSeen.add(new TypeWithContext(t, arg.getTypeContext()));
 
-            t.getInstanceType().accept(this, arg.append("new()"));
+            recurse(t.getInstanceType(), arg.append("new()"));
 
             assert !t.getSignatures().isEmpty();
 
@@ -777,18 +808,18 @@ public class TestCreator {
             }
 
             for (Type baseType : t.getBaseTypes()) {
-                baseType.accept(this, arg);
+                recurse(baseType, arg);
             }
 
             if (t.getDeclaredStringIndexType() != null) {
-                t.getDeclaredStringIndexType().accept(this, arg.append("[stringIndexer]"));
+                recurse(t.getDeclaredStringIndexType(), arg.append("[stringIndexer]"));
             }
             if (t.getDeclaredNumberIndexType() != null) {
-                t.getDeclaredNumberIndexType().accept(this, arg.append("[numberIndexer"));
+                recurse(t.getDeclaredNumberIndexType(), arg.append("[numberIndexer"));
             }
 
             for (Map.Entry<String, Type> entry : t.getStaticProperties().entrySet()) {
-                entry.getValue().accept(this, arg.append(entry.getKey()));
+                recurse(entry.getValue(), arg.append(entry.getKey()));
             }
 
             return null;
@@ -796,26 +827,24 @@ public class TestCreator {
 
         @Override
         public Void visit(GenericType t, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithContext(t, arg.getTypeContext())) || nativeTypes.contains(t)) {
+            if (nativeTypes.contains(t)) {
                 return null;
             }
-            negativeTypesSeen.add(new TypeWithContext(t, arg.getTypeContext()));
 
             if (hasThisTypes.contains(t)) {
                 arg = arg.withThisType(t);
             }
 
             assert t.getTypeParameters().equals(t.getTypeArguments()); // If this fails, look at the other visitor.
-            t.toInterface().accept(this, arg);
+            recurse(t.toInterface(), arg);
             return null;
         }
 
         @Override
         public Void visit(InterfaceType t, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithContext(t, arg.getTypeContext())) || nativeTypes.contains(t)) {
+            if (nativeTypes.contains(t)) {
                 return null;
             }
-            negativeTypesSeen.add(new TypeWithContext(t, arg.getTypeContext()));
 
             if (hasThisTypes.contains(t)) {
                 arg = arg.withThisType(t);
@@ -826,21 +855,21 @@ public class TestCreator {
                     Signature.Parameter parameter = signature.getParameters().get(i);
                     visitor.recurse(parameter.getType(), arg.append("[arg" + i + "]").withTopLevelFunctions());
                 }
-                signature.getResolvedReturnType().accept(this, arg.append("()"));
+                recurse(signature.getResolvedReturnType(), arg.append("()"));
             }
 
             for (Type baseType : t.getBaseTypes()) {
-                baseType.accept(this, arg);
+                recurse(baseType, arg);
             }
 
             if (t.getDeclaredStringIndexType() != null) {
-                t.getDeclaredStringIndexType().accept(this, arg.append("[stringIndexer]"));
+                recurse(t.getDeclaredStringIndexType(), arg.append("[stringIndexer]"));
             }
             if (t.getDeclaredNumberIndexType() != null) {
-                t.getDeclaredNumberIndexType().accept(this, arg.append("[numberIndexer"));
+                recurse(t.getDeclaredNumberIndexType(), arg.append("[numberIndexer"));
             }
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
-                entry.getValue().accept(this, arg.append(entry.getKey()));
+                recurse(entry.getValue(), arg.append(entry.getKey()));
             }
 
             return null;
@@ -848,14 +877,13 @@ public class TestCreator {
 
         @Override
         public Void visit(ReferenceType t, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithContext(t, arg.getTypeContext())) || nativeTypes.contains(t)) {
+            if (nativeTypes.contains(t)) {
                 return null;
             }
-            negativeTypesSeen.add(new TypeWithContext(t, arg.getTypeContext()));
 
             TypeContext newParameters = new TypesUtil(bench).generateParameterMap(t);
 
-            t.getTarget().accept(this, arg.append("<>").withParameters(newParameters));
+            recurse(t.getTarget(), arg.append("<>").withParameters(newParameters));
 
             return null;
         }
@@ -867,14 +895,13 @@ public class TestCreator {
 
         @Override
         public Void visit(TupleType t, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithContext(t, arg.getTypeContext())) /* || nativeTypes.contains(tuple)*/) { // TupleTypes for some weird reason ends up as the result of en Array's map function.
+            if (false /* || nativeTypes.contains(tuple)*/) { // TupleTypes for some weird reason ends up as the result of en Array's map function.
                 return null;
             }
-            negativeTypesSeen.add(new TypeWithContext(t, arg.getTypeContext()));
 
             for (int i = 0; i < t.getElementTypes().size(); i++) {
                 Type type = t.getElementTypes().get(i);
-                type.accept(this, arg.append(Integer.toString(i)));
+                recurse(type, arg.append(Integer.toString(i)));
             }
 
             return null;
@@ -882,14 +909,13 @@ public class TestCreator {
 
         @Override
         public Void visit(UnionType union, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithContext(union, arg.getTypeContext())) || nativeTypes.contains(union)) {
+            if (nativeTypes.contains(union)) {
                 return null;
             }
-            negativeTypesSeen.add(new TypeWithContext(union, arg.getTypeContext()));
 
             for (int i = 0; i < union.getElements().size(); i++) {
                 Type type = union.getElements().get(i);
-                type.accept(this, arg.append("[union" + i + "]"));
+                recurse(type, arg.append("[union" + i + "]"));
             }
             return null;
         }
@@ -901,18 +927,17 @@ public class TestCreator {
 
         @Override
         public Void visit(TypeParameterType t, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithContext(t, arg.getTypeContext())) || nativeTypes.contains(t)) {
+            if (nativeTypes.contains(t)) {
                 return null;
             }
-            negativeTypesSeen.add(new TypeWithContext(t, arg.getTypeContext()));
 
             if (arg.getTypeContext().containsKey(t)) {
                 TypeWithContext lookup = arg.getTypeContext().get(t);
-                lookup.getType().accept(this, arg.withParameters(lookup.getTypeContext()));
+                recurse(lookup.getType(), arg.withParameters(lookup.getTypeContext()));
             }
 
             if (t.getConstraint() != null) {
-                t.getConstraint().accept(this, arg.append("[constraint]"));
+                recurse(t.getConstraint(), arg.append("[constraint]"));
             }
             return null;
         }
@@ -939,21 +964,21 @@ public class TestCreator {
 
         @Override
         public Void visit(IntersectionType intersection, Arg arg) {
-            if (negativeTypesSeen.contains(new TypeWithContext(intersection, arg.getTypeContext())) || nativeTypes.contains(intersection)) {
+            if (nativeTypes.contains(intersection)) {
                 return null;
             }
-            negativeTypesSeen.add(new TypeWithContext(intersection, arg.getTypeContext()));
 
             for (int i = 0; i < intersection.getElements().size(); i++) {
                 Type type = intersection.getElements().get(i);
-                type.accept(this, arg.append("[intersection" + i + "]"));
+                recurse(type, arg.append("[intersection" + i + "]"));
             }
             return null;
         }
 
         @Override
         public Void visit(ClassInstanceType t, Arg arg) {
-            return ((ClassType) t.getClassType()).getInstanceType().accept(this, arg);
+            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(t, reachableTypeParameters));
+            return recurse(((ClassType) t.getClassType()).getInstanceType(), arg);
         }
 
         @Override
@@ -963,18 +988,20 @@ public class TestCreator {
 
         @Override
         public Void visit(ThisType t, Arg arg) {
-            return arg.getTypeContext().getThisType().accept(this, arg);
+            return recurse(arg.getTypeContext().getThisType(), arg);
         }
 
         @Override
         public Void visit(IndexType t, Arg arg) {
-            return t.getType().accept(this, arg.append("[index]"));
+            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(t, reachableTypeParameters));
+            return recurse(t.getType(), arg.append("[index]"));
         }
 
         @Override
         public Void visit(IndexedAccessType t, Arg arg) {
-            t.getObjectType().accept(this, arg.append("[objectType]"));
-            t.getIndexType().accept(this, arg.append("[indexType]"));
+            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(t, reachableTypeParameters));
+            recurse(t.getObjectType(), arg.append("[objectType]"));
+            recurse(t.getIndexType(), arg.append("[indexType]"));
             return null;
         }
     }
