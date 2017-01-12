@@ -233,12 +233,10 @@ public class Main {
 
     private static String runBenchmark(String testFilePath, Benchmark.RUN_METHOD run_method, int timeout) throws IOException, TimeoutException {
         switch (run_method) {
-            case BOOTSTRAP:
             case NODE:
-                String path = testFilePath;
-
-                return Util.runNodeScript(path, timeout);
+                return Util.runNodeScript(testFilePath, timeout);
             case BROWSER:
+            case BOOTSTRAP:
                 try {
                     String rawResult = SeleniumDriver.executeScript(Util.readFile(testFilePath), timeout);
                     JSONObject json = new JSONObject("{res: " + rawResult + "}"); // Ugly, but works.
