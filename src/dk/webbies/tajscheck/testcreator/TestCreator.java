@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.testcreator;
 
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
@@ -52,18 +52,15 @@ public class TestCreator {
         Set<TypeWithContext> seenTopLevel = new HashSet<>();
 
         List<Test> topLevelFunctionTests = new ArrayList<>();
-        topLevelFunctionTests.addAll(addTopLevelFunctionTests(typeToTest, module, new TypeContext(bench), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, 0, seenTopLevel));
+        topLevelFunctionTests.addAll(addTopLevelFunctionTests(typeToTest, module, TypeContext.create(bench), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, 0, seenTopLevel));
 
-        queue.add(new TestQueueElement(typeToTest, new Arg(module, new TypeContext(bench), 0)));
+        queue.add(new TestQueueElement(typeToTest, new Arg(module, TypeContext.create(bench), 0)));
 
         while (!queue.isEmpty()) {
             TestQueueElement element = queue.poll();
             Arg arg = element.arg;
 
-            if (!bench.options.disableSizeOptimization) {
-                arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(element.type, reachableTypeParameters));
-            }
-
+            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(element.type, reachableTypeParameters));
 
             if (arg.withTopLevelFunctions) {
                 topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, arg.depth, seenTopLevel));
@@ -639,9 +636,7 @@ public class TestCreator {
                 TypeWithContext lookup = arg.getTypeContext().get(t);
                 arg = arg.withParameters(lookup.getTypeContext());
                 recurse(lookup.getType(), arg);
-            }
-
-            if (t.getConstraint() != null) {
+            } else if (t.getConstraint() != null) {
                 tests.add(new FilterTest(t, t.getConstraint(), arg.path, arg.getTypeContext(), Check.alwaysTrue()));
                 recurse(t.getConstraint(), arg.append("[constraint]"));
             }
@@ -919,9 +914,7 @@ public class TestCreator {
             if (arg.getTypeContext().containsKey(t)) {
                 TypeWithContext lookup = arg.getTypeContext().get(t);
                 recurse(lookup.getType(), arg.withParameters(lookup.getTypeContext()));
-            }
-
-            if (t.getConstraint() != null) {
+            } else if (t.getConstraint() != null) {
                 recurse(t.getConstraint(), arg.append("[constraint]"));
             }
             return null;

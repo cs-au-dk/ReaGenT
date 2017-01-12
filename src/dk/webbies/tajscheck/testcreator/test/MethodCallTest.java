@@ -2,7 +2,7 @@ package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.typeutil.PrettyTypes;
-import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
 import java.util.Arrays;
 import java.util.List;

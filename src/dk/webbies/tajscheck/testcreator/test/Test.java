@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
 import java.util.Collection;
 import java.util.Collections;

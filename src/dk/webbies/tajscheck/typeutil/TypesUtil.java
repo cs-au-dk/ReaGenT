@@ -2,10 +2,9 @@ package dk.webbies.tajscheck.typeutil;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
@@ -98,7 +97,7 @@ public class TypesUtil {
         for (int i = 0; i < arguments.size(); i++) {
             parameterMap.put(parameters.get(i), arguments.get(i));
         }
-        return new TypeContext(bench).append(parameterMap);
+        return TypeContext.create(bench).append(parameterMap);
     }
 
     private static void assertAboutTarget(Type untypedTarget) {
@@ -134,7 +133,7 @@ public class TypesUtil {
     }
 
     public TypeContext generateParameterMap(ReferenceType type, TypeContext typeContext) {
-        return typeContext.append(generateParameterMap(type).getMap());
+        return typeContext.append(generateParameterMap(type));
     }
 
     public static Set<Type> collectAllTypes(Collection<Type> types) {
@@ -678,7 +677,7 @@ public class TypesUtil {
 
     public Pair<InterfaceType, TypeContext> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter, Map<Type, String> typeNames) {
         if (inter.getBaseTypes().isEmpty()) {
-            return new Pair<>(inter, new TypeContext(bench));
+            return new Pair<>(inter, TypeContext.create(bench));
         }
 //        assert inter.getTypeParameters().isEmpty(); // This should only happen when constructed from a generic/reference type, and in that case we have handled the TypeParameters.
         Map<TypeParameterType, Type> newParameters = new HashMap<>();
@@ -720,7 +719,7 @@ public class TypesUtil {
                 result.getDeclaredProperties().put(entry.getKey(), entry.getValue());
             }
         });
-        return new Pair<>(result, new TypeContext(bench).append(newParameters));
+        return new Pair<>(result, TypeContext.create(bench).append(newParameters));
     }
 
 

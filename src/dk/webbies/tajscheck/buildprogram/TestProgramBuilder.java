@@ -9,7 +9,7 @@ import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
-import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
@@ -192,14 +192,14 @@ public class TestProgramBuilder {
                                 binary(
                                         identifier("module"),
                                         Operator.EQUAL,
-                                        typeCreator.getType(moduleType, new TypeContext(bench))
+                                        typeCreator.getType(moduleType, TypeContext.create(bench))
                                 ),
                                 Operator.EQUAL_EQUAL_EQUAL,
                                 identifier(VARIABLE_NO_VALUE)
                         ),
                         Return()
                 ),
-                new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, new TypeContext(bench)).assertResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
+                new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, TypeContext.create(bench)).assertResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
 
         )));
     }

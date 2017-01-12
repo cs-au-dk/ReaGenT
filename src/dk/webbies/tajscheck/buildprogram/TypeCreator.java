@@ -8,7 +8,7 @@ import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
 import dk.webbies.tajscheck.typeutil.PrettyTypes;
-import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
@@ -492,7 +492,7 @@ public class TypeCreator {
             }
             String markerField = typeParameterIndexer.getMarkerField(type);
             return block(
-                    variable("result", constructType(type.getConstraint(), typeContext)),
+                    variable("result", type.getConstraint() != null ? constructType(type.getConstraint(), typeContext) : object()),
                     ifThen(
                             binary(
                                     binary(unary(Operator.TYPEOF, identifier("result")), Operator.NOT_EQUAL_EQUAL, string("object")),
@@ -516,7 +516,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(SymbolType t, TypeContext typeContext) {
-            Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), new TypeContext(benchmark));
+            Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(benchmark));
             return Return(call(identifier("Symbol"), constructString));
         }
 
@@ -920,7 +920,7 @@ public class TypeCreator {
             case "Error":
                 return Return(newCall(identifier("Error")));
             case "RegExp":
-                Expression constructString = call(function(constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), new TypeContext(benchmark))));
+                Expression constructString = call(function(constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), TypeContext.create(benchmark))));
                 return Return(newCall(identifier("RegExp"), constructString));
             case "String":
                 return constructNewInstanceOfType(new SimpleType(SimpleTypeKind.String), typeContext);

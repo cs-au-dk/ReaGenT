@@ -12,6 +12,7 @@ public final class CheckOptions {
     public final int iterationsToRun;
     public final boolean disableSizeOptimization;
     public final boolean combineAllUnconstrainedGenerics;
+    public final boolean disableGenerics;
 
     private CheckOptions(Builder builder) {
         this.checkDepth = builder.checkDepth;
@@ -21,6 +22,7 @@ public final class CheckOptions {
         this.iterationsToRun = builder.iterationsToRun;
         this.disableSizeOptimization = builder.disableSizeOptimization;
         this.combineAllUnconstrainedGenerics = builder.combineAllUnconstrainedGenerics;
+        this.disableGenerics = builder.disableGenerics;
         this.builder = builder;
     }
 
@@ -45,6 +47,7 @@ public final class CheckOptions {
         private int iterationsToRun = 10000;
         private boolean disableSizeOptimization = false;
         public boolean combineAllUnconstrainedGenerics = true;
+        private boolean disableGenerics = false;
 
         public CheckOptions build() {
             return new CheckOptions(this);
@@ -82,6 +85,11 @@ public final class CheckOptions {
 
         public Builder setDisableSizeOptimization(boolean disableSizeOptimization) {
             this.disableSizeOptimization = disableSizeOptimization;
+            return this;
+        }
+
+        public Builder setDisableGenerics(boolean disableGenerics) {
+            this.disableGenerics = disableGenerics;
             return this;
         }
     }

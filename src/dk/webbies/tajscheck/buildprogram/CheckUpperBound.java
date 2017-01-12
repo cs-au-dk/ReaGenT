@@ -23,7 +23,7 @@ import dk.au.cs.casa.typescript.types.TypeVisitorWithArgument;
 import dk.au.cs.casa.typescript.types.UnionType;
 import dk.au.cs.casa.typescript.types.UnresolvedType;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;

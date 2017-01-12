@@ -1,14 +1,27 @@
 package dk.webbies.tajscheck.test;
 
+import dk.webbies.tajscheck.ExecutionRecording;
+import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.OutputParser;
+import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmarks.CheckOptions;
+import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
+import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BROWSER;
+import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.NODE;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Created by erik1 on 10-01-2017.
@@ -24,6 +37,8 @@ public class DeltaDebug {
         array = Arrays.stream(array).map(str -> str.replace("\r", "")).collect(Collectors.toList()).toArray(new String[]{});
 
         // Kinda copy-pasted from here: https://github.com/wala/jsdelta/blob/master/src/delta_single.js
+
+        write(filePath + ".smallest", array);
 
         for (int sz = array.length >>> 1; sz > 0; sz >>>= 1) {
             System.out.println("  chunk size " + sz);
@@ -44,6 +59,8 @@ public class DeltaDebug {
                         // didn't work, need to put it back
                         array = orgArray;
                         write(filePath, array);
+                    } else {
+                        write(filePath + ".smallest", array);
                     }
                 }
             }
@@ -71,20 +88,75 @@ public class DeltaDebug {
         Util.writeFile(filePath, String.join("\n", Arrays.asList(file)));
     }
 
-
     public static void main(String[] args) throws IOException {
-        String file = "test/benchmarks/peerjs/peerjs.js";
+        String file = "test/benchmarks/p2/p2.d.ts";
         debug(file, () -> {
+            //noinspection TryWithIdenticalCatches
             try {
-                TestParsing.testFile(file);
-            } catch (IOException e) {
-                throw new RuntimeException();
-            } catch (AssertionError error) {
-                return true;
-            } catch (NullPointerException e) {
+                return test();
+            } catch (IllegalArgumentException | StackOverflowError e) {
+                e.printStackTrace();
+                return false;
+            } catch (Error | Exception e) {
+                e.printStackTrace();
                 return false;
             }
-            return false;
         });
+    }
+
+    private static boolean test() throws Exception {
+        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/p2/p2.js", "test/benchmarks/p2/p2.d.ts", "p2", BOOTSTRAP, CheckOptions.builder().setSplitUnions(false).setDisableGenerics(true).build());
+        Main.writeFullDriver(bench);
+        System.out.println("Driver written");
+        String output;
+        try {
+            output = Main.runBenchmark(bench, 2 * 60 * 1000);
+        } catch (TimeoutException e) {
+            System.out.println("Timeout");
+            return false;
+        }
+        OutputParser.RunResult result = OutputParser.parseDriverResult(output);
+
+        for (OutputParser.TypeError typeError : result.typeErrors) {
+            System.out.println(typeError);
+        }
+
+
+        return result.typeErrors.size() > 0;
+    }
+
+
+
+    // TODO: At some point, find whatever is happening here.
+    private static final class TestReact {
+        public static void main(String[] args) throws Exception {
+            while (true) {
+                if (test()) {
+                    System.out.println("FOUND SOUNDNESS ERROR");
+                    break;
+                }
+            }
+        }
+
+        private static boolean test() throws Exception {
+            Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/react/react.js", "test/benchmarks/react/reactdelta.d.ts", "React", BOOTSTRAP, CheckOptions.builder().setSplitUnions(false).setIterationsToRun(1000000).build());
+            Main.writeFullDriver(bench);
+            System.out.println("Driver written");
+            String output;
+            try {
+                output = Main.runBenchmark(bench, 2 * 60 * 1000);
+            } catch (TimeoutException e) {
+                System.out.println("Timeout");
+                return false;
+            }
+            OutputParser.RunResult result = OutputParser.parseDriverResult(output);
+
+            for (OutputParser.TypeError typeError : result.typeErrors) {
+                System.out.println(typeError);
+            }
+
+
+            return result.typeErrors.size() > 0;
+        }
     }
 }

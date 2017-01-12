@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck;
 
 import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
 /**
  * Created by erik1 on 11-11-2016.

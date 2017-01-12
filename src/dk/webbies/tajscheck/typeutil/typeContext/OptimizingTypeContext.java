@@ -1,61 +1,67 @@
-package dk.webbies.tajscheck.typeutil;
+package dk.webbies.tajscheck.typeutil.typeContext;
 
-import dk.au.cs.casa.typescript.types.ThisType;
+import dk.au.cs.casa.typescript.types.SimpleType;
+import dk.au.cs.casa.typescript.types.SimpleTypeKind;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 
 /**
- * Created by erik1 on 14-11-2016.
+ * Created by erik1 on 12-01-2017.
  */
-public class TypeContext {
+public class OptimizingTypeContext implements TypeContext {
     private final Map<TypeParameterType, Type> map;
     private final Set<TypeParameterType> persistent;
     private final Type thisType;
     public final Benchmark bench;
 
-    public TypeContext(Benchmark bench) {
+    public OptimizingTypeContext(Benchmark bench) {
         this.bench = bench;
         this.map = Collections.emptyMap();
         this.persistent = Collections.emptySet();
         this.thisType = null;
     }
 
-    private TypeContext(Map<TypeParameterType, Type> map, Set<TypeParameterType> persistent, Type classType, Benchmark bench) {
+    private OptimizingTypeContext(Map<TypeParameterType, Type> map, Set<TypeParameterType> persistent, Type classType, Benchmark bench) {
         this.map = map;
         this.persistent = persistent;
         this.thisType = classType;
         this.bench = bench;
     }
 
-    public TypeContext append(Map<TypeParameterType, Type> newParameters) {
+    @Override
+    public OptimizingTypeContext append(Map<TypeParameterType, Type> newParameters) {
         Map<TypeParameterType, Type> newMap = new HashMap<>(this.map);
         newMap.putAll(newParameters);
-        return new TypeContext(newMap, persistent, this.thisType, bench);
+        return new OptimizingTypeContext(newMap, persistent, this.thisType, bench);
     }
 
-    public TypeContext withThisType(Type thisType) {
+    @Override
+    public OptimizingTypeContext withThisType(Type thisType) {
         if (thisType == null || this.thisType == null) {
-            return new TypeContext(this.map, persistent, thisType, bench);
+            return new OptimizingTypeContext(this.map, persistent, thisType, bench);
         }
         Set<Type> baseTypes = TypesUtil.getAllBaseTypes(this.thisType, new HashSet<>());
 
         if (baseTypes.contains(thisType)) {
             return this;
         } else {
-            return new TypeContext(this.map, persistent, thisType, bench);
+            return new OptimizingTypeContext(this.map, persistent, thisType, bench);
         }
     }
 
+    @Override
     public boolean containsKey(TypeParameterType parameter) {
         return map.containsKey(parameter);
     }
 
+    @Override
     public TypeWithContext get(TypeParameterType parameter) {
         Type type = map.get(parameter);
         if (type == null) {
@@ -64,35 +70,35 @@ public class TypeContext {
         return new TypeWithContext(type, this.addPersistent(parameter));
     }
 
-    private TypeContext addPersistent(TypeParameterType parameterType) {
+    private OptimizingTypeContext addPersistent(TypeParameterType parameterType) {
         return addPersistent(Collections.singletonList(parameterType));
     }
 
-    Set<TypeParameterType> keySet() {
-        return map.keySet();
-    }
-
+    @Override
     public Map<TypeParameterType, Type> getMap() {
         return map;
     }
 
+    @Override
     public Type getThisType() {
         return thisType;
     }
 
-    public Set<Map.Entry<TypeParameterType, Type>> entrySet() {
-        return map.entrySet();
-    }
-
+    @Override
     public TypeContext append(TypeContext other) {
-        return append(other.getMap()).addPersistent(other.persistent);
+        OptimizingTypeContext result = append(other.getMap());
+        if (other instanceof OptimizingTypeContext) {
+            return result.addPersistent(((OptimizingTypeContext)other).persistent);
+        } else {
+            throw new RuntimeException();
+        }
     }
 
-    private TypeContext addPersistent(Collection<TypeParameterType> newPersistent) {
+    private OptimizingTypeContext addPersistent(Collection<TypeParameterType> newPersistent) {
         Set<TypeParameterType> persistent = new HashSet<>(this.persistent);
         persistent.addAll(newPersistent);
 
-        return new TypeContext(this.map, persistent, this.thisType, bench);
+        return new OptimizingTypeContext(this.map, persistent, this.thisType, bench);
     }
 
     @Override
@@ -100,7 +106,7 @@ public class TypeContext {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        TypeContext that = (TypeContext) o;
+        OptimizingTypeContext that = (OptimizingTypeContext) o;
 
         if (map != null ? !map.equals(that.map) : that.map != null) return false;
         if (persistent != null ? !persistent.equals(that.persistent) : that.persistent != null) return false;
@@ -117,17 +123,12 @@ public class TypeContext {
         return result;
     }
 
-    public TypeContext remove(TypeParameterType typeParameter) {
-        Map<TypeParameterType, Type> newMap = new HashMap<>(this.map);
-        assert newMap.remove(typeParameter) != null;
-        return new TypeContext(newMap, persistent, this.thisType, bench);
-    }
-
-    public TypeContext cleanTypeParameters(Type baseType, MultiMap<Type, TypeParameterType> reachableTypeParameterMap) {
+    @Override
+    public OptimizingTypeContext cleanTypeParameters(Type baseType, MultiMap<Type, TypeParameterType> reachableTypeParameterMap) {
         if (bench.options.disableSizeOptimization) {
             return this;
         }
-        TypeContext clone = this.append(Collections.emptyMap());
+        OptimizingTypeContext clone = this.append(Collections.emptyMap());
 
         Set<TypeParameterType> reachable = new HashSet<>();
 
@@ -156,11 +157,16 @@ public class TypeContext {
         }
 
         if (clone.thisType != null) {
-            if (!TypesUtil.isThisTypeVisible(baseType) && clone.map.values().stream().noneMatch(ThisType.class::isInstance)) {
+            if (!TypesUtil.isThisTypeVisible(baseType) && clone.map.values().stream().noneMatch(TypesUtil::isThisTypeVisible)) {
                 clone = clone.withThisType(null);
             }
         }
 
         return clone;
+    }
+
+    @Override
+    public Benchmark getBenchmark() {
+        return bench;
     }
 }

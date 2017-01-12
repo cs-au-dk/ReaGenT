@@ -5,7 +5,7 @@ import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.typeutil.TypeContext;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
@@ -261,6 +261,7 @@ public class TypeChecker {
                     case "SVGSVGElement":
                     case "HTMLScriptElement":
                     case "DataTransfer":
+                    case "Location":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "StyleMedia":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(expFromString("window.styleMedia.__proto__.constructor")), name));
@@ -363,7 +364,7 @@ public class TypeChecker {
             if (nativeTypes.contains(t.getTarget()) && !(t.getTarget() instanceof TupleType) && !(typeNames.get(t) != null && typeNames.get(t).startsWith("window."))) {
                 throw new RuntimeException(typeNames.get(t));
             }
-            return t.getTarget().accept(this, arg.withParameters(arg.typeContext.append(new TypesUtil(arg.typeContext.bench).generateParameterMap(t))));
+            return t.getTarget().accept(this, arg.withParameters(arg.typeContext.append(new TypesUtil(arg.typeContext.getBenchmark()).generateParameterMap(t))));
         }
 
         @Override

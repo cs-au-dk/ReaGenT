@@ -72,8 +72,6 @@ public class CoverageResult {
                 result.put(name, parseResult(subObj));
             }
 
-            // TODO: For browsers, split result in two. (post-processing?)
-
             return result;
         } catch (JSONException e) {
             throw new RuntimeException(e);

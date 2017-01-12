@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/ts-spec-reader/deserializers/java/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/cache" />
       <excludeFolder url="file://$MODULE_DIR$/test/async/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/benchmarks" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/accounting/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/accounting/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/ace/coverage" />
@@ -32,6 +33,7 @@
       <excludeFolder url="file://$MODULE_DIR$/test/pathjs/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/test/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/underscore/smallDrivers" />
+      <excludeFolder url="file://$MODULE_DIR$/test/unit" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

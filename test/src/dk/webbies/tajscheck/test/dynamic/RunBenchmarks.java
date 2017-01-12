@@ -19,6 +19,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.*;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
 import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
 import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BROWSER;
@@ -112,17 +113,19 @@ public class RunBenchmarks {
 //        benchmarks.put("photoswipe", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/photoswipe/photoswipe.js", "test/benchmarks/photoswipe/photoswipe.d.ts", "PhotoSwipe", BROWSER, options));
 //        benchmarks.put("leaflet", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/leaflet/leaflet.js", "test/benchmarks/leaflet/leaflet.d.ts", "leaflet", BROWSER, options));
 
-        // Blows up in complexity, not sure why. (Option to disable all generics?)
-        /*benchmarks.put("backbone",
-                new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER, options)
+        benchmarks.put("backbone",
+                new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER,
+                        options.getBuilder()
+                        .setDisableGenerics(true)
+                        .build()
+                )
                 .addDependencies(benchmarks.get("underscore"))
-        );*/
+        );
 
-        // TODO: StackOverflow in FindPositiveTypesVisitor (<- use this to implement some delta-debugger thing).
+        // TODO: Debug this one later. (FindPositives seem to run way to long)
 //        benchmarks.put("lodash", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lodash/lodash.js", "test/benchmarks/lodash/lodash.d.ts", "_", NODE, options));
 
-        // TODO: Causes the sanityCheck to timeout! (use the delta-debugger made for lodash).
-//        benchmarks.put("p2", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/p2/p2.js", "test/benchmarks/p2/p2.d.ts", "p2", BROWSER, options));
+        benchmarks.put("p2", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/p2/p2.js", "test/benchmarks/p2/p2.d.ts", "p2", BROWSER, options));
 
     }
 
@@ -184,7 +187,7 @@ public class RunBenchmarks {
 
     @Test
     public void coverage() throws Exception {
-        if (benchmark.dTSFile.contains("underscore.d.ts")) {
+        if (Stream.of("underscore.d.ts", "fabric").anyMatch(file -> benchmark.dTSFile.contains(file))) {
             return; // Too big, node runs out of memory generating the instrumented version.
         }
         Main.writeFullDriver(benchmark);
@@ -202,7 +205,7 @@ public class RunBenchmarks {
     }
 
     @Test
-    public void sanityCheck() throws Exception {
+    public void soundnessTest() throws Exception {
         Benchmark bench = this.benchmark.withRunMethod(BOOTSTRAP);
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");
