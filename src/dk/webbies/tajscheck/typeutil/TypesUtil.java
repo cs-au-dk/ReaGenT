@@ -2,7 +2,9 @@ package dk.webbies.tajscheck.typeutil;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
@@ -162,6 +164,45 @@ public class TypesUtil {
                 type.getDeclaredConstructSignatures().isEmpty() &&
                 type.getDeclaredStringIndexType() == null &&
                 type.getDeclaredNumberIndexType() == null;
+    }
+
+    public static List<Type> findRecursiveDefinition(TypeParameterType firstType, TypeContext typeContext, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer) {
+        List<Type> constraints = new ArrayList<>();
+
+        constraints.add(firstType.getConstraint());
+
+        {
+            String markerField = typeParameterIndexer.getMarkerField(firstType);
+            InterfaceType markerConstraint = SpecReader.makeEmptySyntheticInterfaceType();
+            markerConstraint.getDeclaredProperties().put(markerField, new BooleanLiteral(true));
+            constraints.add(markerConstraint);
+        }
+
+        // The TypeContexts are not used for anything here, so it is ok to ignore them.
+        TypeWithContext lookup = typeContext.get(firstType);
+        Type type = lookup != null ? lookup.getType() : null;
+
+        Set<Type> seen = new HashSet<>();
+
+        while (type instanceof TypeParameterType && typeContext.containsKey((TypeParameterType)type)) {
+            if (type.equals(firstType)) {
+                return constraints; // There is an infinite loop, starting with firstType, return something satisfying the constraints.
+            }
+            if (seen.contains(type)) { // There is some infinite loop, later, it isn't handled now.
+                return new ArrayList<>();
+            }
+            seen.add(type);
+            constraints.add(((TypeParameterType) type).getConstraint());
+            {
+                String markerField = typeParameterIndexer.getMarkerField((TypeParameterType) type);
+                InterfaceType markerConstraint = SpecReader.makeEmptySyntheticInterfaceType();
+                markerConstraint.getDeclaredProperties().put(markerField, new BooleanLiteral(true));
+                constraints.add(markerConstraint);
+            }
+            type = typeContext.get((TypeParameterType)type).getType();
+        }
+
+        return new ArrayList<>();
     }
 
     public static List<Signature> splitSignatures(List<Signature> signatures) {

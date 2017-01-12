@@ -127,6 +127,14 @@ public class TestCreator {
             if (typeParameterType.getConstraint() != null) {
                 result.addAll(addTopLevelFunctionTests(((TypeParameterType) type).getConstraint(), path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
             }
+            List<Type> recursiveDefinition = TypesUtil.findRecursiveDefinition(typeParameterType, typeContext, typeParameterIndexer);
+            if (!recursiveDefinition.isEmpty()) {
+                for (Type subType : recursiveDefinition) {
+                    result.addAll(addTopLevelFunctionTests(subType, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
+                }
+                return result;
+
+            }
             if (typeContext.containsKey(typeParameterType)) {
                 TypeWithContext lookup = typeContext.get(typeParameterType);
                 result.addAll(addTopLevelFunctionTests(lookup.getType(), path, lookup.getTypeContext(), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
@@ -501,6 +509,13 @@ public class TestCreator {
                 TypeParameterType typeParameterType = (TypeParameterType) propertyType ;
                 if (typeParameterType.getConstraint() != null) {
                     addMethodCallTest(baseType, arg, key, ((TypeParameterType) propertyType ).getConstraint(), seen);
+                }
+                List<Type> recursiveDefinition = TypesUtil.findRecursiveDefinition(typeParameterType, arg.typeContext, typeParameterIndexer);
+                if (!recursiveDefinition.isEmpty()) {
+                    for (Type subType : recursiveDefinition) {
+                        addMethodCallTest(baseType, arg, key, subType, seen);
+                    }
+                    return;
                 }
                 if (arg.typeContext.containsKey(typeParameterType)) {
                     TypeWithContext lookup = arg.typeContext.get(typeParameterType);

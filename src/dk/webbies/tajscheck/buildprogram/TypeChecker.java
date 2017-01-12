@@ -424,6 +424,12 @@ public class TypeChecker {
                     return Collections.emptyList();
                 }
                 arg = arg.decreaseDepth();
+                if (!TypesUtil.findRecursiveDefinition(parameter, typeContext, typeParameterIndexer).isEmpty()) {
+                    List<Type> constraints = TypesUtil.findRecursiveDefinition(parameter, typeContext, typeParameterIndexer);
+                    IntersectionType constraintsIntersection = new IntersectionType();
+                    constraintsIntersection.setElements(constraints);
+                    return constraintsIntersection.accept(this, arg);
+                }
                 TypeWithContext lookup = typeContext.get(parameter);
                 return lookup.getType().accept(this, arg.withParameters(lookup.getTypeContext()));
             }
