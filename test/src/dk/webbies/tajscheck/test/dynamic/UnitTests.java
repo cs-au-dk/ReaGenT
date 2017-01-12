@@ -733,8 +733,18 @@ public class UnitTests {
     }
 
     @Test
+    public void complexSanityCheck8() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck8"));
+    }
+
+    @Test
     public void genericsBustStack() throws Exception {
         Main.generateFullDriver(benchFromFolder("genericsBustStack"));
+    }
+
+    @Test
+    public void genericsBustStack2() throws Exception {
+        Main.generateFullDriver(benchFromFolder("genericsBustStack2"));
     }
 
     @Test
