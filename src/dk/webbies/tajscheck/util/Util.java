@@ -5,6 +5,7 @@ import dk.au.cs.casa.typescript.types.*;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -545,5 +546,25 @@ public class Util {
 
     private static <T> int indexOf(List<T> list, Predicate<T> test) {
         return withIndex(list).filter(pair -> test.test(pair.getLeft())).map(Pair::getRight).findFirst().get();
+    }
+
+    // http://stackoverflow.com/questions/1667854/copy-all-values-from-fields-in-one-class-to-another-through-reflection#answer-35103361
+    // Possibly only works on primitives, but that is all i use it for anyway, so that is ok.
+    public static <T > void copyAllFields(T to, T from) {
+        Class<?> clazz = from.getClass();
+        List<Field> fields = new ArrayList<>();
+        do {
+            Collections.addAll(fields, clazz.getDeclaredFields());
+            clazz = clazz.getSuperclass();
+        } while (clazz != null);
+
+        for (Field field : fields) {
+            try {
+                field.setAccessible(true);
+                field.set(to,field.get(from));
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

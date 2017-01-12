@@ -1,5 +1,7 @@
 package dk.webbies.tajscheck.benchmarks;
 
+import dk.webbies.tajscheck.util.Util;
+
 /**
  * Created by erik1 on 13-12-2016.
  */
@@ -27,7 +29,7 @@ public final class CheckOptions {
     }
 
     public Builder getBuilder() {
-        return this.builder;
+        return new Builder(this.builder);
     }
 
     public static CheckOptions defaultOptions() {
@@ -38,7 +40,6 @@ public final class CheckOptions {
         return new Builder();
     }
 
-    @SuppressWarnings("SameParameterValue")
     public static final class Builder {
         private int checkDepth = 0;
         private int checkDepthForUnions = 1;
@@ -48,6 +49,12 @@ public final class CheckOptions {
         private boolean disableSizeOptimization = false;
         private boolean combineAllUnconstrainedGenerics = true;
         private boolean disableGenerics = false;
+
+        private Builder() {}
+
+        private Builder(Builder builder) {
+            Util.copyAllFields(this, builder);
+        }
 
         public CheckOptions build() {
             return new CheckOptions(this);
