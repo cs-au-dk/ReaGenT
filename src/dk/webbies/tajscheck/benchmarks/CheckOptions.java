@@ -46,7 +46,7 @@ public final class CheckOptions {
         private boolean splitUnions = true;
         private int iterationsToRun = 10000;
         private boolean disableSizeOptimization = false;
-        public boolean combineAllUnconstrainedGenerics = true;
+        private boolean combineAllUnconstrainedGenerics = true;
         private boolean disableGenerics = false;
 
         public CheckOptions build() {

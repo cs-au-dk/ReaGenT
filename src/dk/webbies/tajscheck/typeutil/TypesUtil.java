@@ -5,8 +5,6 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
-import dk.webbies.tajscheck.util.ArrayListMultiMap;
-import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
@@ -24,7 +22,7 @@ public class TypesUtil {
         this.bench = bench;
     }
 
-    public static InterfaceType classToInterface(ClassType t, Set<Type> hasThisTypes) {
+    public static InterfaceType classToInterface(ClassType t, FreeGenericsFinder freeGenericsFinder) {
         InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
 
         for (Signature signature : t.getSignatures()) {
@@ -47,7 +45,7 @@ public class TypesUtil {
         interfaceType.setBaseTypes(
                 t.getBaseTypes().stream().map(base -> {
                     if (base instanceof ClassType) {
-                        return classToInterface((ClassType) base, hasThisTypes);
+                        return classToInterface((ClassType) base, freeGenericsFinder);
                     } else {
                         return base;
                     }
@@ -64,8 +62,8 @@ public class TypesUtil {
 
         interfaceType.setTypeParameters(t.getTypeParameters());
 
-        if (hasThisTypes.contains(t)) {
-            hasThisTypes.add(interfaceType);
+        if (freeGenericsFinder.hasThisTypes(t)) {
+            freeGenericsFinder.addHasThisTypes(interfaceType);
         }
 
         return interfaceType;
@@ -271,70 +269,6 @@ public class TypesUtil {
         return acc;
     }
 
-    public static boolean isThisTypeVisible(Type baseType) {
-        return isThisTypeVisible(baseType, true);
-    }
-
-    public static boolean isThisTypeVisible(Type baseType, boolean deep) {
-        if (baseType instanceof ClassType) {
-            return false; // A classType is the "static" context, and not an "instance" context, therefore no this-types are visible.
-        }
-        if (baseType instanceof ClassInstanceType) {
-            baseType = ((ClassType) ((ClassInstanceType) baseType).getClassType()).getInstanceType();
-        }
-        if (baseType instanceof ReferenceType) {
-            if (((ReferenceType) baseType).getTypeArguments().stream().anyMatch(ThisType.class::isInstance)) {
-                return true;
-            }
-            baseType = ((ReferenceType) baseType).getTarget();
-        }
-        if (baseType instanceof GenericType) {
-            baseType = ((GenericType) baseType).toInterface();
-        }
-        if (baseType instanceof ClassInstanceType) {
-            baseType = ((ClassType) ((ClassInstanceType) baseType).getClassType()).getInstanceType();
-        }
-        if (baseType instanceof InterfaceType) {
-            InterfaceType inter = (InterfaceType) baseType;
-
-            for (Signature signature : Util.concat(inter.getDeclaredCallSignatures(), inter.getDeclaredConstructSignatures())) {
-                if (signature.getParameters().stream().map(Signature.Parameter::getType).anyMatch(par -> isThisTypeVisible(par, false))) {
-                    return true;
-                }
-                if (isThisTypeVisible(signature.getResolvedReturnType(), false)) {
-                    return true;
-                }
-            }
-
-
-            if (!deep) {
-                return false;
-            }
-            for (Type type : inter.getDeclaredProperties().values()) {
-                if (isThisTypeVisible(type, false)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        if (baseType instanceof SimpleType || baseType instanceof BooleanLiteral || baseType instanceof StringLiteral || baseType instanceof NumberLiteral || baseType instanceof TypeParameterType) {
-            return false;
-        }
-
-        if (baseType instanceof ThisType) {
-            return true;
-        }
-        if (baseType instanceof UnionType) {
-            return ((UnionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep));
-        }
-        if (baseType instanceof TupleType) {
-            return ((TupleType) baseType).getElementTypes().stream().anyMatch(element -> isThisTypeVisible(element, deep));
-        }
-        if (baseType instanceof IndexedAccessType) {
-            return isThisTypeVisible(((IndexedAccessType) baseType).getIndexType(), deep) || isThisTypeVisible(((IndexedAccessType) baseType).getObjectType(), deep);
-        }
-        throw new RuntimeException(baseType.getClass().getSimpleName());
-    }
 
     private static final class SignatureComparisonContainer {
         private final Signature signature;
@@ -722,62 +656,5 @@ public class TypesUtil {
         return new Pair<>(result, TypeContext.create(bench).append(newParameters));
     }
 
-
-    public static Set<Type> findHasThisTypes(Type global) {
-        Set<Type> allTypes = TypesUtil.collectAllTypes(global);
-
-        MultiMap<Type, Type> reverseBaseTypeMap = new ArrayListMultiMap<>();
-
-        for (Type type : allTypes) {
-            if (type instanceof GenericType) {
-                for (Type baseType : ((GenericType) type).getBaseTypes()) {
-                    reverseBaseTypeMap.put(baseType, type);
-                }
-                reverseBaseTypeMap.put(((GenericType) type).toInterface(), type);
-            } else if (type instanceof InterfaceType) {
-                for (Type baseType : ((InterfaceType) type).getBaseTypes()) {
-                    reverseBaseTypeMap.put(baseType, type);
-                }
-            } else if (type instanceof ClassType) {
-                for (Type baseType : ((ClassType) type).getBaseTypes()) {
-                    reverseBaseTypeMap.put(baseType, type);
-                }
-                reverseBaseTypeMap.put(((ClassType) type).getInstanceType(), type);
-            } else if (type instanceof ReferenceType) {
-                reverseBaseTypeMap.put(((ReferenceType) type).getTarget(), type);
-            } else if (type instanceof ClassInstanceType) {
-                InterfaceType instanceType = ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType();
-                reverseBaseTypeMap.put(instanceType, type);
-            }
-        }
-
-        Set<Type> result = new HashSet<>();
-
-        List<Type> addQueue = allTypes.stream().filter(ThisType.class::isInstance).map(type -> ((ThisType)type).getConstraint()).collect(Collectors.toList());
-
-        while (!addQueue.isEmpty()) {
-            List<Type> copy = new ArrayList<>(addQueue);
-            addQueue.clear();
-            for (Type type : copy) {
-                if (result.contains(type)) {
-                    continue;
-                }
-                if (type instanceof ClassInstanceType) {
-                    addQueue.add(((ClassInstanceType) type).getClassType());
-                } else if (type instanceof ReferenceType) {
-                    addQueue.add(((ReferenceType) type).getTarget());
-                } else if (type instanceof ClassType) {
-                    addQueue.add(((ClassType) type).getInstanceType());
-                } else if (type instanceof GenericType) {
-                    addQueue.add(((GenericType) type).toInterface());
-                }
-                result.add(type);
-                addQueue.addAll(reverseBaseTypeMap.get(type));
-            }
-        }
-
-
-        return result;
-    }
 
 }

@@ -1,13 +1,11 @@
 package dk.webbies.tajscheck.typeutil.typeContext;
 
-import dk.au.cs.casa.typescript.types.SimpleType;
-import dk.au.cs.casa.typescript.types.SimpleTypeKind;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
-import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
@@ -124,7 +122,7 @@ public class OptimizingTypeContext implements TypeContext {
     }
 
     @Override
-    public OptimizingTypeContext cleanTypeParameters(Type baseType, MultiMap<Type, TypeParameterType> reachableTypeParameterMap) {
+    public OptimizingTypeContext cleanTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder) {
         if (bench.options.disableSizeOptimization) {
             return this;
         }
@@ -135,7 +133,7 @@ public class OptimizingTypeContext implements TypeContext {
         ArrayList<Type> typesToTest = new ArrayList<>(Util.concat(persistent, Collections.singletonList(baseType)));
 
         for (Type type : typesToTest) {
-            reachable.addAll(reachableTypeParameterMap.get(type));
+            reachable.addAll(freeGenericsFinder.findFreeGenerics(type));
         }
 
         clone.map.keySet().retainAll(reachable);
@@ -145,7 +143,7 @@ public class OptimizingTypeContext implements TypeContext {
             progress = false;
             Set<TypeParameterType> extraReachable = new HashSet<>();
             for (Type type : clone.map.values()) {
-                extraReachable.addAll(reachableTypeParameterMap.get(type));
+                extraReachable.addAll(freeGenericsFinder.findFreeGenerics(type));
             }
             for (TypeParameterType parameterType : extraReachable) {
                 if (!reachable.contains(parameterType) && this.map.containsKey(parameterType)) {
@@ -157,7 +155,7 @@ public class OptimizingTypeContext implements TypeContext {
         }
 
         if (clone.thisType != null) {
-            if (!TypesUtil.isThisTypeVisible(baseType) && clone.map.values().stream().noneMatch(TypesUtil::isThisTypeVisible)) {
+            if (!freeGenericsFinder.isThisTypeVisible(baseType) && clone.map.values().stream().noneMatch(freeGenericsFinder::isThisTypeVisible)) {
                 clone = clone.withThisType(null);
             }
         }

@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.testcreator;
 
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
@@ -23,17 +24,15 @@ public class TestCreator {
     private final Type typeToTest;
     private final Benchmark bench;
     private final TypeParameterIndexer typeParameterIndexer;
-    private Set<Type> hasThisTypes;
-    private MultiMap<Type, TypeParameterType> reachableTypeParameters;
+    private FreeGenericsFinder freeGenericsFinder;
 
-    public TestCreator(Set<Type> nativeTypes, Map<Type, String> typeNames, Type typeToTest, Benchmark bench, TypeParameterIndexer typeParameterIndexer, Set<Type> hasThisTypes, MultiMap<Type, TypeParameterType> reachableTypeParameters) {
+    public TestCreator(Set<Type> nativeTypes, Map<Type, String> typeNames, Type typeToTest, Benchmark bench, TypeParameterIndexer typeParameterIndexer, FreeGenericsFinder freeGenericsFinder) {
         this.nativeTypes = nativeTypes;
         this.typeNames = typeNames;
         this.typeToTest = typeToTest;
         this.bench = bench;
         this.typeParameterIndexer = typeParameterIndexer;
-        this.hasThisTypes = hasThisTypes;
-        this.reachableTypeParameters = reachableTypeParameters;
+        this.freeGenericsFinder = freeGenericsFinder;
     }
 
     public List<Test> createTests() {
@@ -60,7 +59,7 @@ public class TestCreator {
             TestQueueElement element = queue.poll();
             Arg arg = element.arg;
 
-            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(element.type, reachableTypeParameters));
+            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(element.type, freeGenericsFinder));
 
             if (arg.withTopLevelFunctions) {
                 topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, arg.depth, seenTopLevel));
@@ -354,7 +353,7 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            if (hasThisTypes.contains(t)) {
+            if (freeGenericsFinder.hasThisTypes(t)) {
                 arg = arg.withThisType(t.getInstanceType());
             }
 
@@ -394,7 +393,7 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            if (hasThisTypes.contains(t)) {
+            if (freeGenericsFinder.hasThisTypes(t)) {
                 arg = arg.withThisType(t);
             }
 
@@ -426,7 +425,7 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            if (hasThisTypes.contains(t)) {
+            if (freeGenericsFinder.hasThisTypes(t)) {
                 arg = arg.withThisType(t);
             }
 
@@ -719,14 +718,14 @@ public class TestCreator {
     private void findPositiveTypes(CreateTestVisitor visitor, Type type, Arg arg, Set<Type> nativeTypes) {
         PriorityQueue<TestQueueElement> queue = new PriorityQueue<>();
 
-        FindPositiveTypesVisitor findPositiveVisitor = new FindPositiveTypesVisitor(visitor, nativeTypes, bench, hasThisTypes, reachableTypeParameters, queue);
+        FindPositiveTypesVisitor findPositiveVisitor = new FindPositiveTypesVisitor(visitor, nativeTypes, bench, freeGenericsFinder, queue);
         queue.add(new TestQueueElement(type, arg));
 
         while (!queue.isEmpty()) {
             TestQueueElement element = queue.poll();
             arg = element.arg;
 
-            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(element.type, reachableTypeParameters));
+            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(element.type, freeGenericsFinder));
 
             if (visitor.negativeTypesSeen.contains(new TypeWithContext(element.type, arg.typeContext))) {
                 continue;
@@ -741,22 +740,19 @@ public class TestCreator {
         private CreateTestVisitor visitor;
         private Set<Type> nativeTypes;
         private final Benchmark bench;
-        private Set<Type> hasThisTypes;
-        private final MultiMap<Type, TypeParameterType> reachableTypeParameters;
+        private FreeGenericsFinder freeGenericsFinder;
         private PriorityQueue<TestQueueElement> queue;
 
         public FindPositiveTypesVisitor(
                 CreateTestVisitor createTestVisitor,
                 Set<Type> nativeTypes,
                 Benchmark bench,
-                Set<Type> hasThisTypes,
-                MultiMap<Type, TypeParameterType> reachableTypeParameters,
+                FreeGenericsFinder freeGenericsFinder,
                 PriorityQueue<TestQueueElement> queue) {
             this.visitor = createTestVisitor;
             this.nativeTypes = nativeTypes;
             this.bench = bench;
-            this.hasThisTypes = hasThisTypes;
-            this.reachableTypeParameters = reachableTypeParameters;
+            this.freeGenericsFinder = freeGenericsFinder;
             this.queue = queue;
         }
 
@@ -811,7 +807,7 @@ public class TestCreator {
                 return null;
             }
 
-            if (hasThisTypes.contains(t)) {
+            if (freeGenericsFinder.hasThisTypes(t)) {
                 arg = arg.withThisType(t);
             }
 
@@ -826,7 +822,7 @@ public class TestCreator {
                 return null;
             }
 
-            if (hasThisTypes.contains(t)) {
+            if (freeGenericsFinder.hasThisTypes(t)) {
                 arg = arg.withThisType(t);
             }
 
@@ -955,7 +951,6 @@ public class TestCreator {
 
         @Override
         public Void visit(ClassInstanceType t, Arg arg) {
-            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(t, reachableTypeParameters));
             return recurse(((ClassType) t.getClassType()).getInstanceType(), arg);
         }
 
@@ -971,13 +966,11 @@ public class TestCreator {
 
         @Override
         public Void visit(IndexType t, Arg arg) {
-            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(t, reachableTypeParameters));
             return recurse(t.getType(), arg.append("[index]"));
         }
 
         @Override
         public Void visit(IndexedAccessType t, Arg arg) {
-            arg = arg.withTypeContext(arg.typeContext.cleanTypeParameters(t, reachableTypeParameters));
             recurse(t.getObjectType(), arg.append("[objectType]"));
             recurse(t.getIndexType(), arg.append("[indexType]"));
             return null;

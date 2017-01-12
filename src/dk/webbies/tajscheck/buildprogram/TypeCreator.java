@@ -7,6 +7,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
+import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -34,22 +35,20 @@ public class TypeCreator {
     private final Map<Test, List<Integer>> testValueLocations = new IdentityHashMap<>();
     private final CheckOptions options;
     private Benchmark benchmark;
+    private final FreeGenericsFinder freeGenericsFinder;
     private Map<Type, String> typeNames;
     private Set<Type> nativeTypes;
     private TypeParameterIndexer typeParameterIndexer;
     private ArrayList<Statement> functions = new ArrayList<>();
-    private final MultiMap<Type, TypeParameterType> reachableTypeParameters;
-    private final Set<Type> hasThisTypes;
 
     private static final String GET_TYPE_PREFIX = "getType_";
     private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
     private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
-    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests, Benchmark benchmark, MultiMap<Type, TypeParameterType> reachableTypeParameters, Set<Type> hasThisTypes) {
+    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests, Benchmark benchmark, FreeGenericsFinder freeGenericsFinder) {
         this.options = benchmark.options;
         this.benchmark = benchmark;
-        this.reachableTypeParameters = reachableTypeParameters;
-        this.hasThisTypes = hasThisTypes;
+        this.freeGenericsFinder = freeGenericsFinder;
         this.valueLocations = new ArrayListMultiMap<>();
         this.typeNames = typeNames;
         this.nativeTypes = nativeTypes;
@@ -120,13 +119,13 @@ public class TypeCreator {
                 putProducedValueIndex(index, type, typeContext.withThisType(null), true);
             }
             if (typeContext.getThisType() == null) {
-                if (hasThisTypes.contains(type) && !(type instanceof ClassType)) {
+                if (freeGenericsFinder.hasThisTypes(type) && !(type instanceof ClassType)) {
                     putProducedValueIndex(index, type, typeContext.withThisType(type), true);
                 }
             }
         }
 
-        TypeContext newContext = typeContext.cleanTypeParameters(type, reachableTypeParameters);
+        TypeContext newContext = typeContext.cleanTypeParameters(type, freeGenericsFinder);
         if (!newContext.equals(typeContext)) {
             putProducedValueIndex(index, type, newContext);
         }
@@ -146,7 +145,7 @@ public class TypeCreator {
         } else if (type instanceof ClassInstanceType) {
             ClassInstanceType instanceType = (ClassInstanceType) type;
             putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext);
-            if (hasThisTypes.contains(instanceType.getClassType())) {
+            if (freeGenericsFinder.hasThisTypes(instanceType.getClassType())) {
                 putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext.withThisType(instanceType));
             }
         } else if (type instanceof ThisType) {
@@ -226,7 +225,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(ClassType t, TypeContext typeContext) {
-            if (hasThisTypes.contains(t)) {
+            if (freeGenericsFinder.hasThisTypes(t)) {
                 typeContext = typeContext.withThisType(t.getInstanceType());
             }
 
@@ -236,7 +235,7 @@ public class TypeCreator {
 
             List<Signature> signatures = t.getSignatures().stream().map(sig -> TypesUtil.createConstructorSignature(t, sig)).collect(Collectors.toList());
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, hasThisTypes), typeNames);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, freeGenericsFinder), typeNames);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
 
@@ -285,7 +284,7 @@ public class TypeCreator {
                 }
             }
 
-            if (hasThisTypes.contains(type)) {
+            if (freeGenericsFinder.hasThisTypes(type)) {
                 typeContext = typeContext.withThisType(type);
             }
 

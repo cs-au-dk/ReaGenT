@@ -6,7 +6,7 @@ import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.util.MultiMap;
+import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 
 import java.util.Collections;
 import java.util.Map;
@@ -58,7 +58,7 @@ public class NullTypeContext implements TypeContext {
     }
 
     @Override
-    public TypeContext cleanTypeParameters(Type baseType, MultiMap<Type, TypeParameterType> reachableTypeParameterMap) {
+    public TypeContext cleanTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder) {
         return this;
     }
 

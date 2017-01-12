@@ -3,7 +3,7 @@ package dk.webbies.tajscheck.typeutil.typeContext;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.util.MultiMap;
+import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 
 import java.util.*;
 
@@ -25,7 +25,7 @@ public interface TypeContext {
 
     public TypeContext append(TypeContext other);
 
-    public TypeContext cleanTypeParameters(Type baseType, MultiMap<Type, TypeParameterType> reachableTypeParameterMap);
+    public TypeContext cleanTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder);
 
     public Benchmark getBenchmark();
 
