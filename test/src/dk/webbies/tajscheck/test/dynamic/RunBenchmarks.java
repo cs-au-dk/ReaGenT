@@ -63,19 +63,20 @@ public class RunBenchmarks {
 
 
         benchmarks.put("ace.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/ace/ace.js", "test/benchmarks/ace/ace.d.ts", "ace", BROWSER, options));
-        Benchmark jQuery = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jquery/jquery.js", "test/benchmarks/jquery/jquery.d.ts", "jQuery", BROWSER, options.getBuilder().setIterationsToRun(500).build());
+        Benchmark jQuery = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jquery/jquery.js", "test/benchmarks/jquery/jquery.d.ts", "jQuery", BROWSER, options);
         benchmarks.put("jQuery.js", jQuery);
 
 
         benchmarks.put("angular.js",
                 new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/angular1/angular1.js", "test/benchmarks/angular1/angular1.d.ts", "angular", BROWSER, options)
-                .addDependencies(benchmarks.get("jQuery.js"))
+                .addDependencies(jQuery)
         );
 
 
         benchmarks.put("box2dweb", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/box2dweb/box2dweb.js", "test/benchmarks/box2dweb/box2dweb.d.ts", "Box2D", BROWSER, options));
 
-        benchmarks.put("underscore", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/underscore/underscore.js", "test/benchmarks/underscore/underscore.d.ts", "_", NODE, options));
+        Benchmark underscore = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/underscore/underscore.js", "test/benchmarks/underscore/underscore.d.ts", "_", NODE, options);
+        benchmarks.put("underscore", underscore);
 
         benchmarks.put("handlebars", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", "Handlebars", BROWSER, options));
 
@@ -114,12 +115,8 @@ public class RunBenchmarks {
 //        benchmarks.put("leaflet", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/leaflet/leaflet.js", "test/benchmarks/leaflet/leaflet.d.ts", "leaflet", BROWSER, options));
 
         benchmarks.put("backbone",
-                new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER,
-                        options.getBuilder()
-                        .setDisableGenerics(true)
-                        .build()
-                )
-                .addDependencies(benchmarks.get("underscore"))
+                new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER, options)
+                .addDependencies(underscore)
         );
 
         benchmarks.put("lodash", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lodash/lodash.js", "test/benchmarks/lodash/lodash.d.ts", "_", NODE,
@@ -190,7 +187,7 @@ public class RunBenchmarks {
 
     @Test
     public void coverage() throws Exception {
-        if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts").anyMatch(benchmark.dTSFile::contains)) {
+        if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts", "backbone.d.ts").anyMatch(benchmark.dTSFile::contains)) {
             return; // Too big, node runs out of memory generating the instrumented version.
         }
         Main.writeFullDriver(benchmark);

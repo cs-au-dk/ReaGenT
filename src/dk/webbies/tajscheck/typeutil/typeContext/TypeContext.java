@@ -25,7 +25,7 @@ public interface TypeContext {
 
     public TypeContext append(TypeContext other);
 
-    public TypeContext cleanTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder);
+    public TypeContext optimizeTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder);
 
     public Benchmark getBenchmark();
 

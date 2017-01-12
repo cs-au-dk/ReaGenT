@@ -759,6 +759,11 @@ public class UnitTests {
     }
 
     @Test
+    public void genericsBustStack4() throws Exception {
+        Main.generateFullDriver(benchFromFolder("genericsBustStack4").withRunMethod(BOOTSTRAP));
+    }
+
+    @Test
     public void genericsBustStackRuntime() throws Exception {
         RunResult result = run("genericsBustStackRuntime", "foo");
 
