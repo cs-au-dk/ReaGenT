@@ -533,7 +533,9 @@ public class TypeChecker {
     }
 
     static TypeCheck createIntersection(List<TypeCheck> checks) {
-        assert !checks.isEmpty();
+        if (checks.isEmpty()) {
+            return new SimpleTypeCheck(Check.alwaysTrue(), "[any]");
+        }
         if (checks.size() == 1) {
             return checks.iterator().next();
         }
