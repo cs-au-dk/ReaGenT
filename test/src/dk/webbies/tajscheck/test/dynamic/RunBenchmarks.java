@@ -187,7 +187,7 @@ public class RunBenchmarks {
 
     @Test
     public void coverage() throws Exception {
-        if (Stream.of("underscore.d.ts", "fabric").anyMatch(file -> benchmark.dTSFile.contains(file))) {
+        if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts").anyMatch(file -> benchmark.dTSFile.contains(file))) {
             return; // Too big, node runs out of memory generating the instrumented version.
         }
         Main.writeFullDriver(benchmark);
