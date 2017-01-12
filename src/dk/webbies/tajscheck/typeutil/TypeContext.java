@@ -131,13 +131,29 @@ public class TypeContext {
 
         Set<TypeParameterType> reachable = new HashSet<>();
 
-        ArrayList<Type> typesToTest = new ArrayList<>(Util.concat(persistent, Collections.singletonList(baseType), map.values()));
+        ArrayList<Type> typesToTest = new ArrayList<>(Util.concat(persistent, Collections.singletonList(baseType)));
 
         for (Type type : typesToTest) {
             reachable.addAll(reachableTypeParameterMap.get(type));
         }
 
         clone.map.keySet().retainAll(reachable);
+
+        boolean progress = true;
+        while (progress) {
+            progress = false;
+            Set<TypeParameterType> extraReachable = new HashSet<>();
+            for (Type type : clone.map.values()) {
+                extraReachable.addAll(reachableTypeParameterMap.get(type));
+            }
+            for (TypeParameterType parameterType : extraReachable) {
+                if (!reachable.contains(parameterType) && this.map.containsKey(parameterType)) {
+                    reachable.add(parameterType);
+                    clone.map.put(parameterType, this.map.get(parameterType));
+                    progress = true;
+                }
+            }
+        }
 
         if (clone.thisType != null) {
             if (!TypesUtil.isThisTypeVisible(baseType) && clone.map.values().stream().noneMatch(ThisType.class::isInstance)) {
