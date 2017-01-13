@@ -640,14 +640,6 @@ public class TypesUtil {
 
             return null;
         }
-
-        void acceptTypeTree(SpecReader.TypeNameTree value) {
-            if (value instanceof SpecReader.Leaf) {
-                ((SpecReader.Leaf) value).getType().accept(this);
-            } else if (value instanceof SpecReader.Node) {
-                ((SpecReader.Node) value).getChildren().values().forEach(this::acceptTypeTree);
-            }
-        }
     }
 
     public Pair<InterfaceType, TypeContext> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter, Map<Type, String> typeNames) {
