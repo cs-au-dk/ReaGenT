@@ -443,6 +443,8 @@ public class TypeCreator {
                     );
                 case Null:
                     return Return(nullLiteral());
+                case Enum:
+                    return Return(expFromString("(Math.random() * 10) | 0"));
                 default:
                     throw new RuntimeException("Cannot yet produce a simple: " + simple.getKind());
             }
@@ -924,8 +926,6 @@ public class TypeCreator {
                 return Return(constructType(new SimpleType(SimpleTypeKind.Number), typeContext));
             case "Boolean":
                 return Return(constructType(new SimpleType(SimpleTypeKind.Boolean), typeContext));
-            case "Date":
-                return Return(newCall(identifier("Date")));
             case "Function":
                 InterfaceType interfaceWithSimpleFunction = SpecReader.makeEmptySyntheticInterfaceType();
                 Signature callSignature = new Signature();
@@ -935,8 +935,6 @@ public class TypeCreator {
                 interfaceWithSimpleFunction.getDeclaredCallSignatures().add(callSignature);
                 typeNames.put(interfaceWithSimpleFunction, "Function");
                 return Return(constructType(interfaceWithSimpleFunction, typeContext));
-            case "Error":
-                return Return(newCall(identifier("Error")));
             case "RegExp":
                 Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(benchmark));
                 return Return(newCall(identifier("RegExp"), constructString));
@@ -948,12 +946,6 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return document.createElement('video')");
             case "HTMLImageElement":
                 return AstBuilder.stmtFromString("return document.createElement('img')");
-            case "Uint32Array":
-                return AstBuilder.stmtFromString("return new Uint32Array()");
-            case "Float32Array":
-                return AstBuilder.stmtFromString("return new Float32Array()");
-            case "Uint16Array":
-                return AstBuilder.stmtFromString("return new Uint16Array()");
             case "WebGLRenderingContext":
                 return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\")");
             case "WebGLTexture":
@@ -973,8 +965,6 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createProgram()");
             case "WebGLBuffer":
                 return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createBuffer()");
-            case "ArrayBuffer":
-                return AstBuilder.stmtFromString("return new ArrayBuffer()");
             case "ImageData":
                 return AstBuilder.stmtFromString("return new ImageData(10, 10)");
             case "TouchEvent":
@@ -989,8 +979,6 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return document.createElement('div')");
             case "CanvasPattern":
                 return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"2d\").createPattern()");
-            case "XMLHttpRequest":
-                return AstBuilder.stmtFromString("return new XMLHttpRequest()");
             case "EventTarget":
                 return AstBuilder.stmtFromString("return document"); // Not good, but good enough.
             case "Element":
@@ -1007,6 +995,7 @@ public class TypeCreator {
             case "XMLDocument":
                 return AstBuilder.stmtFromString("return XMLDocument.load()");
             case "Document":
+            case "HTMLDocument":
                 return AstBuilder.stmtFromString("return document");
             case "Window":
                 return AstBuilder.stmtFromString("return window");
@@ -1051,14 +1040,42 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return document.createElementNS(\"http://www.w3.org/2000/svg\", \"g\")");
             case "SVGSVGElement":
                 return AstBuilder.stmtFromString("return document.createElementNS(\"http://www.w3.org/2000/svg\", \"svg\")");
-            case "Range":
-                return AstBuilder.stmtFromString("return new Range()");
             case "ProgressEvent":
                 return AstBuilder.stmtFromString("return new ProgressEvent(1)");
             case "NodeList":
                 return AstBuilder.stmtFromString("return document.childNodes");
             case "HTMLScriptElement":
                 return AstBuilder.stmtFromString("return document.createElement(\"script\")");
+            case "HTMLAudioElement":
+                return AstBuilder.stmtFromString("return document.createElement(\"audio\")");
+            case "AudioContext":
+                return AstBuilder.stmtFromString("return new AudioContext()");
+            case "PannerNode":
+                return AstBuilder.stmtFromString("return new AudioContext().createPanner()");
+            case "Promise":
+                return AstBuilder.stmtFromString("return new Promise(function(){})");
+            case "GainNode":
+            case "AudioNode":
+                return AstBuilder.stmtFromString("return new (window.AudioContext || window.webkitAudioContext)().createGain()");
+            case "DynamicsCompressorNode":
+                return AstBuilder.stmtFromString("return new (window.AudioContext || window.webkitAudioContext)().createDynamicsCompressor()");
+            case "AudioBufferSourceNode":
+                return AstBuilder.stmtFromString("return new AudioBufferSourceNode(new AudioContext())");
+            case "Int8Array":
+            case "Uint8Array":
+            case "Uint32Array":
+            case "Int32Array":
+            case "Float32Array":
+            case "Uint16Array":
+            case "Uint8ClampedArray":
+            case "Int16Array":
+            case "Float64Array":
+            case "Range":
+            case "XMLHttpRequest":
+            case "ArrayBuffer":
+            case "Date":
+            case "Error":
+                return AstBuilder.stmtFromString("return new " + name + "()");
             case "CSSRuleList":
             case "CSSStyleDeclaration":
             case "TouchList":

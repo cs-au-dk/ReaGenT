@@ -135,7 +135,7 @@ public class TypeChecker {
                     "a constructor"
             ));
 
-            t.getBaseTypes().forEach(base -> result.addAll(base.accept(this, arg)));
+            t.getBaseTypes().stream().filter(ClassType.class::isInstance).forEach(base -> result.addAll(base.accept(this, arg)));
 
             if (arg.depthRemaining > 0) {
                 Arg subArg = arg.decreaseDepth();
@@ -161,7 +161,14 @@ public class TypeChecker {
                     case "XMLHttpRequest":
                     case "Uint16Array":
                     case "Uint32Array":
+                    case "Int8Array":
+                    case "Uint8Array":
+                    case "Int32Array":
+                    case "Uint8ClampedArray":
+                    case "Int16Array":
+                    case "Float64Array":
                     case "Selection":
+                    case "Promise":
                         return Collections.singletonList(
                                 new SimpleTypeCheck(
                                         Check.instanceOf(identifier(typeNames.get(t))),
@@ -260,6 +267,14 @@ public class TypeChecker {
                     case "HTMLScriptElement":
                     case "DataTransfer":
                     case "Location":
+                    case "DynamicsCompressorNode":
+                    case "GainNode":
+                    case "AudioContext":
+                    case "AudioNode":
+                    case "PannerNode":
+                    case "HTMLAudioElement":
+                    case "AudioBufferSourceNode":
+                    case "HTMLDocument":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "StyleMedia":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(expFromString("window.styleMedia.__proto__.constructor")), name));
@@ -320,14 +335,14 @@ public class TypeChecker {
                 if (t.getDeclaredNumberIndexType() != null) {
                     Type indexType = t.getDeclaredNumberIndexType();
 
-                    TypeCheck indexCheck = createIntersection(indexType.accept(this, arg));
+                    TypeCheck indexCheck = createIntersection(indexType.accept(this, subArg));
 
                     result.add(new SimpleTypeCheck(Check.numberIndex(indexCheck.getCheck()), "(numberIndexer: " + indexCheck.getExpected() + ")"));
                 }
                 if (t.getDeclaredStringIndexType() != null) {
                     Type indexType = t.getDeclaredStringIndexType();
 
-                    TypeCheck indexCheck = createIntersection(indexType.accept(this, arg));
+                    TypeCheck indexCheck = createIntersection(indexType.accept(this, subArg));
 
                     result.add(new SimpleTypeCheck(Check.stringIndex(indexCheck.getCheck()), "(stringIndexer: " + indexCheck.getExpected() + ")"));
                 }
@@ -343,8 +358,8 @@ public class TypeChecker {
                 return checkArrayThinghy(indexType, "Array", arg);
             }
 
-            if (nativeTypes.contains(t)) {
-                throw new RuntimeException();
+            if (nativeTypes.contains(t) && !(typeNames.get(t) != null && typeNames.get(t).startsWith("window."))) {
+                throw new RuntimeException(typeNames.get(t));
             }
             if (nativeTypes.contains(t.getTarget()) && !(t.getTarget() instanceof TupleType) && !(typeNames.get(t) != null && typeNames.get(t).startsWith("window."))) {
                 throw new RuntimeException(typeNames.get(t));
@@ -564,6 +579,7 @@ public class TypeChecker {
             case String:
                 return "string";
             case Number:
+            case Enum:
                 return "number";
             case Boolean:
                 return "boolean";
