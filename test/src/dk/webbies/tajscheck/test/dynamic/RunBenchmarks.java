@@ -107,12 +107,11 @@ public class RunBenchmarks {
         benchmarks.put("requirejs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/requirejs/require.js", "test/benchmarks/requirejs/requirejs.d.ts", "requirejs", BROWSER, options));
         benchmarks.put("sugar", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/sugar/sugar.js", "test/benchmarks/sugar/sugar.d.ts", "sugarjs", BROWSER, options));
 
-        // The TypeScript parser breaks on the below. TODO: Do something?
-//        benchmarks.put("createjs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/createjs/createjs.js", "test/benchmarks/createjs/createjs.d.ts", "createjs", BROWSER, options));
-//        benchmarks.put("vue", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/vue/vue.js", "test/benchmarks/vue/index.d.ts", "Vue", BROWSER, options));
-//        benchmarks.put("three", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/three/three.js", "test/benchmarks/three/three.d.ts", "THREE", BROWSER, options));
-//        benchmarks.put("photoswipe", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/photoswipe/photoswipe.js", "test/benchmarks/photoswipe/photoswipe.d.ts", "PhotoSwipe", BROWSER, options));
-//        benchmarks.put("leaflet", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/leaflet/leaflet.js", "test/benchmarks/leaflet/leaflet.d.ts", "leaflet", BROWSER, options));
+        benchmarks.put("photoswipe", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/photoswipe/photoswipe.js", "test/benchmarks/photoswipe/photoswipe.d.ts", "PhotoSwipe", BROWSER, options));
+        benchmarks.put("createjs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/createjs/createjs.js", "test/benchmarks/createjs/createjs.d.ts", "createjs", BROWSER, options));
+        benchmarks.put("vue", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/vue/vue.js", "test/benchmarks/vue/index.d.ts", "Vue", BROWSER, options));
+        benchmarks.put("three", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/three/three.js", "test/benchmarks/three/three.d.ts", "THREE", BROWSER, options));
+        benchmarks.put("leaflet", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/leaflet/leaflet.js", "test/benchmarks/leaflet/leaflet.d.ts", "L", BROWSER, options));
 
         benchmarks.put("backbone",
                 new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER, options)
@@ -187,7 +186,7 @@ public class RunBenchmarks {
 
     @Test
     public void coverage() throws Exception {
-        if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts", "backbone.d.ts").anyMatch(benchmark.dTSFile::contains)) {
+        if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts", "backbone.d.ts", "three.d.ts").anyMatch(benchmark.dTSFile::contains)) {
             return; // Too big, node runs out of memory generating the instrumented version.
         }
         Main.writeFullDriver(benchmark);
@@ -222,8 +221,8 @@ public class RunBenchmarks {
 
         if (result.typeErrors.size() > 0) {
             if (
-                    bench.jsFile.contains("box2dweb.js") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail.
-                    bench.jsFile.contains("jasmine.js") // jasmine has a class which extends Error, I don't handle that well.
+                    bench.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail.
+                    bench.jsFile.contains("leaflet.d.ts") // same unsoundness in leaflet.
             ) {
                 System.out.println("Is a benchmark which i know to fail. ");
                 return;
