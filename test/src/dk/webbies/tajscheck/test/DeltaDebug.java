@@ -33,14 +33,45 @@ public class DeltaDebug {
             throw new RuntimeException("Doesn't satisfy condition initially");
         }
 
+        boolean progress = false;
+        // Removing things between curly brackets.
+        String file = Util.readFile(filePath);
+        write(filePath + ".smallest", file);
+
+        int fromIndex = file.indexOf('{');
+        while (fromIndex != -1) {
+            int toIndex = findClosingCurlyBracket(file, fromIndex);
+            if (toIndex == -1) {
+                break;
+            }
+            String orgFile = file;
+            file = file.substring(0, fromIndex + 1) + file.substring(toIndex, file.length());
+            if (orgFile.equals(file)) {
+                fromIndex = file.indexOf('{', fromIndex + 1);
+                continue;
+            }
+            write(filePath, file);
+
+            if (!test.getAsBoolean()) {
+                // didn't work, need to put it back
+                System.out.println("Bad minification (" + file.length() + ")");
+                file = orgFile;
+                write(filePath, file);
+            } else {
+                System.out.println("GOOD minification (" + file.length() + ")");
+                write(filePath + ".smallest", file);
+                progress = true;
+            }
+            fromIndex = file.indexOf('{', fromIndex + 1);
+        }
+
+        // Removing lines, one by one.
         String[] array = Util.readFile(filePath).split(Pattern.quote("\n"));
         array = Arrays.stream(array).map(str -> str.replace("\r", "")).collect(Collectors.toList()).toArray(new String[]{});
 
         // Kinda copy-pasted from here: https://github.com/wala/jsdelta/blob/master/src/delta_single.js
 
-        write(filePath + ".smallest", array);
 
-        boolean progress = false;
         for (int sz = array.length >>> 1; sz > 0; sz >>>= 1) {
             System.out.println("  chunk size " + sz);
             int nchunks = (int) Math.floor(array.length / sz);
@@ -78,6 +109,25 @@ public class DeltaDebug {
         System.out.println("Delta debugging complete. ");
     }
 
+    private static int findClosingCurlyBracket(String file, int fromIndex) {
+        int numberOfBrackets = 1;
+        for (int i = fromIndex + 1; i < file.length(); i++) {
+            char c = file.charAt(i);
+            switch (c) {
+                case '{':
+                    numberOfBrackets++;
+                    break;
+                case '}':
+                    numberOfBrackets--;
+                    break;
+            }
+            if (numberOfBrackets == 0) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     private static String[] deleteFromArray(String[] array, int from, int length) {
         List<String> result = new ArrayList<>();
 
@@ -92,37 +142,49 @@ public class DeltaDebug {
     }
 
     private static void write(String filePath, String[] file) throws IOException {
-        Util.writeFile(filePath, String.join("\n", Arrays.asList(file)));
+        write(filePath, String.join("\n", Arrays.asList(file)));
     }
 
-    // TODO: Something with curly-brackets, next time i use this.
+    private static void write(String filePath, String file) throws IOException {
+        Util.writeFile(filePath, file);
+    }
+
     public static void main(String[] args) throws IOException {
-        String file = "test/benchmarks/knockout/knockout.d.ts";
+        String file = "test/benchmarks/jasmine/jasmine.d.ts";
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
                 return test();
-            } catch (IllegalArgumentException | StackOverflowError e) {
+            }catch (IllegalArgumentException | StackOverflowError e) {
                 e.printStackTrace();
-                return true;
+                return false;
             } catch (Error | Exception e) {
                 e.printStackTrace();
                 return false;
-            } finally {
-                throw new RuntimeException();
             }
         });
     }
 
     private static boolean test() throws Exception {
-        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/knockout/knockout.js", "test/benchmarks/knockout/knockout.d.ts", "ko", BOOTSTRAP, CheckOptions.builder().setSplitUnions(false).build());
-        Main.generateFullDriver(bench);
-        return false;
+        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jasmine/jasmine.js", "test/benchmarks/jasmine/jasmine.d.ts", "jasmine", BOOTSTRAP, CheckOptions.builder().setSplitUnions(false).setIterationsToRun(500).build());
+        Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
+        System.out.println("Driver written");
+        String output;
+        try {
+            output = Main.runBenchmark(bench, 60 * 1000);
+        } catch (TimeoutException e) {
+            System.out.println("Timeout");
+            return false;
+        }
+        System.out.println(output);
+        OutputParser.RunResult result = OutputParser.parseDriverResult(output);
+
+        return result.typeErrors.size() > 0;
     }
 
 
 
-    // TODO: At some point, find whatever is happening here.
+    // TODO: At some point, find whatever is happening here. (Something might also be happening with angular)
     private static final class TestReact {
         public static void main(String[] args) throws Exception {
             while (true) {
