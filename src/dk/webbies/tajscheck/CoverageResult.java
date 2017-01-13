@@ -24,19 +24,37 @@ public class CoverageResult {
     }
 
     public double statementCoverage() {
-        return (statements.values().stream().filter(n -> n > 0).count() / (statements.size() * 1.0));
+        return (statementCount() / (statements.size() * 1.0));
+    }
+
+    private long statementCount() {
+        return statements.values().stream().filter(n -> n > 0).count();
     }
 
     public double functionCoverage() {
-        return (functions.values().stream().filter(n -> n > 0).count() / (statements.size() * 1.0));
+        return (functionCount() / (statements.size() * 1.0));
+    }
+
+    private long functionCount() {
+        return functions.values().stream().filter(n -> n > 0).count();
     }
 
     public double branchCoverage() {
-        int count = 0;
+        return (branchCount() * 1.0) / branchTotal();
+    }
+
+    public int branchTotal() {
         int total = 0;
         for (Collection<Integer> coverageList : branches.values()) {
+            total += coverageList.size();
+        }
+        return total;
+    }
+
+    public int branchCount() {
+        int count = 0;
+        for (Collection<Integer> coverageList : branches.values()) {
             for (Integer integer : coverageList) {
-                total++;
                 if (integer > 0) {
                     count++;
                 }
@@ -44,16 +62,16 @@ public class CoverageResult {
 
         }
 
-        return (1.0 * count) / (total);
+        return count;
     }
 
 
     @Override
     public String toString() {
         return "CoverageResult{" +
-                "statements=" + Util.toFixed(statementCoverage(), 4) +
-                ", branches=" + Util.toFixed(branchCoverage(), 4) +
-                ", functions=" + Util.toFixed(functionCoverage(), 4) +
+                "statements=" + statementCount() + "/" + statements.size() + "(" + Util.toFixed(statementCoverage(), 4) + ")" +
+                ", branches=" + branchCount() + "/" + branchTotal() + "(" + Util.toFixed(branchCoverage(), 4) + ")" +
+                ", functions=" + functionCount() + "/" + functions.size() + "(" + Util.toFixed(functionCoverage(), 4) + ")" +
                 '}';
     }
 
