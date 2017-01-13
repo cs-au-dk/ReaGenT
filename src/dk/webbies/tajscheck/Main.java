@@ -231,8 +231,8 @@ public class Main {
     private static String runBenchmark(String testFilePath, Benchmark.RUN_METHOD run_method, int timeout) throws IOException, TimeoutException {
         switch (run_method) {
             case NODE:
-            case BOOTSTRAP: // TODO: Try to run this in browser instead (more API's).
                 return Util.runNodeScript(testFilePath, timeout);
+            case BOOTSTRAP:
             case BROWSER:
                 try {
                     String rawResult = SeleniumDriver.executeScript(Util.readFile(testFilePath), timeout);
