@@ -89,6 +89,8 @@ public class PrettyTypes {
             return "class";
         } else if (type instanceof SymbolType) {
             return "symbol";
+        } else if (type instanceof ThisType) {
+            return "this";
         }
 
         throw new RuntimeException(type.getClass().getName());
