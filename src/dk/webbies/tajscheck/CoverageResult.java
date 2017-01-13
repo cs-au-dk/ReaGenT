@@ -32,7 +32,7 @@ public class CoverageResult {
     }
 
     public double functionCoverage() {
-        return (functionCount() / (statements.size() * 1.0));
+        return (functionCount() / (functions.size() * 1.0));
     }
 
     private long functionCount() {
