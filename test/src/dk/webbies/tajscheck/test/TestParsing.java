@@ -41,6 +41,27 @@ public class TestParsing {
         );
     }
 
+    @Test
+    public void labeledBreakWithNoWhile() throws Exception {
+        testParse(
+                "(function (global, factory) {}(this, (function (exports) { 'use strict';\n" +
+                        "\tInterpolant.prototype = {\n" +
+                        "\t\tevaluate: function( t ) {\n" +
+                        "\t\t\tvalidate_interval: {\n" +
+                        "\t\t\t\tseek: {\n" +
+                        "\t\t\t\t\tlinear_scan: {\n" +
+                        "\t\t\t\t\t\tforward_scan: if ( ! ( t < t1 ) ) {\n" +
+                        "\t\t\t\t\t\t\tbreak linear_scan;\n" +
+                        "\t\t\t\t\t\t}\n" +
+                        "\t\t\t\t\t}\n" +
+                        "\t\t\t\t} // seek\n" +
+                        "\t\t\t} // validate_interval\n" +
+                        "\t\t},\n" +
+                        "\t}\n" +
+                        "})));"
+        );
+    }
+
     public static void testFile(String file) throws IOException {
         String script = Util.readFile(file);
 
@@ -48,10 +69,12 @@ public class TestParsing {
     }
 
     private static void testParse(String content) {
+        firstParsingComplete = false;
         JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
         Statement iteration1Ast = parser.parse("name", content).toTSCreateAST().getBody();
 
         System.out.println("First parsing complete");
+        firstParsingComplete = true;
 
         String iteration1String = AstToStringVisitor.toString(iteration1Ast);
 
@@ -61,4 +84,6 @@ public class TestParsing {
 
         assertThat(iteration1String, Is.is(equalTo(iteration2String)));
     }
+
+    public static boolean firstParsingComplete = false;
 }
