@@ -6,6 +6,7 @@ import dk.webbies.tajscheck.util.Util;
 
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by erik1 on 01-11-2016.
@@ -31,20 +32,16 @@ public class ParseDeclaration {
         }
     }
 
-    private static void markNamedTypes(SpecReader.Node namedTypes, String prefix, Map<Type, String> typeNames) {
-        for (Map.Entry<String, SpecReader.TypeNameTree> entry : namedTypes.getChildren().entrySet()) {
-            String name = prefix + entry.getKey();
-            SpecReader.TypeNameTree type = entry.getValue();
-            if (type instanceof SpecReader.Leaf) {
-                SpecReader.Leaf leaf = (SpecReader.Leaf) type;
-                if (leaf.getType() instanceof InterfaceType || leaf.getType() instanceof GenericType || leaf.getType() instanceof ClassType || leaf.getType() instanceof ClassInstanceType) {
-                    typeNames.put(leaf.getType(), name);
-                } else {
-                    throw new RuntimeException("I don't handle marking " + leaf.getType().getClass().getName() + " yet!");
+    private static void markNamedTypes(List<SpecReader.NamedType> namedTypes, Map<Type, String> typeNames) {
+        for (SpecReader.NamedType namedType : namedTypes) {
+            StringBuilder name = new StringBuilder();
+            for (int i = 0; i < namedType.qName.size(); i++) {
+                name.append(namedType.qName.get(i));
+                if (i + 1 < namedType.qName.size()) {
+                    name.append(".");
                 }
-            } else {
-                markNamedTypes((SpecReader.Node) type, name + ".", typeNames);
             }
+            typeNames.put(namedType.type, name.toString());
         }
     }
 
@@ -69,7 +66,8 @@ public class ParseDeclaration {
 
     public static Map<Type, String> getTypeNamesMap(SpecReader spec) {
         Map<Type, String> typeNames = new HashMap<>();
-        markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
+        markNamedTypes(spec.getNamedTypes(), typeNames);
+        List<SpecReader.NamedType> error = spec.getNamedTypes().stream().filter(named -> named.qName.size() == 1 && named.qName.get(0).equals("Error")).collect(Collectors.toList());
 
         PriorityQueue<Arg> queue = new PriorityQueue<>(Comparator.comparingInt(Arg::getDepth));
         queue.add(new Arg("window", 0, spec.getGlobal()));
