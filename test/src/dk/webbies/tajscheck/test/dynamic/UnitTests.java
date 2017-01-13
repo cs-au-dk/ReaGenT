@@ -606,6 +606,17 @@ public class UnitTests {
         sanityCheck(benchFromFolder("complexSanityCheck3"));
     }
 
+    @Test(expected = AssertionError.class)
+    public void complexSanityCheck9() throws Exception {
+        // The TypeScript type system is unsound, this is a test of that.
+        sanityCheck(benchFromFolder("complexSanityCheck9"));
+    }
+
+    @Test
+    public void extendsError() throws Exception {
+        sanityCheck(benchFromFolder("extendsError"));
+    }
+
     @Test
     public void complexSanityCheck4() throws Exception {
         sanityCheck(benchFromFolder("complexSanityCheck4"));
