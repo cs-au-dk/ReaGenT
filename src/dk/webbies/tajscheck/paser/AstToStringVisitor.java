@@ -449,7 +449,13 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
     @Override
     public Void visit(BreakStatement breakStatement) {
         ident();
-        write("break;\n");
+        if (breakStatement.getLabel() == null) {
+            write("break;\n");
+        } else {
+            write("break ");
+            write(breakStatement.getLabel());
+            write(";\n");
+        }
         return null;
     }
 
@@ -666,7 +672,16 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
     @Override
     public Void visit(LabeledStatement labeledStatement) {
         write(labeledStatement.getName() + ":");
-        labeledStatement.getStatement().accept(this); // Not perfect, but good enough.
+        if (labeledStatement.getStatement() instanceof BlockStatement) {
+            write("{\n");
+            ident++;
+            writeAsBlock(labeledStatement.getStatement());
+            ident--;
+            ident();
+            write("}\n");
+        } else {
+            writeAsBlock(labeledStatement.getStatement());
+        }
         return null;
     }
     @Override

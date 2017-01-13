@@ -184,7 +184,7 @@ public class AstBuilder {
     }
 
     public static BreakStatement breakStatement() {
-        return new BreakStatement(null);
+        return new BreakStatement(null, null);
     }
 
     public static ContinueStatement continueStatement() {

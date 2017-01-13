@@ -253,7 +253,7 @@ public class AstTransformer {
         } else if (tree instanceof ContinueStatementTree) {
             return new ContinueStatement(loc);
         } else if (tree instanceof BreakStatementTree) {
-            return new BreakStatement(loc);
+            return new BreakStatement(loc, ((BreakStatementTree)tree).getLabel());
         } else if (tree instanceof ThrowStatementTree) {
             ThrowStatementTree throwStatement = (ThrowStatementTree) tree;
             return new ThrowStatement(loc, (Expression) convert(throwStatement.value));
