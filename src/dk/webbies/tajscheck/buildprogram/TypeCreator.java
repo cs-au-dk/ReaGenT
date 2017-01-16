@@ -818,26 +818,15 @@ public class TypeCreator {
     }
 
     private Statement checkNumberOfArgs(Signature signature) {
-        // minArgsCondition
-        BinaryExpression condition = binary(
-                member(identifier("args"), "length"),
-                Operator.GREATER_THAN_EQUAL,
-                number(signature.getMinArgumentCount()));
-        if (!signature.isHasRestParameter()) {
-            // and maxArgsCondition
-            condition = binary(
-                    condition,
-                    Operator.AND,
-                    binary(
-                            member(identifier("args"), "length"),
-                            Operator.LESS_THAN_EQUAL,
-                            number(signature.getParameters().size())
-                    )
-            );
-        }
+
         return block(
                 ifThen(
-                        unary(Operator.NOT, condition
+                        unary(Operator.NOT,
+                                binary(
+                                        member(identifier("args"), "length"),
+                                        Operator.GREATER_THAN_EQUAL,
+                                        number(signature.getMinArgumentCount())
+                                )
                         ),
                         Return(bool(false))
                 )
@@ -1054,6 +1043,8 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return new AudioContext().createPanner()");
             case "Promise":
                 return AstBuilder.stmtFromString("return new Promise(function(){})");
+            case "CSSStyleSheet":
+                return AstBuilder.stmtFromString("return document.styleSheets[0]");
             case "GainNode":
             case "AudioNode":
                 return AstBuilder.stmtFromString("return new (window.AudioContext || window.webkitAudioContext)().createGain()");

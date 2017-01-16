@@ -275,6 +275,7 @@ public class TypeChecker {
                     case "HTMLAudioElement":
                     case "AudioBufferSourceNode":
                     case "HTMLDocument":
+                    case "CSSStyleSheet":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "StyleMedia":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(expFromString("window.styleMedia.__proto__.constructor")), name));
