@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck.test;
 
-import dk.webbies.tajscheck.ExecutionRecording;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
@@ -19,8 +18,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
-import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BROWSER;
-import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.NODE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -156,12 +153,12 @@ public class DeltaDebug {
     // Current fix jQuery procedure: comment out currentTarget and target of BaseJQueryEventObject.
     //                               comment out the two then methods of JQueryGenericPromise.
     public static void main(String[] args) throws IOException {
-        Benchmark bench = RunBenchmarks.benchmarks.get("leaflet");
-        String file = bench.dTSFile;
+        Benchmark bench = RunBenchmarks.benchmarks.get("bluebird");
+        String file = bench.jsFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                return test(bench);
+                return testParsing(bench);
             }catch (IllegalArgumentException | StackOverflowError e) {
                 e.printStackTrace();
                 return false;
@@ -172,7 +169,17 @@ public class DeltaDebug {
         });
     }
 
-    private static boolean test(Benchmark bench) throws Exception {
+    private static boolean testParsing(Benchmark bench) throws Exception {
+        try {
+            TestParsing.testFile(bench.jsFile);
+            return false;
+        } catch (AssertionError e) {
+            return true;
+        }
+    }
+
+
+    private static boolean testSanity(Benchmark bench) throws Exception {
         bench = bench.withRunMethod(BOOTSTRAP);
 
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.

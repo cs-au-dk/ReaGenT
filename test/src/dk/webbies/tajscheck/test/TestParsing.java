@@ -62,6 +62,16 @@ public class TestParsing {
         );
     }
 
+    @Test
+    public void functionWithSemiColon() throws Exception {
+        testParse(
+                "var test = function () {\n" +
+                "    ;\n" +
+                "}"
+        );
+
+    }
+
     public static void testFile(String file) throws IOException {
         String script = Util.readFile(file);
 
