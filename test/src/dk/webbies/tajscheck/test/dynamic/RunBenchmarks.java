@@ -151,6 +151,8 @@ public class RunBenchmarks {
                 .addDependencies(pickadate)
         );
 
+        benchmarks.put("codemirror", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/codemirror/codemirror.js", "test/benchmarks/codemirror/codemirror.d.ts", "CodeMirror", BROWSER, options));
+
     }
 
     @Parameterized.Parameters(name = "{0}")
@@ -247,7 +249,7 @@ public class RunBenchmarks {
         if (result.typeErrors.size() > 0) {
             if (
                     bench.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail.
-                    bench.jsFile.contains("leaflet.d.ts") // same unsoundness in leaflet.
+                    bench.dTSFile.contains("leaflet.d.ts") // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)
             ) {
                 System.out.println("Is a benchmark which i know to fail. ");
                 return;
