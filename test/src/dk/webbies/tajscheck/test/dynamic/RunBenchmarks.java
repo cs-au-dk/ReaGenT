@@ -129,6 +129,8 @@ public class RunBenchmarks {
 
         benchmarks.put("zepto", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/zepto/zepto.js", "test/benchmarks/zepto/zepto.d.ts", "Zepto", BROWSER, options));
 
+        benchmarks.put("redux", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/redux/redux.js", "test/benchmarks/redux/reduxModule.d.ts", "redux", NODE, options));
+
     }
 
     @Parameterized.Parameters(name = "{0}")
