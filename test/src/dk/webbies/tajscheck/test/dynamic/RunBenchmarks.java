@@ -159,6 +159,7 @@ public class RunBenchmarks {
 
         benchmarks.put("Rx", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/rx/Rx.js", "test/benchmarks/rx/types/rx/index.d.ts", "Rx", NODE, options.getBuilder().setDisableGenerics(true).build()));
 
+        benchmarks.put("when", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/when/when.js", "test/benchmarks/when/when.d.ts", "When", NODE, options.getBuilder().setDisableGenerics(true).build()));
 
     }
 
