@@ -141,6 +141,8 @@ public class RunBenchmarks {
 
         benchmarks.put("chartjs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/chartjs/chart.js", "test/benchmarks/chartjs/chart.d.ts", "Chart", BROWSER, options));
 
+        benchmarks.put("videojs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/video/video.js", "test/benchmarks/video/video.d.ts", "videojs", BROWSER, options));
+
     }
 
     @Parameterized.Parameters(name = "{0}")
