@@ -1058,6 +1058,8 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return document.createElement(\"input\")");
             case "TimeRanges":
                 return AstBuilder.stmtFromString("return document.createElement(\"video\").buffered");
+            case "HTMLTextAreaElement":
+                return AstBuilder.stmtFromString("return document.createElement(\"textarea\")");
             case "Int8Array":
             case "Uint8Array":
             case "Uint32Array":
