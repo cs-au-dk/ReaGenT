@@ -143,6 +143,8 @@ public class RunBenchmarks {
 
         benchmarks.put("videojs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/video/video.js", "test/benchmarks/video/video.d.ts", "videojs", BROWSER, options));
 
+        benchmarks.put("reveal", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/reveal/reveal.js", "test/benchmarks/reveal/reveal.d.ts", "Reveal", BROWSER, options));
+
     }
 
     @Parameterized.Parameters(name = "{0}")
