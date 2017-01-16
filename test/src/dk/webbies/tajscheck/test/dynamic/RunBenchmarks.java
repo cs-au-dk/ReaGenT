@@ -165,6 +165,8 @@ public class RunBenchmarks {
         benchmarks.put("autobahn", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/autobahn/autobahn.js", "test/benchmarks/autobahn/autobahn.d.ts", "autobahn", BROWSER, options.getBuilder().setDisableGenerics(true).build())
             .addDependencies(when)
         );
+
+        benchmarks.put("pdf.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pdf/pdf.js", "test/benchmarks/pdf/pdf.d.ts", "PDFJS", BROWSER, options));
     }
 
     @Parameterized.Parameters(name = "{0}")
