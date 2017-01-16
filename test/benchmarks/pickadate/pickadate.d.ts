@@ -3,7 +3,7 @@
 // Definitions by: Theodore Brown <https://github.com/theodorejb/>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
-///<reference types="jquery" />
+///<reference path="../jquery/jquery.d.ts" />
 
 declare namespace Pickadate {
     // KlassOptions shared between date and time pickers

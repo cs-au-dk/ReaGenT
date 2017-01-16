@@ -100,7 +100,8 @@ public class RunBenchmarks {
         benchmarks.put("mathjax", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/mathjax/mathjax.js", "test/benchmarks/mathjax/mathjax.d.ts", "MathJax", BROWSER, options));
 
         benchmarks.put("peerjs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/peerjs/peerjs.js", "test/benchmarks/peerjs/peerjs.d.ts", "PeerJs", BROWSER, options));
-        benchmarks.put("pickadate", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pickadate/picker.js", "test/benchmarks/pickadate/pickadate.d.ts", "Pickadate", BROWSER, options).addDependencies(jQuery));
+        Benchmark pickadate = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pickadate/picker.js", "test/benchmarks/pickadate/pickadate.d.ts", "Pickadate", BROWSER, options).addDependencies(jQuery);
+        benchmarks.put("pickadate", pickadate);
         benchmarks.put("pleasejs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pleasejs/please.js", "test/benchmarks/pleasejs/please.d.ts", "Please", NODE, options));
         benchmarks.put("polymer", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/polymer/polymer.js", "test/benchmarks/polymer/polymer.d.ts", "polymer", BROWSER, options).addDependencies(webcomponents));
         benchmarks.put("q", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/q/q.js", "test/benchmarks/q/q.d.ts", "Q", BROWSER, options));
@@ -144,6 +145,11 @@ public class RunBenchmarks {
         benchmarks.put("videojs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/video/video.js", "test/benchmarks/video/video.d.ts", "videojs", BROWSER, options));
 
         benchmarks.put("reveal", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/reveal/reveal.js", "test/benchmarks/reveal/reveal.d.ts", "Reveal", BROWSER, options));
+
+        benchmarks.put("materialize", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/materialize/materialize.js", "test/benchmarks/materialize/materialize.d.ts", "Materialize", BROWSER, options)
+                .addDependencies(jQuery)
+                .addDependencies(pickadate)
+        );
 
     }
 
