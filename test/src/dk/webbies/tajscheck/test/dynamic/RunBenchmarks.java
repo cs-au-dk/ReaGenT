@@ -137,6 +137,8 @@ public class RunBenchmarks {
             .addDependencies(angular)
         );
 
+        benchmarks.put("Foundation", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/foundation/foundation.js", "test/benchmarks/foundation/foundation.d.ts", "Foundation", BROWSER, options));
+
     }
 
     @Parameterized.Parameters(name = "{0}")
