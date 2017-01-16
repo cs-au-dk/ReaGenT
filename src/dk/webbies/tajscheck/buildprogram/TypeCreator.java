@@ -1054,6 +1054,8 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return new AudioBufferSourceNode(new AudioContext())");
             case "HTMLTrackElement":
                 return AstBuilder.stmtFromString("return document.createElement(\"track\")");
+            case "HTMLInputElement":
+                return AstBuilder.stmtFromString("return document.createElement(\"input\")");
             case "TimeRanges":
                 return AstBuilder.stmtFromString("return document.createElement(\"video\").buffered");
             case "Int8Array":
