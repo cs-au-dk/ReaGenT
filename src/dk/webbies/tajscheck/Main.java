@@ -173,6 +173,15 @@ public class Main {
             }
         }
 
+        if (result instanceof InterfaceType) {
+            InterfaceType inter = (InterfaceType) result;
+            if (inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size() > 0) {
+                if (inter.getDeclaredProperties().keySet().contains("prototype") && inter.getDeclaredProperties().get("prototype") instanceof ClassType) {
+                    return inter.getDeclaredProperties().get("prototype");
+                }
+            }
+        }
+
         return result;
     }
 
