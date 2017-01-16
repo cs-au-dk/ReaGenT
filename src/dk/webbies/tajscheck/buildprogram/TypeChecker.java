@@ -280,6 +280,7 @@ public class TypeChecker {
                     case "TimeRanges":
                     case "HTMLInputElement":
                     case "HTMLTextAreaElement":
+                    case "HTMLDivElement":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "StyleMedia":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(expFromString("window.styleMedia.__proto__.constructor")), name));
