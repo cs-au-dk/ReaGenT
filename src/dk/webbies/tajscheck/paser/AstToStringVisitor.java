@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.paser;
 
+import dk.brics.tajs.util.Collections;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
@@ -198,7 +199,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             write(" ");
         }
         writeArgs(func.getArguments());
-        if (!func.getBody().getStatements().isEmpty()) {
+        if (!explode(func.getBody()).isEmpty()) {
             write(" {\n");
             ident++;
             writeAsBlock(func.getBody());
@@ -209,6 +210,14 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             write(" {}");
         }
         return null;
+    }
+
+    private List<Statement> explode(Statement statement) {
+        if (statement instanceof BlockStatement) {
+            return ((BlockStatement) statement).getStatements().stream().map(this::explode).reduce(new ArrayList<>(), Util::reduceList);
+        } else {
+            return Collections.singletonList(statement);
+        }
     }
 
     @Override
@@ -575,11 +584,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
     }
 
     private void writeAsBlock(Statement statement) {
-        if (!(statement instanceof BlockStatement)) {
-            statement.accept(this);
-        } else {
-            ((BlockStatement) statement).getStatements().forEach(this::writeAsBlock);
-        }
+        explode(statement).forEach(this::accept);
     }
 
     @Override
