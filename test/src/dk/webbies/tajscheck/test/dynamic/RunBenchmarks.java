@@ -159,8 +159,12 @@ public class RunBenchmarks {
 
         benchmarks.put("Rx", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/rx/Rx.js", "test/benchmarks/rx/types/rx/index.d.ts", "Rx", NODE, options.getBuilder().setDisableGenerics(true).build()));
 
-        benchmarks.put("when", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/when/when.js", "test/benchmarks/when/when.d.ts", "When", NODE, options.getBuilder().setDisableGenerics(true).build()));
+        Benchmark when = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/when/when.js", "test/benchmarks/when/when.d.ts", "When", NODE, options.getBuilder().setDisableGenerics(true).build());// TODO: See if something can be done with the exploding complexity.
+        benchmarks.put("when", when);
 
+        benchmarks.put("autobahn", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/autobahn/autobahn.js", "test/benchmarks/autobahn/autobahn.d.ts", "autobahn", BROWSER, options.getBuilder().setDisableGenerics(true).build())
+            .addDependencies(when)
+        );
     }
 
     @Parameterized.Parameters(name = "{0}")
