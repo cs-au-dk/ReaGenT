@@ -139,6 +139,8 @@ public class RunBenchmarks {
 
         benchmarks.put("Foundation", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/foundation/foundation.js", "test/benchmarks/foundation/foundation.d.ts", "Foundation", BROWSER, options));
 
+        benchmarks.put("chartjs", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/chartjs/chart.js", "test/benchmarks/chartjs/chart.d.ts", "Chart", BROWSER, options));
+
     }
 
     @Parameterized.Parameters(name = "{0}")
@@ -241,6 +243,11 @@ public class RunBenchmarks {
                 return;
             }
         }
+
+        for (OutputParser.TypeError typeError : result.typeErrors) {
+            System.out.println(typeError);
+        }
+
 
         assertThat(result.typeErrors.size(), is(0));
     }
