@@ -67,9 +67,10 @@ public class RunBenchmarks {
         benchmarks.put("jQuery.js", jQuery);
 
 
+        Benchmark angular = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/angular1/angular1.js", "test/benchmarks/angular1/angular1.d.ts", "angular", BROWSER, options)
+                .addDependencies(jQuery);
         benchmarks.put("angular.js",
-                new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/angular1/angular1.js", "test/benchmarks/angular1/angular1.d.ts", "angular", BROWSER, options)
-                .addDependencies(jQuery)
+                angular
         );
 
 
@@ -130,6 +131,11 @@ public class RunBenchmarks {
         benchmarks.put("zepto", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/zepto/zepto.js", "test/benchmarks/zepto/zepto.d.ts", "Zepto", BROWSER, options));
 
         benchmarks.put("redux", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/redux/redux.js", "test/benchmarks/redux/reduxModule.d.ts", "redux", NODE, options));
+
+        benchmarks.put("ionic", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/ionic/ionic.js", "test/benchmarks/ionic/ionic.d.ts", "ionic", BROWSER, options)
+            .addDependencies(jQuery)
+            .addDependencies(angular)
+        );
 
     }
 
