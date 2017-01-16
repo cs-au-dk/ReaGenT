@@ -155,6 +155,9 @@ public class RunBenchmarks {
 
         benchmarks.put("bluebird", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/bluebird/bluebird.js", "test/benchmarks/bluebird/bluebird.d.ts", "Bluebird", NODE, options));
 
+        benchmarks.put("modernizr", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/modernizr/modernizr.js", "test/benchmarks/modernizr/modernizr.d.ts", "Modernizr", BROWSER, options));
+
+
     }
 
     @Parameterized.Parameters(name = "{0}")
