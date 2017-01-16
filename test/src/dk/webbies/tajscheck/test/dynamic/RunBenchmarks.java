@@ -167,6 +167,10 @@ public class RunBenchmarks {
         );
 
         benchmarks.put("pdf.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pdf/pdf.js", "test/benchmarks/pdf/pdf.d.ts", "PDFJS", BROWSER, options));
+
+        benchmarks.put("highlight", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/highlight/highlight.js", "test/benchmarks/highlight/highlight.d.ts", "hljs", BROWSER, options));
+
+        // If need more benchmarks, get some from here: https://www.javascripting.com/?p=4
     }
 
     @Parameterized.Parameters(name = "{0}")
