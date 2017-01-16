@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.OutputParser.*;
 import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
+import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BROWSER;
 import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.NODE;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.JSON;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
@@ -69,9 +70,13 @@ public class UnitTests {
     }
 
     private static void sanityCheck(Benchmark bench) throws Exception {
+        sanityCheck(bench, NODE);
+    }
+
+    private static void sanityCheck(Benchmark bench, Benchmark.RUN_METHOD runMethod) throws Exception {
         // Performing a soundness check of the benchmark.
         Main.writeFullDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP));
-        String output = Main.runBenchmark(bench);
+        String output = Main.runBenchmark(bench.withRunMethod(runMethod));
         RunResult result = OutputParser.parseDriverResult(output);
 
         if (result.errors.size() > 0) {
@@ -615,6 +620,38 @@ public class UnitTests {
     @Test
     public void extendsError() throws Exception {
         sanityCheck(benchFromFolder("extendsError"));
+    }
+
+    @Test
+    @Ignore
+    public void extendsEvent() throws Exception {
+        // TODO: (remember to note in noter.txt)
+        // TODO: jQuery state that they extend Event, they only do so structually, the object isn't actually instanceof Event.
+        sanityCheck(benchFromFolder("extendsEvent"), BROWSER);
+    }
+
+    @Test
+    @Ignore
+    public void extendsEvent2() throws Exception {
+        sanityCheck(benchFromFolder("extendsEvent2"), BROWSER);
+    }
+
+    @Test
+    @Ignore
+    public void overrideNumberOfArguments() throws Exception {
+        // TODO: Don't know what to do here.
+        // 1: Change TypeCreator.checkNumberOfArgs, so that it accepts any signature with at least the right number of parameters (but then it is difficult to distinguish signatures with the same "prefix").
+        // 2: Do nothing
+        // 3: Change TypeCreator.checkNumberOfArgs so that it doesn't return a boolean, but return some 3-state thing, with "definite not match, maybe match, definitely match". (That is just implementation hell, since everything happens at JavaScript runtime).
+        sanityCheck(benchFromFolder("overrideNumberOfArguments"), BROWSER);
+    }
+
+    @Test
+    public void classesAndNamespaces() throws Exception {
+        RunResult result = run("classesAndNamespaces", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.errors.size(), is(0));
     }
 
     @Test
