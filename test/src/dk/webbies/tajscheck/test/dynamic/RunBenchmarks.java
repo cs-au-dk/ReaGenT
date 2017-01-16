@@ -153,6 +153,8 @@ public class RunBenchmarks {
 
         benchmarks.put("codemirror", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/codemirror/codemirror.js", "test/benchmarks/codemirror/codemirror.d.ts", "CodeMirror", BROWSER, options));
 
+        benchmarks.put("bluebird", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/bluebird/bluebird.js", "test/benchmarks/bluebird/bluebird.d.ts", "Bluebird", NODE, options));
+
     }
 
     @Parameterized.Parameters(name = "{0}")
