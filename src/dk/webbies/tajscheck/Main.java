@@ -16,6 +16,7 @@ import dk.webbies.tajscheck.util.IdentityHashSet;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import dk.webbies.tajscheck.util.selenium.SeleniumDriver;
+import dk.webbies.tajscheck.util.trie.Trie;
 import org.apache.http.HttpException;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -46,77 +47,17 @@ public class Main {
     public static void writeFullDriver(Benchmark bench, ExecutionRecording recording) throws Exception {
         String programString = generateFullDriver(bench, recording);
 
-        Util.writeFile(getTestFilePath(bench, TEST_FILE_NAME), programString);
+        Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, programString);
     }
 
     public static String createRecordedProgram(Benchmark bench, ExecutionRecording recording) throws Exception {
         String programString = generateFullDriver(bench, recording);
 
-        Util.writeFile(getTestFilePath(bench, "recorded.js"), programString);
+        Util.writeFile(getFolderPath(bench) + "recorded.js", programString);
 
         System.out.println(programString);
 
         return programString;
-    }
-
-    public static void genSmallDrivers(Benchmark orgBench) throws IOException, InterruptedException {
-        SpecReader spec = ParseDeclaration.getTypeSpecification(orgBench.environment, Collections.singletonList(orgBench.dTSFile));
-
-        SpecReader emptySpec = ParseDeclaration.getTypeSpecification(orgBench.environment, new ArrayList<>());
-
-        Set<Type> nativeTypes = TypesUtil.collectNativeTypes(spec, emptySpec);
-
-        Map<Type, String> typeNames = ParseDeclaration.getTypeNamesMap(spec);
-
-        Type typeToTest = getTypeToTest(orgBench, spec);
-
-        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer(orgBench.options);
-
-        FreeGenericsFinder freeGenericsFinder = new FreeGenericsFinder(typeToTest);
-
-        List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, orgBench, typeParameterIndexer, freeGenericsFinder).createTests(false);
-
-        if (tests.size() > 100) {
-            tests.removeAll(new IdentityHashSet<>(tests.subList(100, tests.size())));
-            System.err.println("Artifically limiting the amount of small drivers to 100");
-        }
-
-        int counter = 0;
-
-        File dir = new File(getTestFilePath(orgBench, "smallDrivers"));
-        if (!dir.exists()) {
-            boolean created = dir.mkdir();
-            assert created;
-        }
-
-        ExecutorService pool = Executors.newFixedThreadPool(10);
-        for (Test test : tests) {
-            String path = test.getPath();
-
-            Benchmark bench = orgBench.withPathsToTest(Collections.singletonList(path));
-
-            int count = counter++;
-            pool.submit(() -> {
-                try {
-                    System.out.println("Creating small driver for: " + path + "  " + (count + 1) + "/" + tests.size());
-
-                    List<Test> specificTests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer, freeGenericsFinder).createTests();
-                    specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
-
-                    Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(null);
-
-                    String filePath = getTestFilePath(bench, "smallDrivers/small_driver_" + count + ".js");
-
-                    Util.writeFile(filePath, AstToStringVisitor.toString(program));
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-
-        pool.shutdown();
-        pool.awaitTermination(30, TimeUnit.MINUTES);
-
     }
 
     public static String generateFullDriver(Benchmark bench) throws IOException {
@@ -146,7 +87,7 @@ public class Main {
         return AstToStringVisitor.toString(program);
     }
 
-    private static Type getTypeToTest(Benchmark bench, SpecReader spec) {
+    static Type getTypeToTest(Benchmark bench, SpecReader spec) {
         Type result = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(bench.module);
 
         if (result == null) {
@@ -200,21 +141,14 @@ public class Main {
         return key;
     }
 
-
-    public static String getTestFilePath(Benchmark bench, String fileName) {
-        String folder = getFolderPath(bench);
-
-        return folder + fileName;
-    }
-
-    private static String getFolderPath(Benchmark bench) {
+    public static String getFolderPath(Benchmark bench) {
         String jsPath = bench.jsFile;
         int lastIndex = jsPath.lastIndexOf('/');
 
         return jsPath.substring(0, lastIndex + 1);
     }
 
-    private static String getRequirePath(Benchmark bench) {
+    static String getRequirePath(Benchmark bench) {
         String jsPath = new File(bench.jsFile).getAbsolutePath();
 
         int lastIndex = jsPath.lastIndexOf('\\');
@@ -224,7 +158,7 @@ public class Main {
     }
 
     public static String runBenchmark(Benchmark bench, int timeout) throws IOException, TimeoutException {
-        String testFilePath = getTestFilePath(bench, TEST_FILE_NAME);
+        String testFilePath = getFolderPath(bench) + TEST_FILE_NAME;
         Benchmark.RUN_METHOD run_method = bench.run_method;
         return runBenchmark(testFilePath, run_method, timeout);
     }
@@ -237,7 +171,7 @@ public class Main {
         }
     }
 
-    private static String runBenchmark(String testFilePath, Benchmark.RUN_METHOD run_method, int timeout) throws IOException, TimeoutException {
+    public static String runBenchmark(String testFilePath, Benchmark.RUN_METHOD run_method, int timeout) throws IOException, TimeoutException {
         switch (run_method) {
             case NODE:
                 return Util.runNodeScript(testFilePath, timeout);
@@ -273,13 +207,13 @@ public class Main {
 
             Util.runNodeScript(prefix + "node_modules/istanbul/lib/cli.js cover " + Main.TEST_FILE_NAME, new File(getFolderPath(bench)), timeout);
 
-            return CoverageResult.parse(Util.readFile(getTestFilePath(bench, "coverage/coverage.json")));
+            return CoverageResult.parse(Util.readFile(getFolderPath(bench) + "coverage/coverage.json"));
         }
 
 
-        String instrumented = Util.runNodeScript("node_modules/istanbul/lib/cli.js instrument " + getTestFilePath(bench, TEST_FILE_NAME), timeout);
+        String instrumented = Util.runNodeScript("node_modules/istanbul/lib/cli.js instrument " + getFolderPath(bench)  + TEST_FILE_NAME, timeout);
 
-        String coverageFileName = getTestFilePath(bench, COVERAGE_FILE_NAME);
+        String coverageFileName = getFolderPath(bench) + COVERAGE_FILE_NAME;
         Util.writeFile(coverageFileName, instrumented);
 
         String coverageResult = runBenchmark(coverageFileName, bench.run_method, timeout);
@@ -287,7 +221,7 @@ public class Main {
         Map<String, CoverageResult> result = CoverageResult.parse(coverageResult);
         assert result.size() == 1;
 
-        String[] testFile = Util.readFile(getTestFilePath(bench, TEST_FILE_NAME)).split("\n");
+        String[] testFile = Util.readFile(getFolderPath(bench) + TEST_FILE_NAME).split("\n");
         List<Integer> splitLines = Util.withIndex(Stream.of(testFile)).filter(pair -> pair.getLeft().contains(START_OF_FILE_MARKER)).map(Pair::getRight).collect(Collectors.toList());
 
         Map<String, Pair<Integer, Integer>> splitRules = new HashMap<>();

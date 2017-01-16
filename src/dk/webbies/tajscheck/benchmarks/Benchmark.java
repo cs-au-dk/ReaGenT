@@ -1,11 +1,10 @@
 package dk.webbies.tajscheck.benchmarks;
 
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import dk.webbies.tajscheck.testcreator.TestCreator;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by erik1 on 01-11-2016.
@@ -15,7 +14,7 @@ public class Benchmark {
     public final String jsFile;
     public final String dTSFile;
     public final String module;
-    public final Collection<String> pathsToTest;
+    public final Set<String> pathsToTest;
     public final RUN_METHOD run_method;
     public final boolean useTAJS;
     public final CheckOptions options;
@@ -25,7 +24,7 @@ public class Benchmark {
         this(environment, jsFile, dTSFile, module, load_method, null, false, options, new ArrayList<>());
     }
 
-    private Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, RUN_METHOD load_method, Collection<String> pathsToTest, boolean withTAJS, CheckOptions options, List<Benchmark> dependencies) {
+    private Benchmark(ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, RUN_METHOD load_method, Set<String> pathsToTest, boolean withTAJS, CheckOptions options, List<Benchmark> dependencies) {
         this.environment = environment;
         this.jsFile = jsFile;
         this.dTSFile = dTSFile;
@@ -43,7 +42,8 @@ public class Benchmark {
                 this.jsFile,
                 this.dTSFile,
                 this.module,
-                run_method, Collections.unmodifiableCollection(pathsToTest),
+                run_method,
+                Collections.unmodifiableSet(pathsToTest.stream().map(TestCreator::simplifyPath).collect(Collectors.toSet())),
                 this.useTAJS,
                 options, dependencies);
     }
@@ -90,6 +90,20 @@ public class Benchmark {
 
     public List<Benchmark> getDependencies() {
         return Collections.unmodifiableList(dependencies);
+    }
+
+    public Benchmark withOptions(CheckOptions options) {
+        return new Benchmark(
+                this.environment,
+                this.jsFile,
+                this.dTSFile,
+                this.module,
+                this.run_method,
+                this.pathsToTest,
+                this.useTAJS,
+                options,
+                this.dependencies
+        );
     }
 
     public enum RUN_METHOD {

@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.test.dynamic;
 import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
+import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
@@ -17,8 +18,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
@@ -184,9 +188,30 @@ public class RunBenchmarks {
     }
 
     @Test
-    @Ignore // I currently have no use for this.
+    @Ignore // Takes a long time, and doesn't really test much.
     public void genSmallDrivers() throws Exception {
-        Main.genSmallDrivers(benchmark);
+        RunSmall.genSmallDrivers(benchmark);
+    }
+
+    @Test
+    @Ignore
+    public void runSmallDrivers() throws Exception {
+        Benchmark benchmark = this.benchmark.withOptions(this.benchmark.options.getBuilder().setCheckDepth(1).build());
+        RunSmall.genSmallDrivers(benchmark);
+
+        OutputParser.RunResult result = OutputParser.combine(RunSmall.runSmallDrivers(benchmark, (path) -> {
+            try {
+                return OutputParser.parseDriverResult(Main.runBenchmark(path, benchmark.run_method, 60 * 1000));
+            } catch (TimeoutException e) {
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }));
+
+        for (OutputParser.TypeError typeError : result.typeErrors) {
+            System.out.println(typeError);
+        }
     }
 
     @Test

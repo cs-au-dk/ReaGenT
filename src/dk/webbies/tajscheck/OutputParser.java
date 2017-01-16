@@ -1,9 +1,8 @@
 package dk.webbies.tajscheck;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import dk.webbies.tajscheck.util.Util;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +41,14 @@ public class OutputParser {
         public RunResult(List<TypeError> typeErrors, List<String> errors) {
             this.typeErrors = typeErrors;
             this.errors = errors;
+        }
+
+        public List<TypeError> getTypeErrors() {
+            return typeErrors;
+        }
+
+        public List<String> getErrors() {
+            return errors;
         }
     }
 
@@ -114,5 +121,15 @@ public class OutputParser {
         }
 
         return new TypeError(path, expected, typeof, toString, JSON);
+    }
+
+    public static RunResult combine(List<RunResult> results) {
+        results = results.stream().filter(Objects::nonNull).collect(Collectors.toList());
+
+        List<String> errors = results.stream().map(res -> res == null ? new RunResult(Collections.emptyList(), Collections.emptyList()) : res).map(RunResult::getErrors).reduce(new ArrayList<>(), Util::reduceList).stream().distinct().collect(Collectors.toList());
+
+        List<TypeError> typeErrors = results.stream().map(RunResult::getTypeErrors).reduce(new ArrayList<>(), Util::reduceList).stream().distinct().collect(Collectors.toList());
+
+        return new RunResult(typeErrors, errors);
     }
 }

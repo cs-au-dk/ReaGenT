@@ -123,7 +123,7 @@ public class TAJSUtil {
     public static MultiMap<String, AssertionResult> run(Benchmark bench, int secondsTimeout) throws Exception {
         Main.writeFullDriver(bench);
 
-        String filePath = Main.getTestFilePath(bench, Main.TEST_FILE_NAME);
+        String filePath = Main.getFolderPath(bench) + Main.TEST_FILE_NAME;
 
         MultiMap<String, AssertionResult> result = runTAJS(filePath, secondsTimeout);
 

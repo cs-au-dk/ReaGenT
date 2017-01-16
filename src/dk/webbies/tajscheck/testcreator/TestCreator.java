@@ -10,6 +10,7 @@ import dk.webbies.tajscheck.buildprogram.TestProgramBuilder.TypeParameterIndexer
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.util.*;
+import dk.webbies.tajscheck.util.trie.Trie;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,18 +52,26 @@ public class TestCreator {
         Set<TypeWithContext> seenTopLevel = new HashSet<>();
 
         List<Test> topLevelFunctionTests = new ArrayList<>();
-        topLevelFunctionTests.addAll(addTopLevelFunctionTests(typeToTest, module, TypeContext.create(bench), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, 0, seenTopLevel));
+        topLevelFunctionTests.addAll(addTopLevelFunctionTests(typeToTest, module, TypeContext.create(bench), visitor, negativeTypesSeen, nativeTypes, 0, seenTopLevel));
 
         queue.add(new TestQueueElement(typeToTest, new Arg(module, TypeContext.create(bench), 0)));
+
+        Trie pathsToTestTrie = bench.pathsToTest != null ? Trie.create(bench.pathsToTest) : null;
 
         while (!queue.isEmpty()) {
             TestQueueElement element = queue.poll();
             Arg arg = element.arg;
 
+            if (bench.pathsToTest != null) {
+                if (!isRelevantPath(arg.path, pathsToTestTrie)) {
+                    continue;
+                }
+            }
+
             arg = arg.withTypeContext(arg.typeContext.optimizeTypeParameters(element.type, freeGenericsFinder));
 
             if (arg.withTopLevelFunctions) {
-                topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, arg.depth, seenTopLevel));
+                topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, nativeTypes, arg.depth, seenTopLevel));
 
             }
             element.type.accept(visitor, arg.noTopLevelFunctions());
@@ -72,10 +81,13 @@ public class TestCreator {
         List<Test> tests = Util.concat(visitor.getTests(), topLevelFunctionTests);
 
         if (bench.pathsToTest != null) {
-            tests = tests.stream().filter(test ->
-                bench.pathsToTest.stream().anyMatch(path -> path.startsWith(test.getPath()))
-            ).collect(Collectors.toList());
+            tests = tests.stream().filter(test -> pathsToTestTrie.startsWith(TestCreator.simplifyPath(test.getPath()))).collect(Collectors.toList());
+
+            Set<String> paths = tests.stream().map(Test::getPath).map(TestCreator::simplifyPath).collect(Collectors.toSet());
+
+            assert Util.intersection(paths, bench.pathsToTest).size() == bench.pathsToTest.size();
         }
+
         if (concatDuplicates) {
             return concatDuplicateTests(tests);
         } else {
@@ -83,7 +95,25 @@ public class TestCreator {
         }
     }
 
-    private List<Test> addTopLevelFunctionTests(Type type, String path, TypeContext typeContext, CreateTestVisitor visitor, Set<TypeWithContext> negativeTypesSeen, TypeParameterIndexer typeParameterIndexer, Set<Type> nativeTypes, int depth, Set<TypeWithContext> seenTopLevel) {
+    private boolean isRelevantPath(String path, Trie potentialPaths) {
+        return potentialPaths.startsWith(path);
+    }
+
+    public static String simplifyPath(String path) {
+        int fromIndex = -1;
+        while (true) {
+            fromIndex = path.indexOf('(', fromIndex+1);
+            if (fromIndex == -1) {
+                break;
+            }
+            int toIndex = path.indexOf(')', fromIndex);
+            assert toIndex != -1;
+            path = path.substring(0, fromIndex + 1) + path.substring(toIndex, path.length());
+        }
+        return path;
+    }
+
+    private List<Test> addTopLevelFunctionTests(Type type, String path, TypeContext typeContext, CreateTestVisitor visitor, Set<TypeWithContext> negativeTypesSeen, Set<Type> nativeTypes, int depth, Set<TypeWithContext> seenTopLevel) {
         TypeWithContext key = new TypeWithContext(type, typeContext);
         if (seenTopLevel.contains(key)) {
             return Collections.emptyList();
@@ -105,7 +135,7 @@ public class TestCreator {
         if (type instanceof IntersectionType) {
             List<Test> result = new ArrayList<>();
             for (Type subType : ((IntersectionType) type).getElements()) {
-                result.addAll(addTopLevelFunctionTests(subType, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
+                result.addAll(addTopLevelFunctionTests(subType, path, typeContext, visitor, negativeTypesSeen, nativeTypes, depth, seenTopLevel));
             }
 
             return result;
@@ -116,7 +146,7 @@ public class TestCreator {
             List<Type> element = ((UnionType) type).getElements();
             for (int i = 0; i < element.size(); i++) {
                 Type subType = element.get(i);
-                result.addAll(addTopLevelFunctionTests(subType, path + ".[union" + i + "]", typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
+                result.addAll(addTopLevelFunctionTests(subType, path + ".[union" + i + "]", typeContext, visitor, negativeTypesSeen, nativeTypes, depth, seenTopLevel));
             }
             return result;
         }
@@ -125,11 +155,11 @@ public class TestCreator {
             List<Test> result = new ArrayList<>();
             TypeParameterType typeParameterType = (TypeParameterType) type;
             if (typeParameterType.getConstraint() != null) {
-                result.addAll(addTopLevelFunctionTests(((TypeParameterType) type).getConstraint(), path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
+                result.addAll(addTopLevelFunctionTests(((TypeParameterType) type).getConstraint(), path, typeContext, visitor, negativeTypesSeen, nativeTypes, depth, seenTopLevel));
             }
             if (typeContext.containsKey(typeParameterType)) {
                 TypeWithContext lookup = typeContext.get(typeParameterType);
-                result.addAll(addTopLevelFunctionTests(lookup.getType(), path, lookup.getTypeContext(), visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel));
+                result.addAll(addTopLevelFunctionTests(lookup.getType(), path, lookup.getTypeContext(), visitor, negativeTypesSeen, nativeTypes, depth, seenTopLevel));
             }
             return result;
         }
@@ -140,12 +170,12 @@ public class TestCreator {
             type = ((ReferenceType) type).getTarget();
             path = path + ".<>";
             typeContext = typeContext.append(newParameters);
-            return addTopLevelFunctionTests(type, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel);
+            return addTopLevelFunctionTests(type, path, typeContext, visitor, negativeTypesSeen, nativeTypes, depth, seenTopLevel);
         }
 
         if (type instanceof GenericType) {
             type = ((GenericType) type).toInterface();
-            return addTopLevelFunctionTests(type, path, typeContext, visitor, negativeTypesSeen, typeParameterIndexer, nativeTypes, depth, seenTopLevel);
+            return addTopLevelFunctionTests(type, path, typeContext, visitor, negativeTypesSeen, nativeTypes, depth, seenTopLevel);
         }
 
         if (type instanceof InterfaceType) {

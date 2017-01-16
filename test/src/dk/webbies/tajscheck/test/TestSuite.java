@@ -14,6 +14,7 @@ import org.junit.runners.Suite;
         UnitTests.class,
         RunBenchmarks.class,
         TestParsing.class,
+        TestVarious.class,
 //        TAJSTests.class // Comment in if TAJS is relevant again.
 })
 public class TestSuite {
