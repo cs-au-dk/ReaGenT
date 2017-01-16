@@ -6,6 +6,7 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
@@ -38,9 +39,13 @@ public class DeltaDebug {
         String file = Util.readFile(filePath);
         write(filePath + ".smallest", file);
 
-        int fromIndex = file.indexOf('{');
+        int fromIndex = 0;
         while (fromIndex != -1) {
+            fromIndex = file.indexOf('{', fromIndex + 1);
             int toIndex = findClosingCurlyBracket(file, fromIndex);
+            if (file.indexOf('\n', fromIndex) == -1 || file.indexOf('\n', fromIndex) > toIndex) {
+                continue;
+            }
             if (toIndex == -1) {
                 break;
             }
@@ -62,7 +67,6 @@ public class DeltaDebug {
                 write(filePath + ".smallest", file);
                 progress = true;
             }
-            fromIndex = file.indexOf('{', fromIndex + 1);
         }
 
         // Removing lines, one by one.
@@ -149,12 +153,15 @@ public class DeltaDebug {
         Util.writeFile(filePath, file);
     }
 
+    // Current fix jQuery procedure: comment out currentTarget and target of BaseJQueryEventObject.
+    //                               comment out the two then methods of JQueryGenericPromise.
     public static void main(String[] args) throws IOException {
-        String file = "test/benchmarks/jasmine/jasmine.d.ts";
+        Benchmark bench = RunBenchmarks.benchmarks.get("leaflet");
+        String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                return test();
+                return test(bench);
             }catch (IllegalArgumentException | StackOverflowError e) {
                 e.printStackTrace();
                 return false;
@@ -165,8 +172,9 @@ public class DeltaDebug {
         });
     }
 
-    private static boolean test() throws Exception {
-        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jasmine/jasmine.js", "test/benchmarks/jasmine/jasmine.d.ts", "jasmine", BOOTSTRAP, CheckOptions.builder().setSplitUnions(false).setIterationsToRun(500).build());
+    private static boolean test(Benchmark bench) throws Exception {
+        bench = bench.withRunMethod(BOOTSTRAP);
+
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");
         String output;
@@ -178,6 +186,11 @@ public class DeltaDebug {
         }
         System.out.println(output);
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
+
+        for (OutputParser.TypeError typeError : result.typeErrors) {
+            System.out.println(typeError);
+        }
+
 
         return result.typeErrors.size() > 0;
     }
