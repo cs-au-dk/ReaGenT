@@ -8,6 +8,10 @@ test/**/small_driver*
 ts-spec-reader/node_modules/*
 test/**/coverage/*
 test/benchmarks/*/coverage.js
+build/
+experiment.csv
+junitvmwatcher*.properties
+TEST-*.txt
 
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template
