@@ -618,6 +618,11 @@ public class UnitTests {
     }
 
     @Test
+    public void complexSanityCheck10() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck10"));
+    }
+
+    @Test
     public void extendsError() throws Exception {
         sanityCheck(benchFromFolder("extendsError"));
     }
