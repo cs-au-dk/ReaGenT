@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck.test.experiments;
 
-import com.sun.xml.internal.ws.model.RuntimeModelerException;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;

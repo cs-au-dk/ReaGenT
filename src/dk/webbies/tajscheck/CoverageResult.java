@@ -357,6 +357,7 @@ public class CoverageResult {
     }
 
     public static CoverageResult combine(List<CoverageResult> results) {
+        results = results.stream().filter(Objects::nonNull).collect(Collectors.toList());
         CoverageResult combined = results.get(0);
         for (CoverageResult coverageResult : results.subList(1, results.size())) {
             combined = combine(combined, coverageResult);

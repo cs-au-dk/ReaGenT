@@ -164,8 +164,8 @@ public class RunExperiments {
     public void runExperiment() throws Exception {
         Experiment experiment = new Experiment("Moment.js");
 
-        experiment.addSingleExperiment(smallCoverage);
-        experiment.addSingleExperiment(runSmall);
+//        experiment.addSingleExperiment(smallCoverage);
+//        experiment.addSingleExperiment(runSmall);
 
 //        experiment.addSingleExperiment(uniquePaths);
 //        experiment.addMultiExperiment(uniquePathsAndCoverage);
@@ -173,13 +173,17 @@ public class RunExperiments {
 //        experiment.addMultiExperiment(uniquePathsConvergence);
 
 
-//        experiment.addMultiExperiment(driverSizes);
-//        experiment.addSingleExperiment(jsFileSize);
+        experiment.addMultiExperiment(driverSizes);
+        experiment.addSingleExperiment(jsFileSize);
 
 
         String result = experiment.calculate(THREADS).toCSV();
         System.out.println("\n\n\nResult: \n");
         System.out.println(result);
 
+    }
+
+    public static void main(String[] args) throws Exception {
+        new RunExperiments().runExperiment();
     }
 }

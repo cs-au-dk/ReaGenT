@@ -1,0 +1,87 @@
+<project name="HotCiv" default="help" basedir=".">
+
+    <property name="source-directory" value="src"/>
+    <property name="test-source-directory" value="test/src/"/>
+
+    <property name="build-directory" value="build"/>
+
+    <path id="class-path">
+        <pathelement location="${build-directory}"/>
+        <fileset dir="." includes="lib/*.jar" />
+        <pathelement location="lib/selenium/"/>
+        <pathelement location="lib/selenium/selenium-server-standalone-3.0.1.jar"/>
+        <fileset dir="." includes="TAJS-private/lib/*.jar" />
+        <pathelement location="ts-spec-reader/deserializers/java/src"/>
+    </path>
+
+    <target name="help">
+        <echo>
+            TODO: Do something.
+        </echo>
+    </target>
+
+    <target name="clean">
+        <delete dir="${build-directory}"/>
+    </target>
+
+    <target name="prepare">
+        <mkdir dir="${build-directory}"/>
+    </target>
+
+    <target name="copy-source" depends="prepare">
+        <copy todir="${build-directory}" >
+            <fileset dir="${source-directory}" includes="**"/>
+        </copy>
+    </target>
+
+    <target name="build-src" depends="prepare, copy-source">
+        <javac
+               destdir="${build-directory}"
+               debug="on"
+               includeantruntime="no"
+        >
+            <src path="TAJS-private/src" />
+            <src path="TAJS-private/test/src" />
+            <src path="ts-spec-reader/deserializers/java/src" />
+            <src path="${source-directory}" />
+            <classpath refid="class-path"/>
+        </javac>
+    </target>
+
+    <target name="build-test" depends="build-src">
+        <javac
+               destdir="${build-directory}"
+               debug="on"
+               includeantruntime="no"
+        >
+            <src path="${test-source-directory}" />
+            <classpath refid="class-path"/>
+        </javac>
+    </target>
+
+    <target name="build-all" depends="build-src,build-test"/>
+
+    <!-- JUnit testing -->
+    <target name="test" depends="build-all">
+        <junit printsummary="on" haltonfailure="yes" fork="true" showoutput="true">
+            <classpath>
+                <path refid="class-path"/>
+                <pathelement location="${build-directory}"/>
+            </classpath>
+            <formatter type="plain" usefile="false" /> <!-- to screen -->
+            <formatter type="plain" /> <!-- to file -->
+            <batchtest>
+                <fileset dir="${test-source-directory}" includes="**/*TestSuite.java" />
+            </batchtest>
+        </junit>
+    </target>
+
+    <target name="experiment" depends="build-all">
+        <java fork="yes" classname="dk.webbies.tajscheck.test.experiments.RunExperiments">
+            <classpath>
+                <path refid="class-path"/>
+            </classpath>
+        </java>
+    </target>
+
+</project>
