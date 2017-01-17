@@ -22,11 +22,11 @@ public class RunExperiments {
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth + 1).build());
-        RunSmall.genSmallDrivers(bench, RUN_SMALL_THREADS);
+        RunSmall.genSmallDrivers(bench);
         List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(
                 bench,
                 RunSmall.runDriver(bench.run_method, TIMEOUT),
-                THREADS
+                RUN_SMALL_THREADS
         );
 
 
@@ -37,11 +37,11 @@ public class RunExperiments {
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> smallCoverage = new Pair<>("small-coverage", (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth + 1).build());
-        RunSmall.genSmallDrivers(bench, RUN_SMALL_THREADS);
+        RunSmall.genSmallDrivers(bench);
         List<CoverageResult> results = RunSmall.runSmallDrivers(
                 bench,
                 RunSmall.runCoverage(bench, TIMEOUT),
-                THREADS
+                RUN_SMALL_THREADS
         );
 
         return Util.toPercentage(CoverageResult.combine(results).statementCoverage());
@@ -162,7 +162,7 @@ public class RunExperiments {
 
     @Test
     public void runExperiment() throws Exception {
-        Experiment experiment = new Experiment("Moment.js");
+        Experiment experiment = new Experiment();
 
 //        experiment.addSingleExperiment(smallCoverage);
 //        experiment.addSingleExperiment(runSmall);
@@ -174,16 +174,23 @@ public class RunExperiments {
 
 
         experiment.addMultiExperiment(driverSizes);
-        experiment.addSingleExperiment(jsFileSize);
+//        experiment.addSingleExperiment(jsFileSize);
 
 
         String result = experiment.calculate(THREADS).toCSV();
         System.out.println("\n\n\nResult: \n");
         System.out.println(result);
 
+        Util.writeFile("experiment.csv", result);
+
     }
 
     public static void main(String[] args) throws Exception {
         new RunExperiments().runExperiment();
     }
+/*
+    Benchmark	runSmall	uniquePaths	uniquePathsConvergence	iterationsUntilConvergence
+    Moment.js	184	87	166	12
+*/
+
 }
