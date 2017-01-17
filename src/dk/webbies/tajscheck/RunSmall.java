@@ -58,7 +58,7 @@ public class RunSmall {
 
         List<String> allPaths = new TestCreator(nativeTypes, typeNames, typeToTest, orgBench, typeParameterIndexer, freeGenericsFinder).createTests(false).stream().map(Test::getPath).map(TestCreator::simplifyPath).collect(Collectors.toList());
 
-        allPaths = allPaths.stream().filter(path -> !path.contains("[arg")).collect(Collectors.toList()); // TODO: For now we don't support first-order-functions here, because we are not sure which tests are required for the test to work.
+        allPaths = allPaths.stream().filter(path -> !path.contains("[arg")).collect(Collectors.toList());
 
         Trie trie = Trie.create(allPaths);
         List<String> paths = allPaths.stream().filter(Util.not(trie::containsChildren)).collect(Collectors.toList());
