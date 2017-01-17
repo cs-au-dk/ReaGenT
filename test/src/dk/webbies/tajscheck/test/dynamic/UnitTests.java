@@ -641,13 +641,13 @@ public class UnitTests {
         sanityCheck(benchFromFolder("extendsEvent2"), BROWSER);
     }
 
-    @Test
-    @Ignore
+    @Test(expected = AssertionError.class)
     public void overrideNumberOfArguments() throws Exception {
-        // TODO: Don't know what to do here.
-        // 1: Change TypeCreator.checkNumberOfArgs, so that it accepts any signature with at least the right number of parameters (but then it is difficult to distinguish signatures with the same "prefix").
-        // 2: Do nothing
-        // 3: Change TypeCreator.checkNumberOfArgs so that it doesn't return a boolean, but return some 3-state thing, with "definite not match, maybe match, definitely match". (That is just implementation hell, since everything happens at JavaScript runtime).
+        // TODO: Mention in noter.txt
+        // Actually just bivariance on the function arguments.
+        // When a function (with e.g. 2 parameters) is overridden, with a function that takes 1 parameter.
+        // Then the second parameter kind-of gets the bottom type.
+        // TypeScript allows this, but it is unsound (just like complexSanityCheck9
         sanityCheck(benchFromFolder("overrideNumberOfArguments"), BROWSER);
     }
 
