@@ -958,7 +958,7 @@ public class TypeCreator {
             case "MouseEvent":
                 return AstBuilder.stmtFromString("return new MouseEvent(null)");
             case "Event":
-                return AstBuilder.stmtFromString("return new Event(null)");
+                throw new ProduceManuallyException();
             case "WebGLProgram":
                 return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\").createProgram()");
             case "WebGLBuffer":

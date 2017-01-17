@@ -108,6 +108,10 @@ public class TypeChecker {
         public Arg decreaseDepth() {
             return new Arg(this.typeContext, this.depthRemaining - 1);
         }
+
+        public Arg withDepth(int depth) {
+            return new Arg(typeContext, depth);
+        }
     }
 
     static final class CreateTypeCheckVisitor implements TypeVisitorWithArgument<List<TypeCheck>, Arg> {
@@ -226,7 +230,6 @@ public class TypeChecker {
                     case "ArrayBuffer":
                     case "CanvasGradient":
                     case "WebGLFramebuffer":
-                    case "Event":
                     case "HTMLCanvasElement":
                     case "WebGLRenderbuffer":
                     case "HTMLImageElement":
@@ -302,6 +305,9 @@ public class TypeChecker {
                     case "BlobPropertyBag":
                     case "CanvasPathMethods":
                         break; // Checking the type manually.
+                    case "Event":
+                        arg = arg.withDepth(1);
+                        break;
                     default:
                         throw new RuntimeException(typeNames.get(t));
                 }
@@ -329,7 +335,9 @@ public class TypeChecker {
             }
 
             // Adding all baseTypes
-            t.getBaseTypes().forEach(base -> result.addAll(base.accept(this, arg)));
+            for (Type base : t.getBaseTypes()) {
+                result.addAll(base.accept(this, arg));
+            }
 
             if (arg.depthRemaining > 0) {
                 Arg subArg = arg.decreaseDepth();
