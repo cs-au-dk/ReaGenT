@@ -7,22 +7,14 @@ import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
-import dk.webbies.tajscheck.paser.AST.Statement;
-import dk.webbies.tajscheck.paser.AstToStringVisitor;
-import dk.webbies.tajscheck.paser.JavaScriptParser;
 import dk.webbies.tajscheck.test.TestParsing;
-import dk.webbies.tajscheck.util.Util;
-import org.hamcrest.core.Is;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
@@ -30,7 +22,6 @@ import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BROWSER;
 import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.NODE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
 
 /**
  * Created by erik1 on 22-11-2016.
@@ -195,15 +186,7 @@ public class RunBenchmarks {
         Benchmark benchmark = this.benchmark.withOptions(this.benchmark.options.getBuilder().setCheckDepth(1).build());
         RunSmall.genSmallDrivers(benchmark);
 
-        OutputParser.RunResult result = OutputParser.combine(RunSmall.runSmallDrivers(benchmark, (path) -> {
-            try {
-                return OutputParser.parseDriverResult(Main.runBenchmark(path, benchmark.run_method, 60 * 1000));
-            } catch (TimeoutException e) {
-                return null;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }));
+        OutputParser.RunResult result = OutputParser.combine(RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark.run_method, 60 * 1000)));
 
         for (OutputParser.TypeError typeError : result.typeErrors) {
             System.out.println(typeError);

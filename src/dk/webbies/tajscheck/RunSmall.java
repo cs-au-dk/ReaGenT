@@ -33,11 +33,18 @@ import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BROWSER;
 public class RunSmall {
     public static final String SMALL_DRIVERS_FOLDER = "smallDrivers";
     public static final String SMALL_DRIVER_FILE_PREFIX = "small_driver_";
-    private static final int THREADS = 4;
+    private static final int DEFAULT_THREADS = 4;
 
     public static void genSmallDrivers(Benchmark orgBench) throws IOException {
+        genSmallDrivers(orgBench, DEFAULT_THREADS);
+    }
+
+    public static void genSmallDrivers(Benchmark orgBench, int threads) throws IOException {
         // Deleting all existing.
-        Arrays.stream(new File(Main.getFolderPath(orgBench) + SMALL_DRIVERS_FOLDER).listFiles()).filter(file -> file.getName().contains(SMALL_DRIVER_FILE_PREFIX)).forEach(File::delete);
+        String smallDriversFolderPath = Main.getFolderPath(orgBench) + SMALL_DRIVERS_FOLDER;
+        if (new File(smallDriversFolderPath).exists()) {
+            Arrays.stream(new File(smallDriversFolderPath).listFiles()).filter(file -> file.getName().contains(SMALL_DRIVER_FILE_PREFIX)).forEach(File::delete);
+        }
 
         SpecReader spec = ParseDeclaration.getTypeSpecification(orgBench.environment, Collections.singletonList(orgBench.dTSFile));
 
@@ -62,13 +69,13 @@ public class RunSmall {
 
         int counter = 0;
 
-        File dir = new File(Main.getFolderPath(orgBench) + SMALL_DRIVERS_FOLDER);
+        File dir = new File(smallDriversFolderPath);
         if (!dir.exists()) {
             boolean created = dir.mkdir();
             assert created;
         }
 
-        ExecutorService pool = Executors.newFixedThreadPool(THREADS);
+        ExecutorService pool = Executors.newFixedThreadPool(threads);
         for (String path : paths) {
             Benchmark bench = orgBench.withPathsToTest(Collections.singletonList(path));
 
@@ -101,17 +108,25 @@ public class RunSmall {
         }
     }
 
-    public static <T> List<T> runSmallDrivers(Benchmark benchmark, Function<String, T> runner) throws IOException {
+    public static <T> List<T> runSmallDrivers(Benchmark benchmark, Function<String, T> runner) {
+        return runSmallDrivers(benchmark, runner, DEFAULT_THREADS);
+    }
+
+    public static <T> List<T> runSmallDrivers(Benchmark benchmark, Function<String, T> runner, int threads) {
         if (benchmark.run_method != BROWSER) {
             String jsName = benchmark.jsFile.substring(benchmark.jsFile.lastIndexOf('/') + 1, benchmark.jsFile.length());
-            Util.writeFile(Main.getFolderPath(benchmark) + RunSmall.SMALL_DRIVERS_FOLDER + "/" + jsName, Util.readFile(benchmark.jsFile));
+            try {
+                Util.writeFile(Main.getFolderPath(benchmark) + RunSmall.SMALL_DRIVERS_FOLDER + "/" + jsName, Util.readFile(benchmark.jsFile));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         File smallFolders = new File(Main.getFolderPath(benchmark) + RunSmall.SMALL_DRIVERS_FOLDER);
 
         List<String> files = Arrays.stream(smallFolders.list()).filter(path -> path.contains(RunSmall.SMALL_DRIVER_FILE_PREFIX)).collect(Collectors.toList());
 
-        ExecutorService pool = Executors.newFixedThreadPool(THREADS);
+        ExecutorService pool = Executors.newFixedThreadPool(threads);
 
         List<T> result = Collections.synchronizedList(new ArrayList<T>());
         files.forEach(file -> result.add(null));
@@ -136,5 +151,31 @@ public class RunSmall {
         }
 
         return result;
+    }
+
+    public static Function<String, CoverageResult> runCoverage(Benchmark bench, int timeout) {
+        return (path) -> {
+            try {
+                path = path.substring(Main.getFolderPath(bench).length());
+                Map<String, CoverageResult> coverage = Main.genCoverage(bench, timeout, path);
+                return coverage.get(bench.getJSName());
+            } catch (TimeoutException e) {
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    public static Function<String, OutputParser.RunResult> runDriver(Benchmark.RUN_METHOD run_method, int timeout) {
+        return (path) -> {
+            try {
+                return OutputParser.parseDriverResult(Main.runBenchmark(path, run_method, timeout));
+            } catch (TimeoutException e) {
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 }

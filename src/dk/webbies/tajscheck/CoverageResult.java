@@ -197,6 +197,19 @@ public class CoverageResult {
                     ", end=" + end +
                     '}';
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SourceLocation that = (SourceLocation) o;
+            return (start != null ? start.equals(that.start) : that.start == null) && (end != null ? end.equals(that.end) : that.end == null);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * (start != null ? start.hashCode() : 0) + (end != null ? end.hashCode() : 0);
+        }
     }
 
     public static final class SourcePosition {
@@ -214,6 +227,19 @@ public class CoverageResult {
                     "line=" + line +
                     ", column=" + column +
                     '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SourcePosition that = (SourcePosition) o;
+            return line == that.line && column == that.column;
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * line + column;
         }
     }
 
@@ -304,5 +330,62 @@ public class CoverageResult {
 
     private static SourcePosition toSourcePosition(JSONObject obj) throws JSONException {
         return new SourcePosition(obj.getInt("line"), obj.getInt("column"));
+    }
+
+    public static Map<String, CoverageResult> combine(Map<String, CoverageResult> one, Map<String, CoverageResult> two) {
+        Map<String, CoverageResult> result = new HashMap<>();
+
+        for (String key : Util.union(one.keySet(), two.keySet())) {
+            CoverageResult oneValue = one.get(key);
+            CoverageResult twoValue = two.get(key);
+            if (twoValue == null) {
+                result.put(key, oneValue);
+                continue;
+            }
+            if (oneValue == null) {
+                result.put(key, twoValue);
+                continue;
+            }
+            result.put(key, combine(oneValue, twoValue));
+        }
+
+        return result;
+    }
+
+    public static CoverageResult combine(CoverageResult... results) {
+        return combine(Arrays.asList(results));
+    }
+
+    public static CoverageResult combine(List<CoverageResult> results) {
+        CoverageResult combined = results.get(0);
+        for (CoverageResult coverageResult : results.subList(1, results.size())) {
+            combined = combine(combined, coverageResult);
+        }
+
+        return combined;
+    }
+
+    private static CoverageResult combine(CoverageResult one, CoverageResult two) {
+        assert one.statements.keySet().equals(two.statements.keySet());
+        assert one.branches.keySet().equals(two.branches.keySet());
+        assert one.functions.keySet().equals(two.functions.keySet());
+
+        Map<SourceLocation, Integer> statements = new HashMap<>();
+        Map<SourceLocation, Collection<Integer>> branches = new HashMap<>();
+        Map<SourceLocation, Integer> functions = new HashMap<>();
+
+        for (SourceLocation location : one.statements.keySet()) {
+            statements.put(location, one.statements.get(location) + two.statements.get(location));
+        }
+        for (SourceLocation location : one.functions.keySet()) {
+            functions.put(location, one.functions.get(location) + two.functions.get(location));
+        }
+        for (SourceLocation location : one.branches.keySet()) {
+            assert one.branches.get(location).size() == two.branches.get(location).size();
+            List<Integer> subResult = Util.zip(one.branches.get(location), two.branches.get(location)).stream().map((pair) -> pair.getLeft() + pair.getRight()).collect(Collectors.toList());
+            branches.put(location, subResult);
+        }
+
+        return new CoverageResult(statements, branches, functions);
     }
 }

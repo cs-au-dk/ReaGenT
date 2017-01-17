@@ -165,7 +165,7 @@ public class TestProgramBuilder {
             List<Statement> scripts = new ArrayList<>();
             for (Benchmark dependency : bench.getDependencies()) {
                 String dependencyScript = Util.readFile(dependency.jsFile);
-                String jsName = dependency.jsFile.substring(dependency.jsFile.lastIndexOf('/') + 1, dependency.jsFile.length());
+                String jsName = dependency.getJSName();
                 scripts.add(comment(START_OF_FILE_MARKER + jsName));
                 scripts.add(AstBuilder.stmtFromString(dependencyScript));
             }

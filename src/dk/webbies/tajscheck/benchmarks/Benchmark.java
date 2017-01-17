@@ -112,6 +112,10 @@ public class Benchmark {
         BOOTSTRAP
     }
 
+    public String getJSName() {
+        return this.jsFile.substring(this.jsFile.lastIndexOf('/') + 1, this.jsFile.length());
+    }
+
     @Override
     public String toString() {
         return "Benchmark{" +

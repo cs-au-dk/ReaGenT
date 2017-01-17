@@ -111,6 +111,18 @@ public class Util {
         return (entry) -> new AbstractMap.SimpleEntry<>(entry.getKey(), mapper.apply(entry.getValue()));
     }
 
+    public static String toPercentage(double d) {
+        return toFixed(d * 100, 1) + "%";
+    }
+
+    public static <T> Set<T> union(Collection<T> one, Collection<T> two) {
+        return new HashSet<T>(Util.concat(one, two));
+    }
+
+    public static <T> Collection<T> replaceNulls(Collection<T> list, T defaultValue) {
+        return list.stream().map(t -> t == null ? defaultValue : t).collect(Collectors.toList());
+    }
+
     private static class Worker extends Thread {
         private final Process process;
         private Integer exit;
@@ -565,6 +577,12 @@ public class Util {
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static void ensureSize(List<?> list, int size) {
+        while (list.size() < size) {
+            list.add(null);
         }
     }
 }

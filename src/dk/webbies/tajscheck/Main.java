@@ -198,6 +198,10 @@ public class Main {
     }
 
     public static Map<String, CoverageResult> genCoverage(Benchmark bench, int timeout) throws IOException, TimeoutException {
+        return genCoverage(bench, timeout, Main.TEST_FILE_NAME);
+    }
+
+    public static Map<String, CoverageResult> genCoverage(Benchmark bench, int timeout, String testFileName) throws IOException, TimeoutException {
         if (bench.run_method != Benchmark.RUN_METHOD.BROWSER) {
             StringBuilder prefix = new StringBuilder();
             int foldersDeep = getFolderPath(bench).split("/").length;
@@ -205,13 +209,13 @@ public class Main {
                 prefix.append("../");
             }
 
-            Util.runNodeScript(prefix + "node_modules/istanbul/lib/cli.js cover " + Main.TEST_FILE_NAME, new File(getFolderPath(bench)), timeout);
+            Util.runNodeScript(prefix + "node_modules/istanbul/lib/cli.js cover " + testFileName, new File(getFolderPath(bench)), timeout);
 
             return CoverageResult.parse(Util.readFile(getFolderPath(bench) + "coverage/coverage.json"));
         }
 
 
-        String instrumented = Util.runNodeScript("node_modules/istanbul/lib/cli.js instrument " + getFolderPath(bench)  + TEST_FILE_NAME, timeout);
+        String instrumented = Util.runNodeScript("node_modules/istanbul/lib/cli.js instrument " + getFolderPath(bench) + testFileName, timeout);
 
         String coverageFileName = getFolderPath(bench) + COVERAGE_FILE_NAME;
         Util.writeFile(coverageFileName, instrumented);
@@ -221,7 +225,7 @@ public class Main {
         Map<String, CoverageResult> result = CoverageResult.parse(coverageResult);
         assert result.size() == 1;
 
-        String[] testFile = Util.readFile(getFolderPath(bench) + TEST_FILE_NAME).split("\n");
+        String[] testFile = Util.readFile(getFolderPath(bench) + testFileName).split("\n");
         List<Integer> splitLines = Util.withIndex(Stream.of(testFile)).filter(pair -> pair.getLeft().contains(START_OF_FILE_MARKER)).map(Pair::getRight).collect(Collectors.toList());
 
         Map<String, Pair<Integer, Integer>> splitRules = new HashMap<>();

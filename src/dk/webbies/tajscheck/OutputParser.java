@@ -32,6 +32,10 @@ public class OutputParser {
                     "        toString: " + toString + "\n" +
                     "        JSON: " + JSON;
         }
+
+        public String getPath() {
+            return path;
+        }
     }
 
     public static final class RunResult {
