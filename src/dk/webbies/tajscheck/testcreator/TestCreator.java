@@ -81,7 +81,7 @@ public class TestCreator {
         List<Test> tests = Util.concat(visitor.getTests(), topLevelFunctionTests);
 
         if (bench.pathsToTest != null) {
-            tests = tests.stream().filter(test -> pathsToTestTrie.startsWith(TestCreator.simplifyPath(test.getPath())) || test.getPath().contains("[arg")).collect(Collectors.toList());
+            tests = tests.stream().filter(test -> isRelevantPath(test.getPath(), pathsToTestTrie)).collect(Collectors.toList());
 
             Set<String> paths = tests.stream().map(Test::getPath).map(TestCreator::simplifyPath).collect(Collectors.toSet());
 
@@ -96,7 +96,10 @@ public class TestCreator {
     }
 
     private boolean isRelevantPath(String path, Trie potentialPaths) {
-        return path.contains("[arg") || potentialPaths.startsWith(path);
+        if (path.contains("[arg")) {
+            path = path.substring(0, path.indexOf(".[arg"));
+        }
+        return path.contains("[arg") || potentialPaths.startsWith(TestCreator.simplifyPath(path));
     }
 
     public static String simplifyPath(String path) {
