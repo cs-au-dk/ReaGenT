@@ -36,10 +36,6 @@ public class RunSmall {
     private static final int DEFAULT_THREADS = 4;
 
     public static void genSmallDrivers(Benchmark orgBench) throws IOException {
-        genSmallDrivers(orgBench, DEFAULT_THREADS);
-    }
-
-    public static void genSmallDrivers(Benchmark orgBench, int threads) throws IOException {
         // Deleting all existing.
         String smallDriversFolderPath = Main.getFolderPath(orgBench) + SMALL_DRIVERS_FOLDER;
         if (new File(smallDriversFolderPath).exists()) {
@@ -75,36 +71,20 @@ public class RunSmall {
             assert created;
         }
 
-        ExecutorService pool = Executors.newFixedThreadPool(threads);
         for (String path : paths) {
             Benchmark bench = orgBench.withPathsToTest(Collections.singletonList(path));
 
             int count = counter++;
-            pool.submit(() -> {
-                try {
-                    System.out.println("Creating small driver for: " + path + "  " + (count + 1) + "/" + paths.size());
+            System.out.println("Creating small driver for: " + path + "  " + (count + 1) + "/" + paths.size());
 
-                    List<Test> specificTests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer, freeGenericsFinder).createTests();
-                    specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
+            List<Test> specificTests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer, freeGenericsFinder).createTests();
+            specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
 
-                    Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(null);
+            Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(null);
 
-                    String filePath = Main.getFolderPath(bench) + SMALL_DRIVERS_FOLDER + "/" + SMALL_DRIVER_FILE_PREFIX + count + ".js";
+            String filePath = Main.getFolderPath(bench) + SMALL_DRIVERS_FOLDER + "/" + SMALL_DRIVER_FILE_PREFIX + count + ".js";
 
-                    Util.writeFile(filePath, AstToStringVisitor.toString(program));
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-
-
-        pool.shutdown();
-        try {
-            pool.awaitTermination(30, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            throw new RuntimeException();
+            Util.writeFile(filePath, AstToStringVisitor.toString(program));
         }
     }
 
