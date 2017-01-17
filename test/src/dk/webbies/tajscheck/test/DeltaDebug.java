@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
+import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.NODE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -153,18 +154,21 @@ public class DeltaDebug {
     // Current fix jQuery procedure: comment out currentTarget and target of BaseJQueryEventObject.
     //                               comment out the two then methods of JQueryGenericPromise.
     public static void main(String[] args) throws IOException {
-        Benchmark bench = RunBenchmarks.benchmarks.get("bluebird");
-        String file = bench.jsFile;
+        Benchmark bench = RunBenchmarks.benchmarks.get("Knockout").withRunMethod(NODE);
+        String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                return testParsing(bench);
+//                return testParsing(bench);
+                return testSanity(bench);
             }catch (IllegalArgumentException | StackOverflowError e) {
                 e.printStackTrace();
                 return false;
             } catch (Error | Exception e) {
                 e.printStackTrace();
                 return false;
+            } finally {
+                throw new RuntimeException();
             }
         });
     }
@@ -200,40 +204,5 @@ public class DeltaDebug {
 
 
         return result.typeErrors.size() > 0;
-    }
-
-
-
-    // TODO: At some point, find whatever is happening here. (Something might also be happening with angular)
-    private static final class TestReact {
-        public static void main(String[] args) throws Exception {
-            while (true) {
-                if (test()) {
-                    System.out.println("FOUND SOUNDNESS ERROR");
-                    break;
-                }
-            }
-        }
-
-        private static boolean test() throws Exception {
-            Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/react/react.js", "test/benchmarks/react/reactdelta.d.ts", "React", BOOTSTRAP, CheckOptions.builder().setSplitUnions(false).setIterationsToRun(1000000).build());
-            Main.writeFullDriver(bench);
-            System.out.println("Driver written");
-            String output;
-            try {
-                output = Main.runBenchmark(bench, 2 * 60 * 1000);
-            } catch (TimeoutException e) {
-                System.out.println("Timeout");
-                return false;
-            }
-            OutputParser.RunResult result = OutputParser.parseDriverResult(output);
-
-            for (OutputParser.TypeError typeError : result.typeErrors) {
-                System.out.println(typeError);
-            }
-
-
-            return result.typeErrors.size() > 0;
-        }
     }
 }
