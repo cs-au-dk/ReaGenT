@@ -160,28 +160,6 @@ public class OptimizingTypeContext implements TypeContext {
                 clone = clone.withThisType(null);
             }
         }
-
-        boolean foundShortcut = false;
-        for (Map.Entry<TypeParameterType, Type> entry : new HashMap<>(clone.map).entrySet()) {
-            if (entry.getValue() instanceof TypeParameterType) {
-                if (entry.getKey() == entry.getValue()) {
-                    foundShortcut = true;
-                    clone.map.remove(entry.getKey());
-                }
-                if (clone.map.containsKey(entry.getValue())) {
-                    foundShortcut = true;
-                    clone.map.put(entry.getKey(), clone.map.get(entry.getValue()));
-                } else if (bench.options.combineAllUnconstrainedGenerics && clone.map.get(entry.getKey()) != freeParameterType) {
-                    foundShortcut = true;
-                    clone.map.put(entry.getKey(), freeParameterType);
-                }
-            }
-        }
-        if (foundShortcut) {
-            return clone.optimizeTypeParameters(baseType, freeGenericsFinder);
-        }
-
-
         return clone;
     }
 
