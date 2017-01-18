@@ -55,7 +55,7 @@ public class Table {
             for (int row = 0; row < table.size(); row++) {
                 String value = table.get(row).get(column);
                 try {
-                    total += Double.parseDouble(value);
+                    total += Double.parseDouble(onlyNumeric(value));
                 } catch (NumberFormatException | NullPointerException e) {
                     // Ignored, continue.
                 }
@@ -63,10 +63,37 @@ public class Table {
             if (total == 0) {
                 result.add("-");
             } else {
-                result.add(Double.toString(total));
+                if ((long)total == total) {
+                    result.add(Long.toString((long) total));
+                } else {
+                    result.add(Double.toString(total));
+                }
             }
         }
         return result;
+    }
+
+    private String onlyNumeric(String value) {
+        StringBuilder result = new StringBuilder();
+        for (char c : value.toCharArray()) {
+            switch (c) {
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                case '0':
+                case ',':
+                case '.':
+                    result.append(c);
+            }
+        }
+
+        return result.toString();
     }
 
     public String toCSV() {
