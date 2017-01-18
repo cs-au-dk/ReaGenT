@@ -61,7 +61,7 @@ public class RunSmall {
         allPaths = allPaths.stream().filter(path -> !path.contains("[arg")).collect(Collectors.toList());
 
         Trie trie = Trie.create(allPaths);
-        List<String> paths = allPaths.stream().filter(Util.not(trie::containsChildren)).collect(Collectors.toList());
+        List<String> paths = allPaths.stream().filter(Util.not(trie::containsChildren)).distinct().collect(Collectors.toList());
 
         int counter = 0;
 
@@ -104,6 +104,7 @@ public class RunSmall {
 
         File smallFolders = new File(Main.getFolderPath(benchmark) + RunSmall.SMALL_DRIVERS_FOLDER);
 
+        //noinspection ConstantConditions
         List<String> files = Arrays.stream(smallFolders.list()).filter(path -> path.contains(RunSmall.SMALL_DRIVER_FILE_PREFIX)).collect(Collectors.toList());
 
         ExecutorService pool = Executors.newFixedThreadPool(threads);
