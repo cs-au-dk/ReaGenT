@@ -4,6 +4,8 @@ import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
+import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Test;
@@ -17,7 +19,7 @@ import java.util.stream.Collectors;
  */
 public class RunExperiments {
     private static final int TIMEOUT = 60 * 1000;
-    private static final int THREADS = 3;
+    private static final int THREADS = 4;
     private static final int RUN_SMALL_THREADS = 1;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
@@ -41,7 +43,7 @@ public class RunExperiments {
         List<CoverageResult> results = RunSmall.runSmallDrivers(
                 bench,
                 RunSmall.runCoverage(bench, TIMEOUT),
-                RUN_SMALL_THREADS
+                1
         );
 
         return Util.toPercentage(CoverageResult.combine(results).statementCoverage());
@@ -162,6 +164,14 @@ public class RunExperiments {
 
     @Test
     public void runExperiment() throws Exception {
+        // Only node-based benchmarks .
+        /*Experiment experiment = new Experiment(
+                RunBenchmarks.benchmarks.entrySet().stream()
+                        .filter(entry -> entry.getValue().run_method == Benchmark.RUN_METHOD.NODE)
+//                        .filter(entry -> !done.contains(entry.getKey()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+        );*/
+
         Experiment experiment = new Experiment();
 
 //        experiment.addSingleExperiment(smallCoverage);
@@ -174,7 +184,7 @@ public class RunExperiments {
 
 
         experiment.addMultiExperiment(driverSizes);
-//        experiment.addSingleExperiment(jsFileSize);
+        experiment.addSingleExperiment(jsFileSize);
 
 
         String result = experiment.calculate(THREADS).toCSV();
@@ -188,9 +198,5 @@ public class RunExperiments {
     public static void main(String[] args) throws Exception {
         new RunExperiments().runExperiment();
     }
-/*
-    Benchmark	runSmall	uniquePaths	uniquePathsConvergence	iterationsUntilConvergence
-    Moment.js	184	87	166	12
-*/
 
 }
