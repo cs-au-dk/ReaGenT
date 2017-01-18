@@ -150,7 +150,7 @@ public class RunBenchmarks {
 
         benchmarks.put("RxJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/rx/Rx.js", "test/benchmarks/rx/types/rx/index.d.ts", "Rx", NODE, options.getBuilder().setDisableGenerics(true).build()));
 
-        Benchmark when = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/when/when.js", "test/benchmarks/when/when.d.ts", "When", NODE, options.getBuilder().setDisableGenerics(true).build());// TODO: See if something can be done with the exploding complexity.
+        Benchmark when = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/when/when.js", "test/benchmarks/when/when.d.ts", "When", NODE, options.getBuilder().setDisableGenerics(true).build());
         benchmarks.put("When.js", when);
 
         benchmarks.put("Autobahn|JS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/autobahn/autobahn.js", "test/benchmarks/autobahn/autobahn.d.ts", "autobahn", BROWSER, options.getBuilder().setDisableGenerics(true).build())
@@ -272,7 +272,7 @@ public class RunBenchmarks {
             if (
                     bench.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail.
                     bench.dTSFile.contains("leaflet.d.ts") || // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)
-                    bench.dTSFile.contains("jquery.d.ts") // It is complicated, there are some to-do's in UnitTest.
+                    bench.dTSFile.contains("jquery.d.ts") // Exactly the same thing, the two then methods of JQueryGenericPromise are being overridden in an unsound way.
             ) {
                 System.out.println("Is a benchmark which i know to fail. ");
                 return;
