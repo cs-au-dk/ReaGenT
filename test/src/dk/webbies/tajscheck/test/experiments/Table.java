@@ -32,9 +32,41 @@ public class Table {
     }
 
     private String print(String columnSeparator, String rowSeparator) {
-        List<String> rows = table.stream().filter(Objects::nonNull).map(row -> String.join(columnSeparator, Util.replaceNulls(row, "-"))).collect(Collectors.toList());
+        List<List<String>> table = new ArrayList<>(this.table);
+        table.add(totalRow());
+
+        List<String> rows = table.stream()
+                .filter(Objects::nonNull)
+                .map(row -> String.join(columnSeparator, Util.replaceNulls(row, "-")))
+                .collect(Collectors.toList());
 
         return String.join(rowSeparator, rows);
+    }
+
+    private List<String> totalRow() {
+        List<List<String>> table = this.table.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (table.size() == 0) {
+            return null;
+        }
+        List<String> result = new ArrayList<>();
+        result.add("Total");
+        for (int column = 1; column < table.iterator().next().size(); column++) {
+            double total = 0;
+            for (int row = 0; row < table.size(); row++) {
+                String value = table.get(row).get(column);
+                try {
+                    total += Double.parseDouble(value);
+                } catch (NumberFormatException | NullPointerException e) {
+                    // Ignored, continue.
+                }
+            }
+            if (total == 0) {
+                result.add("-");
+            } else {
+                result.add(Double.toString(total));
+            }
+        }
+        return result;
     }
 
     public String toCSV() {
