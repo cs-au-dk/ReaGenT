@@ -53,14 +53,12 @@ public class RunBenchmarks {
 
         benchmarks.put("Ace", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/ace/ace.js", "test/benchmarks/ace/ace.d.ts", "ace", BROWSER, options));
         Benchmark jQuery = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jquery/jquery.js", "test/benchmarks/jquery/jquery.d.ts", "jQuery", BROWSER, options);
-        benchmarks.put("jQuery.", jQuery);
+        benchmarks.put("jQuery", jQuery);
 
 
         Benchmark angular = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/angular1/angular1.js", "test/benchmarks/angular1/angular1.d.ts", "angular", BROWSER, options)
                 .addDependencies(jQuery);
-        benchmarks.put("AngularJS",
-                angular
-        );
+        benchmarks.put("AngularJS", angular);
 
 
         benchmarks.put("box2dweb", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/box2dweb/box2dweb.js", "test/benchmarks/box2dweb/box2dweb.d.ts", "Box2D", BROWSER, options));
