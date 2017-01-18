@@ -142,6 +142,7 @@ public class RunSmall {
             } catch (TimeoutException e) {
                 return null;
             } catch (Exception e) {
+                e.printStackTrace();
                 throw new RuntimeException(e);
             }
         };

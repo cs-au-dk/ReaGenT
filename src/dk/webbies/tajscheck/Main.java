@@ -241,7 +241,7 @@ public class Main {
 
         assert result.size() == 1;
 
-        return result.get(TEST_FILE_NAME).split(splitRules);
+        return result.get(testFileName.substring(testFileName.lastIndexOf('/') + 1)).split(splitRules);
     }
 
     public static String runBenchmark(Benchmark bench) throws IOException {
