@@ -3,8 +3,6 @@ package dk.webbies.tajscheck.test;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.benchmarks.CheckOptions;
-import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Util;
 
@@ -37,35 +35,7 @@ public class DeltaDebug {
         String file = Util.readFile(filePath);
         write(filePath + ".smallest", file);
 
-        int fromIndex = 0;
-        while (fromIndex != -1) {
-            fromIndex = file.indexOf('{', fromIndex + 1);
-            int toIndex = findClosingCurlyBracket(file, fromIndex);
-            if (file.indexOf('\n', fromIndex) == -1 || file.indexOf('\n', fromIndex) > toIndex) {
-                continue;
-            }
-            if (toIndex == -1) {
-                break;
-            }
-            String orgFile = file;
-            file = file.substring(0, fromIndex + 1) + file.substring(toIndex, file.length());
-            if (orgFile.equals(file)) {
-                fromIndex = file.indexOf('{', fromIndex + 1);
-                continue;
-            }
-            write(filePath, file);
-
-            if (!test.getAsBoolean()) {
-                // didn't work, need to put it back
-                System.out.println("Bad minification (" + file.length() + ")");
-                file = orgFile;
-                write(filePath, file);
-            } else {
-                System.out.println("GOOD minification (" + file.length() + ")");
-                write(filePath + ".smallest", file);
-                progress = true;
-            }
-        }
+        progress |= testBracket(filePath, test, file, '{', '}');
 
         // Removing lines, one by one.
         String[] array = Util.readFile(filePath).split(Pattern.quote("\n"));
@@ -103,6 +73,11 @@ public class DeltaDebug {
 
         write(filePath, array);
 
+        file = Util.readFile(filePath);
+        progress |= testBracket(filePath, test, file, '(', ')');
+        file = Util.readFile(filePath);
+        progress |= testBracket(filePath, test, file, '[', ']');
+
         if (progress) {
             debug(filePath, test);
             return;
@@ -111,17 +86,48 @@ public class DeltaDebug {
         System.out.println("Delta debugging complete. ");
     }
 
-    private static int findClosingCurlyBracket(String file, int fromIndex) {
+    private static boolean testBracket(String filePath, BooleanSupplier test, String file, char start, char closing) throws IOException {
+        boolean progress = false;
+        int fromIndex = 0;
+        while (fromIndex != -1) {
+            fromIndex = file.indexOf(start, fromIndex + 1);
+            int toIndex = findClosingBracket(file, fromIndex, start, closing);
+            if (file.indexOf('\n', fromIndex) == -1 || file.indexOf('\n', fromIndex) > toIndex) {
+                continue;
+            }
+            if (toIndex == -1) {
+                break;
+            }
+            String orgFile = file;
+            file = file.substring(0, fromIndex + 1) + file.substring(toIndex, file.length());
+            if (orgFile.equals(file)) {
+                fromIndex = file.indexOf(start, fromIndex + 1);
+                continue;
+            }
+            write(filePath, file);
+
+            if (!test.getAsBoolean()) {
+                // didn't work, need to put it back
+                System.out.println("Bad minification (" + file.length() + ")");
+                file = orgFile;
+                write(filePath, file);
+            } else {
+                System.out.println("GOOD minification (" + file.length() + ")");
+                write(filePath + ".smallest", file);
+                progress = true;
+            }
+        }
+        return progress;
+    }
+
+    private static int findClosingBracket(String file, int fromIndex, char start, char closing) {
         int numberOfBrackets = 1;
         for (int i = fromIndex + 1; i < file.length(); i++) {
             char c = file.charAt(i);
-            switch (c) {
-                case '{':
-                    numberOfBrackets++;
-                    break;
-                case '}':
-                    numberOfBrackets--;
-                    break;
+            if (c == start) {
+                numberOfBrackets++;
+            } else if (c == closing) {
+                numberOfBrackets--;
             }
             if (numberOfBrackets == 0) {
                 return i;
@@ -154,23 +160,44 @@ public class DeltaDebug {
     // Current fix jQuery procedure: comment out currentTarget and target of BaseJQueryEventObject.
     //                               comment out the two then methods of JQueryGenericPromise.
     public static void main(String[] args) throws IOException {
-        Benchmark bench = RunBenchmarks.benchmarks.get("Knockout").withRunMethod(NODE);
+        Benchmark bench = RunBenchmarks.benchmarks.get("Moment.js").withRunMethod(NODE);
         String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
 //                return testParsing(bench);
-                return testSanity(bench);
+//                return testSanity(bench);
+//                return testBiggerWithNoGenerics(bench);
+                return testHasError(bench, "moment().creationData().format");
             }catch (IllegalArgumentException | StackOverflowError e) {
                 e.printStackTrace();
                 return false;
             } catch (Error | Exception e) {
                 e.printStackTrace();
                 return false;
-            } finally {
-                throw new RuntimeException();
             }
         });
+    }
+
+    private static boolean testHasError(Benchmark bench, String path) throws Exception {
+        Main.writeFullDriver(bench);
+        bench = bench.withOptions(bench.options.getBuilder().setIterationsToRun(100).build());
+        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+
+        return result.typeErrors.stream().map(OutputParser.TypeError::getPath).filter(str -> str.equals(path)).count() >= 2;
+    }
+
+    private static boolean testBiggerWithNoGenerics(Benchmark bench) throws IOException {
+        String driverWithGenerics = Main.generateFullDriver(bench);
+        int sizeWithGenerics = driverWithGenerics.length();
+        String driverWithNoGenerics = Main.generateFullDriver(bench.withOptions(bench.options.getBuilder().setDisableGenerics(true).build()));
+        int sizeWithNoGenerics = driverWithNoGenerics.length();
+        boolean noGenericsSmaller = sizeWithNoGenerics > sizeWithGenerics;
+        if (noGenericsSmaller) {
+            Util.writeFile("test/nogenerics.js", driverWithNoGenerics);
+            Util.writeFile("test/withgenerics.js", driverWithGenerics);
+        }
+        return noGenericsSmaller;
     }
 
     private static boolean testParsing(Benchmark bench) throws Exception {
