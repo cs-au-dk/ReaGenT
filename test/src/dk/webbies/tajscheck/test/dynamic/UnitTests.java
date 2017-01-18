@@ -9,7 +9,6 @@ import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -623,20 +622,21 @@ public class UnitTests {
     }
 
     @Test
+    public void complexSanityCheck11() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck11"));
+    }
+
+    @Test
     public void extendsError() throws Exception {
         sanityCheck(benchFromFolder("extendsError"));
     }
 
     @Test
-    @Ignore
     public void extendsEvent() throws Exception {
-        // TODO: (remember to note in noter.txt)
-        // TODO: jQuery state that they extend Event, they only do so structually, the object isn't actually instanceof Event.
         sanityCheck(benchFromFolder("extendsEvent"), BROWSER);
     }
 
     @Test
-    @Ignore
     public void extendsEvent2() throws Exception {
         sanityCheck(benchFromFolder("extendsEvent2"), BROWSER);
     }
