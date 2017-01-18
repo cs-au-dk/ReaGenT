@@ -1153,7 +1153,7 @@ public class TypeCreator {
         for (TypeWithContext key : getTypeFunctionQueue) {
             int value = typeIndexes.get(key);
 
-            Collection<Integer> values = valueLocations.get(key);
+            Collection<Integer> values = valueLocations.get(key).stream().distinct().collect(Collectors.toList());
 
             Statement returnTypeStatement;
 

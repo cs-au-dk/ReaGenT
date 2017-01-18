@@ -124,8 +124,9 @@ public class TestProgramBuilder {
                     .getTypeToTest()
                     .stream()
                     .map(typeToTest -> typeCreator.getValueIndex(typeToTest, test.getTypeContext()))
-                    .map(valueIndexes -> valueIndexes.stream().map(AstBuilder::number).collect(Collectors.toList()))
-                    .map(AstBuilder::array).collect(Collectors.toList());
+                    .map(valueIndexes -> valueIndexes.stream().distinct().map(AstBuilder::number).collect(Collectors.toList()))
+                    .map(AstBuilder::array)
+                    .collect(Collectors.toList());
 
             program.add(statement(
                     call(identifier("registerTest"), number(i), array(args))
