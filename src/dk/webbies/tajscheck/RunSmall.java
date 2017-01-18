@@ -107,31 +107,46 @@ public class RunSmall {
         //noinspection ConstantConditions
         List<String> files = Arrays.stream(smallFolders.list()).filter(path -> path.contains(RunSmall.SMALL_DRIVER_FILE_PREFIX)).collect(Collectors.toList());
 
-        ExecutorService pool = Executors.newFixedThreadPool(threads);
-
         List<T> result = Collections.synchronizedList(new ArrayList<T>());
-        files.forEach(file -> result.add(null));
 
-        int counter = 0;
-        for (String file : files) {
-            int count = counter++;
-            pool.submit(() -> {
+        if (threads > 1) {
+            ExecutorService pool = Executors.newFixedThreadPool(threads);
+
+            files.forEach(file -> result.add(null));
+
+            int counter = 0;
+            for (String file : files) {
+                int count = counter++;
+                pool.submit(() -> {
+                    System.out.println("Running " + count + " / " + files.size());
+
+                    String path = Main.getFolderPath(benchmark) + RunSmall.SMALL_DRIVERS_FOLDER + "/" + file;
+
+                    result.set(count, runner.apply(path));
+                });
+            }
+
+            pool.shutdown();
+            try {
+                pool.awaitTermination(30, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                throw new RuntimeException();
+            }
+
+            return result;
+        } else {
+            int counter = 0;
+            for (String file : files) {
+                int count = counter++;
                 System.out.println("Running " + count + " / " + files.size());
 
                 String path = Main.getFolderPath(benchmark) + RunSmall.SMALL_DRIVERS_FOLDER + "/" + file;
 
-                result.set(count, runner.apply(path));
-            });
-        }
+                result.add(runner.apply(path));
+            }
 
-        pool.shutdown();
-        try {
-            pool.awaitTermination(30, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            throw new RuntimeException();
+            return result;
         }
-
-        return result;
     }
 
     public static Function<String, CoverageResult> runCoverage(Benchmark bench, int timeout) {
