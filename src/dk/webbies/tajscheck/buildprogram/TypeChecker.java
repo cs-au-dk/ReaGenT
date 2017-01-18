@@ -304,10 +304,9 @@ public class TypeChecker {
                     case "ObjectURLOptions":
                     case "BlobPropertyBag":
                     case "CanvasPathMethods":
-                        break; // Checking the type manually.
                     case "Event":
                         arg = arg.withDepth(1);
-                        break;
+                        break;// Checking the type structurally.
                     default:
                         throw new RuntimeException(typeNames.get(t));
                 }
