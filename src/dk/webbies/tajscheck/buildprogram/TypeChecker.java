@@ -459,7 +459,7 @@ public class TypeChecker {
                 return lookup.getType().accept(this, arg.withParameters(lookup.getTypeContext()));
             }
 
-            List<TypeCheck> checks = new ArrayList<>(parameter.getConstraint().accept(this, arg));
+            List<TypeCheck> checks = new ArrayList<>(parameter.getConstraint() != null ? parameter.getConstraint().accept(this, arg) : Collections.emptyList());
 
             String markerField = typeParameterIndexer.getMarkerField(parameter);
 

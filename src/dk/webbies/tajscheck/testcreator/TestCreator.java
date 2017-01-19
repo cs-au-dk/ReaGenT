@@ -413,9 +413,15 @@ public class TestCreator {
             TypeWithContext withParameters = new TypeWithContext(t, arg.getTypeContext());
             if (typeNames.get(t).equals("Array")) {
                 assert t.getTypeParameters().size() == 1;
-                TypeWithContext lookup = arg.typeContext.get((TypeParameterType) t.getTypeParameters().iterator().next());
-                arg = arg.withParameters(arg.getTypeContext());
-                Type arrayType = lookup.getType();
+                TypeParameterType parameterType = (TypeParameterType) t.getTypeParameters().iterator().next();
+                Type arrayType;
+                if (arg.getTypeContext().containsKey(parameterType)) {
+                    TypeWithContext lookup = arg.typeContext.get(parameterType);
+                    arg = arg.withParameters(arg.getTypeContext());
+                    arrayType = lookup.getType();
+                } else {
+                    arrayType = parameterType;
+                }
                 tests.add(new NumberIndexTest(t, arrayType, arg.path, arg.typeContext));
                 recurse(arrayType, arg.append("[numberIndexer]"));
 
