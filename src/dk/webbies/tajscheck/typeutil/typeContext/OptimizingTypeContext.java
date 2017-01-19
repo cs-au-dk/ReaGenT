@@ -155,6 +155,25 @@ public class OptimizingTypeContext implements TypeContext {
             }
         }
 
+        if (bench.options.combineAllUnconstrainedGenerics) {
+            boolean foundShortcut = false;
+            for (Map.Entry<TypeParameterType, Type> entry : new HashMap<>(clone.map).entrySet()) {
+                if (entry.getValue() instanceof TypeParameterType) {
+                    if (entry.getKey() == entry.getValue()) {
+                        foundShortcut = true;
+                        clone.map.remove(entry.getKey());
+                    }
+                    if (!reachable.contains(entry.getValue())) {
+                        foundShortcut = true;
+                        clone.map.remove(entry.getKey());
+                    }
+                }
+            }
+            if (foundShortcut) {
+                return clone.optimizeTypeParameters(baseType, freeGenericsFinder);
+            }
+        }
+
         if (clone.thisType != null) {
             if (!freeGenericsFinder.isThisTypeVisible(baseType) && clone.map.values().stream().noneMatch(freeGenericsFinder::isThisTypeVisible)) {
                 clone = clone.withThisType(null);
@@ -162,6 +181,8 @@ public class OptimizingTypeContext implements TypeContext {
         }
         return clone;
     }
+
+    private static int counter = 0;
 
     private static final TypeParameterType freeParameterType = new TypeParameterType();
     static {
