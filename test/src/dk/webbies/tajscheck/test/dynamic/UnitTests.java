@@ -24,6 +24,7 @@ import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.Expe
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 /**
  * Created by erik1 on 23-11-2016.
@@ -263,7 +264,7 @@ public class UnitTests {
         assertThat(result.typeErrors.size(), is(1));
 
         expect(result)
-                .forPath("module.Container.create().<>.value")
+                .forPath("module.Container.create().<>.value", "module.Container.new().value")
                 .expected(startsWith("a generic type marker"))
                 .got(JSON, is("\"foo\""));
     }
@@ -848,5 +849,18 @@ public class UnitTests {
         RunResult result = run("extendsArray4", "foo");
 
         assertThat(result.typeErrors.size(), is(0));
+    }
+
+    @Test
+    public void unconstrainedGenericsAreNotDuplicated() throws Exception {
+        RunResult result = run("unconstrainedGenericsAreNotDuplicated", "foo");
+
+        assertThat(result.typeErrors.size(), is(lessThanOrEqualTo(1)));
+
+    }
+
+    @Test
+    public void complexGenerics() throws Exception {
+        Main.generateFullDriver(benchFromFolder("complexGenerics")); // Just a test that no null-pointer.
     }
 }
