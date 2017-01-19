@@ -65,11 +65,15 @@ public class Util {
 
         if (!errGobbler.getResult().isEmpty()) {
             System.err.println("Error running node script: " + errGobbler.getResult());
-//            throw new RuntimeException("Got an error running a node script: " + errGobbler.getResult());
+            if (isDeltaDebugging) {
+                throw new RuntimeException("Got an error running a node script: " + errGobbler.getResult());
+            }
         }
 
         return inputGobbler.getResult();
     }
+
+    public static boolean isDeltaDebugging = false;
 
     public static String runNodeScript(String args, File dir, int timeout) throws IOException, TimeoutException {
         return runScript("node " + args, dir, timeout);

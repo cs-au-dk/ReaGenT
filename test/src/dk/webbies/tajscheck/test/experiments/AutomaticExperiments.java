@@ -20,7 +20,7 @@ public class AutomaticExperiments {
     private static final int THREADS = 4;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth + 1).build());
+        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth + 1).setIterationsToRun(1000).build());
         List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench.run_method, TIMEOUT));
 
         long paths = OutputParser.combine(results).typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
@@ -29,7 +29,7 @@ public class AutomaticExperiments {
     });
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> smallCoverage = new Pair<>("small-coverage", (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth + 1).build());
+        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth + 1).setIterationsToRun(1000).build());
         List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench, TIMEOUT));
 
         return Util.toPercentage(CoverageResult.combine(results).statementCoverage());
@@ -156,31 +156,24 @@ public class AutomaticExperiments {
         return Util.toFixed(Util.readFile(bench.jsFile).length() / DIVIDE_BY, DECIMALS) + SUFFIX;
     });
 
-    /*
-Benchmark	small-coverage	runSmall	uniquePaths	uniquePaths	coverage	uniquePaths	5coverage	uniquePaths	uniquePathsConvergence	iterationsUntilConvergence	size	size-no-generics	jsFileSize
-Ace	19.7%	2	-	-	-	-	-	-	-	-	2.4mb	2.4mb	0.5mb
-Chart.js	16.8%	0	0	0	16.8%	0	16.8%	0	0	1	0.7mb	0.7mb	0.6mb
-CodeMirror	11.0%	2	-	-	-	-	-	-	-	-	1.9mb	1.7mb	0.4mb
-Total	47.5	4	-	-	16.8	-	21.8	-	-	1	5	4.8	1.5
-     */
-
     public static void main(String[] args) throws Exception {
         // Only node-based benchmarks .
         /*Experiment experiment = new Experiment(
                 RunBenchmarks.benchmarks.entrySet().stream()
                         .filter(entry -> entry.getValue().run_method == Benchmark.RUN_METHOD.NODE)
-//                        .filter(entry -> !done.contains(entry.getKey()))
+                        .filter(entry -> !done.contains(entry.getKey()))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );*/
 
-        Experiment experiment = new Experiment("Autobahn|JS", "AngularJS", "Backbone.js", "Fabric.js", "Materialize", "RequireJS", "Underscore.js", "Vue.js", "bluebird");
+        Experiment experiment = new Experiment("bluebird");
+
 
 //        experiment.addSingleExperiment(smallCoverage);
-//        experiment.addSingleExperiment(runSmall);
+        experiment.addSingleExperiment(runSmall);
 
 //        experiment.addSingleExperiment(uniquePaths);
 //        experiment.addMultiExperiment(uniquePathsAndCoverage);
-        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
+//        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
 //        experiment.addMultiExperiment(uniquePathsConvergence);
 
 
@@ -195,4 +188,5 @@ Total	47.5	4	-	-	16.8	-	21.8	-	-	1	5	4.8	1.5
         Util.writeFile("experiment.csv", result);
     }
 
+    private static final Set<String> done = new HashSet<>(Arrays.asList("Moment.js", "PleaseJS", "Redux", "When.js", "accounting.js"));
 }
