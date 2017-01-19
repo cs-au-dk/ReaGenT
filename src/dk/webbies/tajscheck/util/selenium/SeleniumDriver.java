@@ -70,7 +70,7 @@ public class SeleniumDriver {
         ServerSocket socket = new ServerSocket(0);
         int port = socket.getLocalPort();
 
-        System.out.println("Listening for result at port: " + port);
+//        System.out.println("Listening for result at port: " + port);
 
         driver.get(getEmptyPageUrl(scriptFile.getAbsolutePath(), port));
 
@@ -93,7 +93,7 @@ public class SeleniumDriver {
         driver.close();
         driver.quit();
 
-        System.out.println("Message recieved, length: " + message.length());
+//        System.out.println("Message recieved, length: " + message.length());
 
         return message;
     }

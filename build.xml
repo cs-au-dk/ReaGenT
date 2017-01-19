@@ -76,8 +76,16 @@
         </junit>
     </target>
 
-    <target name="experiment" depends="build-all">
-        <java fork="yes" classname="dk.webbies.tajscheck.test.experiments.RunExperiments">
+    <target name="auto-experiment" depends="build-all">
+        <java fork="yes" classname="dk.webbies.tajscheck.test.experiments.AutomaticExperiments">
+            <classpath>
+                <path refid="class-path"/>
+            </classpath>
+        </java>
+    </target>
+
+    <target name="manual-experiment" depends="build-all">
+        <java fork="yes" classname="dk.webbies.tajscheck.test.experiments.ManualExperiment">
             <classpath>
                 <path refid="class-path"/>
             </classpath>

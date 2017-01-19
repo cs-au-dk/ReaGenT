@@ -53,7 +53,8 @@ public class Table {
         for (int column = 1; column < table.iterator().next().size(); column++) {
             double total = 0;
             for (int row = 0; row < table.size(); row++) {
-                String value = table.get(row).get(column);
+                List<String> rowList = table.get(row);
+                String value = rowList.get(column);
                 try {
                     total += Double.parseDouble(onlyNumeric(value));
                 } catch (NumberFormatException | NullPointerException e) {

@@ -1,7 +1,6 @@
 package dk.webbies.tajscheck.util;
 
 
-import dk.au.cs.casa.typescript.types.*;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -121,6 +120,19 @@ public class Util {
 
     public static <T> Collection<T> replaceNulls(Collection<T> list, T defaultValue) {
         return list.stream().map(t -> t == null ? defaultValue : t).collect(Collectors.toList());
+    }
+
+    public static void deleteFile(String filePath) {
+        //noinspection ResultOfMethodCallIgnored
+        new File(filePath).delete();
+    }
+
+    public static <T> T selectRandom(Collection<T> list) {
+        return selectRandom(new ArrayList<T>(list));
+    }
+
+    public static <T> T selectRandom(List<T> list) {
+        return list.get(new Random().nextInt(list.size()));
     }
 
     private static class Worker extends Thread {

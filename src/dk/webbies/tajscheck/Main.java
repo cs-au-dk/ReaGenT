@@ -202,7 +202,7 @@ public class Main {
     }
 
     public static Map<String, CoverageResult> genCoverage(Benchmark bench, int timeout, String testFileName) throws IOException, TimeoutException {
-        if (bench.run_method != Benchmark.RUN_METHOD.BROWSER) {
+        if (bench.run_method == Benchmark.RUN_METHOD.NODE) {
             StringBuilder prefix = new StringBuilder();
             int foldersDeep = getFolderPath(bench).split("/").length;
             for (int i = 0; i < foldersDeep; i++) {

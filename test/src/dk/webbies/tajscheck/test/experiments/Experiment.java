@@ -102,17 +102,17 @@ public class Experiment {
 
             pool.submit(() -> {
                 System.out.println("Running benchmark: " + benchmark.getLeft() + " (" + rowIndex + "/" + benchmarks.size() + ")");
-                for (Pair<List<String>, ExperimentMultiRunner> pair : experiments) {
-                    List<String> subResult;
-                    try {
-                        subResult = pair.getRight().run(benchmark.getRight());
-                    } catch (Throwable e) {
-                        e.printStackTrace();
-                        throw new RuntimeException(e);
-                    }
-                    row.addAll(subResult);
-                }
                 try {
+                    for (Pair<List<String>, ExperimentMultiRunner> pair : experiments) {
+                        List<String> subResult;
+                        try {
+                            subResult = pair.getRight().run(benchmark.getRight());
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                            throw new RuntimeException(e);
+                        }
+                        row.addAll(subResult);
+                    }
                     table.setRow(rowIndex, row);
                     System.out.println("\nSub result ready:");
                     System.out.println(table.toCSV());

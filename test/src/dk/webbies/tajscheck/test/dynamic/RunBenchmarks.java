@@ -173,17 +173,9 @@ public class RunBenchmarks {
     }
 
     @Test
-    @Ignore // Takes a long time, and doesn't really test much.
-    public void genSmallDrivers() throws Exception {
-        RunSmall.genSmallDrivers(benchmark);
-    }
-
-    @Test
     @Ignore
     public void runSmallDrivers() throws Exception {
         Benchmark benchmark = this.benchmark.withOptions(this.benchmark.options.getBuilder().setCheckDepth(1).build());
-        RunSmall.genSmallDrivers(benchmark);
-
         OutputParser.RunResult result = OutputParser.combine(RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark.run_method, 60 * 1000)));
 
         for (OutputParser.TypeError typeError : result.typeErrors) {

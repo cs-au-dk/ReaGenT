@@ -4,8 +4,6 @@ import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Test;
@@ -17,20 +15,13 @@ import java.util.stream.Collectors;
 /**
  * Created by erik1 on 16-01-2017.
  */
-public class RunExperiments {
+public class AutomaticExperiments {
     private static final int TIMEOUT = 60 * 1000;
     private static final int THREADS = 4;
-    private static final int RUN_SMALL_THREADS = 1;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth + 1).build());
-        RunSmall.genSmallDrivers(bench);
-        List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(
-                bench,
-                RunSmall.runDriver(bench.run_method, TIMEOUT),
-                RUN_SMALL_THREADS
-        );
-
+        List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench.run_method, TIMEOUT));
 
         long paths = OutputParser.combine(results).typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
 
@@ -39,12 +30,7 @@ public class RunExperiments {
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> smallCoverage = new Pair<>("small-coverage", (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth + 1).build());
-        RunSmall.genSmallDrivers(bench);
-        List<CoverageResult> results = RunSmall.runSmallDrivers(
-                bench,
-                RunSmall.runCoverage(bench, TIMEOUT),
-                1
-        );
+        List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench, TIMEOUT));
 
         return Util.toPercentage(CoverageResult.combine(results).statementCoverage());
     });
@@ -97,7 +83,7 @@ public class RunExperiments {
     });
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAndCoverage = new Pair<>(Arrays.asList("uniquePaths", "coverage"), (bench) -> {
-        String uniquePaths = RunExperiments.uniquePaths.getRight().run(bench);
+        String uniquePaths = AutomaticExperiments.uniquePaths.getRight().run(bench);
         if (uniquePaths == null) {
             return Arrays.asList(null, null);
         }
@@ -116,27 +102,35 @@ public class RunExperiments {
         return Arrays.asList(uniquePaths, Util.toPercentage(out.get(bench.getJSName()).statementCoverage()));
     });
 
-    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAnd5Coverage = new Pair<>(Arrays.asList("uniquePaths", "5coverage"), (bench) -> {
-        String uniquePaths = RunExperiments.uniquePaths.getRight().run(bench);
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAnd5Coverage = new Pair<>(Arrays.asList("uniquePaths", "coverage", "5coverage"), (bench) -> {
+        String uniquePaths = AutomaticExperiments.uniquePaths.getRight().run(bench);
         if (uniquePaths == null) {
-            return Arrays.asList(null, null);
+            return Arrays.asList(null, null, null);
         }
 
         Map<String, CoverageResult> out = new HashMap<>();
+
+        String firstCoverage = null;
         for (int i = 0; i < 5; i++) {
             try {
                 Map<String, CoverageResult> subResult = Main.genCoverage(bench, TIMEOUT * 5);
                 out = CoverageResult.combine(out, subResult);
+                if (firstCoverage == null) {
+                    firstCoverage = Util.toPercentage(out.get(bench.getJSName()).statementCoverage());
+                }
             } catch (TimeoutException e) {
                 // this is ok, it happens.
                 System.out.println("Timeout on coverage");
-                return Arrays.asList(uniquePaths, null);
+                return Arrays.asList(uniquePaths, firstCoverage, null);
+            } catch (Exception e) {
+                System.out.println("Other exception: " + e.getClass().getSimpleName());
+                return Arrays.asList(uniquePaths, firstCoverage, null);
             }
         }
 
         assert out.containsKey(bench.getJSName());
 
-        return Arrays.asList(uniquePaths, Util.toPercentage(out.get(bench.getJSName()).statementCoverage()));
+        return Arrays.asList(uniquePaths, firstCoverage, Util.toPercentage(out.get(bench.getJSName()).statementCoverage()));
     });
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> driverSizes = new Pair<>(Arrays.asList("size", "size-no-generics"), (bench) -> {
@@ -162,8 +156,15 @@ public class RunExperiments {
         return Util.toFixed(Util.readFile(bench.jsFile).length() / DIVIDE_BY, DECIMALS) + SUFFIX;
     });
 
-    @Test
-    public void runExperiment() throws Exception {
+    /*
+Benchmark	small-coverage	runSmall	uniquePaths	uniquePaths	coverage	uniquePaths	5coverage	uniquePaths	uniquePathsConvergence	iterationsUntilConvergence	size	size-no-generics	jsFileSize
+Ace	19.7%	2	-	-	-	-	-	-	-	-	2.4mb	2.4mb	0.5mb
+Chart.js	16.8%	0	0	0	16.8%	0	16.8%	0	0	1	0.7mb	0.7mb	0.6mb
+CodeMirror	11.0%	2	-	-	-	-	-	-	-	-	1.9mb	1.7mb	0.4mb
+Total	47.5	4	-	-	16.8	-	21.8	-	-	1	5	4.8	1.5
+     */
+
+    public static void main(String[] args) throws Exception {
         // Only node-based benchmarks .
         /*Experiment experiment = new Experiment(
                 RunBenchmarks.benchmarks.entrySet().stream()
@@ -172,19 +173,19 @@ public class RunExperiments {
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );*/
 
-        Experiment experiment = new Experiment();
+        Experiment experiment = new Experiment("Autobahn|JS", "AngularJS", "Backbone.js", "Fabric.js", "Materialize", "RequireJS", "Underscore.js", "Vue.js", "bluebird");
 
 //        experiment.addSingleExperiment(smallCoverage);
 //        experiment.addSingleExperiment(runSmall);
 
 //        experiment.addSingleExperiment(uniquePaths);
 //        experiment.addMultiExperiment(uniquePathsAndCoverage);
-//        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
+        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
 //        experiment.addMultiExperiment(uniquePathsConvergence);
 
 
-        experiment.addMultiExperiment(driverSizes);
-        experiment.addSingleExperiment(jsFileSize);
+//        experiment.addMultiExperiment(driverSizes);
+//        experiment.addSingleExperiment(jsFileSize);
 
 
         String result = experiment.calculate(THREADS).toCSV();
@@ -192,11 +193,6 @@ public class RunExperiments {
         System.out.println(result);
 
         Util.writeFile("experiment.csv", result);
-
-    }
-
-    public static void main(String[] args) throws Exception {
-        new RunExperiments().runExperiment();
     }
 
 }

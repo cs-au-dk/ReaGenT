@@ -31,13 +31,11 @@ import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BROWSER;
  * Created by erik1 on 16-01-2017.
  */
 public class RunSmall {
-    public static final String SMALL_DRIVERS_FOLDER = "smallDrivers";
     public static final String SMALL_DRIVER_FILE_PREFIX = "small_driver_";
-    private static final int DEFAULT_THREADS = 4;
 
-    public static void genSmallDrivers(Benchmark orgBench) throws IOException {
+    public static <T> List<T> runSmallDrivers(Benchmark orgBench, Function<String, T> runner) throws IOException {
         // Deleting all existing.
-        String smallDriversFolderPath = Main.getFolderPath(orgBench) + SMALL_DRIVERS_FOLDER;
+        String smallDriversFolderPath = Main.getFolderPath(orgBench);
         if (new File(smallDriversFolderPath).exists()) {
             Arrays.stream(new File(smallDriversFolderPath).listFiles()).filter(file -> file.getName().contains(SMALL_DRIVER_FILE_PREFIX)).forEach(File::delete);
         }
@@ -63,91 +61,39 @@ public class RunSmall {
         Trie trie = Trie.create(allPaths);
         List<String> paths = allPaths.stream().filter(Util.not(trie::containsChildren)).distinct().collect(Collectors.toList());
 
-        int counter = 0;
-
         File dir = new File(smallDriversFolderPath);
         if (!dir.exists()) {
             boolean created = dir.mkdir();
             assert created;
         }
 
-        for (String path : paths) {
+        List<T> result = new ArrayList<>();
+
+        for (int i = 0; i < paths.size(); i++) {
+            String path = paths.get(i);
+
             Benchmark bench = orgBench.withPathsToTest(Collections.singletonList(path));
 
-            int count = counter++;
-            System.out.println("Creating small driver for: " + path + "  " + (count + 1) + "/" + paths.size());
+            System.out.println("Creating small driver for: " + path + "  " + (i + 1) + "/" + paths.size());
 
             List<Test> specificTests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer, freeGenericsFinder).createTests();
             specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
 
             Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(null);
 
-            String filePath = Main.getFolderPath(bench) + SMALL_DRIVERS_FOLDER + "/" + SMALL_DRIVER_FILE_PREFIX + count + ".js";
+            String filePath = Main.getFolderPath(bench) + "/" + SMALL_DRIVER_FILE_PREFIX + fileCounter++ + ".js";
 
             Util.writeFile(filePath, AstToStringVisitor.toString(program));
-        }
-    }
 
-    public static <T> List<T> runSmallDrivers(Benchmark benchmark, Function<String, T> runner) {
-        return runSmallDrivers(benchmark, runner, DEFAULT_THREADS);
-    }
+            result.add(runner.apply(filePath));
 
-    public static <T> List<T> runSmallDrivers(Benchmark benchmark, Function<String, T> runner, int threads) {
-        if (benchmark.run_method != BROWSER) {
-            String jsName = benchmark.jsFile.substring(benchmark.jsFile.lastIndexOf('/') + 1, benchmark.jsFile.length());
-            try {
-                Util.writeFile(Main.getFolderPath(benchmark) + RunSmall.SMALL_DRIVERS_FOLDER + "/" + jsName, Util.readFile(benchmark.jsFile));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            Util.deleteFile(filePath);
         }
 
-        File smallFolders = new File(Main.getFolderPath(benchmark) + RunSmall.SMALL_DRIVERS_FOLDER);
-
-        //noinspection ConstantConditions
-        List<String> files = Arrays.stream(smallFolders.list()).filter(path -> path.contains(RunSmall.SMALL_DRIVER_FILE_PREFIX)).collect(Collectors.toList());
-
-        List<T> result = Collections.synchronizedList(new ArrayList<T>());
-
-        if (threads > 1) {
-            ExecutorService pool = Executors.newFixedThreadPool(threads);
-
-            files.forEach(file -> result.add(null));
-
-            int counter = 0;
-            for (String file : files) {
-                int count = counter++;
-                pool.submit(() -> {
-                    System.out.println("Running " + count + " / " + files.size());
-
-                    String path = Main.getFolderPath(benchmark) + RunSmall.SMALL_DRIVERS_FOLDER + "/" + file;
-
-                    result.set(count, runner.apply(path));
-                });
-            }
-
-            pool.shutdown();
-            try {
-                pool.awaitTermination(30, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                throw new RuntimeException();
-            }
-
-            return result;
-        } else {
-            int counter = 0;
-            for (String file : files) {
-                int count = counter++;
-                System.out.println("Running " + count + " / " + files.size());
-
-                String path = Main.getFolderPath(benchmark) + RunSmall.SMALL_DRIVERS_FOLDER + "/" + file;
-
-                result.add(runner.apply(path));
-            }
-
-            return result;
-        }
+        return result;
     }
+
+    private static int fileCounter = 0;
 
     public static Function<String, CoverageResult> runCoverage(Benchmark bench, int timeout) {
         return (path) -> {
