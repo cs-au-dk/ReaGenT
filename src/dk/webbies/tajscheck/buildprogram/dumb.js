@@ -1,18 +1,3 @@
-/*{
- "path": path,
- "expected": expected,
- "actual": actual
- }*/
-
-/*setTimeout(function () {
-    dumbMessages();
-    try {
-        process.exit(0)
-    } catch(e) {
-
-    }
-}, 100);*/
-
 if (!isTAJS) {
     setTimeout(function () {
         dumbMessages();
