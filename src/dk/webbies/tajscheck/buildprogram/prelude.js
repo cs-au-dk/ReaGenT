@@ -288,8 +288,8 @@ function registerTest (index, requirements) {
         testsThatCanRun.push(index);
     } else {
         var registration = {
-            "testIndex": index,
-            "requirements": requirements
+            testIndex: index,
+            requirements: requirements
         };
         for (var i = 0; i < requirements.length; i++) {
             var requirementList = requirements[i];
