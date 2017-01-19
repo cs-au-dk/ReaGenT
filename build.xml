@@ -1,4 +1,4 @@
-<project name="HotCiv" default="help" basedir=".">
+<project name="TAJSCheck" default="help" basedir=".">
 
     <property name="source-directory" value="src"/>
     <property name="test-source-directory" value="test/src/"/>
