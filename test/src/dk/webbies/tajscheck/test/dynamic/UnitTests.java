@@ -644,7 +644,6 @@ public class UnitTests {
 
     @Test(expected = AssertionError.class)
     public void overrideNumberOfArguments() throws Exception {
-        // TODO: Mention in noter.txt
         // Actually just bivariance on the function arguments.
         // When a function (with e.g. 2 parameters) is overridden, with a function that takes 1 parameter.
         // Then the second parameter kind-of gets the bottom type.
@@ -695,7 +694,7 @@ public class UnitTests {
         RunResult result = run("thisTypesInInterfaces", "foo");
 
         expect(result)
-                .forPath("(module.baz().bar, module.baz().bar.bar)")
+                .forPath("module.baz().bar")
                 .expected("(function or object)")
                 .got(TYPEOF, "undefined");
     }
@@ -872,6 +871,13 @@ public class UnitTests {
                 .forPath("window.module.foo.[arg0].[arg0]")
                 .expected("boolean")
                 .got(TYPEOF, "undefined");
+
+        assertThat(result.typeErrors.size(), is(1));
+    }
+
+    @Test
+    public void thisTypesAreOptimized2() throws Exception {
+        RunResult result = run("thisTypesAreOptimized2", CheckOptions.builder().setSplitUnions(false).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
     }

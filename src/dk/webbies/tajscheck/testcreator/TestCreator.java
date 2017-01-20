@@ -70,6 +70,10 @@ public class TestCreator {
 
             arg = arg.withTypeContext(arg.typeContext.optimizeTypeParameters(element.type, freeGenericsFinder));
 
+            if (freeGenericsFinder.hasThisTypes(element.type)) {
+                arg = arg.withThisType(element.type);
+            }
+
             if (arg.withTopLevelFunctions) {
                 topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, nativeTypes, arg.depth, seenTopLevel));
 
