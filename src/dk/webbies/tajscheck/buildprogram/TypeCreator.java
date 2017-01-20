@@ -7,6 +7,8 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
+import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
+import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -944,6 +946,8 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return document.createElement('video')");
             case "HTMLImageElement":
                 return AstBuilder.stmtFromString("return document.createElement('img')");
+            case "HTMLLinkElement":
+                return AstBuilder.stmtFromString("return document.createElement('link')");
             case "WebGLRenderingContext":
                 return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"webgl\")");
             case "WebGLTexture":
@@ -1069,6 +1073,20 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return document.createElement(\"video\").buffered");
             case "HTMLTextAreaElement":
                 return AstBuilder.stmtFromString("return document.createElement(\"textarea\")");
+            case "CustomEvent":
+                return AstBuilder.stmtFromString("return new CustomEvent(\"123\")");
+            case "ObjectConstructor":
+                return AstBuilder.stmtFromString("return Object");
+            case "NumberConstructor":
+                return AstBuilder.stmtFromString("return Number");
+            case "BooleanConstructor":
+                return AstBuilder.stmtFromString("return Boolean");
+            case "ArrayConstructor":
+                return AstBuilder.stmtFromString("return Array");
+            case "DateConstructor":
+                return AstBuilder.stmtFromString("return Date");
+            case "StringConstructor":
+                return AstBuilder.stmtFromString("return String");
             case "Int8Array":
             case "Uint8Array":
             case "Uint32Array":

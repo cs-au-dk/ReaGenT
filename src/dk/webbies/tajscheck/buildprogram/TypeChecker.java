@@ -216,6 +216,18 @@ public class TypeChecker {
                         return new SimpleType(SimpleTypeKind.Boolean).accept(this, arg);
                     case "Number":
                         return new SimpleType(SimpleTypeKind.Number).accept(this, arg);
+                    case "NumberConstructor":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("Number")), "NumberConstructor"));
+                    case "BooleanConstructor":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("Boolean")), "BooleanConstructor"));
+                    case "ObjectConstructor":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("Object")), "ObjectConstructor"));
+                    case "ArrayConstructor":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("Array")), "ArrayConstructor"));
+                    case "DateConstructor":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("Date")), "DateConstructor"));
+                    case "StringConstructor":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("String")), "StringConstructor"));
                     case "Object":
                         return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.typeOf("object"), "Object"));
                     case "Date":
@@ -305,8 +317,14 @@ public class TypeChecker {
                     case "BlobPropertyBag":
                     case "CanvasPathMethods":
                     case "Event":
-                        arg = arg.withDepth(1);
-                        break;// Checking the type structurally.
+                        List<TypeCheck> structuralCheckList = new ArrayList<>();
+                        for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
+                            List<TypeCheck> fieldChecks = entry.getValue().accept(this, arg);
+                            structuralCheckList.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
+                        }
+
+                        TypeCheck structuralCheck = createIntersection(structuralCheckList);
+                        return Collections.singletonList(new SimpleTypeCheck(Check.or(structuralCheck.getCheck(), Check.instanceOf(identifier(name))), "(" + name + " or " + structuralCheck.getExpected() + ")"));
                     default:
                         throw new RuntimeException(typeNames.get(t));
                 }
