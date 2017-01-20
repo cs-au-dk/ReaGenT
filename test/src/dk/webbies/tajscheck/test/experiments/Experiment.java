@@ -32,6 +32,7 @@ public class Experiment {
 
     public Experiment(List<Pair<String, Benchmark>> benchmarks) {
         this.benchmarks = benchmarks.stream().sorted(Comparator.comparing(Pair::getLeft)).collect(Collectors.toList());
+        Collections.shuffle(this.benchmarks);
     }
 
     public Experiment(String... names) {
