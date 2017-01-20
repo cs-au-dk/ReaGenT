@@ -371,7 +371,7 @@ public class FreeGenericsFinder {
             baseType = ((ClassType) ((ClassInstanceType) baseType).getClassType()).getInstanceType();
         }
         if (baseType instanceof ReferenceType) {
-            if (((ReferenceType) baseType).getTypeArguments().stream().anyMatch(ThisType.class::isInstance)) {
+            if (((ReferenceType) baseType).getTypeArguments().stream().anyMatch(arg -> isThisTypeVisible(arg, deep, seen))) {
                 return true;
             }
             baseType = ((ReferenceType) baseType).getTarget();

@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/ts-spec-reader/deserializers/java/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
       <excludeFolder url="file://$MODULE_DIR$/cache" />
+      <excludeFolder url="file://$MODULE_DIR$/paper" />
       <excludeFolder url="file://$MODULE_DIR$/test/async/smallDrivers" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks" />
       <excludeFolder url="file://$MODULE_DIR$/test/benchmarks/accounting/coverage" />

@@ -4,6 +4,8 @@ import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
+import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Test;
@@ -20,7 +22,7 @@ public class AutomaticExperiments {
     private static final int THREADS = 4;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth + 1).setIterationsToRun(1000).build());
+        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth).setIterationsToRun(1000).build());
         List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench.run_method, TIMEOUT));
 
         long paths = OutputParser.combine(results).typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
@@ -29,7 +31,7 @@ public class AutomaticExperiments {
     });
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> smallCoverage = new Pair<>("small-coverage", (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth + 1).setIterationsToRun(1000).build());
+        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth).setIterationsToRun(1000).build());
         List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench, TIMEOUT));
 
         return Util.toPercentage(CoverageResult.combine(results).statementCoverage());
@@ -157,28 +159,27 @@ public class AutomaticExperiments {
     });
 
     public static void main(String[] args) throws Exception {
-        // Only node-based benchmarks .
-        /*Experiment experiment = new Experiment(
+        Experiment experiment = new Experiment(
                 RunBenchmarks.benchmarks.entrySet().stream()
                         .filter(entry -> entry.getValue().run_method == Benchmark.RUN_METHOD.NODE)
-                        .filter(entry -> !done.contains(entry.getKey()))
+//                        .filter(entry -> !done.contains(entry.getKey()))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-        );*/
+        );
 
-        Experiment experiment = new Experiment("bluebird");
+//        Experiment experiment = new Experiment();
 
 
-//        experiment.addSingleExperiment(smallCoverage);
+        experiment.addSingleExperiment(smallCoverage);
         experiment.addSingleExperiment(runSmall);
 
 //        experiment.addSingleExperiment(uniquePaths);
-//        experiment.addMultiExperiment(uniquePathsAndCoverage);
-//        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
-//        experiment.addMultiExperiment(uniquePathsConvergence);
+        experiment.addMultiExperiment(uniquePathsAndCoverage);
+        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
+        experiment.addMultiExperiment(uniquePathsConvergence);
 
 
-//        experiment.addMultiExperiment(driverSizes);
-//        experiment.addSingleExperiment(jsFileSize);
+        experiment.addMultiExperiment(driverSizes);
+        experiment.addSingleExperiment(jsFileSize);
 
 
         String result = experiment.calculate(THREADS).toCSV();
@@ -188,5 +189,32 @@ public class AutomaticExperiments {
         Util.writeFile("experiment.csv", result);
     }
 
-    private static final Set<String> done = new HashSet<>(Arrays.asList("Moment.js", "PleaseJS", "Redux", "When.js", "accounting.js"));
+    private static final Set<String> done = new HashSet<>(Arrays.asList(
+            "bluebird",
+            "Hammer.js",
+            "Modernizr",
+            "accounting.js",
+            "RxJS",
+            "Lodash",
+            "Handlebars.js",
+            "Chart.js",
+            "Autobahn|JS",
+            "RequireJS",
+            "lunr.js",
+            "Vue.js",
+            "webcomponents.js",
+            "PDF.js",
+            "async",
+            "reveal.js",
+            "Redux",
+            "PeerJS",
+            "pickadate.js",
+            "Leaflet",
+            "React",
+            "highlight.js",
+            "QUnit",
+            "Knockout",
+            "Jasmine",
+            "pathjs"
+    ));
 }

@@ -167,8 +167,6 @@ public class OptimizingTypeContext implements TypeContext {
         return clone;
     }
 
-    private static int counter = 0;
-
     private static final TypeParameterType freeParameterType = new TypeParameterType();
     static {
         freeParameterType.setConstraint(SpecReader.makeEmptySyntheticInterfaceType());

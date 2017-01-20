@@ -81,7 +81,7 @@ public class RunSmall {
 
             Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(null);
 
-            String filePath = Main.getFolderPath(bench) + "/" + SMALL_DRIVER_FILE_PREFIX + fileCounter++ + ".js";
+            String filePath = Main.getFolderPath(bench) + SMALL_DRIVER_FILE_PREFIX + fileCounter++ + ".js";
 
             Util.writeFile(filePath, AstToStringVisitor.toString(program));
 

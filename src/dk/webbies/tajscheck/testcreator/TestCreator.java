@@ -11,6 +11,7 @@ import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.util.*;
 import dk.webbies.tajscheck.util.trie.Trie;
+import jdk.nashorn.internal.ir.Symbol;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -551,7 +552,7 @@ public class TestCreator {
                 }
                 return;
             }
-            if (propertyType instanceof SimpleType || propertyType instanceof StringLiteral || propertyType instanceof BooleanLiteral || propertyType instanceof NumberLiteral || propertyType instanceof ThisType || propertyType instanceof TupleType) {
+            if (propertyType instanceof SimpleType || propertyType instanceof StringLiteral || propertyType instanceof BooleanLiteral || propertyType instanceof NumberLiteral || propertyType instanceof ThisType || propertyType instanceof TupleType || propertyType instanceof SymbolType) {
                 return;
             }
 

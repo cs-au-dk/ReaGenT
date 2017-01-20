@@ -891,4 +891,14 @@ public class UnitTests {
         assertThat(driver, not(containsString("module.CatmullRomCurve3.<>.getPoint().setFromSpherical().multiplyVector3Array()")));
 
     }
+
+    @Test
+    public void exponentialComplexity() throws Exception {
+        Main.writeFullDriver(benchFromFolder("exponentialComplexity"));
+    }
+
+    @Test
+    public void veryComplexThisType() throws Exception {
+        Main.generateFullDriver(benchFromFolder("veryComplexThisType"));
+    }
 }

@@ -1,16 +1,23 @@
+TODO For paper:
+    On something like Event, we check that is structually matches an Event, or it is instanceof (also because a native event, might not match the type given in lib.d.ts, because it contains errors).
 
-TODO:
-    // Write in paper that the static analysis can actually give spurious warnings, with un-reachable unions.
     // For paper: You can't really check for runtime-errors, if we supply previously returned types to the thing itself, because some of those arguments might be wrong, and then anything can happen. (We can check if we know there are no type-errors, but we don't know that).
-    // For paper.tex, note that small node applications can be nice analysis-targets.
-    // Find 5 small node-applications, that has TypeScript declarations, as analysis-targets, both for this project and Hamid's project.
+
+    // For paper: It can be a good idea to start from the beginning every once in a while, because there might be functions, which modify the state in a way that cannot be reversed (such as jQuery.noConflict).
+    // Have ignored all jQuery plugins, since they extend the existing jQuery. And we would therefore end up testing jQuery, more than the concrete library.
+
+    // Taking a small part of a test doesn't work that well, because even if we test something like "moment().duration().foo.bar" (which produce a duration), there might be another test "moment().duration().baz" which only fails if the input to that test was the first test.
+    // Yet, analyzing all the small parts, we somehow get even more than doing one big analysis. One disadvantage is the huge amount of time it takes to execute the sometimes thousands of smaller drivers.
+
+    For unsoundness discussion.
+    Another subtle unsoundness in the type system, is that when a method B overrides a method A, then method B is allowed to take less arguments than method A (it is also allowed to take more, but only if the arguments are optional).
+    This is unsound, since removing parameters is equivalent to annotating the parameters with the bottom type, which is unsound for the same reasons as discussed above.
 
 
+TODO: For impl.
+	Check out Polymer and Zepto runsmall
 
-Implemtation TODO's
-    // Explicitly try to instantiate unconstrained generic types with a primitive?
-    // idea from Esben: Instead of generating assertions, at runtime convert the concrete object into a type (with some limited depth, followed by any types), and ask the TypeScript compiler if they are assignable.
-    // RestArgs, both for checking and for generating calls to functions
+    Try to look at the exceptions that happen during runtime. See if they can be used for anything.
 
 Notes:
     -  What the analysis does, is say, if this code is reachable, then the following is true.
@@ -153,6 +160,10 @@ Related works:
 Future work:
     - Symbolic execution could be used to get the under-approximation to be less of an under-approximation (speculation: I don't think it will make a big different, we are looking for type errors).
 
+If static analysis:
+    // Write in paper that the static analysis can actually give spurious warnings, with un-reachable unions.
+    // Find 5 small node-applications, that has TypeScript declarations, as analysis-targets, both for this project and Hamid's project.
+    // For paper.tex, note that small node applications can be nice analysis-targets.
 
 Requirements:
     debian package timelimit
