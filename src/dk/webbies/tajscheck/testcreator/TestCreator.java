@@ -770,6 +770,10 @@ public class TestCreator {
 
             arg = arg.withTypeContext(arg.typeContext.optimizeTypeParameters(element.type, freeGenericsFinder));
 
+            if (freeGenericsFinder.hasThisTypes(element.type)) {
+                arg = arg.withThisType(element.type);
+            }
+
             if (visitor.negativeTypesSeen.contains(new TypeWithContext(element.type, arg.typeContext))) {
                 continue;
             }
