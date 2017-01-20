@@ -264,7 +264,8 @@ public class RunBenchmarks {
                     bench.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail.
                     bench.dTSFile.contains("leaflet.d.ts") || // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)
                     bench.dTSFile.contains("jquery.d.ts") || // Exactly the same thing, the two then methods of JQueryGenericPromise are being overridden in an unsound way.
-                    bench.dTSFile.contains("ember.d.ts") // It includes jQuery, therefore it fails.
+                    bench.dTSFile.contains("ember.d.ts") || // It includes jQuery, therefore it fails.
+                    bench.dTSFile.contains("fabric.d.ts") // Unsoundness in the noTransform argument of the render method (and that is it!).
             ) {
                 System.out.println("Is a benchmark which i know to fail. ");
                 return;
