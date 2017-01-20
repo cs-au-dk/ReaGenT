@@ -863,4 +863,16 @@ public class UnitTests {
     public void complexGenerics() throws Exception {
         Main.generateFullDriver(benchFromFolder("complexGenerics")); // Just a test that no null-pointer.
     }
+
+    @Test
+    public void wrongSignaturePropagates() throws Exception {
+        RunResult result = run("wrongSignaturePropagates", "foo");
+
+        expect(result)
+                .forPath("window.module.foo.[arg0].[arg0]")
+                .expected("boolean")
+                .got(TYPEOF, "undefined");
+
+        assertThat(result.typeErrors.size(), is(1));
+    }
 }
