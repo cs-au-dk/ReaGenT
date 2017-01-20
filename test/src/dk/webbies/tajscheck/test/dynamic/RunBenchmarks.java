@@ -148,10 +148,10 @@ public class RunBenchmarks {
 
         benchmarks.put("RxJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/rx/Rx.js", "test/benchmarks/rx/types/rx/index.d.ts", "Rx", NODE, options.getBuilder().setDisableGenerics(true).build()));
 
-        Benchmark when = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/when/when.js", "test/benchmarks/when/when.d.ts", "When", NODE, options.getBuilder().setDisableGenerics(true).build());
+        Benchmark when = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/when/when.js", "test/benchmarks/when/when.d.ts", "When", NODE, options);
         benchmarks.put("When.js", when);
 
-        benchmarks.put("Autobahn|JS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/autobahn/autobahn.js", "test/benchmarks/autobahn/autobahn.d.ts", "autobahn", BROWSER, options.getBuilder().setDisableGenerics(true).build())
+        benchmarks.put("Autobahn|JS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/autobahn/autobahn.js", "test/benchmarks/autobahn/autobahn.d.ts", "autobahn", BROWSER, options)
             .addDependencies(when)
         );
 
@@ -246,31 +246,31 @@ public class RunBenchmarks {
 
     @Test
     public void soundnessTest() throws Exception {
-        Benchmark bench = this.benchmark.withRunMethod(BOOTSTRAP);
-        Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
+        Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP);
+        if (
+                benchmark.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail.
+                        benchmark.dTSFile.contains("leaflet.d.ts") || // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)
+                        benchmark.dTSFile.contains("jquery.d.ts") || // Exactly the same thing, the two then methods of JQueryGenericPromise are being overridden in an unsound way.
+                        benchmark.dTSFile.contains("ember.d.ts") || // It includes jQuery, therefore it fails.
+                        benchmark.dTSFile.contains("fabric.d.ts") || // Unsoundness in the noTransform argument of the render method (and that is it!).
+                        benchmark.dTSFile.contains("materialize.d.ts") || // Includes jQuery.
+                        benchmark.dTSFile.contains("backbone.d.ts")  // Includes jQuery.
+                ) {
+            System.out.println("Is a benchmark which i know to fail. ");
+            return;
+        }
+
+        Main.writeFullDriver(benchmark); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");
         String output;
         try {
-            output = Main.runBenchmark(bench, 60 * 1000);
+            output = Main.runBenchmark(benchmark, 60 * 1000);
         } catch (TimeoutException e) {
             System.out.println("Timeout");
             return;
         }
         System.out.println(output);
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
-
-        if (result.typeErrors.size() > 0) {
-            if (
-                    bench.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail.
-                    bench.dTSFile.contains("leaflet.d.ts") || // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)
-                    bench.dTSFile.contains("jquery.d.ts") || // Exactly the same thing, the two then methods of JQueryGenericPromise are being overridden in an unsound way.
-                    bench.dTSFile.contains("ember.d.ts") || // It includes jQuery, therefore it fails.
-                    bench.dTSFile.contains("fabric.d.ts") // Unsoundness in the noTransform argument of the render method (and that is it!).
-            ) {
-                System.out.println("Is a benchmark which i know to fail. ");
-                return;
-            }
-        }
 
         for (OutputParser.TypeError typeError : result.typeErrors) {
             System.out.println(typeError);
