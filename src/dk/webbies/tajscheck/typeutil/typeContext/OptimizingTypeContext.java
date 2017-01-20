@@ -16,20 +16,17 @@ import java.util.*;
  */
 public class OptimizingTypeContext implements TypeContext {
     private final Map<TypeParameterType, Type> map;
-    private final Set<TypeParameterType> persistent;
     private final Type thisType;
     public final Benchmark bench;
 
     public OptimizingTypeContext(Benchmark bench) {
         this.bench = bench;
         this.map = Collections.emptyMap();
-        this.persistent = Collections.emptySet();
         this.thisType = null;
     }
 
-    private OptimizingTypeContext(Map<TypeParameterType, Type> map, Set<TypeParameterType> persistent, Type classType, Benchmark bench) {
+    private OptimizingTypeContext(Map<TypeParameterType, Type> map, Type classType, Benchmark bench) {
         this.map = map;
-        this.persistent = persistent;
         this.thisType = classType;
         this.bench = bench;
     }
@@ -38,20 +35,20 @@ public class OptimizingTypeContext implements TypeContext {
     public OptimizingTypeContext append(Map<TypeParameterType, Type> newParameters) {
         Map<TypeParameterType, Type> newMap = new HashMap<>(this.map);
         newMap.putAll(newParameters);
-        return new OptimizingTypeContext(newMap, persistent, this.thisType, bench);
+        return new OptimizingTypeContext(newMap, this.thisType, bench);
     }
 
     @Override
     public OptimizingTypeContext withThisType(Type thisType) {
         if (thisType == null || this.thisType == null) {
-            return new OptimizingTypeContext(this.map, persistent, thisType, bench);
+            return new OptimizingTypeContext(this.map, thisType, bench);
         }
         Set<Type> baseTypes = TypesUtil.getAllBaseTypes(this.thisType, new HashSet<>());
 
         if (baseTypes.contains(thisType)) {
             return this;
         } else {
-            return new OptimizingTypeContext(this.map, persistent, thisType, bench);
+            return new OptimizingTypeContext(this.map, thisType, bench);
         }
     }
 
@@ -66,12 +63,9 @@ public class OptimizingTypeContext implements TypeContext {
         if (type == null) {
             return null;
         }
-        return new TypeWithContext(type, this.addPersistent(parameter));
+        return new TypeWithContext(type, this);
     }
 
-    private OptimizingTypeContext addPersistent(TypeParameterType parameterType) {
-        return addPersistent(Collections.singletonList(parameterType));
-    }
 
     @Override
     public Map<TypeParameterType, Type> getMap() {
@@ -87,17 +81,10 @@ public class OptimizingTypeContext implements TypeContext {
     public TypeContext append(TypeContext other) {
         OptimizingTypeContext result = append(other.getMap());
         if (other instanceof OptimizingTypeContext) {
-            return result.addPersistent(((OptimizingTypeContext)other).persistent);
+            return result;
         } else {
             throw new RuntimeException();
         }
-    }
-
-    private OptimizingTypeContext addPersistent(Collection<TypeParameterType> newPersistent) {
-        Set<TypeParameterType> persistent = new HashSet<>(this.persistent);
-        persistent.addAll(newPersistent);
-
-        return new OptimizingTypeContext(this.map, persistent, this.thisType, bench);
     }
 
     @Override
@@ -108,7 +95,6 @@ public class OptimizingTypeContext implements TypeContext {
         OptimizingTypeContext that = (OptimizingTypeContext) o;
 
         if (map != null ? !map.equals(that.map) : that.map != null) return false;
-        if (persistent != null ? !persistent.equals(that.persistent) : that.persistent != null) return false;
         if (thisType != null ? !thisType.equals(that.thisType) : that.thisType != null) return false;
         return bench != null ? bench.equals(that.bench) : that.bench == null;
     }
@@ -116,7 +102,6 @@ public class OptimizingTypeContext implements TypeContext {
     @Override
     public int hashCode() {
         int result = map != null ? map.hashCode() : 0;
-        result = 31 * result + (persistent != null ? persistent.hashCode() : 0);
         result = 31 * result + (thisType != null ? thisType.hashCode() : 0);
         result = 31 * result + (bench != null ? bench.hashCode() : 0);
         return result;
@@ -131,7 +116,7 @@ public class OptimizingTypeContext implements TypeContext {
 
         Set<TypeParameterType> reachable = new HashSet<>();
 
-        ArrayList<Type> typesToTest = new ArrayList<>(Util.concat(persistent, Collections.singletonList(baseType)));
+        ArrayList<Type> typesToTest = new ArrayList<>(Collections.singletonList(baseType));
 
         for (Type type : typesToTest) {
             reachable.addAll(freeGenericsFinder.findFreeGenerics(type));
