@@ -9,6 +9,7 @@ import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -880,5 +881,14 @@ public class UnitTests {
         RunResult result = run("thisTypesAreOptimized2", CheckOptions.builder().setSplitUnions(false).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
+    }
+
+    @Test
+    public void genericsAreOptimized2() throws Exception {
+        String driver = Main.generateFullDriver(benchFromFolder("genericsAreOptimized2"));
+
+        assertThat(driver, not(containsString("module.CatmullRomCurve3.<>.getPoint().setFromSpherical().multiplyVector3Array(any)")));
+        assertThat(driver, not(containsString("module.CatmullRomCurve3.<>.getPoint().setFromSpherical().multiplyVector3Array()")));
+
     }
 }
