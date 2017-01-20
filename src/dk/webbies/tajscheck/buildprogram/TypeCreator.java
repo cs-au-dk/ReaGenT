@@ -697,7 +697,12 @@ public class TypeCreator {
                                     Return(bool(true))
                             )
                     ))),
-                    saveArgsAndReturnValue(signature, typeContext)
+                    ifThenElse(
+                            identifier("signatureCorrect"),
+                            saveArgsAndReturnValue(signature, typeContext), // Saving the arguments, and returning something
+                            Return(constructType(signature.getResolvedReturnType(), typeContext)) // Just returning the correct type, no saving arguments.
+                    )
+
             );
 
 
