@@ -7,8 +7,6 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
-import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
-import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -1140,7 +1138,10 @@ public class TypeCreator {
     public CallExpression constructType(Type type, TypeContext typeContext) {
         int index = getTypeIndex(type, typeContext);
 
-        addConstructInstanceFunction(index);
+        if (!hasCreateTypeFunction.contains(index)) {
+            hasCreateTypeFunction.add(index);
+            constructTypeQueue.add(new TypeWithContext(type, typeContext));
+        }
 
         return call(identifier(CONSTRUCT_TYPE_PREFIX + index));
     }
@@ -1152,28 +1153,35 @@ public class TypeCreator {
 
     private int getTypeIndex(Type type, TypeContext typeContext) {
         TypeWithContext key = new TypeWithContext(type, typeContext);
+        return getTypeIndex(key);
+    }
+
+    private int getTypeIndex(TypeWithContext key) {
         if (typeIndexes.containsKey(key)) {
             return typeIndexes.get(key);
         } else {
             int value = typeIndexes.size();
             typeIndexes.put(key, value);
 
-            if (finished) {
-                throw new RuntimeException("Already finished");
-            }
-
-            getTypeFunctionQueue.add(key);
+            getTypeQueue.add(key);
 
             return value;
         }
     }
 
-    private final List<TypeWithContext> getTypeFunctionQueue = new ArrayList<>();
-    private boolean finished = false;
+    private final List<TypeWithContext> getTypeQueue = new ArrayList<>();
+    private final List<TypeWithContext> constructTypeQueue = new ArrayList<>();
 
     private void finish() {
-        finished = true;
-        for (TypeWithContext key : getTypeFunctionQueue) {
+        while (!constructTypeQueue.isEmpty()) {
+            ArrayList<TypeWithContext> clone = new ArrayList<>(constructTypeQueue);
+            constructTypeQueue.clear();
+            for (TypeWithContext typeWithContext : clone) {
+                addConstructInstanceFunction(typeWithContext, getTypeIndex(typeWithContext)); // This is hopefully only ever called here.
+            }
+        }
+
+        for (TypeWithContext key : getTypeQueue) {
             int value = typeIndexes.get(key);
 
             Collection<Integer> values = valueLocations.get(key).stream().distinct().collect(Collectors.toList());
@@ -1203,17 +1211,7 @@ public class TypeCreator {
 
     private static final String CONSTRUCTED_VARIABLE_CACHE_PREFIX = "constructed_cache_";
     private int constructed_value_cache_counter = 0;
-    private void addConstructInstanceFunction(int index) {
-        if (hasCreateTypeFunction.contains(index)) {
-            return;
-        }
-        hasCreateTypeFunction.add(index);
-
-        if (finished) {
-            throw new RuntimeException("Already finished");
-        }
-
-        TypeWithContext typeWithParameters = typeIndexes.inverse().get(index);
+    private void addConstructInstanceFunction(TypeWithContext typeWithParameters, int index) {
         Type type = typeWithParameters.getType();
         TypeContext typeContext = typeWithParameters.getTypeContext();
 
