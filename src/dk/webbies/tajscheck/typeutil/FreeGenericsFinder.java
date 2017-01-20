@@ -353,12 +353,17 @@ public class FreeGenericsFinder {
         if (thisTypeVisibleCache.containsKey(baseType)) {
             return thisTypeVisibleCache.get(baseType);
         }
-        boolean result = isThisTypeVisible(baseType, true);
+        boolean result = isThisTypeVisible(baseType, true, new HashSet<>());
         thisTypeVisibleCache.put(baseType, result);
         return result;
     }
 
-    private boolean isThisTypeVisible(Type baseType, boolean deep) {
+    private boolean isThisTypeVisible(Type baseType, boolean deep, Set<Type> orgSeen) {
+        if (orgSeen.contains(baseType)) {
+            return false;
+        }
+        Set<Type> seen = Util.concatSet(orgSeen, Collections.singletonList(baseType));
+
         if (baseType instanceof ClassType) {
             return false; // A classType is the "static" context, and not an "instance" context, therefore no this-types are visible.
         }
@@ -381,10 +386,10 @@ public class FreeGenericsFinder {
             InterfaceType inter = (InterfaceType) baseType;
 
             for (Signature signature : Util.concat(inter.getDeclaredCallSignatures(), inter.getDeclaredConstructSignatures())) {
-                if (signature.getParameters().stream().map(Signature.Parameter::getType).anyMatch(par -> isThisTypeVisible(par, false))) {
+                if (signature.getParameters().stream().map(Signature.Parameter::getType).anyMatch(par -> isThisTypeVisible(par, false, seen))) {
                     return true;
                 }
-                if (isThisTypeVisible(signature.getResolvedReturnType(), false)) {
+                if (isThisTypeVisible(signature.getResolvedReturnType(), false, seen)) {
                     return true;
                 }
             }
@@ -394,7 +399,7 @@ public class FreeGenericsFinder {
                 return false;
             }
             for (Type type : inter.getDeclaredProperties().values()) {
-                if (isThisTypeVisible(type, false)) {
+                if (isThisTypeVisible(type, false, seen)) {
                     return true;
                 }
             }
@@ -408,16 +413,16 @@ public class FreeGenericsFinder {
             return true;
         }
         if (baseType instanceof UnionType) {
-            return ((UnionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep));
+            return ((UnionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep, seen));
         }
         if (baseType instanceof IntersectionType) {
-            return ((IntersectionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep));
+            return ((IntersectionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep, seen));
         }
         if (baseType instanceof TupleType) {
-            return ((TupleType) baseType).getElementTypes().stream().anyMatch(element -> isThisTypeVisible(element, deep));
+            return ((TupleType) baseType).getElementTypes().stream().anyMatch(element -> isThisTypeVisible(element, deep, seen));
         }
         if (baseType instanceof IndexedAccessType) {
-            return isThisTypeVisible(((IndexedAccessType) baseType).getIndexType(), deep) || isThisTypeVisible(((IndexedAccessType) baseType).getObjectType(), deep);
+            return isThisTypeVisible(((IndexedAccessType) baseType).getIndexType(), deep, seen) || isThisTypeVisible(((IndexedAccessType) baseType).getObjectType(), deep, seen);
         }
         throw new RuntimeException(baseType.getClass().getSimpleName());
     }
