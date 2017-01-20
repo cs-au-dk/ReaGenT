@@ -1,8 +1,11 @@
 package dk.webbies.tajscheck.test;
 
+import dk.brics.tajs.util.Collections;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
+import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Util;
 
@@ -35,6 +38,19 @@ public class DeltaDebug {
         String file = Util.readFile(filePath);
         write(filePath + ".smallest", file);
 
+        String newFile = removeCommentsAndWhitespace(file);
+        write(filePath, newFile);
+
+        if (newFile.length() == file.length()) {
+            System.out.println("There were no comments or whitespace");
+        } else if (test.getAsBoolean()) {
+            System.out.println("Successfully remove whitespace and stuff");
+            progress = true;
+            file = newFile;
+        } else {
+            System.out.println("Removing whitespace failed");
+        }
+
         progress |= testBracket(filePath, test, file, '{', '}');
 
         // Removing lines, one by one.
@@ -46,6 +62,9 @@ public class DeltaDebug {
 
         for (int sz = array.length >>> 1; sz > 0; sz >>>= 1) {
             System.out.println("  chunk size " + sz);
+            if (sz > MAX_LINES_TO_REMOVE) {
+                continue;
+            }
             int nchunks = (int) Math.floor(array.length / sz);
             for (int i = nchunks - 1; i >= 0; --i) {
                 // try removing chunk i
@@ -84,6 +103,21 @@ public class DeltaDebug {
         }
 
         System.out.println("Delta debugging complete. ");
+    }
+
+    private static String removeCommentsAndWhitespace(String file) {
+        int fromIndex = file.indexOf("/*");
+        while (fromIndex != -1) {
+            int toIndex = file.indexOf("*/", fromIndex);
+            file = file.substring(0, fromIndex) + file.substring(toIndex + 2, file.length());
+            fromIndex = file.indexOf("/*", fromIndex);
+        }
+        List<String> lines = Arrays.stream(file.split(Pattern.quote("\n")))
+                .map(str -> str.replaceAll("\r", ""))
+                .filter(str -> !str.trim().isEmpty())
+                .collect(Collectors.toList());
+
+        return String.join("\n", lines);
     }
 
     private static boolean testBracket(String filePath, BooleanSupplier test, String file, char start, char closing) throws IOException {
@@ -157,20 +191,20 @@ public class DeltaDebug {
         Util.writeFile(filePath, file);
     }
 
-    // Current fix jQuery procedure: comment out currentTarget and target of BaseJQueryEventObject.
-    //                               comment out the two then methods of JQueryGenericPromise.
+    private static final int MAX_LINES_TO_REMOVE = 20   ;
+
     public static void main(String[] args) throws IOException {
-        Benchmark bench = RunBenchmarks.benchmarks.get("Moment.js").withRunMethod(NODE);
+        Util.isDeltaDebugging = true;
+        Benchmark bench = RunBenchmarks.benchmarks.get("Materialize").withOptions(RunBenchmarks.benchmarks.get("Materialize").options.getBuilder().setIterationsToRun(50000).build());
+//        Benchmark bench = RunBenchmarks.benchmarks.get("AngularJS").withRunMethod(NODE);
         String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-//                return testParsing(bench);
-//                return testSanity(bench);
-//                return testBiggerWithNoGenerics(bench);
-                return testHasError(bench, "moment().creationData().format");
-            }catch (IllegalArgumentException | StackOverflowError e) {
-                e.printStackTrace();
+                return testSoundness(bench);
+            }catch (NullPointerException e) {
+                return false;
+            }catch (IllegalArgumentException e) {
                 return false;
             } catch (Error | Exception e) {
                 e.printStackTrace();
@@ -210,7 +244,7 @@ public class DeltaDebug {
     }
 
 
-    private static boolean testSanity(Benchmark bench) throws Exception {
+    private static boolean testSoundness(Benchmark bench) throws Exception {
         bench = bench.withRunMethod(BOOTSTRAP);
 
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
