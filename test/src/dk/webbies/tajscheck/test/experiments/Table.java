@@ -52,7 +52,7 @@ public class Table {
         result.add("Total");
         for (int column = 1; column < table.iterator().next().size(); column++) {
             double total = 0;
-            for (int row = 0; row < table.size(); row++) {
+            for (int row = 1; row < table.size(); row++) {
                 List<String> rowList = table.get(row);
                 String value = rowList.get(column);
                 try {
