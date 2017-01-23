@@ -13,10 +13,12 @@ import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.IdentityHashSet;
+import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import dk.webbies.tajscheck.util.selenium.SeleniumDriver;
 import dk.webbies.tajscheck.util.trie.Trie;
+import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -85,6 +88,47 @@ public class Main {
         Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(recording);
 
         return AstToStringVisitor.toString(program);
+    }
+
+    public static void generateSmallestDriver(Benchmark bench, BooleanSupplier test) throws IOException {
+        SpecReader spec = ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile));
+
+        SpecReader emptySpec = ParseDeclaration.getTypeSpecification(bench.environment, new ArrayList<>());
+
+        Set<Type> nativeTypes = TypesUtil.collectNativeTypes(spec, emptySpec);
+
+        Map<Type, String> typeNames = ParseDeclaration.getTypeNamesMap(spec);
+
+        Type typeToTest = getTypeToTest(bench, spec);
+
+        FreeGenericsFinder freeGenericsFinder = new FreeGenericsFinder(typeToTest);
+
+        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer(bench.options);
+
+        List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer, freeGenericsFinder).createTests();
+        tests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
+
+        Test[] testsArray = tests.toArray(new Test[]{});
+        int prevSize = -1;
+
+        while (prevSize != testsArray.length) {
+            prevSize = testsArray.length;
+            testsArray = MinimizeArray.minimizeArray((testsToTest) -> {
+                try {
+                    Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, Arrays.asList(testsToTest), typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(null);
+
+                    Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(program));
+
+                    return test.getAsBoolean();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }, testsArray);
+        }
+
+        Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, Arrays.asList(testsArray), typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(null);
+
+        Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(program));
     }
 
     static Type getTypeToTest(Benchmark bench, SpecReader spec) {
@@ -181,7 +225,7 @@ public class Main {
                     String rawResult = SeleniumDriver.executeScript(Util.readFile(testFilePath), timeout);
                     JSONObject json = new JSONObject("{res: " + rawResult + "}"); // Ugly, but works.
                     return json.getString("res");
-                } catch (HttpException | JSONException e) {
+                } catch (ConnectionClosedException | HttpException | JSONException e) {
                     throw new RuntimeException(e);
                 }
             default:

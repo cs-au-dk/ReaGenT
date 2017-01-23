@@ -1,25 +1,24 @@
 package dk.webbies.tajscheck.test;
 
-import dk.brics.tajs.util.Collections;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
-import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
+import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
-import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.NODE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -60,34 +59,28 @@ public class DeltaDebug {
         // Kinda copy-pasted from here: https://github.com/wala/jsdelta/blob/master/src/delta_single.js
 
 
-        for (int sz = array.length >>> 1; sz > 0; sz >>>= 1) {
-            System.out.println("  chunk size " + sz);
-            if (sz > MAX_LINES_TO_REMOVE) {
-                continue;
-            }
-            int nchunks = (int) Math.floor(array.length / sz);
-            for (int i = nchunks - 1; i >= 0; --i) {
-                // try removing chunk i
-                System.out.println("    chunk #" + i + " size(" + sz + ") arr(" + array.length + ")");
-                int lo = i * sz;
-                int hi = i == nchunks - 1 ? array.length : (i + 1) * sz;
+        int prevSize = array.length;
 
-                // avoid creating empty array if nonempty is set
-                if (lo > 0 || hi < array.length) {
-                    String[] orgArray = array.clone();
-                    array = deleteFromArray(array, lo, hi - lo);
-                    write(filePath, array);
+        array = MinimizeArray.minimizeArray((testArray) -> {
+            try {
+                write(filePath, testArray);
 
-                    if (!test.getAsBoolean()) {
-                        // didn't work, need to put it back
-                        array = orgArray;
-                        write(filePath, array);
-                    } else {
-                        write(filePath + ".smallest", array);
-                        progress = true;
-                    }
+                boolean success;
+                if (!test.getAsBoolean()) {
+                    write(filePath, testArray);
+                    success = false;
+                } else {
+                    write(filePath + ".smallest", testArray);
+                    success = true;
                 }
+                return success;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
+        }, array);
+
+        if (prevSize != array.length) {
+            progress = true;
         }
 
         write(filePath, array);
@@ -170,19 +163,6 @@ public class DeltaDebug {
         return -1;
     }
 
-    private static String[] deleteFromArray(String[] array, int from, int length) {
-        List<String> result = new ArrayList<>();
-
-        for (int i = 0; i < Math.min(from, array.length); i++) {
-            result.add(array[i]);
-        }
-        for (int i = from + length; i < array.length; i++) {
-            result.add(array[i]);
-        }
-
-        return result.toArray(new String[]{});
-    }
-
     private static void write(String filePath, String[] file) throws IOException {
         write(filePath, String.join("\n", Arrays.asList(file)));
     }
@@ -191,17 +171,15 @@ public class DeltaDebug {
         Util.writeFile(filePath, file);
     }
 
-    private static final int MAX_LINES_TO_REMOVE = 20   ;
-
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
-        Benchmark bench = RunBenchmarks.benchmarks.get("Materialize").withOptions(RunBenchmarks.benchmarks.get("Materialize").options.getBuilder().setIterationsToRun(50000).build());
+        Benchmark bench = RunBenchmarks.benchmarks.get("PhotoSwipe");
 //        Benchmark bench = RunBenchmarks.benchmarks.get("AngularJS").withRunMethod(NODE);
         String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                return testSoundness(bench);
+                return testHasError(bench, "PhotoSwipe.viewportSize");
             }catch (NullPointerException e) {
                 return false;
             }catch (IllegalArgumentException e) {
@@ -218,7 +196,7 @@ public class DeltaDebug {
         bench = bench.withOptions(bench.options.getBuilder().setIterationsToRun(100).build());
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
 
-        return result.typeErrors.stream().map(OutputParser.TypeError::getPath).filter(str -> str.equals(path)).count() >= 2;
+        return result.typeErrors.stream().map(OutputParser.TypeError::getPath).filter(str -> str.equals(path)).count() >= 1;
     }
 
     private static boolean testBiggerWithNoGenerics(Benchmark bench) throws IOException {
