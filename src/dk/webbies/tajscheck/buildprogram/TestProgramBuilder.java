@@ -44,6 +44,7 @@ public class TestProgramBuilder {
     public static final class TypeParameterIndexer {
         private final boolean combineAllUnconstrainedGenerics;
         private final Map<TypeParameterType, Integer> map = new HashMap<>();
+        public static final String IS_UNSTRAINED_GENERIC_MARKER = "_isUnconstrainedGeneric";
 
         public TypeParameterIndexer(CheckOptions options) {
             this.combineAllUnconstrainedGenerics = options.combineAllUnconstrainedGenerics;
@@ -51,7 +52,7 @@ public class TestProgramBuilder {
 
         public String getMarkerField(TypeParameterType t) {
             if (combineAllUnconstrainedGenerics) {
-                return "_isUnconstrainedGeneric";
+                return IS_UNSTRAINED_GENERIC_MARKER;
             }
             if (map.containsKey(t)) {
                 return "typeParameterMarker_" + map.get(t);
