@@ -85,7 +85,11 @@ public class RunSmall {
 
             Util.writeFile(filePath, AstToStringVisitor.toString(program));
 
-            result.add(runner.apply(filePath));
+            try {
+                result.add(runner.apply(filePath));
+            } catch (Throwable e) {
+                System.out.println("Got exception: " + e + ", while running small driver...");
+            }
 
             Util.deleteFile(filePath);
         }
