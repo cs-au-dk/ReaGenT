@@ -1,16 +1,29 @@
-
-// Results in 658 tests.
-// 595 if i disable optimizations (yes, less)
 declare module module {
-    var foo: L1<string, boolean>;
-    var bar: L1<number, symbol>;
+    var foo: L1<true>;
+    var bar: L1<false>;
 }
-interface L1<S, T> {
-    foo: [[T, L2<T[], this>], T & L1<T, S>];
-    bar: [[S, L2<S[], this>], S & L1<S, T>];
+interface L1<T> {
+    foo: L2<T & true>;
+    bar: L2<T & false>;
 }
-interface L2<S, T> extends L1<[S, T], [T[], [S[]]]> {
-    baz: [[T, [T, this]], T & L1<T, S>];
-    quz: [[S, [S, this]], S & L1<S, T>];
+interface L2<T> {
+    foo: L3<T & true>;
+    bar: L3<T & false>;
 }
-
+interface L3<T> {
+    foo: L4<T & true>;
+    bar: L4<T & false>;
+}
+interface L4<T> {
+    foo: L5<T & true>;
+    bar: L5<T & false>;
+}
+interface L5<T> {
+    foo: L6<T & true>;
+    bar: L6<T & false>;
+}
+interface L6<T> {
+    foo: L1<T & true>;
+    bar: L1<T & false>;
+    get: T;
+}

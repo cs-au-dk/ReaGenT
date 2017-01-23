@@ -6,6 +6,7 @@ import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
+import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
@@ -900,5 +901,21 @@ public class UnitTests {
     @Test
     public void veryComplexThisType() throws Exception {
         Main.generateFullDriver(benchFromFolder("veryComplexThisType"));
+    }
+
+    @Test
+    public void genericsAreNotTooOptimized() throws Exception {
+        Benchmark bench = benchFromFolder("genericsAreNotTooOptimized", CheckOptions.builder().setCombineAllUnconstrainedGenerics(true).build());
+        String driver = Main.generateFullDriver(bench);
+        Main.writeFullDriver(bench);
+
+        assertThat(driver, not(containsString(TestProgramBuilder.TypeParameterIndexer.IS_UNSTRAINED_GENERIC_MARKER)));
+    }
+
+    @Test
+    public void classAndClassInstances() throws Exception {
+        RunResult result = run("classAndClassInstances", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
     }
 }
