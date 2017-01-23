@@ -144,10 +144,6 @@ public class OptimizingTypeContext implements TypeContext {
             boolean foundShortcut = false;
             for (Map.Entry<TypeParameterType, Type> entry : new HashMap<>(clone.map).entrySet()) {
                 if (entry.getValue() instanceof TypeParameterType) {
-                    if (entry.getKey() == entry.getValue()) {
-                        foundShortcut = true;
-                        clone.map.remove(entry.getKey());
-                    }
                     if (!reachable.contains(entry.getValue())) {
                         foundShortcut = true;
                         clone.map.remove(entry.getKey());
