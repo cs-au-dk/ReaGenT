@@ -134,9 +134,11 @@ public class TestProgramBuilder {
             ));
         }
 
+        program.add(variable("i", number(0)));
+
         program.add(statement(function("testStuff", block(
                 forLoop(
-                    variable("i", number(0)),
+                    statement(binary(identifier("i"), Operator.EQUAL, number(0))),
                     binary(identifier("i"), Operator.LESS_THAN, iterationsToRun),
                     unary(Operator.POST_PLUS_PLUS, identifier("i")),
                     block(
