@@ -1080,6 +1080,12 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return new CustomEvent(\"123\")");
             case "ObjectConstructor":
                 return AstBuilder.stmtFromString("return Object");
+            case "FunctionConstructor":
+                return AstBuilder.stmtFromString("return Function");
+            case "RegExpConstructor":
+                return AstBuilder.stmtFromString("return RegExp");
+            case "ErrorConstructor":
+                return AstBuilder.stmtFromString("return Error");
             case "NumberConstructor":
                 return AstBuilder.stmtFromString("return Number");
             case "BooleanConstructor":
@@ -1115,6 +1121,12 @@ public class TypeCreator {
             case "EventListenerObject":
             case "WebKitPoint":
             case "ErrorEventHandler":
+            case "Intl.CollatorOptions":
+            case "Intl.ResolvedCollatorOptions":
+            case "Intl.NumberFormatOptions":
+            case "Intl.ResolvedNumberFormatOptions":
+            case "Intl.DateTimeFormatOptions":
+            case "Intl.ResolvedDateTimeFormatOptions":
                 throw new ProduceManuallyException();
             default:
                 throw new RuntimeException("Unknown: " + name);

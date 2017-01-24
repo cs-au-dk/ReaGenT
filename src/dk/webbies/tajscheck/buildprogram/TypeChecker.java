@@ -307,15 +307,6 @@ public class TypeChecker {
                         return Collections.singletonList(new SimpleTypeCheck(Check.and(Check.expression(
                                 binary(member(identifier("window"), name), Operator.INSTANCEOF, string("function"))
                         ), Check.instanceOf(identifier(name))), name));
-                    case "EventListener":
-                    case "EventListenerObject":
-                    case "ScrollToOptions":
-                    case "ScrollOptions":
-                    case "WebKitPoint":
-                    case "FrameRequestCallback":
-                    case "ObjectURLOptions":
-                    case "BlobPropertyBag":
-                    case "CanvasPathMethods":
                     case "Event":
                         List<TypeCheck> structuralCheckList = new ArrayList<>();
                         for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
@@ -325,6 +316,24 @@ public class TypeChecker {
 
                         TypeCheck structuralCheck = createIntersection(structuralCheckList);
                         return Collections.singletonList(new SimpleTypeCheck(Check.or(structuralCheck.getCheck(), Check.instanceOf(identifier(name))), "(" + name + " or " + structuralCheck.getExpected() + ")"));
+                    case "EventListener":
+                    case "ObjectURLOptions":
+                    case "EventListenerObject":
+                    case "ScrollToOptions":
+                    case "ScrollOptions":
+                    case "WebKitPoint":
+                    case "FrameRequestCallback":
+                    case "BlobPropertyBag":
+                    case "CanvasPathMethods":
+                    case "Intl.CollatorOptions":
+                    case "Intl.ResolvedCollatorOptions":
+                    case "Intl.NumberFormatOptions":
+                    case "Intl.ResolvedNumberFormatOptions":
+                    case "Intl.DateTimeFormatOptions":
+                    case "Intl.ResolvedDateTimeFormatOptions":
+                    case "RTCIceServer":
+                        arg = arg.withDepth(1);
+                        break; // Testing manually.
                     default:
                         throw new RuntimeException(typeNames.get(t));
                 }
