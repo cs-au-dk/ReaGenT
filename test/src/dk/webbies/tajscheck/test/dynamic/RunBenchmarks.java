@@ -83,21 +83,17 @@ public class RunBenchmarks {
 
         benchmarks.put("D3.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", "d3", BROWSER, options));
 
-        Benchmark webcomponents = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/webcomponents/webcomponents.js", "test/benchmarks/webcomponents/webcomponents.d.ts", "webcomponents", BROWSER, options);
-        benchmarks.put("webcomponents.js", webcomponents);
-
         benchmarks.put("MathJax", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/mathjax/mathjax.js", "test/benchmarks/mathjax/mathjax.d.ts", "MathJax", BROWSER, options));
 
-        benchmarks.put("PeerJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/peerjs/peerjs.js", "test/benchmarks/peerjs/peerjs.d.ts", "PeerJs", BROWSER, options));
-        Benchmark pickadate = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pickadate/picker.js", "test/benchmarks/pickadate/pickadate.d.ts", "Pickadate", BROWSER, options).addDependencies(jQuery);
-        benchmarks.put("pickadate.js", pickadate);
+        benchmarks.put("PeerJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/peerjs/peerjs.js", "test/benchmarks/peerjs/peerjs.d.ts", "Peer", BROWSER, options));
         benchmarks.put("PleaseJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pleasejs/please.js", "test/benchmarks/pleasejs/please.d.ts", "Please", NODE, options));
+        Benchmark webcomponents = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/webcomponents/webcomponents.js", "test/benchmarks/webcomponents/webcomponents.d.ts", "webcomponents", BROWSER, options); // Doesn't really directly expose an API, so I'm just keeping it as dependency only.
         benchmarks.put("Polymer", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/polymer/polymer.js", "test/benchmarks/polymer/polymer.d.ts", "Polymer", BROWSER, options).addDependencies(webcomponents));
         benchmarks.put("q", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/q/q.js", "test/benchmarks/q/q.d.ts", "Q", BROWSER, options));
         benchmarks.put("QUnit", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/qunit/qunit.js", "test/benchmarks/qunit/qunit.d.ts", "QUnit", BROWSER, options));
         benchmarks.put("React", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/react/react.js", "test/benchmarks/react/react.d.ts", "React", BROWSER, options));
         benchmarks.put("RequireJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/requirejs/require.js", "test/benchmarks/requirejs/requirejs.d.ts", "requirejs", BROWSER, options));
-        benchmarks.put("Sugar", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/sugar/sugar.js", "test/benchmarks/sugar/sugar.d.ts", "sugarjs", BROWSER, options));
+        benchmarks.put("Sugar", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/sugar/sugar.js", "test/benchmarks/sugar/sugar.d.ts", "Sugar", NODE, options.getBuilder().setDisableGenerics(true).build()));
 
         benchmarks.put("PhotoSwipe", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/photoswipe/photoswipe.js", "test/benchmarks/photoswipe/photoswipe.d.ts", "PhotoSwipe", BROWSER, options));
         benchmarks.put("CreateJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/createjs/createjs.js", "test/benchmarks/createjs/createjs.d.ts", "createjs", BROWSER, options));
@@ -135,6 +131,7 @@ public class RunBenchmarks {
 
         benchmarks.put("reveal.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/reveal/reveal.js", "test/benchmarks/reveal/reveal.d.ts", "Reveal", BROWSER, options));
 
+        Benchmark pickadate = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pickadate/picker.js", "test/benchmarks/pickadate/pickadate.d.ts", "Pickadate", BROWSER, options).addDependencies(jQuery); // Just a jQuery plugin, I therefore don't test it.
         benchmarks.put("Materialize", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/materialize/materialize.js", "test/benchmarks/materialize/materialize.d.ts", "Materialize", BROWSER, options)
                 .addDependencies(jQuery)
                 .addDependencies(pickadate)
@@ -249,13 +246,13 @@ public class RunBenchmarks {
         Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP);
         if (
                 benchmark.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail.
-                        benchmark.dTSFile.contains("leaflet.d.ts") || // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)
-                        benchmark.dTSFile.contains("jquery.d.ts") || // Exactly the same thing, the two then methods of JQueryGenericPromise are being overridden in an unsound way.
-                        benchmark.dTSFile.contains("ember.d.ts") || // It includes jQuery, therefore it fails.
-                        benchmark.dTSFile.contains("fabric.d.ts") || // Unsoundness in the noTransform argument of the render method (and that is it!).
-                        benchmark.dTSFile.contains("materialize.d.ts") || // Includes jQuery.
-                        benchmark.dTSFile.contains("backbone.d.ts")  // Includes jQuery.
-                ) {
+                benchmark.dTSFile.contains("leaflet.d.ts") || // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)
+                benchmark.dTSFile.contains("jquery.d.ts") || // Exactly the same thing, the two then methods of JQueryGenericPromise are being overridden in an unsound way.
+                benchmark.dTSFile.contains("ember.d.ts") || // It includes jQuery, therefore it fails.
+                benchmark.dTSFile.contains("fabric.d.ts") || // Unsoundness in the noTransform argument of the render method (and that is it!).
+                benchmark.dTSFile.contains("materialize.d.ts") || // Includes jQuery.
+                benchmark.dTSFile.contains("backbone.d.ts")  // Includes jQuery.
+        ) {
             System.out.println("Is a benchmark which i know to fail. ");
             return;
         }
