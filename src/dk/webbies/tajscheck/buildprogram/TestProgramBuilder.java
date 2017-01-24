@@ -134,32 +134,35 @@ public class TestProgramBuilder {
             ));
         }
 
-        program.add(forLoop(
-                variable("i", number(0)),
-                binary(identifier("i"), Operator.LESS_THAN, iterationsToRun),
-                unary(Operator.POST_PLUS_PLUS, identifier("i")),
-                block(
-                        bench.options.checkHeap ? statement(call(identifier("checkHeap"))) : comment("checkHeap()"),
-                        variable("testNumberToRun", getNumberToRun),
-                        statement(methodCall(identifier("testOrderRecording"), "push", identifier("testNumberToRun"))),
-                        tryCatch(
-                                AstBuilder.switchCase(
-                                        identifier("testNumberToRun"),
-                                        buildTestCases()),
-                                catchBlock(
-                                        identifier("e"),
-                                        block(
-//                                                statement(call(identifier("print"), identifier("e"))),
-                                                ifThen(
-                                                        binary(identifier("e"), Operator.INSTANCEOF, identifier(RUNTIME_ERROR_NAME)),
-                                                        block(
-                                                                statement(call(identifier("error"),
-                                                                        binary(string(RUNTIME_ERROR_NAME), Operator.PLUS, member(identifier("e"), "message"))
-                                                                ))
-                                                        )
-                                                )
-                                        )))
-                )));
+        program.add(statement(function("testStuff", block(
+                forLoop(
+                    variable("i", number(0)),
+                    binary(identifier("i"), Operator.LESS_THAN, iterationsToRun),
+                    unary(Operator.POST_PLUS_PLUS, identifier("i")),
+                    block(
+                            bench.options.checkHeap ? statement(call(identifier("checkHeap"))) : comment("checkHeap()"),
+                            variable("testNumberToRun", getNumberToRun),
+                            statement(methodCall(identifier("testOrderRecording"), "push", identifier("testNumberToRun"))),
+                            tryCatch(
+                                    AstBuilder.switchCase(
+                                            identifier("testNumberToRun"),
+                                            buildTestCases()),
+                                    catchBlock(
+                                            identifier("e"),
+                                            block(
+    //                                                statement(call(identifier("print"), identifier("e"))),
+                                                    ifThen(
+                                                            binary(identifier("e"), Operator.INSTANCEOF, identifier(RUNTIME_ERROR_NAME)),
+                                                            block(
+                                                                    statement(call(identifier("error"),
+                                                                            binary(string(RUNTIME_ERROR_NAME), Operator.PLUS, member(identifier("e"), "message"))
+                                                                    ))
+                                                            )
+                                                    )
+                                            )))
+                    )
+                )
+        ))));
 
         program.add(AstBuilder.programFromFile(this.getClass().getResource("dumb.js")));
 
@@ -222,6 +225,7 @@ public class TestProgramBuilder {
             result.add(new Pair<>(
                     number(i),
                     block(
+                            comment("path: " + test.getPath() + " type: " + test.getClass().getSimpleName()),
                             statement(call(function(block(buildTestCase(test))))),
                             breakStatement()
                     )
