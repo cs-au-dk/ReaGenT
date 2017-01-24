@@ -15,9 +15,45 @@ TODO For paper:
 
 
 TODO: For impl.
-	Check out Polymer and Zepto runsmall
+	Try to argue for/against JavaScript implementation, that dynamically creates tests and stuff.
+    For:
+        The same architecture can be used with a static analysis, to "close off" an open implementation.
+        We limit ourself to soundly only checking parts of the declaration (with a fixed program, so that's runtime-efficient, I think)
+            But the parts that we don't check
+        Impossible to soundly generate all values anyway (like "<T>create(): T").
+            It is in principle possible to automatically create a "<T>id(t: T): T" function, but actually doing it is a nightmare.
+        The generated program is human readable, and it is therefore easier to understand what is going on if debugging an issue.
+
+    Against:
+        In principle unsound value-generation (but very little), however sound (but under-approximating) checking.
+        Impl: I have to re-implement a lot in another language (but I know pretty clearly what to implement).
+        Impl: I don't think i can get ts-spec-reader to work in a browser environment (but the program can then take the parsed .json as input).
+
+    Support loading multiple-modules (and use it for jasmine).
 
     Try to look at the exceptions that happen during runtime. See if they can be used for anything.
+
+Manual evaluation notes
+    Good/bad (when it's complicated).
+        Underscore: _.each.[arg0].[arg0]
+            Underscore has two each methods, one is only supposed to be used when underscore wraps an object, the other is only supposed to be used when it wraps a list.
+            Calling the other results in a type-error with TAJSCheck.
+            each(iterator: _.ListIterator<T, void>, context?: any): T[];
+            each(iterator: _.ObjectIterator<T, void>, context?: any): T[];
+
+    When it's obviously the wrong version.
+        In PDFJS, PDFJS.PDFViewer is missing, obviously because major version. But the declaration file doesn't have a version annotated.
+
+    Sometimes it's just stupid.
+        /*The function to be called when the callback is executed.*/
+        hook:number;
+
+    Not strong enough types used:
+        redux.combineReducers()(typeParameter, typeParameter)
+        expected unconstrined generic, got an object (because they use an any).
+
+    Materialize only initializes it's API on $(document).ready
+
 
 Notes:
     -  What the analysis does, is say, if this code is reachable, then the following is true.
