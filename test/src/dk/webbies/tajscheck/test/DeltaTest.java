@@ -24,8 +24,8 @@ import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
  */
 public class DeltaTest {
     public static void main(String[] args) throws IOException {
-        Benchmark bench = RunBenchmarks.benchmarks.get("Moment.js");
-        String testPath = "window.moment.defineLocale.[arg1].[union1].weekdaysShort.[union3].[arg0]";
+        Benchmark bench = RunBenchmarks.benchmarks.get("Materialize");
+        String testPath = "Materialize.updateTextFields";
         Main.generateSmallestDriver(bench, () -> {
             OutputParser.RunResult result;
             try {

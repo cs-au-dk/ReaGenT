@@ -173,17 +173,18 @@ public class DeltaDebug {
 
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
-        Benchmark bench = RunBenchmarks.benchmarks.get("PhotoSwipe");
+        Benchmark bench = RunBenchmarks.benchmarks.get("pickadate.js");
 //        Benchmark bench = RunBenchmarks.benchmarks.get("AngularJS").withRunMethod(NODE);
         String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                return testHasError(bench, "PhotoSwipe.viewportSize");
+                Main.generateFullDriver(bench);
+                return false;
             }catch (NullPointerException e) {
                 return false;
-            }catch (IllegalArgumentException e) {
-                return false;
+            } catch (IllegalArgumentException e) {
+                return true;
             } catch (Error | Exception e) {
                 e.printStackTrace();
                 return false;

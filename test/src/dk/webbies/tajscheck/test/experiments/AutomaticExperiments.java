@@ -161,21 +161,19 @@ public class AutomaticExperiments {
     public static void main(String[] args) throws Exception {
         Experiment experiment = new Experiment(
                 RunBenchmarks.benchmarks.entrySet().stream()
-                        .filter(entry -> entry.getValue().run_method == Benchmark.RUN_METHOD.NODE)
-//                        .filter(entry -> !done.contains(entry.getKey()))
+                        .filter(entry -> todo.contains(entry.getKey()))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
 
-//        Experiment experiment = new Experiment();
+//        experiment = new Experiment("PhotoSwipe");
 
 
-        experiment.addSingleExperiment(smallCoverage);
-        experiment.addSingleExperiment(runSmall);
+//        experiment.addSingleExperiment(smallCoverage);
+//        experiment.addSingleExperiment(runSmall);
 
-//        experiment.addSingleExperiment(uniquePaths);
-        experiment.addMultiExperiment(uniquePathsAndCoverage);
-        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
-        experiment.addMultiExperiment(uniquePathsConvergence);
+//        experiment.addMultiExperiment(uniquePathsAndCoverage);
+//        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
+//        experiment.addMultiExperiment(uniquePathsConvergence);
 
 
         experiment.addMultiExperiment(driverSizes);
@@ -189,32 +187,17 @@ public class AutomaticExperiments {
         Util.writeFile("experiment.csv", result);
     }
 
-    private static final Set<String> done = new HashSet<>(Arrays.asList(
-            "bluebird",
-            "Hammer.js",
-            "Modernizr",
-            "accounting.js",
-            "RxJS",
-            "Lodash",
-            "Handlebars.js",
-            "Chart.js",
+    private static final Set<String> todo = new HashSet<>(Arrays.asList(
             "Autobahn|JS",
-            "RequireJS",
-            "lunr.js",
-            "Vue.js",
-            "webcomponents.js",
-            "PDF.js",
-            "async",
-            "reveal.js",
-            "Redux",
-            "PeerJS",
-            "pickadate.js",
-            "Leaflet",
-            "React",
-            "highlight.js",
-            "QUnit",
-            "Knockout",
-            "Jasmine",
-            "pathjs"
+            "box2dweb",
+            "D3.js",
+            "Ember.js",
+            "Foundation",
+            "jQuery",
+            "P2.js",
+            "PixiJS",
+            "q",
+            "three.js",
+            "Sugar"
     ));
 }
