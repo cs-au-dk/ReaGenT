@@ -919,5 +919,4 @@ public class UnitTests {
         assertThat(result.typeErrors.size(), is(0));
     }
 
-    // TODO: Create tests that ensure that for string-indexers, known properties are not checked.
 }
