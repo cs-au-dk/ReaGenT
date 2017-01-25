@@ -111,6 +111,10 @@ public class Main {
         Test[] testsArray = tests.toArray(new Test[]{});
         int prevSize = -1;
 
+        if (!test.getAsBoolean()) {
+            throw new RuntimeException("Does not initially satisfy condition!");
+        }
+
         while (prevSize != testsArray.length) {
             prevSize = testsArray.length;
             testsArray = MinimizeArray.minimizeArray((testsToTest) -> {
