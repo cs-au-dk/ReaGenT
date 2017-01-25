@@ -395,8 +395,6 @@ public class TestCreator {
                 arg = arg.withThisType(t.getInstanceType());
             }
 
-            assert t.getTarget().equals(t) || (t.getTarget() instanceof ClassInstanceType && ((ClassInstanceType) t.getTarget()).getClassType().equals(t));
-
             for (Type baseType : t.getBaseTypes()) {
                 recurse(baseType, arg.withThisType(null));
             }

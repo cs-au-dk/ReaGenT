@@ -350,7 +350,7 @@ public class UnitTests {
         RunResult result = run("constructClass", "seed");
 
         expect(result)
-                .forPath("module.foo(obj)")
+                .forPath("module.foo(class)")
                 .expected("\"foo\"")
                 .got(STRING, "fooBar");
     }
@@ -918,4 +918,6 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size(), is(0));
     }
+
+    // TODO: Create tests that ensure that for string-indexers, known properties are not checked.
 }

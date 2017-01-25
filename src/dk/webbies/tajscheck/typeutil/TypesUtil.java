@@ -88,8 +88,6 @@ public class TypesUtil {
         List<Type> arguments = ref.getTypeArguments();
         Map<TypeParameterType, Type> parameterMap = new HashMap<>();
 
-        assertAboutTarget(ref.getTarget());
-
         List<Type> typeParameters = getTypeParameters(ref.getTarget());
         assert typeParameters.size() == arguments.size();
         List<TypeParameterType> parameters = Util.cast(TypeParameterType.class, typeParameters);
@@ -98,22 +96,6 @@ public class TypesUtil {
             parameterMap.put(parameters.get(i), arguments.get(i));
         }
         return TypeContext.create(bench).append(parameterMap);
-    }
-
-    private static void assertAboutTarget(Type untypedTarget) {
-        if (untypedTarget instanceof GenericType) {
-            GenericType target = (GenericType) untypedTarget;
-            assert target.getTypeParameters().equals(target.getTypeArguments());
-            assert target.getTarget() == target;
-        } else if (untypedTarget instanceof ClassType) {
-            ClassType target = (ClassType) untypedTarget;
-            assert target.getTypeParameters().equals(target.getTypeArguments());
-            assert target.getTarget() == target || (target.getTarget() instanceof ClassInstanceType && ((ClassInstanceType) target.getTarget()).getClassType().equals(target));
-        } else if (untypedTarget instanceof ClassInstanceType || untypedTarget instanceof TupleType) {
-            // nothing.
-        } else {
-            assert untypedTarget instanceof InterfaceType;
-        }
     }
 
     public static List<Type> getTypeParameters(Type target) {
