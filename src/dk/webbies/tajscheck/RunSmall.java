@@ -18,14 +18,9 @@ import dk.webbies.tajscheck.util.trie.Trie;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BROWSER;
 
 /**
  * Created by erik1 on 16-01-2017.
@@ -34,6 +29,11 @@ public class RunSmall {
     public static final String SMALL_DRIVER_FILE_PREFIX = "small_driver_";
 
     public static <T> List<T> runSmallDrivers(Benchmark orgBench, Function<String, T> runner) throws IOException {
+        return runSmallDrivers(orgBench, runner, Integer.MAX_VALUE);
+    }
+
+    public static <T> List<T> runSmallDrivers(Benchmark orgBench, Function<String, T> runner, int limit) throws IOException {
+        assert limit > 0;
         // Deleting all existing.
         String smallDriversFolderPath = Main.getFolderPath(orgBench);
         if (new File(smallDriversFolderPath).exists()) {
@@ -60,6 +60,11 @@ public class RunSmall {
 
         Trie trie = Trie.create(allPaths);
         List<String> paths = allPaths.stream().filter(Util.not(trie::containsChildren)).distinct().collect(Collectors.toList());
+        Collections.shuffle(paths);
+
+        if (paths.size() > limit) {
+            paths = paths.subList(0, limit);
+        }
 
         File dir = new File(smallDriversFolderPath);
         if (!dir.exists()) {
