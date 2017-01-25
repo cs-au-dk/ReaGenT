@@ -91,8 +91,9 @@ public class RunBenchmarks {
         benchmarks.put("Polymer", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/polymer/polymer.js", "test/benchmarks/polymer/polymer.d.ts", "Polymer", BROWSER, options).addDependencies(webcomponents));
         benchmarks.put("q", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/q/q.js", "test/benchmarks/q/q.d.ts", "Q", BROWSER, options));
         benchmarks.put("QUnit", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/qunit/qunit.js", "test/benchmarks/qunit/qunit.d.ts", "QUnit", BROWSER, options));
-        benchmarks.put("React", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/react/react.js", "test/benchmarks/react/react.d.ts", "React", BROWSER, options));
-        benchmarks.put("RequireJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/requirejs/require.js", "test/benchmarks/requirejs/requirejs.d.ts", "requirejs", BROWSER, options));
+        Benchmark react = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/react/react.js", "test/benchmarks/react/react.d.ts", "React", BROWSER, options);
+        benchmarks.put("React", react);
+        benchmarks.put("RequireJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/requirejs/require.js", "test/benchmarks/requirejs/requirejs.d.ts", "requirejs", BROWSER, options).addDependencies(jQuery));
         benchmarks.put("Sugar", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/sugar/sugar.js", "test/benchmarks/sugar/sugar.d.ts", "Sugar", NODE, options.getBuilder().setDisableGenerics(true).build()));
 
         benchmarks.put("PhotoSwipe", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/photoswipe/photoswipe.js", "test/benchmarks/photoswipe/photoswipe.d.ts", "PhotoSwipe", BROWSER, options));
@@ -156,9 +157,18 @@ public class RunBenchmarks {
 
         benchmarks.put("highlight.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/highlight/highlight.js", "test/benchmarks/highlight/highlight.d.ts", "hljs", BROWSER, options));
 
-        // If need more benchmarks, get some from here: https://www.javascripting.com/?p=4
-        // TODO: After this latests round of optimization, try to enable generics on stuff.
-        // TODO: Fabric and Ember has soundness-issues (try to search for target: and currentTarget:)
+        benchmarks.put("intro.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/intro/intro.js", "test/benchmarks/intro/intro.d.ts", "introJs", BROWSER, options));
+
+        benchmarks.put("Swiper", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/swiper/swiper.js", "test/benchmarks/swiper/swiper.d.ts", "Swiper", BROWSER, options));
+
+        benchmarks.put("axios", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/axios/axios.js", "test/benchmarks/axios/axios.d.ts", "axios", NODE, options));
+
+        benchmarks.put("Medium Editor", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/medium-editor/medium-editor.js", "test/benchmarks/medium-editor/medium-editor.d.ts", "MediumEditor", BROWSER, options));
+
+        benchmarks.put("Sortable", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/sortable/sortable.js", "test/benchmarks/sortable/sortable.d.ts", "Sortable", BROWSER, options));
+
+
+        // If need more benchmarks, get some from here: https://www.javascripting.com/?p=5
     }
 
     @Parameterized.Parameters(name = "{0}")
@@ -172,7 +182,7 @@ public class RunBenchmarks {
     }
 
     @Test
-//    @Ignore
+    @Ignore
     public void runSmallDrivers() throws Exception {
         OutputParser.RunResult result = OutputParser.combine(RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark.run_method, 60 * 1000)));
 
