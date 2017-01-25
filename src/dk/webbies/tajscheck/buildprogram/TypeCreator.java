@@ -422,7 +422,18 @@ public class TypeCreator {
                             ));
                     return Return(produceRandomString);
                 case Number:
-                    return Return(expFromString("Math.random() > 0.5 ? Math.random() * 10 : (Math.random() * 100) | 0"));
+                    return AstBuilder.stmtFromString(
+                            "    switch(Math.random() * 3 | 0) {\n" +
+                            "        case 0: return Math.random() * 10;\n" +
+                            "        case 1: return Math.random() * 100 | 0;\n" +
+                            "        case 2: {\n" +
+                            "            switch(Math.random() * 3 | 0) {\n" +
+                            "                case 0: return NaN;\n" +
+                            "                case 1: return Infinity;\n" +
+                            "                case 2: return -Infinity;\n" +
+                            "            }\n" +
+                            "        }\n" +
+                            "    }");
                 case Boolean:
                     // Math.random() > 0.5
                     return Return(
