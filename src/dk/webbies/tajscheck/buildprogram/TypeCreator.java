@@ -235,7 +235,7 @@ public class TypeCreator {
 
             List<Signature> signatures = t.getSignatures().stream().map(sig -> TypesUtil.createConstructorSignature(t, sig)).collect(Collectors.toList());
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, freeGenericsFinder), typeNames);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, freeGenericsFinder), typeNames, freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
 
@@ -288,7 +288,7 @@ public class TypeCreator {
                 typeContext = typeContext.withThisType(type);
             }
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(type, typeNames);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(type, typeNames, freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
@@ -1096,6 +1096,8 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return Date");
             case "StringConstructor":
                 return AstBuilder.stmtFromString("return String");
+            case "HTMLCollection":
+                return AstBuilder.stmtFromString("return document.forms");
             case "Int8Array":
             case "Uint8Array":
             case "Uint32Array":
