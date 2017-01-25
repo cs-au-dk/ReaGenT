@@ -4,6 +4,7 @@ if (!isTAJS) {
             testStuff();
             setTimeout(function () {
                 dumbMessages();
+                window.close();
             });
         }, 100);
     } else {
