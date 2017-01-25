@@ -152,7 +152,6 @@ public class ParseDeclaration {
             if (t.getDeclaredStringIndexType() != null) {
                 queue.add(arg.append("[stringIndexer]", t.getDeclaredStringIndexType()));
             }
-            assert t.getTarget().equals(t) || (t.getTarget() instanceof ClassInstanceType && ((ClassInstanceType) t.getTarget()).getClassType().equals(t));
 
             return null;
         }
