@@ -642,7 +642,7 @@ public class TypesUtil {
         }
     }
 
-    public Pair<InterfaceType, TypeContext> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter, Map<Type, String> typeNames) {
+    public Pair<InterfaceType, TypeContext> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter, Map<Type, String> typeNames, FreeGenericsFinder freeGenericsFinder) {
         if (inter.getBaseTypes().isEmpty()) {
             return new Pair<>(inter, TypeContext.create(bench));
         }
@@ -661,13 +661,16 @@ public class TypesUtil {
                 newParameters.putAll(generateParameterMap((ReferenceType) subType).getMap());
                 subType = ((ReferenceType) subType).getTarget();
             }
+            if (subType instanceof ClassType) {
+                subType = TypesUtil.classToInterface((ClassType) subType, freeGenericsFinder);
+            }
             if (subType instanceof GenericType) {
                 subType = ((GenericType) subType).toInterface();
             }
             if (subType instanceof ClassInstanceType) {
                 subType = ((ClassType) ((ClassInstanceType) subType).getClassType()).getInstanceType();
             }
-            Pair<InterfaceType, TypeContext> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) subType, typeNames);
+            Pair<InterfaceType, TypeContext> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) subType, typeNames, freeGenericsFinder);
             newParameters.putAll(pair.getRight().getMap());
             InterfaceType type = pair.getLeft();
             result.getDeclaredCallSignatures().addAll((type.getDeclaredCallSignatures()));

@@ -35,6 +35,7 @@ public class TestProgramBuilder {
     private final List<Test> tests;
     private final Set<Type> nativeTypes;
     private final TypeParameterIndexer typeParameterIndexer;
+    private FreeGenericsFinder freeGenericsFinder;
     private Map<Type, String> typeNames;
     private Type moduleType;
 
@@ -70,6 +71,7 @@ public class TestProgramBuilder {
         this.typeNames = typeNames;
         this.moduleType = moduleType;
         this.typeParameterIndexer = typeParameterIndexer;
+        this.freeGenericsFinder = freeGenericsFinder;
 
         this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer, tests, bench, freeGenericsFinder);
     }
@@ -347,7 +349,7 @@ public class TestProgramBuilder {
 
         return Util.concat(
                 testCode,
-                bench.useTAJS && product != null ? new CheckUpperBound(nativeTypes, typeNames, typeParameterIndexer, bench).checkType(product, test.getTypeContext(), identifier("result"), test.getPath()) : Collections.emptyList(),
+                bench.useTAJS && product != null ? new CheckUpperBound(nativeTypes, typeNames, typeParameterIndexer, bench, freeGenericsFinder).checkType(product, test.getTypeContext(), identifier("result"), test.getPath()) : Collections.emptyList(),
                 Collections.singletonList(saveResultStatement)
         );
     }

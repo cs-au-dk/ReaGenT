@@ -23,6 +23,7 @@ import dk.au.cs.casa.typescript.types.TypeVisitorWithArgument;
 import dk.au.cs.casa.typescript.types.UnionType;
 import dk.au.cs.casa.typescript.types.UnresolvedType;
 import dk.webbies.tajscheck.TypeWithContext;
+import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
@@ -48,12 +49,14 @@ public class CheckUpperBound {
     private final Map<Type, String> typeNames;
     private final TestProgramBuilder.TypeParameterIndexer indexer;
     private Benchmark bench;
+    private FreeGenericsFinder freeGenericsFinder;
 
-    CheckUpperBound(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer indexer, Benchmark bench) {
+    CheckUpperBound(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer indexer, Benchmark bench, FreeGenericsFinder freeGenericsFinder) {
         this.nativeTypes = nativeTypes;
         this.typeNames = typeNames;
         this.indexer = indexer;
         this.bench = bench;
+        this.freeGenericsFinder = freeGenericsFinder;
     }
 
 
@@ -115,7 +118,7 @@ public class CheckUpperBound {
                 return Collections.emptyList();
             }
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(bench).constructSyntheticInterfaceWithBaseTypes(t, typeNames);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(bench).constructSyntheticInterfaceWithBaseTypes(t, typeNames, freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             TypeContext typeContext = arg.context.append(pair.getRight());
 
