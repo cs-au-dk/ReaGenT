@@ -12,12 +12,10 @@ import dk.webbies.tajscheck.testcreator.test.LoadModuleTest;
 import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
-import dk.webbies.tajscheck.util.IdentityHashSet;
 import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import dk.webbies.tajscheck.util.selenium.SeleniumDriver;
-import dk.webbies.tajscheck.util.trie.Trie;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.json.JSONException;
@@ -26,9 +24,6 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -90,7 +85,7 @@ public class Main {
         return AstToStringVisitor.toString(program);
     }
 
-    public static void generateSmallestDriver(Benchmark bench, BooleanSupplier test) throws IOException {
+    public static String generateSmallestDriver(Benchmark bench, BooleanSupplier test) throws IOException {
         SpecReader spec = ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile));
 
         SpecReader emptySpec = ParseDeclaration.getTypeSpecification(bench.environment, new ArrayList<>());
@@ -133,6 +128,8 @@ public class Main {
         Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, Arrays.asList(testsArray), typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(null);
 
         Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(program));
+
+        return AstToStringVisitor.toString(program);
     }
 
     static Type getTypeToTest(Benchmark bench, SpecReader spec) {
@@ -250,6 +247,12 @@ public class Main {
     }
 
     public static Map<String, CoverageResult> genCoverage(Benchmark bench, int timeout, String testFileName) throws IOException, TimeoutException {
+        try {
+            writeFullDriver(bench);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         if (bench.run_method == Benchmark.RUN_METHOD.NODE) {
             StringBuilder prefix = new StringBuilder();
             int foldersDeep = getFolderPath(bench).split("/").length;
@@ -289,7 +292,21 @@ public class Main {
 
         assert result.size() == 1;
 
+        genCoverageReport(coverageResult, bench);
+
         return result.get(testFileName.substring(testFileName.lastIndexOf('/') + 1)).split(splitRules);
+    }
+
+    private static void genCoverageReport(String coverageResult, Benchmark bench) throws IOException {
+        Util.writeFile(getFolderPath(bench) + "coverage.json", coverageResult);
+
+        StringBuilder prefix = new StringBuilder();
+        int foldersDeep = getFolderPath(bench).split("/").length;
+        for (int i = 0; i < foldersDeep; i++) {
+            prefix.append("../");
+        }
+
+        Util.runNodeScript(prefix + "node_modules/istanbul/lib/cli.js report --dir coverage", new File(getFolderPath(bench)));
     }
 
     public static String runBenchmark(Benchmark bench) throws IOException {
