@@ -67,7 +67,7 @@ public class RunBenchmarks {
         benchmarks.put("Underscore.js", underscore);
 
         Benchmark handlebars = new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", "Handlebars", BROWSER, options);
-        benchmarks.put("Handlebars.js", handlebars);
+        benchmarks.put("Handlebars", handlebars);
 
         benchmarks.put("Hammer.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", "Hammer", BROWSER, options));
 
@@ -145,13 +145,6 @@ public class RunBenchmarks {
         benchmarks.put("Modernizr", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/modernizr/modernizr.js", "test/benchmarks/modernizr/modernizr.d.ts", "Modernizr", BROWSER, options));
 
         benchmarks.put("RxJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/rx/Rx.js", "test/benchmarks/rx/types/rx/index.d.ts", "Rx", NODE, options.getBuilder().setDisableGenerics(true).build()));
-
-        Benchmark when = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/when/when.js", "test/benchmarks/when/when.d.ts", "When", NODE, options);
-        benchmarks.put("When.js", when);
-
-        benchmarks.put("Autobahn|JS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/autobahn/autobahn.js", "test/benchmarks/autobahn/autobahn.d.ts", "autobahn", BROWSER, options)
-            .addDependencies(when)
-        );
 
         benchmarks.put("PDF.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pdf/pdf.js", "test/benchmarks/pdf/pdf.d.ts", "PDFJS", BROWSER, options));
 
