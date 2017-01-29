@@ -26,19 +26,12 @@ import java.util.stream.Collectors;
  * Created by erik1 on 16-01-2017.
  */
 public class RunSmall {
-    public static final String SMALL_DRIVER_FILE_PREFIX = "small_driver_";
-
     public static <T> List<T> runSmallDrivers(Benchmark orgBench, Function<String, T> runner) throws IOException {
-        return runSmallDrivers(orgBench, runner, Integer.MAX_VALUE);
+        return runSmallDrivers(orgBench, runner, Integer.MAX_VALUE, 1);
     }
 
-    public static <T> List<T> runSmallDrivers(Benchmark orgBench, Function<String, T> runner, int limit) throws IOException {
-        assert limit > 0;
-        // Deleting all existing.
-        String smallDriversFolderPath = Main.getFolderPath(orgBench);
-        if (new File(smallDriversFolderPath).exists()) {
-            Arrays.stream(new File(smallDriversFolderPath).listFiles()).filter(file -> file.getName().contains(SMALL_DRIVER_FILE_PREFIX)).forEach(File::delete);
-        }
+    public static <T> List<T> runSmallDrivers(Benchmark orgBench, Function<String, T> runner, int runsLimit, int collectionSizeLimit) throws IOException {
+        assert runsLimit > 0;
 
         SpecReader spec = ParseDeclaration.getTypeSpecification(orgBench.environment, Collections.singletonList(orgBench.dTSFile));
 
@@ -59,14 +52,29 @@ public class RunSmall {
         allPaths = allPaths.stream().filter(path -> !path.contains("[arg")).collect(Collectors.toList());
 
         Trie trie = Trie.create(allPaths);
-        List<String> paths = allPaths.stream().filter(Util.not(trie::containsChildren)).distinct().collect(Collectors.toList());
-        Collections.shuffle(paths);
+        List<String> prefixFixedPaths = allPaths.stream().filter(Util.not(trie::containsChildren)).distinct().collect(Collectors.toList());
+        Collections.shuffle(prefixFixedPaths);
 
-        if (paths.size() > limit) {
-            paths = paths.subList(0, limit);
+        collectionSizeLimit = Math.max(1, Math.min(collectionSizeLimit, prefixFixedPaths.size() / runsLimit));
+
+        Iterator<String> iterator = prefixFixedPaths.iterator();
+        List<List<String>> paths = new ArrayList<>();
+        while (iterator.hasNext()) {
+            ArrayList<String> subCollection = new ArrayList<>();
+            paths.add(subCollection);
+            for (int i = 0; i < collectionSizeLimit; i++) {
+                if (!iterator.hasNext()) {
+                    break;
+                }
+                subCollection.add(iterator.next());
+            }
         }
 
-        File dir = new File(smallDriversFolderPath);
+        if (paths.size() > runsLimit) {
+            paths = paths.subList(0, runsLimit);
+        }
+
+        File dir = new File(Main.getFolderPath(orgBench));
         if (!dir.exists()) {
             boolean created = dir.mkdir();
             assert created;
@@ -75,9 +83,9 @@ public class RunSmall {
         List<T> result = new ArrayList<>();
 
         for (int i = 0; i < paths.size(); i++) {
-            String path = paths.get(i);
+            List<String> path = paths.get(i);
 
-            Benchmark bench = orgBench.withPathsToTest(Collections.singletonList(path));
+            Benchmark bench = orgBench.withPathsToTest(path);
 
             System.out.println("Creating small driver for: " + path + "  " + (i + 1) + "/" + paths.size());
 
@@ -86,7 +94,7 @@ public class RunSmall {
 
             Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, specificTests, typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(null);
 
-            String filePath = Main.getFolderPath(bench) + SMALL_DRIVER_FILE_PREFIX + fileCounter++ + ".js";
+            String filePath = Main.getFolderPath(bench) + Main.TEST_FILE_NAME;
 
             Util.writeFile(filePath, AstToStringVisitor.toString(program));
 
@@ -95,14 +103,10 @@ public class RunSmall {
             } catch (Throwable e) {
                 System.out.println("Got exception: " + e + ", while running small driver...");
             }
-
-            Util.deleteFile(filePath);
         }
 
         return result;
     }
-
-    private static int fileCounter = 0;
 
     public static Function<String, CoverageResult> runCoverage(Benchmark bench, int timeout) {
         return (path) -> {
