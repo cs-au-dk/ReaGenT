@@ -4,11 +4,8 @@ import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
-import org.junit.Test;
 
 import java.util.*;
 import java.util.concurrent.TimeoutException;
@@ -20,19 +17,22 @@ import java.util.stream.Collectors;
 public class AutomaticExperiments {
     private static final int TIMEOUT = 60 * 1000;
     private static final int THREADS = 4;
+    private static int SMALL_DRIVER_RUNS_LIMIT = 100;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth).setIterationsToRun(1000).build());
-        List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench.run_method, TIMEOUT));
+        List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench.run_method, TIMEOUT), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
         long paths = OutputParser.combine(results).typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
 
         return Long.toString(paths);
     });
 
+    private static final Pair<String, Experiment.ExperimentSingleRunner> type = new Pair<>("type", (bench) -> bench.run_method.toString());
+
     private static final Pair<String, Experiment.ExperimentSingleRunner> smallCoverage = new Pair<>("small-coverage", (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth).setIterationsToRun(1000).build());
-        List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench, TIMEOUT));
+        List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench, TIMEOUT), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
         return Util.toPercentage(CoverageResult.combine(results).statementCoverage());
     });
@@ -97,6 +97,9 @@ public class AutomaticExperiments {
             // this is ok, it happens.
             System.out.println("Timeout on coverage");
             return Arrays.asList(uniquePaths, null);
+        } catch (Exception e) {
+            System.out.println("Exceotion: " + e.getClass().getSimpleName() + " while doing coverage.");
+            return Arrays.asList(uniquePaths, null);
         }
 
         assert out.containsKey(bench.getJSName());
@@ -159,25 +162,26 @@ public class AutomaticExperiments {
     });
 
     public static void main(String[] args) throws Exception {
-        Experiment experiment = new Experiment(
-                RunBenchmarks.benchmarks.entrySet().stream()
-                        .filter(entry -> todo.contains(entry.getKey()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-        );
+//        Experiment experiment = new Experiment(
+//                RunBenchmarks.benchmarks.entrySet().stream()
+//                        .filter(entry -> !done.contains(entry.getKey()))
+//                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+//        );
 
-//        experiment = new Experiment("PhotoSwipe");
+        Experiment experiment = new Experiment();
 
+        experiment.addSingleExperiment(type);
 
-//        experiment.addSingleExperiment(smallCoverage);
-//        experiment.addSingleExperiment(runSmall);
 
 //        experiment.addMultiExperiment(uniquePathsAndCoverage);
 //        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
 //        experiment.addMultiExperiment(uniquePathsConvergence);
 
-
         experiment.addMultiExperiment(driverSizes);
         experiment.addSingleExperiment(jsFileSize);
+
+//        experiment.addSingleExperiment(smallCoverage);
+//        experiment.addSingleExperiment(runSmall);
 
 
         String result = experiment.calculate(THREADS).toCSV();
@@ -187,17 +191,57 @@ public class AutomaticExperiments {
         Util.writeFile("experiment.csv", result);
     }
 
-    private static final Set<String> todo = new HashSet<>(Arrays.asList(
-            "Autobahn|JS",
-            "box2dweb",
-            "D3.js",
-            "Ember.js",
-            "Foundation",
-            "jQuery",
+    public static Set<String> done = new HashSet<>(Arrays.asList(
             "P2.js",
+            "Vue.js",
+            "Sortable",
+            "box2dweb",
+            "async",
+            "PeerJS",
+            "pathjs",
+            "Materialize",
+            "RequireJS",
+            "Lodash",
+            "React",
+            "Sugar",
+            "Fabric.js",
+            "Knockout",
+            "Moment.js",
+            "lunr.js",
             "PixiJS",
-            "q",
-            "three.js",
-            "Sugar"
+            "intro.js",
+            "RxJS",
+            "axios",
+            "PDF.js",
+            "Ace",
+            "Zepto.js",
+            "Polymer",
+            "PhotoSwipe",
+            "Swiper",
+            "D3.js",
+            "Handlebars",
+            "CreateJS",
+            "Underscore.js",
+            "MathJax",
+            "accounting.js",
+            "Video.js",
+            "Chart.js",
+            "AngularJS",
+            "Redux",
+            "Leaflet",
+            "Ionic",
+            "bluebird",
+            "jQuery",
+            "PleaseJS",
+            "Backbone.js",
+            "highlight.js",
+            "Hammer.js",
+            "Medium Editor",
+            "QUnit",
+            "Jasmine",
+            "Modernizr",
+            "reveal.js"
+
     ));
+
 }

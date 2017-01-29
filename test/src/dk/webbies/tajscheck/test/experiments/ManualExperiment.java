@@ -4,18 +4,19 @@ import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.test.DeltaTest;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
-import dk.webbies.tajscheck.util.ArrayListMultiMap;
-import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -25,6 +26,7 @@ public class ManualExperiment {
     private static final Scanner scanner = new Scanner(System.in);
     private static final int TIMEOUT = 60 * 1000;
 
+    private static int minimizedResultCounter = 0;
     private static void fillWithRandomTypeErrors(BlockingQueue<Pair<String, OutputParser.TypeError>> queue) throws Exception {
         //noinspection InfiniteLoopStatement
         List<Pair<String, Benchmark>> benchmarks = RunBenchmarks.benchmarks.entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
@@ -36,7 +38,34 @@ public class ManualExperiment {
             try {
                 OutputParser.RunResult result = getSomeResult(benchmark);
                 if (!result.typeErrors.isEmpty()) {
-                    queue.put(new Pair<>(name, Util.selectRandom(result.typeErrors)));
+                    String driver = Util.readFile(Main.getFolderPath(benchmark) + Main.TEST_FILE_NAME);
+                    List<String> paths = Arrays.stream(driver.split(Pattern.quote("\n")))
+                            .map(String::trim)
+                            .map(str -> str.replaceAll("\r", ""))
+                            .filter(line -> line.startsWith("// path:"))
+                            .map(str -> str.substring("// path: ".length(), str.lastIndexOf(" type: ")))
+                            .map(String::trim)
+                            .collect(Collectors.toList());
+
+                    OutputParser.TypeError typeError = Util.selectRandom(result.typeErrors);
+
+                    if (!paths.contains(typeError.path)) {
+                        throw new RuntimeException();
+                    }
+
+                    String smallDriver;
+                    while (true) {
+                        try {
+                            smallDriver = Main.generateSmallestDriver(benchmark.withPathsToTest(paths), DeltaTest.testHasTypeError(benchmark, typeError.path));
+                            break;
+                        } catch (RuntimeException e) {
+                            // continue
+                        }
+                    }
+
+                    Util.writeFile(Main.getFolderPath(benchmark) + "minimizedDriver" + minimizedResultCounter++ + ".js", smallDriver);
+
+                    queue.put(new Pair<>(name, typeError));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -49,7 +78,7 @@ public class ManualExperiment {
             Main.writeFullDriver(benchmark);
             return OutputParser.parseDriverResult(Main.runBenchmark(benchmark, TIMEOUT));
         } else {
-            List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark.run_method, TIMEOUT), 5);
+            List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark.run_method, TIMEOUT), 1, 10);
             return OutputParser.combine(results);
         }
 
