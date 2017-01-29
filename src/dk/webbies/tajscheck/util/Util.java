@@ -65,7 +65,7 @@ public class Util {
 
         if (!errGobbler.getResult().isEmpty()) {
             System.err.println("Error running node script: " + errGobbler.getResult());
-            if (isDeltaDebugging) {
+            if (isDeltaDebugging && args.contains("ts-spec-reader")) {
                 throw new RuntimeException("Got an error running a node script: " + errGobbler.getResult());
             }
         }
