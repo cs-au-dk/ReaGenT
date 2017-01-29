@@ -879,7 +879,7 @@ public class UnitTests {
 
     @Test
     public void thisTypesAreOptimized2() throws Exception {
-        RunResult result = run("thisTypesAreOptimized2", CheckOptions.builder().setSplitUnions(false).build(), "foo");
+        RunResult result = run("thisTypesAreOptimized2", "foo");
 
         assertThat(result.typeErrors.size(), is(1));
     }
@@ -919,4 +919,11 @@ public class UnitTests {
         assertThat(result.typeErrors.size(), is(0));
     }
 
+    @Test
+    public void typeofParsing() throws Exception {
+        String driver = Main.generateFullDriver(benchFromFolder("typeofParsing"));
+
+        assertThat(driver, not(containsString("module.getNewLibraryCopy.prototype")));
+
+    }
 }
