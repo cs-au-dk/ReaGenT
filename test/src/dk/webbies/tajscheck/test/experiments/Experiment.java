@@ -126,7 +126,7 @@ public class Experiment {
 
         pool.shutdown();
         try {
-            pool.awaitTermination(30, TimeUnit.MINUTES);
+            pool.awaitTermination(30, TimeUnit.DAYS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
