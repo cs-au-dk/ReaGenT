@@ -24,9 +24,13 @@ import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
  */
 public class DeltaTest {
     public static void main(String[] args) throws IOException {
-        Benchmark bench = RunBenchmarks.benchmarks.get("Materialize");
-        String testPath = "Materialize.updateTextFields";
-        Main.generateSmallestDriver(bench, () -> {
+        Benchmark bench = RunBenchmarks.benchmarks.get("Modernizr");
+        String testPath = "Modernizr.prefixedCSS";
+        Main.generateSmallestDriver(bench, testHasTypeError(bench, testPath));
+    }
+
+    public static BooleanSupplier testHasTypeError(Benchmark bench, String testPath) {
+        return () -> {
             OutputParser.RunResult result;
             try {
                 result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
@@ -34,6 +38,6 @@ public class DeltaTest {
                 throw new RuntimeException(e);
             }
             return result.typeErrors.stream().map(OutputParser.TypeError::getPath).anyMatch(str -> str.equals(testPath));
-        });
+        };
     }
 }
