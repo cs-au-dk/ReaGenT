@@ -364,9 +364,6 @@ public class FreeGenericsFinder {
         }
         Set<Type> seen = Util.concatSet(orgSeen, Collections.singletonList(baseType));
 
-        if (baseType instanceof ClassType) {
-            return false; // A classType is the "static" context, and not an "instance" context, therefore no this-types are visible.
-        }
         if (baseType instanceof ClassInstanceType) {
             baseType = ((ClassType) ((ClassInstanceType) baseType).getClassType()).getInstanceType();
         }
@@ -375,6 +372,9 @@ public class FreeGenericsFinder {
                 return true;
             }
             baseType = ((ReferenceType) baseType).getTarget();
+        }
+        if (baseType instanceof ClassType) {
+            return false; // A classType is the "static" context, and not an "instance" context, therefore no this-types are visible.
         }
         if (baseType instanceof GenericType) {
             baseType = ((GenericType) baseType).toInterface();
