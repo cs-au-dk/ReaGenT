@@ -376,7 +376,7 @@ public class TypeCreator {
             Type target;
             if (type.getTarget() instanceof GenericType) {
                 target = ((GenericType) type.getTarget()).toInterface();
-            } else if (type.getTarget() instanceof TupleType) {
+            } else if (type.getTarget() instanceof TupleType || type.getTarget() instanceof ClassType) {
                 target = type.getTarget();
             } else {
                 assert type.getTarget() instanceof ClassInstanceType;
