@@ -38,10 +38,10 @@ public class TestCreator {
     }
 
     public List<Test> createTests() {
-        return createTests(true);
+        return createTests(false);
     }
 
-    public List<Test> createTests(boolean concatDuplicates) {
+    public List<Test> createTests(@SuppressWarnings("SameParameterValue") boolean concatDuplicates) {
         String module = bench.module;
 
         PriorityQueue<TestQueueElement> queue = new PriorityQueue<>();
