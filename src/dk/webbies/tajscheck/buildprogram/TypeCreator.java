@@ -7,12 +7,11 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
-import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
+import dk.webbies.tajscheck.BenchmarkInfo;
 import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.benchmarks.CheckOptions;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
@@ -34,26 +33,18 @@ public class TypeCreator {
     private final MultiMap<TypeWithContext, Integer> valueLocations;
     private final Map<Test, List<Integer>> testValueLocations = new IdentityHashMap<>();
     private final CheckOptions options;
-    private Benchmark benchmark;
-    private final FreeGenericsFinder freeGenericsFinder;
-    private Map<Type, String> typeNames;
-    private Set<Type> nativeTypes;
-    private TypeParameterIndexer typeParameterIndexer;
+    private final BenchmarkInfo info;
     private ArrayList<Statement> functions = new ArrayList<>();
 
     private static final String GET_TYPE_PREFIX = "getType_";
     private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
     private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
-    TypeCreator(Map<Type, String> typeNames, Set<Type> nativeTypes, TypeParameterIndexer typeParameterIndexer, List<Test> tests, Benchmark benchmark, FreeGenericsFinder freeGenericsFinder) {
-        this.options = benchmark.options;
-        this.benchmark = benchmark;
-        this.freeGenericsFinder = freeGenericsFinder;
+    TypeCreator(List<Test> tests, BenchmarkInfo info) {
+        this.options = info.bench.options;
         this.valueLocations = new ArrayListMultiMap<>();
-        this.typeNames = typeNames;
-        this.nativeTypes = nativeTypes;
-        this.typeParameterIndexer = typeParameterIndexer;
         this.typeIndexes = HashBiMap.create();
+        this.info = info;
 
         for (Test test : tests) {
             List<Integer> testValueLocations = new ArrayList<>();
@@ -119,13 +110,13 @@ public class TypeCreator {
                 putProducedValueIndex(index, type, typeContext.withThisType(null), true);
             }
             if (typeContext.getThisType() == null) {
-                if (freeGenericsFinder.hasThisTypes(type) && !(type instanceof ClassType)) {
+                if (info.freeGenericsFinder.hasThisTypes(type) && !(type instanceof ClassType)) {
                     putProducedValueIndex(index, type, typeContext.withThisType(type), true);
                 }
             }
         }
 
-        TypeContext newContext = typeContext.optimizeTypeParameters(type, freeGenericsFinder);
+        TypeContext newContext = typeContext.optimizeTypeParameters(type, info.freeGenericsFinder);
         if (!newContext.equals(typeContext)) {
             putProducedValueIndex(index, type, newContext);
         }
@@ -137,7 +128,7 @@ public class TypeCreator {
             List<Type> baseTypes = ((IntersectionType) type).getElements();
             baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext));
         } else if (type instanceof ReferenceType) {
-            putProducedValueIndex(index, ((ReferenceType) type).getTarget(), new TypesUtil(benchmark).generateParameterMap((ReferenceType) type, typeContext));
+            putProducedValueIndex(index, ((ReferenceType) type).getTarget(), new TypesUtil(info.bench).generateParameterMap((ReferenceType) type, typeContext));
         } else if (type instanceof GenericType) {
             putProducedValueIndex(index, ((GenericType) type).toInterface(), typeContext);
         } else if (type instanceof ClassType) {
@@ -145,7 +136,7 @@ public class TypeCreator {
         } else if (type instanceof ClassInstanceType) {
             ClassInstanceType instanceType = (ClassInstanceType) type;
             putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext);
-            if (freeGenericsFinder.hasThisTypes(instanceType.getClassType())) {
+            if (info.freeGenericsFinder.hasThisTypes(instanceType.getClassType())) {
                 putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext.withThisType(instanceType));
             }
         } else if (type instanceof ThisType) {
@@ -225,7 +216,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(ClassType t, TypeContext typeContext) {
-            if (freeGenericsFinder.hasThisTypes(t)) {
+            if (info.freeGenericsFinder.hasThisTypes(t)) {
                 typeContext = typeContext.withThisType(t.getInstanceType());
             }
 
@@ -235,16 +226,16 @@ public class TypeCreator {
 
             List<Signature> signatures = t.getSignatures().stream().map(sig -> TypesUtil.createConstructorSignature(t, sig)).collect(Collectors.toList());
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, freeGenericsFinder), typeNames, freeGenericsFinder);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(info.bench).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, info.freeGenericsFinder), info.typeNames, info.freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
 
             if (inter.getDeclaredNumberIndexType() != null) {
-                addProperties.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result"), typeNames.get(t).hashCode()));
+                addProperties.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result"), info.typeNames.get(t).hashCode()));
             }
 
             if (inter.getDeclaredStringIndexType() != null) {
-                addProperties.addAll(addStringIndexerType(inter.getDeclaredStringIndexType(), typeContext, identifier("result"), inter.getDeclaredProperties().keySet(), typeNames.get(t).hashCode()));
+                addProperties.addAll(addStringIndexerType(inter.getDeclaredStringIndexType(), typeContext, identifier("result"), inter.getDeclaredProperties().keySet(), info.typeNames.get(t).hashCode()));
             }
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
@@ -254,7 +245,7 @@ public class TypeCreator {
             }
 
             return createCachedConstruction(
-                    Return(createFunction(signatures, typeContext, typeNames.get(t))),
+                    Return(createFunction(signatures, typeContext, info.typeNames.get(t))),
                     block(addProperties),
                     1
             );
@@ -263,9 +254,9 @@ public class TypeCreator {
         @Override
         public Statement visit(GenericType type, TypeContext typeContext) {
             assert type.getTypeParameters().equals(type.getTypeArguments());
-            if (nativeTypes.contains(type)) {
+            if (info.nativeTypes.contains(type)) {
                 try {
-                    return constructTypeFromName(typeNames.get(type), typeContext, type.getTypeParameters());
+                    return constructTypeFromName(info.typeNames.get(type), typeContext, type.getTypeParameters());
                 } catch (ProduceManuallyException e) {
                     // continue
                 }
@@ -276,19 +267,19 @@ public class TypeCreator {
 
         @Override
         public Statement visit(InterfaceType type, TypeContext typeContext) {
-            if (nativeTypes.contains(type) && !TypesUtil.isEmptyInterface(type) && typeNames.get(type) != null &&  !typeNames.get(type).startsWith("window.")) {
+            if (info.nativeTypes.contains(type) && !TypesUtil.isEmptyInterface(type) && info.typeNames.get(type) != null &&  !info.typeNames.get(type).startsWith("window.")) {
                 try {
-                    return constructTypeFromName(typeNames.get(type), typeContext, type.getTypeParameters());
+                    return constructTypeFromName(info.typeNames.get(type), typeContext, type.getTypeParameters());
                 } catch (ProduceManuallyException e) {
                     // continue
                 }
             }
 
-            if (freeGenericsFinder.hasThisTypes(type)) {
+            if (info.freeGenericsFinder.hasThisTypes(type)) {
                 typeContext = typeContext.withThisType(type);
             }
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(benchmark).constructSyntheticInterfaceWithBaseTypes(type, typeNames, freeGenericsFinder);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(info.bench).constructSyntheticInterfaceWithBaseTypes(type, info.typeNames, info.freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
@@ -297,7 +288,7 @@ public class TypeCreator {
 
             Expression constructInitial;
             if (numberOfSignatures == 0) {
-                Type nativebase = TypesUtil.getNativeBase(type, nativeTypes, typeNames);
+                Type nativebase = TypesUtil.getNativeBase(type, info.nativeTypes, info.typeNames);
                 if (nativebase != null) {
                     constructInitial = constructType(nativebase, typeContext);
                 } else {
@@ -310,11 +301,11 @@ public class TypeCreator {
             List<Statement> addProperties = new ArrayList<>();
 
             if (inter.getDeclaredNumberIndexType() != null) {
-                addProperties.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result"), typeNames.get(type).hashCode()));
+                addProperties.addAll(addNumberIndexerType(inter.getDeclaredNumberIndexType(), typeContext, identifier("result"), info.typeNames.get(type).hashCode()));
             }
 
             if (inter.getDeclaredStringIndexType() != null) {
-                addProperties.addAll(addStringIndexerType(inter.getDeclaredStringIndexType(), typeContext, identifier("result"), inter.getDeclaredProperties().keySet(), typeNames.get(type).hashCode()));
+                addProperties.addAll(addStringIndexerType(inter.getDeclaredStringIndexType(), typeContext, identifier("result"), inter.getDeclaredProperties().keySet(), info.typeNames.get(type).hashCode()));
             }
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
@@ -368,7 +359,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(ReferenceType type, TypeContext typeContext) {
-            if ("Array".equals(typeNames.get(type.getTarget()))) {
+            if ("Array".equals(info.typeNames.get(type.getTarget()))) {
                 Type indexType = type.getTypeArguments().iterator().next();
                 return constructArray(typeContext, indexType);
             }
@@ -382,12 +373,12 @@ public class TypeCreator {
                 assert type.getTarget() instanceof ClassInstanceType;
                 target = ((ClassType) ((ClassInstanceType) type.getTarget()).getClassType()).getInstanceType();
             }
-            return Return(constructType(target, new TypesUtil(benchmark).generateParameterMap(type, typeContext)));
+            return Return(constructType(target, new TypesUtil(info.bench).generateParameterMap(type, typeContext)));
         }
 
         @Override
         public Statement visit(SimpleType simple, TypeContext typeContext) {
-            if (benchmark.useTAJS) {
+            if (info.bench.useTAJS) {
                 switch (simple.getKind()) {
                     case String:
                         return Return(call(identifier("TAJS_make"), string("AnyStr")));
@@ -479,7 +470,7 @@ public class TypeCreator {
         @Override
         public Statement visit(TypeParameterType type, TypeContext typeContext) {
             if (typeContext.containsKey(type)) {
-                List<Type> recursiveGenerics = TypesUtil.findRecursiveDefinition(type, typeContext, typeParameterIndexer);
+                List<Type> recursiveGenerics = TypesUtil.findRecursiveDefinition(type, typeContext, info.typeParameterIndexer);
                 if (!recursiveGenerics.isEmpty()) {
                     IntersectionType intersection = new IntersectionType();
                     intersection.setElements(recursiveGenerics);
@@ -490,7 +481,7 @@ public class TypeCreator {
                 TypeWithContext lookup = typeContext.get(type);
                 return Return(constructType(lookup.getType(), lookup.getTypeContext()));
             }
-            String markerField = typeParameterIndexer.getMarkerField(type);
+            String markerField = info.typeParameterIndexer.getMarkerField(type);
             return block(
                     variable("result", type.getConstraint() != null ? constructType(type.getConstraint(), typeContext) : object()),
                     ifThen(
@@ -516,7 +507,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(SymbolType t, TypeContext typeContext) {
-            Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(benchmark));
+            Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(info.bench));
             return Return(call(identifier("Symbol"), constructString));
         }
 
@@ -644,7 +635,7 @@ public class TypeCreator {
     private FunctionExpression createFunction(InterfaceType inter, TypeContext typeContext) {
         List<Signature> signatures = TypesUtil.removeDuplicateSignatures(Util.concat(inter.getDeclaredCallSignatures(), inter.getDeclaredConstructSignatures()));
 
-        String interName = typeNames.get(inter);
+        String interName = info.typeNames.get(inter);
         assert interName != null;
 
         return createFunction(signatures, typeContext, interName);
@@ -660,7 +651,7 @@ public class TypeCreator {
             args.add("arg" + i);
         }
 
-        TypeChecker typeChecker = new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, typeContext);
+        TypeChecker typeChecker = new TypeChecker(info);
 
 
         assert !signatures.isEmpty();
@@ -679,7 +670,7 @@ public class TypeCreator {
                         identifier("assert"),
                         call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
                                 function(block(
-                                        Return(typeChecker.checkResultingType(restType, identifier("exp"), path + ".[restArgs]", options.checkDepth))
+                                        Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.checkDepth))
                                 ), "exp")
                         ),
                         string(path + ".[restArgs]"),
@@ -692,7 +683,7 @@ public class TypeCreator {
             }
 
             Util.zip(args.stream(), parameters.stream(), (argName, par) ->
-                    typeChecker.assertResultingType(par.getType(), identifier(argName), path + ".[" + argName + "]", options.checkDepth)
+                    typeChecker.assertResultingType(new TypeWithContext(par.getType(), typeContext), identifier(argName), path + ".[" + argName + "]", options.checkDepth)
             ).forEach(typeChecks::add);
 
             typeChecks.add(checkNumberOfArgs(signature));
@@ -736,7 +727,7 @@ public class TypeCreator {
                             checkRestArgs = ifThen(unary(Operator.NOT,
                                     call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
                                             function(block(
-                                                    Return(typeChecker.checkResultingType(restType, identifier("exp"), path + ".[restArgs]", options.checkDepth))
+                                                    Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.checkDepth))
                                             ), "exp")
                                     )),
                                     Return(bool(false))
@@ -754,7 +745,7 @@ public class TypeCreator {
                                             Signature.Parameter arg = parameterPair.getLeft();
 
                                             return block(
-                                                    variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(arg.getType(), identifier("arg" + argIndex), path + ".[arg" + argIndex + "]", options.checkDepth)),
+                                                    variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(new TypeWithContext(arg.getType(), typeContext), identifier("arg" + argIndex), path + ".[arg" + argIndex + "]", options.checkDepth)),
                                                     ifThen(
                                                             unary(Operator.NOT, identifier("arg" + argIndex + "Correct")),
                                                             Return(bool(false))
@@ -763,7 +754,7 @@ public class TypeCreator {
                                         }).collect(Collectors.toList())),
                                         Return(bool(true))
                                 )))),
-                                benchmark.useTAJS ? statement(
+                                info.bench.useTAJS ? statement(
                                         call(
                                                 identifier("assert"),
                                                 identifier("signatureCorrect" + signatureIndex),
@@ -903,7 +894,7 @@ public class TypeCreator {
         if (array instanceof ReferenceType) {
             ReferenceType restTypeArr = (ReferenceType) array;
 
-            assert "Array".equals(typeNames.get(restTypeArr.getTarget()));
+            assert "Array".equals(info.typeNames.get(restTypeArr.getTarget()));
             assert restTypeArr.getTypeArguments().size() == 1;
 
             restType = restTypeArr.getTypeArguments().iterator().next();
@@ -912,7 +903,7 @@ public class TypeCreator {
 
             GenericType restTypeArr = (GenericType) array;
 
-            assert "Array".equals(typeNames.get(restTypeArr.getTarget()));
+            assert "Array".equals(info.typeNames.get(restTypeArr.getTarget()));
             assert restTypeArr.getTypeArguments().size() == 1;
 
             restType = restTypeArr.getTypeArguments().iterator().next();
@@ -947,10 +938,10 @@ public class TypeCreator {
                 callSignature.setMinArgumentCount(0);
                 callSignature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
                 interfaceWithSimpleFunction.getDeclaredCallSignatures().add(callSignature);
-                typeNames.put(interfaceWithSimpleFunction, "Function");
+                info.typeNames.put(interfaceWithSimpleFunction, "Function");
                 return Return(constructType(interfaceWithSimpleFunction, typeContext));
             case "RegExp":
-                Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(benchmark));
+                Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(info.bench));
                 return Return(newCall(identifier("RegExp"), constructString));
             case "String":
                 return Return(constructType(new SimpleType(SimpleTypeKind.String), typeContext));

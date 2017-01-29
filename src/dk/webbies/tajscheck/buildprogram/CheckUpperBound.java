@@ -22,6 +22,7 @@ import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.au.cs.casa.typescript.types.TypeVisitorWithArgument;
 import dk.au.cs.casa.typescript.types.UnionType;
 import dk.au.cs.casa.typescript.types.UnresolvedType;
+import dk.webbies.tajscheck.BenchmarkInfo;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -45,18 +46,10 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
  * Created by erik1 on 13-12-2016.
  */
 public class CheckUpperBound {
-    private final Set<Type> nativeTypes;
-    private final Map<Type, String> typeNames;
-    private final TestProgramBuilder.TypeParameterIndexer indexer;
-    private Benchmark bench;
-    private FreeGenericsFinder freeGenericsFinder;
+    private BenchmarkInfo info;
 
-    CheckUpperBound(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer indexer, Benchmark bench, FreeGenericsFinder freeGenericsFinder) {
-        this.nativeTypes = nativeTypes;
-        this.typeNames = typeNames;
-        this.indexer = indexer;
-        this.bench = bench;
-        this.freeGenericsFinder = freeGenericsFinder;
+    CheckUpperBound(BenchmarkInfo info) {
+        this.info = info;
     }
 
 
@@ -114,11 +107,11 @@ public class CheckUpperBound {
 
         @Override
         public List<TypeCheck> visit(InterfaceType t, Arg arg) {
-            if (nativeTypes.contains(t)) {
+            if (info.nativeTypes.contains(t)) {
                 return Collections.emptyList();
             }
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(bench).constructSyntheticInterfaceWithBaseTypes(t, typeNames, freeGenericsFinder);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(info.bench).constructSyntheticInterfaceWithBaseTypes(t, info.typeNames, info.freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             TypeContext typeContext = arg.context.append(pair.getRight());
 
@@ -135,7 +128,7 @@ public class CheckUpperBound {
 
         @Override
         public List<TypeCheck> visit(ReferenceType t, Arg arg) {
-            TypeContext newParameters = new TypesUtil(bench).generateParameterMap(t);
+            TypeContext newParameters = new TypesUtil(info.bench).generateParameterMap(t);
 
             return t.getTarget().accept(this, arg.withParameters(newParameters));
         }
@@ -153,7 +146,7 @@ public class CheckUpperBound {
         @Override
         public List<TypeCheck> visit(UnionType union, Arg arg) {
             return union.getElements().stream().map((type) -> {
-                TypeCheck check = checkType(arg, type, bench.options.checkDepthForUnions);
+                TypeCheck check = checkType(arg, type, info.bench.options.checkDepthForUnions);
                 return new SimpleTypeCheck(check.getCheck(), "maybe " + check.getExpected());
             }).collect(Collectors.toList());
         }
@@ -225,6 +218,6 @@ public class CheckUpperBound {
     }
 
     private TypeCheck checkType(Arg arg, Type type, int depth) {
-        return TypeChecker.createIntersection(type.accept(new TypeChecker.CreateTypeCheckVisitor(nativeTypes, indexer, typeNames), new TypeChecker.Arg(arg.context, depth)));
+        return TypeChecker.createIntersection(type.accept(new TypeChecker.CreateTypeCheckVisitor(info), new TypeChecker.Arg(arg.context, depth)));
     }
 }

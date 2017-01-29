@@ -9,7 +9,6 @@ import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
-import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
@@ -31,13 +30,8 @@ public class TestProgramBuilder {
     public static final String RUNTIME_ERROR_NAME = "RuntimeError";
     public static final String START_OF_FILE_MARKER = "-!-!-!- START OF FILE MARKER -!-!-!-:";
 
-    private final Benchmark bench;
     private final List<Test> tests;
-    private final Set<Type> nativeTypes;
-    private final TypeParameterIndexer typeParameterIndexer;
-    private FreeGenericsFinder freeGenericsFinder;
-    private Map<Type, String> typeNames;
-    private Type moduleType;
+    private final BenchmarkInfo info;
 
     private TypeCreator typeCreator;
 
@@ -64,16 +58,11 @@ public class TestProgramBuilder {
         }
     }
 
-    public TestProgramBuilder(Benchmark bench, Set<Type> nativeTypes, Map<Type, String> typeNames, List<Test> tests, Type moduleType, TypeParameterIndexer typeParameterIndexer, FreeGenericsFinder freeGenericsFinder) {
-        this.bench = bench;
+    public TestProgramBuilder(List<Test> tests, BenchmarkInfo info) {
         this.tests = new ArrayList<>(tests);
-        this.nativeTypes = nativeTypes;
-        this.typeNames = typeNames;
-        this.moduleType = moduleType;
-        this.typeParameterIndexer = typeParameterIndexer;
-        this.freeGenericsFinder = freeGenericsFinder;
+        this.info = info;
 
-        this.typeCreator = new TypeCreator(this.typeNames, nativeTypes, typeParameterIndexer, tests, bench, freeGenericsFinder);
+        this.typeCreator = new TypeCreator(tests, info);
     }
 
     public Statement buildTestProgram(ExecutionRecording recording) throws IOException {
@@ -86,7 +75,7 @@ public class TestProgramBuilder {
             program.add(variable("initialRandomness", string(recording.seed)));
         }
 
-        program.add(variable("isTAJS", bool(bench.useTAJS)));
+        program.add(variable("isTAJS", bool(info.bench.useTAJS)));
 
         program.add(AstBuilder.programFromFile(this.getClass().getResource("prelude.js")));
 
@@ -98,7 +87,7 @@ public class TestProgramBuilder {
 
         Expression iterationsToRun;
         if (recording == null || recording.testSequence == null) {
-            iterationsToRun = number(bench.options.iterationsToRun);
+            iterationsToRun = number(info.bench.options.iterationsToRun);
         } else {
             iterationsToRun = member(identifier("recording"), "length");
             program.add(variable("recording", array()));
@@ -116,7 +105,7 @@ public class TestProgramBuilder {
             getNumberToRun = expFromString("recording[i]");
         }
 
-        if (bench.options.checkHeap) {
+        if (info.bench.options.checkHeap) {
             program.add(createCheckHeapFunction());
         }
 
@@ -144,7 +133,7 @@ public class TestProgramBuilder {
                     binary(identifier("i"), Operator.LESS_THAN, iterationsToRun),
                     unary(Operator.POST_PLUS_PLUS, identifier("i")),
                     block(
-                            bench.options.checkHeap ? statement(call(identifier("checkHeap"))) : comment("checkHeap()"),
+                            info.bench.options.checkHeap ? statement(call(identifier("checkHeap"))) : comment("checkHeap()"),
                             variable("testNumberToRun", getNumberToRun),
                             statement(methodCall(identifier("testOrderRecording"), "push", identifier("testNumberToRun"))),
                             tryCatch(
@@ -170,18 +159,18 @@ public class TestProgramBuilder {
 
         program.add(AstBuilder.programFromFile(this.getClass().getResource("dumb.js")));
 
-        if (bench.run_method == Benchmark.RUN_METHOD.BROWSER) {
+        if (info.bench.run_method == Benchmark.RUN_METHOD.BROWSER) {
             List<Statement> scripts = new ArrayList<>();
-            for (Benchmark dependency : bench.getDependencies()) {
+            for (Benchmark dependency : info.bench.getDependencies()) {
                 String dependencyScript = Util.readFile(dependency.jsFile);
                 String jsName = dependency.getJSName();
                 scripts.add(comment(START_OF_FILE_MARKER + jsName));
                 scripts.add(AstBuilder.stmtFromString(dependencyScript));
             }
 
-            scripts.add(comment(START_OF_FILE_MARKER + bench.jsFile.substring(bench.jsFile.lastIndexOf('/') + 1, bench.jsFile.length())));
+            scripts.add(comment(START_OF_FILE_MARKER + info.bench.jsFile.substring(info.bench.jsFile.lastIndexOf('/') + 1, info.bench.jsFile.length())));
 
-            scripts.add(AstBuilder.stmtFromString(Util.readFile(bench.jsFile)));
+            scripts.add(AstBuilder.stmtFromString(Util.readFile(info.bench.jsFile)));
 
             scripts.add(comment(START_OF_FILE_MARKER + Main.TEST_FILE_NAME));
 
@@ -190,7 +179,7 @@ public class TestProgramBuilder {
                     statement(call(function(block(program))))
             );
         } else {
-            assert bench.run_method == Benchmark.RUN_METHOD.NODE || bench.run_method == Benchmark.RUN_METHOD.BOOTSTRAP;
+            assert info.bench.run_method == Benchmark.RUN_METHOD.NODE || info.bench.run_method == Benchmark.RUN_METHOD.BOOTSTRAP;
             return statement(call(function(block(program))));
         }
 
@@ -206,14 +195,14 @@ public class TestProgramBuilder {
                                 binary(
                                         identifier("module"),
                                         Operator.EQUAL,
-                                        typeCreator.getType(moduleType, TypeContext.create(bench))
+                                        typeCreator.getType(info.typeToTest, TypeContext.create(info.bench))
                                 ),
                                 Operator.EQUAL_EQUAL_EQUAL,
                                 identifier(VARIABLE_NO_VALUE)
                         ),
                         Return()
                 ),
-                new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, TypeContext.create(bench)).assertResultingType(moduleType, identifier("module"), "require(" + bench.module + ")", Integer.MAX_VALUE)
+                new TypeChecker(info).assertResultingType(new TypeWithContext(info.typeToTest, TypeContext.create(info.bench)), identifier("module"), "require(" + info.bench.module + ")", Integer.MAX_VALUE)
 
         )));
     }
@@ -246,14 +235,14 @@ public class TestProgramBuilder {
         assert produces.size() == typeCreator.getTestProducesIndexes(test).size();
 
         Statement saveResultStatement;
-        TypeChecker checkType = new TypeChecker(nativeTypes, typeNames, typeParameterIndexer, test.getTypeContext());
+        TypeChecker checkType = new TypeChecker(info);
         if (produces.size() == 0) {
             saveResultStatement = block();
         } else if (produces.size() == 1) {
             Type product = produces.iterator().next();
             int index = typeCreator.getTestProducesIndexes(test).iterator().next();
             saveResultStatement = block(
-                    checkType.assertResultingType(product, identifier("result"), test.getPath(), bench.options.checkDepth),
+                    checkType.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.bench.options.checkDepth),
                     statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result"))),
                     statement(call(identifier("registerValue"), number(index)))
             );
@@ -267,7 +256,7 @@ public class TestProgramBuilder {
                                 Type type = pair.getLeft();
                                 Integer valueIndex = pair.getRight();
                                 return block(
-                                        variable("passed" + valueIndex, checkType.checkResultingType(type, identifier("result"), test.getPath(), bench.options.checkDepthForUnions)),
+                                        variable("passed" + valueIndex, checkType.checkResultingType(new TypeWithContext(type, test.getTypeContext()), identifier("result"), test.getPath(), info.bench.options.checkDepthForUnions)),
                                         ifThen(
                                                 identifier("passed" + valueIndex),
                                                 statement(methodCall(identifier("passedResults"), "push", number(valueIndex)))
@@ -292,7 +281,7 @@ public class TestProgramBuilder {
                                                             number(0)
                                                     ),
                                                     string(test.getPath()),
-                                                    string(checkType.getTypeDescription(createUnionType(produces), bench.options.checkDepthForUnions)),
+                                                    string(checkType.getTypeDescription(new TypeWithContext(createUnionType(produces), test.getTypeContext()), info.bench.options.checkDepthForUnions)),
                                                     identifier("result"),
                                                     identifier("i")
                                             )
@@ -349,7 +338,7 @@ public class TestProgramBuilder {
 
         return Util.concat(
                 testCode,
-                bench.useTAJS && product != null ? new CheckUpperBound(nativeTypes, typeNames, typeParameterIndexer, bench, freeGenericsFinder).checkType(product, test.getTypeContext(), identifier("result"), test.getPath()) : Collections.emptyList(),
+                info.bench.useTAJS && product != null ? new CheckUpperBound(info).checkType(product, test.getTypeContext(), identifier("result"), test.getPath()) : Collections.emptyList(),
                 Collections.singletonList(saveResultStatement)
         );
     }
@@ -366,7 +355,7 @@ public class TestProgramBuilder {
      */
     private class TestBuilderVisitor implements TestVisitor<List<Statement>> {
         Expression getTypeExpression(Type type, TypeContext typeContext) {
-            if (bench.useTAJS) {
+            if (info.bench.useTAJS) {
                 return call(identifier("TAJS_except"), typeCreator.getType(type, typeContext), identifier(VARIABLE_NO_VALUE));
             } else {
                 return typeCreator.getType(type, typeContext);
@@ -387,7 +376,7 @@ public class TestProgramBuilder {
 
         @Override
         public List<Statement> visit(LoadModuleTest test) {
-            switch (bench.run_method) {
+            switch (info.bench.run_method) {
                 case NODE:
                     return Collections.singletonList(
                             variable(
@@ -397,7 +386,7 @@ public class TestProgramBuilder {
                     );
                 case BROWSER:
                     return Collections.singletonList(
-                            variable("result", identifier(bench.module))
+                            variable("result", identifier(info.bench.module))
                     );
                 case BOOTSTRAP:
                     return Collections.singletonList(
@@ -429,7 +418,7 @@ public class TestProgramBuilder {
             if (restArgs) {
                 Type restArgArr = orgParameterTypes.get(orgParameterTypes.size() - 1);
                 assert restArgArr instanceof ReferenceType;
-                assert "Array".equals(typeNames.get(((ReferenceType) restArgArr).getTarget()));
+                assert "Array".equals(info.typeNames.get(((ReferenceType) restArgArr).getTarget()));
                 assert ((ReferenceType) restArgArr).getTypeArguments().size() == 1;
 
                 Type restArgType = ((ReferenceType) restArgArr).getTypeArguments().iterator().next();

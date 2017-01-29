@@ -77,3 +77,8 @@ src/CLI.js
 src/CLI.js.map
 src/TypeScriptEnvironmentReader.js
 src/TypeScriptEnvironmentReader.js.map
+**/coverage.json
+**/*.d.ts.smallest
+**/minimizedDriver*.js
+**/tmp.html
+**/tmp.js.html

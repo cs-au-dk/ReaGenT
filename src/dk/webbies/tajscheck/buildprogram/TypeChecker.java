@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
+import dk.webbies.tajscheck.BenchmarkInfo;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
@@ -24,20 +25,14 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
  * Created by erik1 on 03-11-2016.
  */
 public class TypeChecker {
-    private final Set<Type> nativeTypes;
-    private Map<Type, String> typeNames;
-    private TestProgramBuilder.TypeParameterIndexer typeParameterIndexer;
-    private TypeContext typeContext;
+    private final BenchmarkInfo info;
 
-    public TypeChecker(Set<Type> nativeTypes, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, TypeContext typeContext) {
-        this.nativeTypes = nativeTypes;
-        this.typeNames = typeNames;
-        this.typeParameterIndexer = typeParameterIndexer;
-        this.typeContext = typeContext;
+    public TypeChecker(BenchmarkInfo info) {
+        this.info = info;
     }
 
-    public Statement assertResultingType(Type type, Expression exp, String path, int depth) {
-        List<TypeCheck> typeChecks = type.accept(new CreateTypeCheckVisitor(nativeTypes, typeParameterIndexer, typeNames), new Arg(typeContext, depth));
+    public Statement assertResultingType(TypeWithContext type, Expression exp, String path, int depth) {
+        List<TypeCheck> typeChecks = type.getType().accept(new CreateTypeCheckVisitor(info), new Arg(type.getTypeContext(), depth));
 
         return block(
                 variable("typeChecked", bool(true)),
@@ -51,7 +46,7 @@ public class TypeChecker {
         );
     }
 
-    public Expression checkResultingType(Type type, Expression exp, String path, int depth) {
+    public Expression checkResultingType(TypeWithContext type, Expression exp, String path, int depth) {
         return call(function(
                 block(
                         statement(function("assert", block(
@@ -65,8 +60,8 @@ public class TypeChecker {
         ));
     }
 
-    public String getTypeDescription(Type type, int depth) {
-        List<TypeCheck> result = type.accept(new CreateTypeCheckVisitor(nativeTypes, typeParameterIndexer, typeNames), new Arg(typeContext, depth));
+    public String getTypeDescription(TypeWithContext type, int depth) {
+        List<TypeCheck> result = type.getType().accept(new CreateTypeCheckVisitor(info), new Arg(type.getTypeContext(), depth));
         return createIntersection(result).getExpected();
     }
 
@@ -115,14 +110,10 @@ public class TypeChecker {
     }
 
     static final class CreateTypeCheckVisitor implements TypeVisitorWithArgument<List<TypeCheck>, Arg> {
-        private final Set<Type> nativeTypes;
-        private final TestProgramBuilder.TypeParameterIndexer typeParameterIndexer;
-        private final Map<Type, String> typeNames;
+        private final BenchmarkInfo info;
 
-        CreateTypeCheckVisitor(Set<Type> nativeTypes, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer, Map<Type, String> typeNames) {
-            this.nativeTypes = nativeTypes;
-            this.typeParameterIndexer = typeParameterIndexer;
-            this.typeNames = typeNames;
+        CreateTypeCheckVisitor(BenchmarkInfo info) {
+            this.info = info;
         }
 
         @Override
@@ -154,8 +145,8 @@ public class TypeChecker {
 
         @Override
         public List<TypeCheck> visit(GenericType t, Arg arg) {
-            if (nativeTypes.contains(t)) {
-                switch (typeNames.get(t)) {
+            if (info.nativeTypes.contains(t)) {
+                switch (info.typeNames.get(t)) {
                     case "RegExp":
                     case "HTMLCanvasElement":
                     case "HTMLImageElement":
@@ -175,8 +166,8 @@ public class TypeChecker {
                     case "Promise":
                         return Collections.singletonList(
                                 new SimpleTypeCheck(
-                                        Check.instanceOf(identifier(typeNames.get(t))),
-                                        typeNames.get(t)
+                                        Check.instanceOf(identifier(info.typeNames.get(t))),
+                                        info.typeNames.get(t)
                                 )
                         );
                     case "Array":
@@ -188,7 +179,7 @@ public class TypeChecker {
                     case "ArrayLike":
                         break; // Check manually.
                     default:
-                        throw new RuntimeException(typeNames.get(t));
+                        throw new RuntimeException(info.typeNames.get(t));
 
                 }
             }
@@ -200,8 +191,8 @@ public class TypeChecker {
             if (TypesUtil.isEmptyInterface(t)) {
                 return Collections.singletonList(new SimpleTypeCheck(Check.alwaysTrue(), "[any]"));
             }
-            if (nativeTypes.contains(t) && !typeNames.get(t).startsWith("window.")) {
-                String name = typeNames.get(t);
+            if (info.nativeTypes.contains(t) && !info.typeNames.get(t).startsWith("window.")) {
+                String name = info.typeNames.get(t);
 
                 if (name.startsWith("global.")) {
                     name = name.substring("global.".length(), name.length());
@@ -338,7 +329,7 @@ public class TypeChecker {
                         arg = arg.withDepth(1);
                         break; // Testing manually.
                     default:
-                        throw new RuntimeException(typeNames.get(t));
+                        throw new RuntimeException(info.typeNames.get(t));
                 }
             }
 
@@ -396,16 +387,16 @@ public class TypeChecker {
 
         @Override
         public List<TypeCheck> visit(ReferenceType t, Arg arg) {
-            if ("Array".equals(typeNames.get(t.getTarget()))) {
+            if ("Array".equals(info.typeNames.get(t.getTarget()))) {
                 Type indexType = t.getTypeArguments().get(0);
                 return checkArrayThinghy(indexType, "Array", arg);
             }
 
-            if (nativeTypes.contains(t) && !(typeNames.get(t) != null && typeNames.get(t).startsWith("window."))) {
-                throw new RuntimeException(typeNames.get(t));
+            if (info.nativeTypes.contains(t) && !(info.typeNames.get(t) != null && info.typeNames.get(t).startsWith("window."))) {
+                throw new RuntimeException(info.typeNames.get(t));
             }
-            if (nativeTypes.contains(t.getTarget()) && !(t.getTarget() instanceof TupleType) && !(typeNames.get(t) != null && typeNames.get(t).startsWith("window."))) {
-                throw new RuntimeException(typeNames.get(t));
+            if (info.nativeTypes.contains(t.getTarget()) && !(t.getTarget() instanceof TupleType) && !(info.typeNames.get(t) != null && info.typeNames.get(t).startsWith("window."))) {
+                throw new RuntimeException(info.typeNames.get(t));
             }
             return t.getTarget().accept(this, arg.withParameters(arg.typeContext.append(new TypesUtil(arg.typeContext.getBenchmark()).generateParameterMap(t))));
         }
@@ -491,7 +482,7 @@ public class TypeChecker {
 
             List<TypeCheck> checks = new ArrayList<>(parameter.getConstraint() != null ? parameter.getConstraint().accept(this, arg) : Collections.emptyList());
 
-            String markerField = typeParameterIndexer.getMarkerField(parameter);
+            String markerField = info.typeParameterIndexer.getMarkerField(parameter);
 
             checks.add(expectNotNull());
             checks.add(new SimpleTypeCheck(

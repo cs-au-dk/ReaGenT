@@ -29,6 +29,7 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static dk.webbies.tajscheck.BenchmarkInfo.getTypeToTest;
 import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
 
 /**
@@ -63,45 +64,21 @@ public class Main {
     }
 
     public static String generateFullDriver(Benchmark bench, ExecutionRecording recording) throws IOException {
-        SpecReader spec = ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile));
+        BenchmarkInfo info = BenchmarkInfo.create(bench);
 
-        SpecReader emptySpec = ParseDeclaration.getTypeSpecification(bench.environment, new ArrayList<>());
+        List<Test> tests = new TestCreator(info).createTests();
+        tests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, bench));
 
-        Set<Type> nativeTypes = TypesUtil.collectNativeTypes(spec, emptySpec);
-
-        Map<Type, String> typeNames = ParseDeclaration.getTypeNamesMap(spec);
-
-        Type typeToTest = getTypeToTest(bench, spec);
-
-        FreeGenericsFinder freeGenericsFinder = new FreeGenericsFinder(typeToTest);
-
-        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer(bench.options);
-
-        List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer, freeGenericsFinder).createTests();
-        tests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
-
-        Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, tests, typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(recording);
+        Statement program = new TestProgramBuilder(tests, info).buildTestProgram(recording);
 
         return AstToStringVisitor.toString(program);
     }
 
     public static String generateSmallestDriver(Benchmark bench, BooleanSupplier test) throws IOException {
-        SpecReader spec = ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile));
+        BenchmarkInfo info = BenchmarkInfo.create(bench);
 
-        SpecReader emptySpec = ParseDeclaration.getTypeSpecification(bench.environment, new ArrayList<>());
-
-        Set<Type> nativeTypes = TypesUtil.collectNativeTypes(spec, emptySpec);
-
-        Map<Type, String> typeNames = ParseDeclaration.getTypeNamesMap(spec);
-
-        Type typeToTest = getTypeToTest(bench, spec);
-
-        FreeGenericsFinder freeGenericsFinder = new FreeGenericsFinder(typeToTest);
-
-        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer(bench.options);
-
-        List<Test> tests = new TestCreator(nativeTypes, typeNames, typeToTest, bench, typeParameterIndexer, freeGenericsFinder).createTests();
-        tests.add(new LoadModuleTest(Main.getRequirePath(bench), typeToTest, bench));
+        List<Test> tests = new TestCreator(info).createTests();
+        tests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, bench));
 
         Test[] testsArray = tests.toArray(new Test[]{});
         int prevSize = -1;
@@ -114,7 +91,7 @@ public class Main {
             prevSize = testsArray.length;
             testsArray = MinimizeArray.minimizeArray((testsToTest) -> {
                 try {
-                    Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, Arrays.asList(testsToTest), typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(null);
+                    Statement program = new TestProgramBuilder(Arrays.asList(testsToTest), info).buildTestProgram(null);
 
                     Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(program));
 
@@ -125,66 +102,13 @@ public class Main {
             }, testsArray);
         }
 
-        Statement program = new TestProgramBuilder(bench, nativeTypes, typeNames, Arrays.asList(testsArray), typeToTest, typeParameterIndexer, freeGenericsFinder).buildTestProgram(null);
+        Statement program = new TestProgramBuilder(Arrays.asList(testsArray), info).buildTestProgram(null);
 
         Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(program));
 
         return AstToStringVisitor.toString(program);
     }
 
-    static Type getTypeToTest(Benchmark bench, SpecReader spec) {
-        Type result = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(bench.module);
-
-        if (result == null) {
-            throw new RuntimeException("Module: " + bench.module + " not found in benchmark");
-        }
-
-        for (Type type : TypesUtil.collectAllTypes(result)) {
-            if (bench.options.splitUnions) {
-                if (type instanceof InterfaceType) {
-                    InterfaceType inter = (InterfaceType) type;
-                    inter.setDeclaredCallSignatures(TypesUtil.splitSignatures(inter.getDeclaredCallSignatures()));
-                    inter.setDeclaredConstructSignatures(TypesUtil.splitSignatures(inter.getDeclaredConstructSignatures()));
-                } else if (type instanceof GenericType) {
-                    GenericType inter = (GenericType) type;
-                    inter.setDeclaredCallSignatures(TypesUtil.splitSignatures(inter.getDeclaredCallSignatures()));
-                    inter.setDeclaredConstructSignatures(TypesUtil.splitSignatures(inter.getDeclaredConstructSignatures()));
-                }
-            }
-
-            if (type instanceof InterfaceType) {
-                ((InterfaceType) type).setDeclaredProperties(fixUnderscoreNames(((InterfaceType) type).getDeclaredProperties()));
-            } else if (type instanceof GenericType) {
-                ((GenericType) type).setDeclaredProperties(fixUnderscoreNames(((GenericType) type).getDeclaredProperties()));
-            }
-        }
-
-        if (result instanceof InterfaceType) {
-            InterfaceType inter = (InterfaceType) result;
-            if (inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size() > 0) {
-                if (inter.getDeclaredProperties().keySet().contains("prototype") && inter.getDeclaredProperties().get("prototype") instanceof ClassType) {
-                    return inter.getDeclaredProperties().get("prototype");
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private static Map<String, Type> fixUnderscoreNames(Map<String, Type> declaredProperties) {
-        return declaredProperties.entrySet().stream().collect(Collectors.toMap(
-                entry -> fixUnderscoreName(entry.getKey()),
-                Map.Entry::getValue
-        ));
-    }
-
-    private static String fixUnderscoreName(String key) {
-        // For some reason, everything with two or more underscore in the beginning, gets an extra underscore. I have a test that fails if this behaviour changes.
-        if (key.startsWith("___")) {
-            return key.substring(1, key.length());
-        }
-        return key;
-    }
 
     public static String getFolderPath(Benchmark bench) {
         String jsPath = bench.jsFile;
