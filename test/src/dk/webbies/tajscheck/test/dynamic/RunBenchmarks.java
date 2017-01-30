@@ -94,7 +94,7 @@ public class RunBenchmarks {
         Benchmark react = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/react/react.js", "test/benchmarks/react/react.d.ts", "React", BROWSER, options);
         benchmarks.put("React", react);
         benchmarks.put("RequireJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/requirejs/require.js", "test/benchmarks/requirejs/requirejs.d.ts", "requirejs", BROWSER, options).addDependencies(jQuery));
-        benchmarks.put("Sugar", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/sugar/sugar.js", "test/benchmarks/sugar/sugar.d.ts", "Sugar", NODE, options.getBuilder().setDisableGenerics(true).build()));
+        benchmarks.put("Sugar", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/sugar/sugar.js", "test/benchmarks/sugar/sugar.d.ts", "Sugar", NODE, options.getBuilder().setDisableGenerics(true).build()));
 
         benchmarks.put("PhotoSwipe", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/photoswipe/photoswipe.js", "test/benchmarks/photoswipe/photoswipe.d.ts", "PhotoSwipe", BROWSER, options));
         benchmarks.put("CreateJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/createjs/createjs.js", "test/benchmarks/createjs/createjs.d.ts", "createjs", BROWSER, options));
