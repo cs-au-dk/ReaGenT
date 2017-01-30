@@ -3,7 +3,7 @@ package dk.webbies.tajscheck.test.experiments;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.test.DeltaTest;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;

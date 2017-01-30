@@ -4,10 +4,9 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
+import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
-import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 

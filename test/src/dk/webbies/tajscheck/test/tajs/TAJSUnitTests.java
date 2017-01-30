@@ -1,8 +1,8 @@
 package dk.webbies.tajscheck.test.tajs;
 
 import dk.brics.tajs.lattice.Value;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.benchmarks.CheckOptions;
+import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;

@@ -3,7 +3,9 @@ package dk.webbies.tajscheck.typeutil;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
+import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -148,7 +150,7 @@ public class TypesUtil {
                 type.getDeclaredNumberIndexType() == null;
     }
 
-    public static List<Type> findRecursiveDefinition(TypeParameterType firstType, TypeContext typeContext, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer) {
+    public static List<Type> findRecursiveDefinition(TypeParameterType firstType, TypeContext typeContext, TypeParameterIndexer typeParameterIndexer) {
         List<Type> constraints = new ArrayList<>();
 
         constraints.add(firstType.getConstraint());

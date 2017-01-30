@@ -4,8 +4,8 @@ import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.benchmarks.CheckOptions;
+import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.test.TestParsing;
 import org.junit.Ignore;
@@ -17,9 +17,9 @@ import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
-import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
-import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BROWSER;
-import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.NODE;
+import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BOOTSTRAP;
+import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BROWSER;
+import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.NODE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

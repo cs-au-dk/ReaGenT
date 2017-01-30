@@ -1,4 +1,4 @@
-package dk.webbies.tajscheck.benchmarks;
+package dk.webbies.tajscheck.benchmark;
 
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.testcreator.TestCreator;

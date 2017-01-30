@@ -1,17 +1,13 @@
 package dk.webbies.tajscheck;
 
-import dk.au.cs.casa.typescript.SpecReader;
-import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
-import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.paser.AstToStringVisitor;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.testcreator.test.LoadModuleTest;
 import dk.webbies.tajscheck.testcreator.TestCreator;
-import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
-import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
@@ -29,7 +25,6 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static dk.webbies.tajscheck.BenchmarkInfo.getTypeToTest;
 import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
 
 /**

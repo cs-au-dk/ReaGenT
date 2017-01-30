@@ -2,8 +2,8 @@ package dk.webbies.tajscheck.typeutil.typeContext;
 
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
+import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 
 import java.util.*;
 

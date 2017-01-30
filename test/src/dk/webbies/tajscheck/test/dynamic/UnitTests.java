@@ -4,22 +4,22 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.webbies.tajscheck.ExecutionRecording;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.benchmarks.CheckOptions;
+import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.CheckOptions;
+import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.OutputParser.*;
-import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
-import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BROWSER;
-import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.NODE;
+import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BOOTSTRAP;
+import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BROWSER;
+import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.NODE;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.JSON;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.TYPEOF;
@@ -909,7 +909,7 @@ public class UnitTests {
         String driver = Main.generateFullDriver(bench);
         Main.writeFullDriver(bench);
 
-        assertThat(driver, not(containsString(TestProgramBuilder.TypeParameterIndexer.IS_UNSTRAINED_GENERIC_MARKER)));
+        assertThat(driver, not(containsString(TypeParameterIndexer.IS_UNSTRAINED_GENERIC_MARKER)));
     }
 
     @Test

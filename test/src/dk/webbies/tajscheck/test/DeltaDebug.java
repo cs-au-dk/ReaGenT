@@ -2,23 +2,20 @@ package dk.webbies.tajscheck.test;
 
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tajscheck.benchmarks.Benchmark.RUN_METHOD.BOOTSTRAP;
+import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BOOTSTRAP;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -174,7 +171,7 @@ public class DeltaDebug {
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
         Benchmark bench = RunBenchmarks.benchmarks.get("pickadate.js");
-//        Benchmark bench = RunBenchmarks.benchmarks.get("AngularJS").withRunMethod(NODE);
+//        Benchmark bench = RunBenchmarks.benchmark.get("AngularJS").withRunMethod(NODE);
         String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches

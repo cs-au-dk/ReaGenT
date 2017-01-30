@@ -5,8 +5,8 @@ import dk.au.cs.casa.typescript.types.SimpleTypeKind;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
+import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 
 import java.util.Collections;
 import java.util.Map;

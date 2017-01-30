@@ -1,14 +1,12 @@
-package dk.webbies.tajscheck;
+package dk.webbies.tajscheck.benchmark;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.ClassType;
 import dk.au.cs.casa.typescript.types.GenericType;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
-import dk.webbies.tajscheck.typeutil.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 
 import java.util.ArrayList;
@@ -26,9 +24,9 @@ public class BenchmarkInfo {
     public final Set<Type> nativeTypes;
     public final FreeGenericsFinder freeGenericsFinder;
     public final Map<Type, String> typeNames;
-    public final TestProgramBuilder.TypeParameterIndexer typeParameterIndexer;
+    public final TypeParameterIndexer typeParameterIndexer;
 
-    public BenchmarkInfo(Benchmark bench, Type typeToTest, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TestProgramBuilder.TypeParameterIndexer typeParameterIndexer) {
+    private BenchmarkInfo(Benchmark bench, Type typeToTest, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TypeParameterIndexer typeParameterIndexer) {
         this.bench = bench;
         this.typeToTest = typeToTest;
         this.nativeTypes = nativeTypes;
@@ -50,12 +48,12 @@ public class BenchmarkInfo {
 
         FreeGenericsFinder freeGenericsFinder = new FreeGenericsFinder(typeToTest);
 
-        TestProgramBuilder.TypeParameterIndexer typeParameterIndexer = new TestProgramBuilder.TypeParameterIndexer(bench.options);
+        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer(bench.options);
 
         return new BenchmarkInfo(bench, typeToTest, nativeTypes, freeGenericsFinder, typeNames, typeParameterIndexer);
     }
 
-    static Type getTypeToTest(Benchmark bench, SpecReader spec) {
+    private static Type getTypeToTest(Benchmark bench, SpecReader spec) {
         Type result = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(bench.module);
 
         if (result == null) {

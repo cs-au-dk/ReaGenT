@@ -1,6 +1,7 @@
-package dk.webbies.tajscheck.typeutil;
+package dk.webbies.tajscheck.benchmark;
 
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.HashSetMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;

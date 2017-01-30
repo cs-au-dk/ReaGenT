@@ -11,7 +11,7 @@ import dk.brics.tajs.util.AnalysisLimitationException;
 import dk.brics.tajs.util.ExperimentalAnalysisVariables;
 import dk.brics.tajs.util.Pair;
 import dk.webbies.tajscheck.Main;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 

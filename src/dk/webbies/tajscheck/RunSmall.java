@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck;
 
-import dk.webbies.tajscheck.benchmarks.Benchmark;
+import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.paser.AstToStringVisitor;

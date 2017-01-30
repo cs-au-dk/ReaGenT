@@ -2,8 +2,9 @@ package dk.webbies.tajscheck.buildprogram;
 
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.*;
-import dk.webbies.tajscheck.benchmarks.Benchmark;
-import dk.webbies.tajscheck.benchmarks.CheckOptions;
+import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.*;
@@ -34,29 +35,6 @@ public class TestProgramBuilder {
     private final BenchmarkInfo info;
 
     private TypeCreator typeCreator;
-
-
-    public static final class TypeParameterIndexer {
-        private final boolean combineAllUnconstrainedGenerics;
-        private final Map<TypeParameterType, Integer> map = new HashMap<>();
-        public static final String IS_UNSTRAINED_GENERIC_MARKER = "_isUnconstrainedGeneric";
-
-        public TypeParameterIndexer(CheckOptions options) {
-            this.combineAllUnconstrainedGenerics = options.combineAllUnconstrainedGenerics;
-        }
-
-        public String getMarkerField(TypeParameterType t) {
-            if (combineAllUnconstrainedGenerics) {
-                return IS_UNSTRAINED_GENERIC_MARKER;
-            }
-            if (map.containsKey(t)) {
-                return "typeParameterMarker_" + map.get(t);
-            } else {
-                map.put(t, map.size());
-                return getMarkerField(t);
-            }
-        }
-    }
 
     public TestProgramBuilder(List<Test> tests, BenchmarkInfo info) {
         this.tests = new ArrayList<>(tests);

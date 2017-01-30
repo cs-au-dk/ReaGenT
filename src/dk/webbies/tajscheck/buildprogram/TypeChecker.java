@@ -4,7 +4,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
-import dk.webbies.tajscheck.BenchmarkInfo;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
