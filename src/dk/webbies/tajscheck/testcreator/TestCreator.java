@@ -387,7 +387,7 @@ public class TestCreator {
 
             assert !t.getSignatures().isEmpty();
             for (Signature signature : t.getSignatures()) {
-                tests.add(new ConstructorCallTest(t, signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList()), t.getInstanceType(), arg.path, arg.typeContext, signature.isHasRestParameter()));
+                tests.add(new ConstructorCallTest(t, signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList()), t.getInstance(), arg.path, arg.typeContext, signature.isHasRestParameter()));
             }
 
             recurse(t.getInstanceType(), arg.append("new()"));

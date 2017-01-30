@@ -1,18 +1,11 @@
 package dk.webbies.tajscheck.benchmark;
 
 import dk.au.cs.casa.typescript.SpecReader;
-import dk.au.cs.casa.typescript.types.ClassType;
-import dk.au.cs.casa.typescript.types.GenericType;
-import dk.au.cs.casa.typescript.types.InterfaceType;
-import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
+import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -25,14 +18,16 @@ public class BenchmarkInfo {
     public final FreeGenericsFinder freeGenericsFinder;
     public final Map<Type, String> typeNames;
     public final TypeParameterIndexer typeParameterIndexer;
+    private Set<Type> globalProperties;
 
-    private BenchmarkInfo(Benchmark bench, Type typeToTest, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TypeParameterIndexer typeParameterIndexer) {
+    private BenchmarkInfo(Benchmark bench, Type typeToTest, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TypeParameterIndexer typeParameterIndexer, Set<Type> globalProperties) {
         this.bench = bench;
         this.typeToTest = typeToTest;
         this.nativeTypes = nativeTypes;
         this.freeGenericsFinder = freeGenericsFinder;
         this.typeNames = typeNames;
         this.typeParameterIndexer = typeParameterIndexer;
+        this.globalProperties = globalProperties;
     }
 
     public static BenchmarkInfo create(Benchmark bench) {
@@ -50,7 +45,15 @@ public class BenchmarkInfo {
 
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer(bench.options);
 
-        return new BenchmarkInfo(bench, typeToTest, nativeTypes, freeGenericsFinder, typeNames, typeParameterIndexer);
+        Set<Type> globalProperties = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().values().stream().map(prop -> {
+            if (prop instanceof ReferenceType) {
+                return ((ReferenceType) prop).getTarget();
+            } else {
+                return prop;
+            }
+        }).collect(Collectors.toSet());
+
+        return new BenchmarkInfo(bench, typeToTest, nativeTypes, freeGenericsFinder, typeNames, typeParameterIndexer, globalProperties);
     }
 
     private static Type getTypeToTest(Benchmark bench, SpecReader spec) {
@@ -77,6 +80,10 @@ public class BenchmarkInfo {
                 ((InterfaceType) type).setDeclaredProperties(fixUnderscoreNames(((InterfaceType) type).getDeclaredProperties()));
             } else if (type instanceof GenericType) {
                 ((GenericType) type).setDeclaredProperties(fixUnderscoreNames(((GenericType) type).getDeclaredProperties()));
+            }
+
+            if (type instanceof ClassInstanceType) {
+                ((ClassType) ((ClassInstanceType) type).getClassType()).instance = (ClassInstanceType) type;
             }
         }
 
@@ -114,7 +121,35 @@ public class BenchmarkInfo {
                 this.nativeTypes,
                 this.freeGenericsFinder,
                 this.typeNames,
-                this.typeParameterIndexer
-        );
+                this.typeParameterIndexer,
+                globalProperties);
+    }
+
+    public boolean shouldConstructType(Type type) {
+        if (bench.options.constructAllTypes) {
+            return true;
+        }
+
+        while (type instanceof ReferenceType) {
+            type = ((ReferenceType) type).getTarget();
+        }
+
+        if (type instanceof SimpleType || type instanceof BooleanLiteral || type instanceof StringLiteral || type instanceof NumberLiteral || type instanceof SymbolType || type instanceof NeverType || type instanceof UnionType || type instanceof IntersectionType || type instanceof TypeParameterType || type instanceof TupleType) {
+            return true;
+        }
+
+        if (globalProperties.contains(type)) {
+            return false;
+        }
+
+        if (type instanceof GenericType || type instanceof InterfaceType) {
+            return true;
+        }
+
+        if (type instanceof ClassInstanceType || type instanceof ClassType || type instanceof ThisType) {
+            return false;
+        }
+
+        throw new RuntimeException(type.getClass().getSimpleName());
     }
 }

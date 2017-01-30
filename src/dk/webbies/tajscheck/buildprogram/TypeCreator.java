@@ -135,6 +135,11 @@ public class TypeCreator {
             valueLocations.put(new TypeWithContext(type, typeContext.withThisType(((ClassType) type).getInstanceType())), index);
         } else if (type instanceof ClassInstanceType) {
             ClassInstanceType instanceType = (ClassInstanceType) type;
+
+            if (instanceType != ((ClassType) instanceType.getClassType()).getInstance()) {
+                putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstance(), typeContext, touchedThisTypes);
+            }
+
             putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext);
             if (info.freeGenericsFinder.hasThisTypes(instanceType.getClassType())) {
                 putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext.withThisType(instanceType));
@@ -1231,25 +1236,41 @@ public class TypeCreator {
         Type type = typeWithParameters.getType();
         TypeContext typeContext = typeWithParameters.getTypeContext();
 
-        ExpressionStatement constructNewInstanceFunction = statement(
-                function(
-                        CONSTRUCT_TYPE_PREFIX + index,
-                        block(
-                                variable("existingValue", getType(index)),
-                                ifThenElse(
-                                        binary(
-                                                binary(identifier("existingValue"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
-                                                Operator.AND,
-                                                binary(call(identifier("random")), Operator.GREATER_THAN, number(0.5))
-                                        ),
-                                        Return(identifier("existingValue")),
-                                        type.accept(new ConstructNewInstanceVisitor(), typeContext)
-                                )
-                        )
-                )
-        );
+        if (!info.shouldConstructType(type)) {
+            functions.add(statement(
+                    function(
+                            CONSTRUCT_TYPE_PREFIX + index,
+                            block(
+                                    variable("existingValue", getType(index)),
+                                    ifThenElse(
+                                            binary(identifier("existingValue"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
+                                            Return(identifier("existingValue")),
+                                            throwStatement(newCall(identifier("RUNTIME_ERROR_NAME"), string("I will not construct this type, " + type.getClass().getSimpleName())))
+                                    )
+                            )
+                    )
+            ));
+        } else {
+            functions.add(statement(
+                    function(
+                            CONSTRUCT_TYPE_PREFIX + index,
+                            block(
+                                    variable("existingValue", getType(index)),
+                                    ifThenElse(
+                                            binary(
+                                                    binary(identifier("existingValue"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
+                                                    Operator.AND,
+                                                    binary(call(identifier("random")), Operator.GREATER_THAN, number(0.5))
+                                            ),
+                                            Return(identifier("existingValue")),
+                                            type.accept(new ConstructNewInstanceVisitor(), typeContext)
+                                    )
+                            )
+                    )
+            ));
+        }
 
-        functions.add(constructNewInstanceFunction);
+
     }
 
     public BlockStatement getBlockStatementWithTypeFunctions() {

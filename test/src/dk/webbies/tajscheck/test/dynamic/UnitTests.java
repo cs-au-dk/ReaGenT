@@ -76,6 +76,8 @@ public class UnitTests {
     }
 
     private static void sanityCheck(Benchmark bench, Benchmark.RUN_METHOD runMethod) throws Exception {
+        bench = bench.withOptions(bench.options.getBuilder().setConstructAllTypes(true).build());
+
         // Performing a soundness check of the benchmark.
         Main.writeFullDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP));
         String output = Main.runBenchmark(bench.withRunMethod(runMethod));
@@ -347,7 +349,7 @@ public class UnitTests {
 
     @Test
     public void constructClass() throws Exception {
-        RunResult result = run("constructClass", "seed");
+        RunResult result = run("constructClass", CheckOptions.builder().setConstructAllTypes(true).build(), "seed");
 
         expect(result)
                 .forPath("module.foo(class)")
@@ -650,7 +652,7 @@ public class UnitTests {
         // When a function (with e.g. 2 parameters) is overridden, with a function that takes 1 parameter.
         // Then the second parameter kind-of gets the bottom type.
         // TypeScript allows this, but it is unsound (just like complexSanityCheck9
-        sanityCheck(benchFromFolder("overrideNumberOfArguments"), BROWSER);
+        sanityCheck(benchFromFolder("overrideNumberOfArguments", CheckOptions.builder().setConstructAllTypes(false).build()), BROWSER);
     }
 
     @Test
@@ -879,7 +881,7 @@ public class UnitTests {
 
     @Test
     public void thisTypesAreOptimized2() throws Exception {
-        RunResult result = run("thisTypesAreOptimized2", "foo");
+        RunResult result = run("thisTypesAreOptimized2", CheckOptions.builder().setConstructAllTypes(false).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
     }
@@ -924,6 +926,14 @@ public class UnitTests {
         String driver = Main.generateFullDriver(benchFromFolder("typeofParsing"));
 
         assertThat(driver, not(containsString("module.getNewLibraryCopy.prototype")));
+
+    }
+
+    @Test
+    public void testClass() throws Exception {
+        RunResult result = run("testClass", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
 
     }
 }

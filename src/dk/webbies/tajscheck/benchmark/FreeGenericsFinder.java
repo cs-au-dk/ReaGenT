@@ -47,7 +47,6 @@ public class FreeGenericsFinder {
                 for (Type baseType : ((ClassType) type).getBaseTypes()) {
                     reverseBaseTypeMap.put(baseType, type);
                 }
-                reverseBaseTypeMap.put(((ClassType) type).getInstanceType(), type);
             } else if (type instanceof ReferenceType) {
                 reverseBaseTypeMap.put(((ReferenceType) type).getTarget(), type);
             } else if (type instanceof ClassInstanceType) {
@@ -365,9 +364,6 @@ public class FreeGenericsFinder {
         }
         Set<Type> seen = Util.concatSet(orgSeen, Collections.singletonList(baseType));
 
-        if (baseType instanceof ClassInstanceType) {
-            baseType = ((ClassType) ((ClassInstanceType) baseType).getClassType()).getInstanceType();
-        }
         if (baseType instanceof ReferenceType) {
             if (((ReferenceType) baseType).getTypeArguments().stream().anyMatch(arg -> isThisTypeVisible(arg, deep, seen))) {
                 return true;

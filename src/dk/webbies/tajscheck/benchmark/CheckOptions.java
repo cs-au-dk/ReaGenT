@@ -6,15 +6,16 @@ import dk.webbies.tajscheck.util.Util;
  * Created by erik1 on 13-12-2016.
  */
 public final class CheckOptions {
+    private Builder builder;
     public final int checkDepth;
     public final int checkDepthForUnions;
     public final boolean checkHeap;
     public final boolean splitUnions;
-    private Builder builder;
     public final int iterationsToRun;
     public final boolean disableSizeOptimization;
     public final boolean combineAllUnconstrainedGenerics;
     public final boolean disableGenerics;
+    public final boolean constructAllTypes;
 
     private CheckOptions(Builder builder) {
         this.checkDepth = builder.checkDepth;
@@ -25,6 +26,7 @@ public final class CheckOptions {
         this.disableSizeOptimization = builder.disableSizeOptimization;
         this.combineAllUnconstrainedGenerics = builder.combineAllUnconstrainedGenerics;
         this.disableGenerics = builder.disableGenerics;
+        this.constructAllTypes = builder.constructAllTypes;
         this.builder = builder;
     }
 
@@ -40,6 +42,7 @@ public final class CheckOptions {
         return new Builder();
     }
 
+    @SuppressWarnings("SameParameterValue")
     public static final class Builder {
         private int checkDepth = 0;
         private int checkDepthForUnions = 1;
@@ -49,6 +52,7 @@ public final class CheckOptions {
         private boolean disableSizeOptimization = false;
         private boolean combineAllUnconstrainedGenerics = true;
         private boolean disableGenerics = false;
+        private boolean constructAllTypes = false;
 
         private Builder() {}
 
@@ -62,6 +66,11 @@ public final class CheckOptions {
 
         public Builder setCheckDepth(int checkDepth) {
             this.checkDepth = checkDepth;
+            return this;
+        }
+
+        public Builder setConstructAllTypes(boolean constructAllTypes) {
+            this.constructAllTypes = constructAllTypes;
             return this;
         }
 
