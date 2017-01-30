@@ -936,4 +936,14 @@ public class UnitTests {
         assertThat(result.typeErrors.size(), is(1));
 
     }
+
+    @Test
+    public void interfacesAndObjectsParsing() throws Exception {
+        String driver = Main.generateFullDriver(benchFromFolder("interfacesAndObjectsParsing"));
+
+        Main.writeFullDriver(benchFromFolder("interfacesAndObjectsParsing"));
+
+        assertThat(driver, not(containsString("// path: module.Observable.selectMany")));
+
+    }
 }
