@@ -141,7 +141,11 @@ public class Util {
     }
 
     public static void append(String file, String content) throws IOException {
-        Files.write(Paths.get(file), content.getBytes(), StandardOpenOption.APPEND);
+        if (!Paths.get(file).toFile().exists()) {
+            Util.writeFile(file, content);
+        } else {
+            Files.write(Paths.get(file), content.getBytes(), StandardOpenOption.APPEND);
+        }
     }
 
     private static class Worker extends Thread {
