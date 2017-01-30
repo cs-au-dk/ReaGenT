@@ -8,6 +8,7 @@ import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -137,6 +138,10 @@ public class Util {
 
     public static <T> T selectRandom(List<T> list) {
         return list.get(new Random().nextInt(list.size()));
+    }
+
+    public static void append(String file, String content) throws IOException {
+        Files.write(Paths.get(file), content.getBytes(), StandardOpenOption.APPEND);
     }
 
     private static class Worker extends Thread {

@@ -9,6 +9,7 @@ import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -95,6 +96,21 @@ public class ManualExperiment {
             }
         });
 
+        manualCheck(queue, fillerThread);
+
+        printToDisk(queue);
+    }
+
+    private static void printToDisk(BlockingQueue<Pair<String, OutputParser.TypeError>> queue) throws InterruptedException, IOException {
+        while (true) {
+            Pair<String, OutputParser.TypeError> error = queue.poll(30, TimeUnit.MINUTES);
+
+            Util.append("errors.txt", "\n\n" + error.toString() + "\n");
+            System.out.println("Wrote an error to errors.txt");
+        }
+    }
+
+    private static void manualCheck(BlockingQueue<Pair<String, OutputParser.TypeError>> queue, Thread fillerThread) throws InterruptedException {
         fillerThread.start();
 
         int good = 0;
