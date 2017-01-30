@@ -6,6 +6,7 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -22,9 +23,11 @@ public class DeltaTest {
         return () -> {
             OutputParser.RunResult result;
             try {
-                result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+                result = OutputParser.parseDriverResult(Main.runBenchmark(bench, 2 * 60 * 1000));
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            } catch (TimeoutException e) {
+                return false;
             }
             return result.typeErrors.stream().map(OutputParser.TypeError::getPath).anyMatch(str -> str.equals(testPath));
         };
