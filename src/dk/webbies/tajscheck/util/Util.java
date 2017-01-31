@@ -526,7 +526,7 @@ public class Util {
     }
 
     public static String toFixed(double number, int decimals) {
-        return toFixed(number, decimals, '.');
+        return toFixed(number, decimals, ',');
     }
 
     public static String toFixed(double number, int decimals, char separator) {

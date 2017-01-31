@@ -67,7 +67,7 @@ public class Table {
                 if ((long)total == total) {
                     result.add(Long.toString((long) total));
                 } else {
-                    result.add(Double.toString(total));
+                    result.add(Double.toString(total).replace('.', ','));
                 }
             }
         }
@@ -94,7 +94,7 @@ public class Table {
             }
         }
 
-        return result.toString();
+        return result.toString().replace(",", ".");
     }
 
     public String toCSV() {
