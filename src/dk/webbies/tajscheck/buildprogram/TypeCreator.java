@@ -245,15 +245,29 @@ public class TypeCreator {
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
 
-            for (Pair<String, Type> property : properties) {
-                addProperties.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, constructType(property.getRight(), typeContext))));
-            }
+            addProperties.addAll(addProperties(typeContext, properties));
 
             return createCachedConstruction(
                     Return(createFunction(signatures, typeContext, info.typeNames.get(t))),
                     block(addProperties),
                     1
             );
+        }
+
+        int propertyCounter = 0;
+        private List<Statement> addProperties(TypeContext typeContext, List<Pair<String, Type>> properties) {
+            List<Statement> addProperties = new ArrayList<>();
+            for (Pair<String, Type> property : properties) {
+                int count = propertyCounter++;
+                addProperties.add(block(
+                        variable("prop_" + count, constructType(property.getRight(), typeContext)),
+                        ifThen(
+                                binary(unary(Operator.TYPEOF, identifier("prop_" + count)), Operator.NOT_EQUAL_EQUAL, string("undefined")),
+                                statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, identifier("prop_" + count)))
+                        )
+                ));
+            }
+            return addProperties;
         }
 
         @Override
@@ -315,9 +329,7 @@ public class TypeCreator {
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
 
-            for (Pair<String, Type> property : properties) {
-                addProperties.add(statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, constructType(property.getRight(), typeContext))));
-            }
+            addProperties.addAll(addProperties(typeContext, properties));
 
 
             return createCachedConstruction(
@@ -333,7 +345,7 @@ public class TypeCreator {
 
             int keys = random.nextInt(10) + 1;
 
-            List<Statement> result = new ArrayList<>();
+            List<Pair<String, Type>> properties = new ArrayList<>();
 
 
             for (int i = 0; i < keys; i++) {
@@ -343,23 +355,23 @@ public class TypeCreator {
                     // do nothing.
                 }
 
-                result.add(statement(binary(member(exp, key), Operator.EQUAL, constructType(type, context))));
+                properties.add(new Pair<>(key, type));
             }
 
-            return result;
+            return addProperties(context, properties);
         }
 
         private Collection<Statement> addNumberIndexerType(Type type, TypeContext context, Expression exp, int seed) {
             Random random = new Random(seed);
 
-            List<Statement> result = new ArrayList<>();
+            List<Pair<String, Type>> properties = new ArrayList<>();
 
             int keys = random.nextInt(10) + 1;
             for (int i = 0; i < keys; i++) {
-                result.add(statement(binary(member(exp, Integer.toString(random.nextInt(100))), Operator.EQUAL, constructType(type, context))));
+                properties.add(new Pair<>(Integer.toString(random.nextInt(100)), type));
             }
 
-            return result;
+            return addProperties(context, properties);
         }
 
         @Override

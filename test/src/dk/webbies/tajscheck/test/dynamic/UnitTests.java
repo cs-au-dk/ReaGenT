@@ -946,4 +946,11 @@ public class UnitTests {
         assertThat(driver, not(containsString("// path: module.Observable.selectMany")));
 
     }
+
+    @Test
+    public void undefinedOnObject() throws Exception {
+        RunResult result = run("undefinedOnObject", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+    }
 }
