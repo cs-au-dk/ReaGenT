@@ -63,8 +63,8 @@ public class TestCreator {
 
             if (arg.withTopLevelFunctions) {
                 topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, info.nativeTypes, arg.depth, seenTopLevel));
-
             }
+
             element.type.accept(visitor, arg.noTopLevelFunctions());
         }
 

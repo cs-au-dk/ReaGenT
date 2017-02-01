@@ -105,6 +105,7 @@ public class RunBenchmarks {
         benchmarks.put("Backbone.js",
                 new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/backbone/backbone.js", "test/benchmarks/backbone/backbone.d.ts", "Backbone", BROWSER, options)
                 .addDependencies(underscore)
+                .addDependencies(jQuery)
         );
 
         benchmarks.put("Lodash", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lodash/lodash.js", "test/benchmarks/lodash/lodash.d.ts", "_", NODE,
