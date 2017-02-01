@@ -30,11 +30,12 @@ public class AutomaticExperiments {
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> type = new Pair<>("type", (bench) -> bench.run_method.toString());
 
-    private static final Pair<String, Experiment.ExperimentSingleRunner> smallCoverage = new Pair<>("small-coverage", (bench) -> {
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> smallCoverage = new Pair<>(Arrays.asList("small-coverage(stmt)", "small-coverage(func)", "small-coverage(branches)"), (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth).setIterationsToRun(1000).build());
         List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench, TIMEOUT), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
-        return Util.toPercentage(CoverageResult.combine(results).statementCoverage());
+        CoverageResult result = CoverageResult.combine(results);
+        return Arrays.asList(Util.toPercentage(result.statementCoverage()), Util.toPercentage(result.functionCoverage()), Util.toPercentage(result.branchCoverage()));
     });
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> uniquePaths = new Pair<>("uniquePaths", (bench) -> {
@@ -65,7 +66,7 @@ public class AutomaticExperiments {
 
         long prevCount = 0;
         long count = firstPathCount;
-        int runs = 1;
+        int runs = 0;
         while (prevCount != count) {
             prevCount = count;
             try {
@@ -73,7 +74,7 @@ public class AutomaticExperiments {
                 runs++;
             } catch (TimeoutException e) {
                 System.out.println("Timeout");
-                return Arrays.asList(Long.toString(firstPathCount), Long.toString(count), Integer.toString(runs));
+                return Arrays.asList(Long.toString(firstPathCount), null, null);
             }
             result.typeErrors.stream().map(OutputParser.TypeError::getPath).forEach(paths::add);
             count = paths.size();
@@ -84,10 +85,10 @@ public class AutomaticExperiments {
         return Arrays.asList(Long.toString(firstPathCount), Long.toString(count), Integer.toString(runs));
     });
 
-    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAndCoverage = new Pair<>(Arrays.asList("uniquePaths", "coverage"), (bench) -> {
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAndCoverage = new Pair<>(Arrays.asList("uniquePaths", "coverage(stmt)", "coverage(functions)", "coverage(branches)"), (bench) -> {
         String uniquePaths = AutomaticExperiments.uniquePaths.getRight().run(bench);
         if (uniquePaths == null) {
-            return Arrays.asList(null, null);
+            return Arrays.asList(null, null, null, null);
         }
 
         Map<String, CoverageResult> out;
@@ -96,46 +97,51 @@ public class AutomaticExperiments {
         } catch (TimeoutException e) {
             // this is ok, it happens.
             System.out.println("Timeout on coverage");
-            return Arrays.asList(uniquePaths, null);
+            return Arrays.asList(uniquePaths, null, null, null);
         } catch (Exception e) {
             System.out.println("Exceotion: " + e.getClass().getSimpleName() + " while doing coverage.");
-            return Arrays.asList(uniquePaths, null);
+            return Arrays.asList(uniquePaths, null, null, null);
         }
 
         assert out.containsKey(bench.getJSName());
 
-        return Arrays.asList(uniquePaths, Util.toPercentage(out.get(bench.getJSName()).statementCoverage()));
+        CoverageResult coverage = out.get(bench.getJSName());
+        return Arrays.asList(uniquePaths, Util.toPercentage(coverage.statementCoverage()), Util.toPercentage(coverage.functionCoverage()), Util.toPercentage(coverage.branchCoverage()));
     });
 
-    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAnd5Coverage = new Pair<>(Arrays.asList("uniquePaths", "coverage", "5coverage"), (bench) -> {
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAnd5Coverage = new Pair<>(Arrays.asList("uniquePaths", "coverage(stmt)", "coverage(functions)", "coverage(branches)", "5coverage(stmt)", "5coverage(functions)", "5coverage(branches)"), (bench) -> {
         String uniquePaths = AutomaticExperiments.uniquePaths.getRight().run(bench);
         if (uniquePaths == null) {
-            return Arrays.asList(null, null, null);
+            return Arrays.asList(null, null, null, null, null, null, null);
         }
 
         Map<String, CoverageResult> out = new HashMap<>();
 
-        String firstCoverage = null;
+        CoverageResult firstCoverage = null;
         for (int i = 0; i < 5; i++) {
             try {
                 Map<String, CoverageResult> subResult = Main.genCoverage(bench, TIMEOUT * 5);
                 out = CoverageResult.combine(out, subResult);
                 if (firstCoverage == null) {
-                    firstCoverage = Util.toPercentage(out.get(bench.getJSName()).statementCoverage());
+                    firstCoverage = out.get(bench.getJSName());
                 }
-            } catch (TimeoutException e) {
-                // this is ok, it happens.
-                System.out.println("Timeout on coverage");
-                return Arrays.asList(uniquePaths, firstCoverage, null);
             } catch (Exception e) {
-                System.out.println("Other exception: " + e.getClass().getSimpleName());
-                return Arrays.asList(uniquePaths, firstCoverage, null);
+                System.out.println("Exception: " + e.getClass().getSimpleName());
+                if (firstCoverage != null) {
+                    return Arrays.asList(uniquePaths, Util.toPercentage(firstCoverage.statementCoverage()), Util.toPercentage(firstCoverage.functionCoverage()), Util.toPercentage(firstCoverage.branchCoverage()), null, null, null);
+                } else {
+                    return Arrays.asList(uniquePaths, null, null, null, null, null, null);
+                }
             }
         }
 
         assert out.containsKey(bench.getJSName());
 
-        return Arrays.asList(uniquePaths, firstCoverage, Util.toPercentage(out.get(bench.getJSName()).statementCoverage()));
+        CoverageResult coverage = out.get(bench.getJSName());
+        return Arrays.asList(uniquePaths,
+                Util.toPercentage(firstCoverage.statementCoverage()), Util.toPercentage(firstCoverage.functionCoverage()), Util.toPercentage(firstCoverage.branchCoverage()),
+                Util.toPercentage(coverage.statementCoverage()), Util.toPercentage(coverage.functionCoverage()), Util.toPercentage(coverage.branchCoverage())
+        );
     });
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> driverSizes = new Pair<>(Arrays.asList("size", "size-no-generics"), (bench) -> {
@@ -172,15 +178,16 @@ public class AutomaticExperiments {
 
         experiment.addSingleExperiment(type);
 
-
 //        experiment.addMultiExperiment(uniquePathsAndCoverage);
-//        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
-//        experiment.addMultiExperiment(uniquePathsConvergence);
+        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
+        experiment.addMultiExperiment(uniquePathsConvergence);
 
         experiment.addMultiExperiment(driverSizes);
         experiment.addSingleExperiment(jsFileSize);
 
-//        experiment.addSingleExperiment(smallCoverage);
+//        experiment.addSingleExperiment(uniquePaths);
+
+//        experiment.addMultiExperiment(smallCoverage);
 //        experiment.addSingleExperiment(runSmall);
 
 
