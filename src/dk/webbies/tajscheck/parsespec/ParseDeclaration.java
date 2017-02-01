@@ -221,7 +221,7 @@ public class ParseDeclaration {
             addName(t, arg.path);
 
             for (int i = 0; i < t.getTypeArguments().size(); i++) {
-                queue.add(arg.append("{typeArg" + i + "]", t.getTypeArguments().get(i)));
+                queue.add(arg.append("[typeArg" + i + "]", t.getTypeArguments().get(i)));
             }
 
             return t.getTarget().accept(this, arg);
