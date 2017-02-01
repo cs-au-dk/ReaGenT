@@ -50,18 +50,11 @@ public class ManualExperiment {
 
                     OutputParser.TypeError typeError = Util.selectRandom(result.typeErrors);
 
-                    if (!paths.contains(typeError.path)) {
-                        throw new RuntimeException();
-                    }
-
                     String smallDriver;
-                    while (true) {
-                        try {
-                            smallDriver = Main.generateSmallestDriver(benchmark.withPathsToTest(paths), DeltaTest.testHasTypeError(benchmark, typeError.path));
-                            break;
-                        } catch (RuntimeException e) {
-                            // continue
-                        }
+                    try {
+                        smallDriver = Main.generateSmallestDriver(benchmark.withPathsToTest(paths), DeltaTest.testHasTypeError(benchmark, typeError.path));
+                    } catch (RuntimeException e) {
+                        continue; // No point in trying any more.
                     }
 
                     Util.writeFile(Main.getFolderPath(benchmark) + "minimizedDriver" + minimizedResultCounter++ + ".js", smallDriver);
@@ -96,8 +89,9 @@ public class ManualExperiment {
             }
         });
 
-        manualCheck(queue, fillerThread);
+        fillerThread.start();
 
+//        manualCheck(queue, fillerThread);
         printToDisk(queue);
     }
 
@@ -105,14 +99,12 @@ public class ManualExperiment {
         while (true) {
             Pair<String, OutputParser.TypeError> error = queue.poll(30, TimeUnit.MINUTES);
 
-            Util.append("errors.txt", "\n\n" + error.toString() + "\n");
+            Util.append("errors.txt", "\n\n" + error.left + "\n" + error.right.toString() + "\n");
             System.out.println("Wrote an error to errors.txt");
         }
     }
 
     private static void manualCheck(BlockingQueue<Pair<String, OutputParser.TypeError>> queue, Thread fillerThread) throws InterruptedException {
-        fillerThread.start();
-
         int good = 0;
         int bad = 0;
         int unknown = 0;
