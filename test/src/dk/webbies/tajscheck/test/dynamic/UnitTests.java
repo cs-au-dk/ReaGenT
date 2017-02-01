@@ -953,4 +953,12 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size(), is(0));
     }
+
+    @Test
+    public void namespacesAndClassWithNestedClass() throws Exception {
+        RunResult result = run("namespacesAndClassWithNestedClass", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+
+    }
 }
