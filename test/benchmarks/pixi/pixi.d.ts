@@ -1,4 +1,4 @@
-// Type definitions for Pixi.js 4.1
+// Type definitions for Pixi.js 4.3.4
 // Project: https://github.com/pixijs/pixi.js/tree/dev
 // Definitions by: clark-stevenson <https://github.com/pixijs/pixi-typescript>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
@@ -192,6 +192,37 @@ declare module PIXI {
 
     // display
 
+    export interface IApplicationOptions extends IRendererOptions {
+
+        view?: HTMLCanvasElement;
+        transparent?: boolean;
+        autoResize?: boolean;
+        antialias?: boolean;
+        resolution?: number;
+        clearBeforeRender?: boolean;
+        backgroundColor?: number;
+        roundPixels?: boolean;
+        context?: WebGLRenderingContext;
+        preserveDrawingBuffer?: boolean;
+
+    }
+
+    export class Application {
+
+        constructor(width?: number, height?: number, options?: IApplicationOptions, noWebGL?: boolean);
+
+        renderer: PIXI.WebGLRenderer | PIXI.CanvasRenderer;
+        stage: Container;
+        ticker: ticker.Ticker;
+
+        stop(): void;
+        start(): void;
+        render(): void;
+        destroy(removeView?: boolean): void;
+        readonly view: HTMLCanvasElement;
+
+    }
+
     export interface IDestroyOptions {
         children?: boolean;
         texture?: boolean;
@@ -237,7 +268,7 @@ declare module PIXI {
         getChildAt(index: number): DisplayObject;
         removeChild(child: DisplayObject): DisplayObject;
         removeChildAt(index: number): DisplayObject;
-        removeChildren(beginIndex?: number, endIndex?: number): DisplayObject | DisplayObject[];
+        removeChildren(beginIndex?: number, endIndex?: number): DisplayObject[];
         updateTransform(): void;
         calculateBounds(): void;
         protected _calculateBounds(): void;
@@ -291,12 +322,11 @@ declare module PIXI {
 
         // begin interactive target
         interactive: boolean;
-        buttonMode: boolean;
-        hitArea: IHitArea;
         interactiveChildren: boolean;
+        hitArea: PIXI.Rectangle | PIXI.Circle | PIXI.Ellipse | PIXI.Polygon | PIXI.RoundedRectangle;
+        buttonMode: boolean;
         defaultCursor: string;
-        _isRightDown: boolean;
-        _isLeftDown: boolean;
+        getTrackedPointers(): { [key: number]: interaction.InteractionTrackingData; };
         // end interactive target
 
         transform: TransformBase;
@@ -313,7 +343,7 @@ declare module PIXI {
         protected _lastBoundsID: number;
         protected _boundsRect: Rectangle;
         protected _localBoundsRect: Rectangle;
-        protected _mask: Rectangle;
+        protected _mask: PIXI.Graphics | PIXI.Sprite;
         x: number;
         y: number;
         worldTransform: Matrix;
@@ -334,7 +364,7 @@ declare module PIXI {
         getLocalBounds(rect?: Rectangle): Rectangle;
         toGlobal(position: Point, point?: Point, skipUpdate?: boolean): Point;
         toLocal(position: Point, from?: DisplayObject, point?: Point, skipUpdate?: boolean): Point;
-        protected renderWebGL(renderer: WebGLRenderer): void;
+        renderWebGL(renderer: WebGLRenderer): void;
         renderCanvas(renderer: CanvasRenderer): void;
         setParent(container: Container): Container;
         setTransform(x?: number, y?: number, scaleX?: number, scaleY?: number, rotation?: number, skewX?: number, skewY?: number, pivotX?: number, pivotY?: number): DisplayObject;
@@ -723,7 +753,7 @@ declare module PIXI {
         contains(x: number, y: number): boolean;
         pad(paddingX: number, paddingY: number): void;
         fit(rectangle: Rectangle): void;
-        enlarge(rect: Rectangle): void;
+        enlarge(rectangle: Rectangle): void;
 
     }
     export class RoundedRectangle {
@@ -795,6 +825,9 @@ declare module PIXI {
         destroyPlugins(): void;
         // plugintarget mixin end
 
+        // from InteractionManager
+        interaction: interaction.InteractionManager;
+
         constructor(width?: number, height?: number, options?: IRendererOptions);
 
         rootContext: CanvasRenderingContext2D;
@@ -810,6 +843,7 @@ declare module PIXI {
         setBlendMode(blendMode: number): void;
         destroy(removeView?: boolean): void;
         resize(w: number, h: number): void;
+        clear(clearColor?: string): void;
 
         on(event: "prerender", fn: () => void, context?: any): utils.EventEmitter;
         on(event: "postrender", fn: () => void, context?: any): utils.EventEmitter;
@@ -869,6 +903,9 @@ declare module PIXI {
         initPlugins(): void;
         destroyPlugins(): void;
         // plugintarget mixin end
+
+        // from InteractionManager
+        interaction: interaction.InteractionManager;
 
         constructor(width?: number, height?: number, options?: IWebGLRendererOptions);
 
@@ -1156,13 +1193,13 @@ declare module PIXI {
 
         vertextSrc: string;
         fragmentSrc: string;
+        blendMode: number;
         protected uniformData: { [name: string]: IUniformData };
-        uniforms: { [name: string]: any };
+        uniforms: { [name: string]: any } | any;
         glShaders: any;
         glShaderKey: string;
         padding: number;
         resolution: number;
-        blendMode: number;
         enabled: boolean;
         apply(filterManager: FilterManager, input: RenderTarget, output: RenderTarget, clear?: boolean): void;
 
@@ -1189,12 +1226,15 @@ declare module PIXI {
         protected _anchor: ObservablePoint;
         anchor: ObservablePoint;
         protected _texture: Texture;
+        protected _transformTrimmedID: number;
+        protected _textureTrimmedID: number;
         protected _width: number;
         protected _height: number;
         tint: number;
         protected _tint: number;
         protected _tintRGB: number;
         blendMode: number;
+        pluginName: string;
         protected cachedTint: number;
         texture: Texture;
         protected textureDirty: boolean;
@@ -1282,9 +1322,7 @@ declare module PIXI {
     }
 
     // text
-
-    export class TextStyle {
-
+    export interface ITextStyleStyle {
         align?: string;
         breakWords?: boolean;
         dropShadow?: boolean;
@@ -1294,7 +1332,8 @@ declare module PIXI {
         dropShadowDistance?: number;
         fill?: string | string[] | number | number[] | CanvasGradient | CanvasPattern;
         fillGradientType?: number;
-        fontFamily?: string;
+        fillGradientStops?: number[];
+        fontFamily?: string | string[];
         fontSize?: number | string;
         fontStyle?: string;
         fontVariant?: string;
@@ -1310,14 +1349,46 @@ declare module PIXI {
         textBaseline?: string;
         wordWrap?: boolean;
         wordWrapWidth?: number;
-
     }
+
+    export class TextStyle implements ITextStyleStyle {
+        align: string;
+        breakWords: boolean;
+        dropShadow: boolean;
+        dropShadowAngle: number;
+        dropShadowBlur: number;
+        dropShadowColor: string | number;
+        dropShadowDistance: number;
+        fill: string | string[] | number | number[] | CanvasGradient | CanvasPattern;
+        fillGradientType: number;
+        fillGradientStops: number[];
+        fontFamily: string | string[];
+        fontSize: number | string;
+        fontStyle: string;
+        fontVariant: string;
+        fontWeight: string;
+        letterSpacing: number;
+        lineHeight: number;
+        lineJoin: string;
+        miterLimit: number;
+        padding: number;
+        stroke: string | number;
+        strokeThickness: number;
+        styleID: number;
+        textBaseline: string;
+        wordWrap: boolean;
+        wordWrapWidth: number;
+        constructor(style?: ITextStyleStyle);
+        public clone(): TextStyle;
+        public reset(): void;
+    }
+
     export class Text extends Sprite {
 
-        static getFontStyle(style: TextStyle): string;
+        static getFontStyle(style: ITextStyleStyle): string;
         static calculateFontProperties(style: string): any;
 
-        constructor(text?: string, style?: TextStyle);
+        constructor(text?: string, style?: ITextStyleStyle, canvas?: HTMLCanvasElement);
 
         canvas: HTMLCanvasElement;
         context: CanvasRenderingContext2D;
@@ -1343,9 +1414,10 @@ declare module PIXI {
         renderWebGL(renderer: WebGLRenderer): void;
         protected _renderCanvas(renderer: CanvasRenderer): void;
         protected wordWrap(text: string): string;
+        getLocalBounds(rect?: Rectangle): Rectangle;
         protected _calculateBounds(): void;
         protected _onStyleChange: () => void;
-        protected _generateFillStyle(style: string | number | CanvasGradient, lines: string[]): string | number | CanvasGradient;
+        protected _generateFillStyle(style: TextStyle, lines: string[]): string | number | CanvasGradient;
         destroy(options?: IDestroyOptions | boolean): void;
         dirty: boolean;
 
@@ -1412,7 +1484,7 @@ declare module PIXI {
         protected _loadSvgSourceUsingDataUri(dataUri: string): void;
         protected _loadSvgSourceUsingXhr(): void;
         protected _loadSvgSourceUsingString(svgString: string): void;
-        loadSource(source: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement): void;
+        protected loadSource(source: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement): void;
         protected _sourceLoaded(): void;
         destroy(): void;
         dispose(): void;
@@ -1528,6 +1600,8 @@ declare module PIXI {
         static fromUrl(videoSrc: string | any | string[] | any[]): VideoBaseTexture;
         static fromUrls(videoSrc: string | any | string[] | any[]): VideoBaseTexture;
 
+        source: HTMLVideoElement;
+        protected loadSource(source: HTMLVideoElement): void;
     }
 
     // ticker
@@ -1629,6 +1703,8 @@ declare module PIXI {
 
             constructor(text: string, style?: IBitmapTextStyle);
 
+            protected _textWidth: number;
+            protected _textHeight: number;
             textWidth: number;
             textHeight: number;
             protected _glyphs: Sprite[];
@@ -1659,8 +1735,9 @@ declare module PIXI {
         }
         export class AnimatedSprite extends Sprite {
 
-            constructor(textures: Texture[] | { texture: Texture, time?: number }[]);
+            constructor(textures: Texture[] | { texture: Texture, time?: number }[], autoUpdate?: boolean);
 
+            protected _autoUpdate: boolean;
             protected _textures: Texture[];
             protected _durations: number[];
             textures: Texture[] | { texture: Texture, time?: number }[];
@@ -1710,6 +1787,7 @@ declare module PIXI {
             protected _height: number;
             protected _canvasPattern: CanvasPattern;
             uvTransform: TextureTransform;
+            uvRespectAnchor: boolean;
 
             clampMargin: number;
             tileScale: Point | ObservablePoint;
@@ -1752,7 +1830,7 @@ declare module PIXI {
         export class FXAAFilter extends Filter { }
         export class BlurFilter extends Filter {
 
-            constructor(strength?: number, quality?: number, resolution?: number);
+            constructor(strength?: number, quality?: number, resolution?: number, kernelSize?: number);
 
             blurXFilter: BlurXFilter;
             blurYFilter: BlurYFilter;
@@ -1767,7 +1845,7 @@ declare module PIXI {
         }
         export class BlurXFilter extends Filter {
 
-            constructor(strength?: number, quality?: number, resolution?: number);
+            constructor(strength?: number, quality?: number, resolution?: number, kernelSize?: number);
 
             protected _quality: number;
 
@@ -1781,7 +1859,7 @@ declare module PIXI {
         }
         export class BlurYFilter extends Filter {
 
-            constructor(strength?: number, quality?: number, resolution?: number);
+            constructor(strength?: number, quality?: number, resolution?: number, kernelSize?: number);
 
             protected _quality: number;
 
@@ -1853,6 +1931,25 @@ declare module PIXI {
 
     export module interaction {
 
+        export interface InteractiveTarget {
+
+            interactive: boolean;
+            interactiveChildren: boolean;
+            hitArea: PIXI.Rectangle | PIXI.Circle | PIXI.Ellipse | PIXI.Polygon | PIXI.RoundedRectangle;
+            buttonMode: boolean;
+            defaultCursor: string;
+            getTrackedPointers(): { [key: number]: InteractionTrackingData; };
+
+        }
+        export interface InteractionTrackingData {
+
+            readonly pointerId: number;
+            flags: number;
+            over: boolean;
+            rightDown: boolean;
+            leftDown: boolean;
+
+        }
         export interface InteractionEvent {
 
             stopped: boolean;
@@ -1866,53 +1963,41 @@ declare module PIXI {
         export class InteractionData {
 
             global: Point;
-
-            protected _target: DisplayObject;
             target: DisplayObject;
-            targetProxy: DisplayObject;
             originalEvent: Event;
+            identifier: number;
 
             getLocalPosition(displayObject: DisplayObject, point?: Point, globalPos?: Point): Point;
 
         }
+        export interface InteractionManagerOptions {
+            autoPreventDefault?: boolean;
+            interactionFrequency?: number;
+        }
         export class InteractionManager extends utils.EventEmitter {
 
-            constructor(renderer: SystemRenderer, options?: { autoPreventDefault?: boolean; interactionFrequency?: number; });
+            constructor(renderer: SystemRenderer, options?: InteractionManagerOptions);
 
             renderer: SystemRenderer;
             autoPreventDefault: boolean;
             interactionFrequency: number;
             mouse: InteractionData;
-            pointer: InteractionData;
-            eventData: {
-                stopped: boolean;
-                target: any;
-                type: any;
-                data: InteractionData;
-                stopPropagination(): void;
-            };
-            interactiveDataPool: InteractionData[];
+            protected activeInteractionData: any;
+            protected interactionDataPool: InteractionData[];
+            eventData: InteractionEvent;
             protected interactionDOMElement: HTMLElement;
-            protected moveWhenInside: boolean;
+            moveWhenInside: boolean;
             protected eventsAdded: boolean;
-            mouseOverRenderer: boolean;
+            protected mouseOverRenderer: boolean;
             supportsTouchEvents: boolean;
             supportsPointerEvents: boolean;
             normalizeTouchEvents: boolean;
             normalizeMouseEvents: boolean;
 
-            protected onMouseUp: (event: MouseEvent) => void;
-            protected processMouseUp: (displayObject: DisplayObject, hit: boolean) => void;
-            protected onMouseDown: (event: MouseEvent) => void;
-            protected processMouseDown: (displayObject: DisplayObject, hit: boolean) => void;
-            protected onMouseMove: (event: MouseEvent) => void;
-            protected processMouseMove: (displayObject: DisplayObject, hit: boolean) => void;
-            protected onMouseOut: (event: MouseEvent) => void;
-            protected processMouseOverOut: (displayObject: DisplayObject, hit: boolean) => void;
-            protected onMouseOver: (event: MouseEvent) => void;
-
             protected onPointerUp: (event: PointerEvent) => void;
             protected processPointerUp: (displayObject: DisplayObject, hit: boolean) => void;
+            protected onPointerCancel: (event: PointerEvent) => void;
+            protected processPointerCancel: (displayObject: DisplayObject, hit: boolean) => void;
             protected onPointerDown: (event: PointerEvent) => void;
             protected processPointerDown: (displayObject: DisplayObject, hit: boolean) => void;
             protected onPointerMove: (event: PointerEvent) => void;
@@ -1921,43 +2006,24 @@ declare module PIXI {
             protected processPointerOut: (displayObject: DisplayObject, hit: boolean) => void;
             protected onPointerOver: (event: PointerEvent) => void;
 
-            protected onTouchStart: (event: TouchEvent) => void;
-            protected processTouchStart: (DisplayObject: DisplayObject, hit: boolean) => void;
-            protected onTouchEnd: (event: TouchEvent) => void;
-            protected processTouchEnd: (displayObject: DisplayObject, hit: boolean) => void;
-            protected onTouchMove: (event: TouchEvent) => void;
-            protected processTouchMove: (displayObject: DisplayObject, hit: boolean) => void;
             defaultCursorStyle: string;
             currentCursorStyle: string;
             protected _tempPoint: Point;
             resolution: number;
-            protected setTargetElement(element: HTMLElement, resolution: number): void;
+            protected setTargetElement(element: HTMLCanvasElement, resolution?: number): void;
             protected addEvents(): void;
             protected removeEvents(): void;
             update(deltaTime: number): void;
-            protected dispatchEvent(displayObject: DisplayObject, eventString: string, eventData: any): void;
+            protected dispatchEvent(displayObject: DisplayObject, eventString: string, eventData: InteractionData): void;
             mapPositionToPoint(point: Point, x: number, y: number): void;
-            protected processInteractive(point: Point, displayObject: DisplayObject, func: (displayObject: DisplayObject, hit: boolean) => void, hitTest: boolean, interactive: boolean): boolean;
-            protected _startInteractionProcess(): void;
-            protected _queueAdd(displayObject: DisplayObject, order: number): void;
-            protected _finishInteractionProcess(func: Function): void;
-            protected getTouchData(touchEvent: InteractionData): InteractionData;
-            protected returnTouchData(touchData: InteractionData): void;
-            protected normalizeToPointerData(Event: Event): void;
-
+            protected processInteractive(point: Point, displayObject: DisplayObject, func: (displayObject: DisplayObject, hit: boolean) => void, hitTest?: boolean, interactive?: boolean): boolean;
+            protected onPointerComplete(originalEvent: PointerEvent, cancelled: boolean, fun: Function): void;
+            protected getInteractionDataForPointerId(pointerId: number): InteractionData;
+            protected releaseInteractionDataForPointerId(pointerId: number): void;
+            protected configureInteractionEventForDOMEvent(interactionEvent: InteractionEvent, pointerEvent: PointerEvent, interactionData: InteractionData): InteractionEvent;
+            protected normalizeToPointerData(event: TouchEvent | MouseEvent | PointerEvent): PointerEvent[];
             destroy(): void;
 
-        }
-        export interface InteractiveTarget {
-
-            interactive: boolean;
-            interactiveChildren: boolean;
-            hitArea: IHitArea;
-            buttonMode: boolean;
-            defaultCursor: string;
-
-        }
-        export interface InteractiveTargetProxy extends InteractiveTarget {
         }
 
     }
@@ -1965,9 +2031,44 @@ declare module PIXI {
     //////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////LOADER/////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////
-    // extends
+
+    // pixi loader extends
     // https://github.com/englercj/resource-loader/
-    // 1.6.4
+    // 2.0.4
+
+    class MiniSignalBinding {
+
+        constructor(fn: Function, once?: boolean, thisArg?: any);
+
+        protected _fn: Function;
+        protected _once: boolean;
+        protected _thisArg: any;
+        protected _next: MiniSignalBinding;
+        protected _prev: MiniSignalBinding;
+        protected _owner: MiniSignal;
+
+        detach(): boolean;
+
+    }
+    class MiniSignal {
+
+        constructor();
+
+        protected _head: MiniSignalBinding;
+        protected _tail: MiniSignalBinding;
+
+        handlers(exists?: boolean): MiniSignalBinding[] | boolean;
+        handlers(exists?: true): boolean;
+        handlers(exists?: false): MiniSignalBinding[];
+
+        has(node: MiniSignalBinding): boolean;
+        dispatch(): boolean;
+        add(fn: Function, thisArg?: any): void;
+        once(fn: Function, thisArg?: any): void;
+        detach(node: MiniSignalBinding): MiniSignal;
+        detachAll(): MiniSignal;
+
+    }
 
     export module loaders {
 
@@ -1977,6 +2078,8 @@ declare module PIXI {
             loadType?: number;
             xhrType?: string;
             metaData?: any;
+            loadElement?: HTMLImageElement | HTMLAudioElement | HTMLVideoElement;
+            skipSource?: boolean;
 
         }
         export interface IResourceDictionary {
@@ -1984,22 +2087,63 @@ declare module PIXI {
             [index: string]: PIXI.loaders.Resource;
 
         }
+
+        // As of ResourceLoader v2 we no longer require EventEmitter
+        // However, for depreciation reasons, it remains.
         export class Loader extends utils.EventEmitter {
 
-            protected static _pixiMiddleware: Function[];
+            // pixi overrides here
             static addPixiMiddleware(fn: Function): void;
+
+            // below this line is the original non-pixi loader
+
+            static Resource: any;
+            static async: any;
+            static base64: any;
 
             constructor(baseUrl?: string, concurrency?: number);
 
             baseUrl: string;
             progress: number;
             loading: boolean;
+            defaultQueryString: string;
+
+            protected _beforeMiddleware: Function[];
+            protected _afterMiddleware: Function[];
+            protected _resourcesParsing: Resource[];
+            protected _boundLoadResource: (r: Resource, d: Function) => void;
+            protected _queue: any;
+
             resources: IResourceDictionary;
 
-            add(name: string, url: string, options?: ILoaderOptions, cb?: () => void): Loader;
-            add(url: string, options?: ILoaderOptions, cb?: () => void): Loader;
-            // todo I am not sure of object literal notional (or its options) so just allowing any but would love to improve this
-            add(obj: any, options?: ILoaderOptions, cb?: () => void): Loader;
+            onProgress: MiniSignal;
+            onError: MiniSignal;
+            onLoad: MiniSignal;
+            onStart: MiniSignal;
+            onComplete: MiniSignal;
+
+            add(...params: any[]): this;
+            add(name: string, url: string, options?: ILoaderOptions, cb?: Function): this;
+            add(url: string, options?: ILoaderOptions, cb?: Function): this;
+            add(obj: any | any[], options?: ILoaderOptions, cb?: Function): this;
+
+            pre(fn: Function): this;
+            use(fn: Function): this;
+            reset(): this;
+            load(cb?: Function): this;
+
+            protected _prepareUrl(url: string): string;
+            protected _loadResource(resource: Resource, dequeue: Function): void;
+            protected _onComplete(): void;
+            protected _onLoad(resource: Resource): void;
+
+            // these are added for spine support
+
+            spineAtlas: any;
+            spineData: any;
+            textures: ITextureDictionary;
+
+            // depreciation
 
             on(event: "complete", fn: (loader: loaders.Loader, object: any) => void, context?: any): utils.EventEmitter;
             on(event: "error", fn: (error: Error, loader: loaders.Loader, resource: Resource) => void, context?: any): utils.EventEmitter;
@@ -2015,36 +2159,95 @@ declare module PIXI {
             once(event: "start", fn: (loader: loaders.Loader) => void, context?: any): utils.EventEmitter;
             once(event: string, fn: Function, context?: any): utils.EventEmitter;
 
-            before(fn: Function): Loader;
-            pre(fn: Function): Loader;
-
-            after(fn: Function): Loader;
-            use(fn: Function): Loader;
-
-            reset(): void;
-
-            load(cb?: (loader: loaders.Loader, object: any) => void): Loader;
-
         }
         export interface ITextureDictionary {
             [index: string]: PIXI.Texture;
         }
+        export class Resource {
 
-        export class Resource extends utils.EventEmitter {
+            static setExtensionLoadType(extname: string, loadType: number): void;
+            static setExtensionXhrType(extname: string, xhrType: number): void;
+
+            constructor(name: string, url: string | string[], options?: ILoaderOptions);
+
+            protected _flags: number;
+
+            name: string;
+            url: string;
+            data: any;
+            crossOrigin: boolean | string;
+            loadType: number;
+            xhrType: string;
+            metadata: any;
+            error: Error;
+            xhr: XMLHttpRequest;
+            children: Resource[];
+            type: number;
+            progressChunk: number;
+
+            protected _dequeue: Function;
+            protected _onLoadBinding: Function;
+            protected _boundComplete: Function;
+            protected _boundOnError: Function;
+            protected _boundOnProgress: Function;
+            protected _boundXhrOnError: Function;
+            protected _boundXhrOnAbort: Function;
+            protected _boundXhrOnLoad: Function;
+            protected _boundXdrOnTimeout: Function;
+
+            onStart: MiniSignal;
+            onProgress: MiniSignal;
+            onComplete: MiniSignal;
+            onAfterMiddleware: MiniSignal;
+
+            isDataUrl: boolean;
+            isComplete: boolean;
+            isLoading: boolean;
+            complete(): void;
+            abort(message?: string): void;
+            load(cb?: Function): void;
+
+            protected _hasFlag(flag: number): boolean;
+            protected _setFlag(flag: number, value: boolean): void;
+            protected _loadElement(type: string): void;
+            protected _loadSourceElement(type: string): void;
+            protected _loadXhr(): void;
+            protected _loadXdr(): void;
+            protected _createSource(type: string, url: string, mime?: string): HTMLSourceElement;
+            protected _onError(event?: any): void;
+            protected _onProgress(event?: any): void;
+            protected _xhrOnError(): void;
+            protected _xhrOnAbort(): void;
+            protected _xdrOnTimeout(): void;
+            protected _xhrOnLoad(): void;
+            protected _determineCrossOrigin(url: string, loc: any): string;
+            protected _determineXhrType(): number;
+            protected _determineLoadType(): number;
+            protected _getExtension(): string;
+            protected _getMimeXhrType(type: number): string;
+
+            static STATUS_FLAGS: {
+                NONE: number;
+                DATA_URL: number;
+                COMPLETE: number;
+                LOADING: number;
+            };
+
+            static TYPE: {
+                UNKNOWN: number;
+                JSON: number;
+                XML: number;
+                IMAGE: number;
+                AUDIO: number;
+                VIDEO: number;
+                TEXT: number;
+            };
 
             static LOAD_TYPE: {
                 XHR: number;
                 IMAGE: number;
                 AUDIO: number;
                 VIDEO: number;
-            };
-
-            static XHR_READ_STATE: {
-                UNSENT: number;
-                OPENED: number;
-                HEADERS_RECIEVED: number;
-                LOADING: number;
-                DONE: number;
             };
 
             static XHR_RESPONSE_TYPE: {
@@ -2056,37 +2259,7 @@ declare module PIXI {
                 TEXT: number;
             };
 
-            constructor(name?: string, url?: string | string[], options?: ILoaderOptions);
-
-            protected _loadSourceElement(type: string): void;
-            isLoading: boolean;
-            isComplete: boolean;
-
-            isJson: boolean;
-            isXml: boolean;
-            isImage: boolean;
-            isAudio: boolean;
-            isVideo: boolean;
-
-            name: string;
-            texture: Texture;
-            textures: ITextureDictionary;
-            url: string;
-            data: any;
-            crossOrigin: boolean | string;
-            loadType: number;
-            xhrType: string;
-            error: Error;
-            xhr: XMLHttpRequest;
-            SVGMetadataElement: any;
-
-            metadata: any;
-            spineAtlas: any;
-            spineData: any;
-
-            complete(): void;
-            load(cb?: () => void): void;
-            abort(message: string): void;
+            static EMPTY_GIF: string;
 
         }
     }
@@ -2110,6 +2283,7 @@ declare module PIXI {
             dirtyVertex: boolean;
             protected _geometryVersion: number;
             blendMode: number;
+            pluginName: string;
             canvasPadding: number;
             drawMode: number;
             texture: Texture;
@@ -2451,10 +2625,11 @@ declare module PIXI {
         }
         export class GLShader {
 
-            constructor(gl: WebGLRenderingContext, vertexSrc: string | string[], fragmentSrc: string | string[]);
+            constructor(gl: WebGLRenderingContext, vertexSrc: string | string[], fragmentSrc: string | string[], precision: string, attributeLocations: { [key: string]: number });
 
             gl: WebGLRenderingContext;
             program: WebGLProgram;
+            uniformData: any;
             uniforms: any;
             attributes: any;
 
@@ -2542,6 +2717,7 @@ declare module PIXI {
             clear(): VertexArrayObject;
             draw(type: number, size: number, start: number): VertexArrayObject;
             destroy(): void;
+            getSize(): number;
 
         }
 
@@ -2565,7 +2741,7 @@ declare module PIXI {
         export function hex2string(hex: number): string;
         export function rgb2hex(rgb: Number[]): number;
         export function canUseNewCanvasBlendModes(): boolean;
-        export function getResolutionOfUrl(url: string): number;
+        export function getResolutionOfUrl(url: string, defaultValue?: number): number;
         export function getSvgSize(svgString: string): any;
         export function decomposeDataUri(dataUri: string): IDecomposedDataUri;
         export function getUrlFileExtension(url: string): string;
@@ -2617,7 +2793,7 @@ declare module PIXI {
         // https://github.com/primus/eventemitter3
         export class EventEmitter {
 
-            listeners(event: string): Function[];
+            listeners(event: string, exists?: boolean): Function[];
             emit(event: string, ...args: any[]): boolean;
             on(event: string, fn: Function, context?: any): EventEmitter;
             once(event: string, fn: Function, context?: any): EventEmitter;
@@ -2629,6 +2805,229 @@ declare module PIXI {
             addListener(event: string, fn: Function, context?: any): EventEmitter;
 
         }
+
+    }
+
+    //////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////depreciation/////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
+    // not sure how to handle blendmodes scalemodes basetexturecache
+    module core {
+
+        /**
+         * @class
+         * @private
+         * @name SpriteBatch
+         * @memberof PIXI
+         * @see PIXI.ParticleContainer
+         * @throws {ReferenceError} SpriteBatch does not exist any more, please use the new ParticleContainer instead.
+         * @deprecated since version 3.0.0
+         */
+        type SpriteBatch = ParticleContainer;
+
+        /**
+         * @class
+         * @private
+         * @name AssetLoader
+         * @memberof PIXI
+         * @see PIXI.loaders.Loader
+         * @throws {ReferenceError} The loader system was overhauled in pixi v3, please see the new PIXI.loaders.Loader class.
+         * @deprecated since version 3.0.0
+         */
+        type AssetLoader = loaders.Loader;
+
+        /**
+         * @class
+         * @private
+         * @name Stage
+         * @memberof PIXI
+         * @see PIXI.Container
+         * @deprecated since version 3.0.0
+         */
+        type Stage = Container;
+
+        /**
+         * @class
+         * @private
+         * @name DisplayObjectContainer
+         * @memberof PIXI
+         * @see PIXI.Container
+         * @deprecated since version 3.0.0
+         */
+        type DisplayObjectContainer = Container;
+
+        /**
+         * @class
+         * @private
+         * @name Strip
+         * @memberof PIXI
+         * @see PIXI.mesh.Mesh
+         * @deprecated since version 3.0.0
+         */
+        type Strip = mesh.Mesh;
+
+        /**
+         * @class
+         * @private
+         * @name Rope
+         * @memberof PIXI
+         * @see PIXI.mesh.Rope
+         * @deprecated since version 3.0.0
+         */
+        type Rope = mesh.Rope;
+
+        /**
+         * @class
+         * @private
+         * @name ParticleContainer
+         * @memberof PIXI
+         * @see PIXI.particles.ParticleContainer
+         * @deprecated since version 4.0.0
+         */
+        type ParticleContainer = particles.ParticleContainer;
+
+        /**
+         * @class
+         * @private
+         * @name MovieClip
+         * @memberof PIXI
+         * @see PIXI.extras.MovieClip
+         * @deprecated since version 3.0.0
+         */
+        type MovieClip = extras.AnimatedSprite
+
+        /**
+         * @class
+         * @private
+         * @name TilingSprite
+         * @memberof PIXI
+         * @see PIXI.extras.TilingSprite
+         * @deprecated since version 3.0.0
+         */
+        type TilingSprite = extras.TilingSprite;
+
+        /**
+         * @class
+         * @private
+         * @name BitmapText
+         * @memberof PIXI
+         * @see PIXI.extras.BitmapText
+         * @deprecated since version 3.0.0
+         */
+        type BitmapText = extras.BitmapText;
+
+        /**
+         * @namespace
+         * @private
+         * @name math
+         * @memberof PIXI
+         * @see PIXI
+         * @deprecated since version 3.0.6
+         */
+        type math = any;
+
+        /**
+         * @class
+         * @private
+         * @name PIXI.AbstractFilter
+         * @see PIXI.Filter
+         * @deprecated since version 3.0.6
+         */
+        type AbstractFilter = Filter;
+
+        /**
+         * @class
+         * @private
+         * @name PIXI.TransformManual
+         * @see PIXI.TransformBase
+         * @deprecated since version 4.0.0
+         */
+        type TransformManual = TransformBase;
+
+        /**
+         * @static
+         * @constant
+         * @name PIXI.TARGET_FPMS
+         * @see PIXI.settings.TARGET_FPMS
+         * @deprecated since version 4.2.0
+         */
+        type TARGET_FPMS = number;
+
+        /**
+         * @static
+         * @constant
+         * @name PIXI.FILTER_RESOLUTION
+         * @see PIXI.settings.FILTER_RESOLUTION
+         * @deprecated since version 4.2.0
+         */
+        type FILTER_RESOLUTION = number;
+
+        /**
+         * @static
+         * @constant
+         * @name PIXI.RESOLUTION
+         * @see PIXI.settings.RESOLUTION
+         * @deprecated since version 4.2.0
+         */
+        type RESOLUTION = number;
+
+        /**
+         * @static
+         * @constant
+         * @name PIXI.MIPMAP_TEXTURES
+         * @see PIXI.settings.MIPMAP_TEXTURES
+         * @deprecated since version 4.2.0
+         */
+        type MIPMAP_TEXTURES = any;
+
+        /**
+         * @static
+         * @constant
+         * @name PIXI.SPRITE_BATCH_SIZE
+         * @see PIXI.settings.SPRITE_BATCH_SIZE
+         * @deprecated since version 4.2.0
+         */
+        type SPRITE_BATCH_SIZE = number;
+
+        /**
+         * @static
+         * @constant
+         * @name PIXI.SPRITE_MAX_TEXTURES
+         * @see PIXI.settings.SPRITE_MAX_TEXTURES
+         * @deprecated since version 4.2.0
+         */
+        type SPRITE_MAX_TEXTURES = number;
+
+        /**
+         * @static
+         * @constant
+         * @name PIXI.RETINA_PREFIX
+         * @see PIXI.settings.RETINA_PREFIX
+         * @deprecated since version 4.2.0
+         */
+        type RETINA_PREFIX = RegExp | string;
+
+        /**
+         * @static
+         * @constant
+         * @name PIXI.DEFAULT_RENDER_OPTIONS
+         * @see PIXI.settings.RENDER_OPTIONS
+         * @deprecated since version 4.2.0
+         */
+        type DEFAULT_RENDER_OPTIONS = number;
+
+    }
+
+    export module extras {
+
+        /**
+         * @class
+         * @name MovieClip
+         * @memberof PIXI.extras
+         * @see PIXI.extras.AnimatedSprite
+         * @deprecated since version 4.2.0
+         */
+        type MovieClip = extras.AnimatedSprite;
 
     }
 
