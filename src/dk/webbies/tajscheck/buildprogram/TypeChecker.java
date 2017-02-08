@@ -136,7 +136,9 @@ public class TypeChecker {
                 Arg subArg = arg.decreaseDepth();
                 for (Map.Entry<String, Type> entry : t.getStaticProperties().entrySet()) {
                     List<TypeCheck> fieldChecks = entry.getValue().accept(this, subArg);
-                    result.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
+                    if (!fieldChecks.isEmpty()) {
+                        result.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
+                    }
                 }
             }
 
@@ -286,6 +288,7 @@ public class TypeChecker {
                     case "TimeRanges":
                     case "HTMLInputElement":
                     case "HTMLTextAreaElement":
+                    case "HTMLSourceElement":
                     case "HTMLDivElement":
                     case "NodeList":
                     case "HTMLCollection":
@@ -305,7 +308,9 @@ public class TypeChecker {
                         List<TypeCheck> structuralCheckList = new ArrayList<>();
                         for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
                             List<TypeCheck> fieldChecks = entry.getValue().accept(this, arg);
-                            structuralCheckList.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
+                            if (!fieldChecks.isEmpty()) {
+                                structuralCheckList.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
+                            }
                         }
 
                         TypeCheck structuralCheck = createIntersection(structuralCheckList);
@@ -363,7 +368,9 @@ public class TypeChecker {
                 Arg subArg = arg.decreaseDepth();
                 for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
                     List<TypeCheck> fieldChecks = entry.getValue().accept(this, subArg);
-                    result.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
+                    if (!fieldChecks.isEmpty()) {
+                        result.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
+                    }
                 }
 
                 if (t.getDeclaredNumberIndexType() != null) {
@@ -448,7 +455,9 @@ public class TypeChecker {
                 arg = arg.decreaseDepth();
                 for (int i = 0; i < size; i++) {
                     List<TypeCheck> subCheck = tuple.getElementTypes().get(i).accept(this, arg);
-                    result.add(new FieldTypeCheck(Integer.toString(i), subCheck));
+                    if (!subCheck.isEmpty()) {
+                        result.add(new FieldTypeCheck(Integer.toString(i), subCheck));
+                    }
                 }
             }
 
