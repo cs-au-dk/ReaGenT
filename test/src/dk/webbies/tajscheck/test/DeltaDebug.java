@@ -170,18 +170,19 @@ public class DeltaDebug {
 
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
-        Benchmark bench = RunBenchmarks.benchmarks.get("pickadate.js");
+        Benchmark bench = RunBenchmarks.benchmarks.get("bluebird");
 //        Benchmark bench = RunBenchmarks.benchmark.get("AngularJS").withRunMethod(NODE);
         String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                Main.generateFullDriver(bench);
-                return false;
+                Main.writeFullDriver(bench);
+
+                return Main.generateFullDriver(bench).contains("\"window.Bluebird.nodeify.[arg0].[arg1]\", \"(undefined or (a non null value and Array))\"");
             }catch (NullPointerException e) {
                 return false;
             } catch (IllegalArgumentException e) {
-                return true;
+                return false;
             } catch (Error | Exception e) {
                 e.printStackTrace();
                 return false;

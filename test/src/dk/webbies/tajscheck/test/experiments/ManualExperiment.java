@@ -52,7 +52,7 @@ public class ManualExperiment {
 
                     String smallDriver;
                     try {
-                        smallDriver = Main.generateSmallestDriver(benchmark.withPathsToTest(paths), DeltaTest.testHasTypeError(benchmark, typeError.path));
+                        smallDriver = Main.generateSmallestDriver(benchmark.withPathsToTest(paths), DeltaTest.testHasTypeError(benchmark, typeError));
                     } catch (RuntimeException e) {
                         continue; // No point in trying any more.
                     }

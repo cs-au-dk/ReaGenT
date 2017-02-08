@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  */
 public class AutomaticExperiments {
     private static final int TIMEOUT = 60 * 1000;
-    private static final int THREADS = 4;
+    private static final int THREADS = 6;
     private static int SMALL_DRIVER_RUNS_LIMIT = 100;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
@@ -179,8 +179,8 @@ public class AutomaticExperiments {
         experiment.addSingleExperiment(type);
 
 //        experiment.addMultiExperiment(uniquePathsAndCoverage);
-        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
-        experiment.addMultiExperiment(uniquePathsConvergence);
+//        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
+//        experiment.addMultiExperiment(uniquePathsConvergence);
 
         experiment.addMultiExperiment(driverSizes);
         experiment.addSingleExperiment(jsFileSize);
