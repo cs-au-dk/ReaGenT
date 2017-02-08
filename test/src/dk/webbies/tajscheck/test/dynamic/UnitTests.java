@@ -961,4 +961,12 @@ public class UnitTests {
         assertThat(result.typeErrors.size(), is(0));
 
     }
+
+    @Test
+    public void complexGenerics2() throws Exception {
+        RunResult result = run("complexGenerics2", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+
+    }
 }
