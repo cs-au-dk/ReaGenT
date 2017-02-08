@@ -18,7 +18,8 @@ public class BenchmarkInfo {
     public final FreeGenericsFinder freeGenericsFinder;
     public final Map<Type, String> typeNames;
     public final TypeParameterIndexer typeParameterIndexer;
-    private Set<Type> globalProperties;
+    public final CheckOptions options;
+    private final Set<Type> globalProperties;
 
     private BenchmarkInfo(Benchmark bench, Type typeToTest, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TypeParameterIndexer typeParameterIndexer, Set<Type> globalProperties) {
         this.bench = bench;
@@ -28,6 +29,7 @@ public class BenchmarkInfo {
         this.typeNames = typeNames;
         this.typeParameterIndexer = typeParameterIndexer;
         this.globalProperties = globalProperties;
+        this.options = bench.options;
     }
 
     public static BenchmarkInfo create(Benchmark bench) {

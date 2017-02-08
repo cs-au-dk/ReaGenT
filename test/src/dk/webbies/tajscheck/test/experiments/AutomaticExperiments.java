@@ -20,7 +20,7 @@ public class AutomaticExperiments {
     private static int SMALL_DRIVER_RUNS_LIMIT = 100;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth).setIterationsToRun(1000).build());
+        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth).setMaxIterationsToRun(1000).build());
         List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench.run_method, TIMEOUT), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
         long paths = OutputParser.combine(results).typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
@@ -31,7 +31,7 @@ public class AutomaticExperiments {
     private static final Pair<String, Experiment.ExperimentSingleRunner> type = new Pair<>("type", (bench) -> bench.run_method.toString());
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> smallCoverage = new Pair<>(Arrays.asList("small-coverage(stmt)", "small-coverage(func)", "small-coverage(branches)"), (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth).setIterationsToRun(1000).build());
+        bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth).setMaxIterationsToRun(1000).build());
         List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench, TIMEOUT), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
         CoverageResult result = CoverageResult.combine(results);
@@ -178,12 +178,16 @@ public class AutomaticExperiments {
 
         experiment.addSingleExperiment(type);
 
+        experiment.addSingleExperiment(uniquePaths);
+        experiment.addSingleExperiment(uniquePaths);
+        experiment.addSingleExperiment(uniquePaths);
+
 //        experiment.addMultiExperiment(uniquePathsAndCoverage);
 //        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
 //        experiment.addMultiExperiment(uniquePathsConvergence);
 
-        experiment.addMultiExperiment(driverSizes);
-        experiment.addSingleExperiment(jsFileSize);
+//        experiment.addMultiExperiment(driverSizes);
+//        experiment.addSingleExperiment(jsFileSize);
 
 //        experiment.addSingleExperiment(uniquePaths);
 

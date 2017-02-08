@@ -4,7 +4,6 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.*;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.*;
@@ -53,6 +52,8 @@ public class TestProgramBuilder {
             program.add(variable("initialRandomness", string(recording.seed)));
         }
 
+        program.add(variable("maxTime", number(info.options.maxTime)));
+
         program.add(variable("isTAJS", bool(info.bench.useTAJS)));
 
         program.add(AstBuilder.programFromFile(this.getClass().getResource("prelude.js")));
@@ -65,8 +66,10 @@ public class TestProgramBuilder {
 
         Expression iterationsToRun;
         if (recording == null || recording.testSequence == null) {
-            iterationsToRun = number(info.bench.options.iterationsToRun);
+            iterationsToRun = number(info.options.maxIterationsToRun);
+            program.add(variable("runRecording", bool(false)));
         } else {
+            program.add(variable("runRecording", bool(true)));
             iterationsToRun = member(identifier("recording"), "length");
             program.add(variable("recording", array()));
             Arrays.stream(recording.testSequence)
@@ -75,15 +78,7 @@ public class TestProgramBuilder {
                     .forEach(program::add);
         }
 
-        // Non-deterministically running all the test-cases.
-        Expression getNumberToRun;
-        if (recording == null || recording.testSequence == null) {
-            getNumberToRun = expFromString("testsThatCanRun[Math.floor(Math.random() * testsThatCanRun.length)]");
-        } else {
-            getNumberToRun = expFromString("recording[i]");
-        }
-
-        if (info.bench.options.checkHeap) {
+        if (info.options.checkHeap) {
             program.add(createCheckHeapFunction());
         }
 
@@ -111,8 +106,12 @@ public class TestProgramBuilder {
                     binary(identifier("i"), Operator.LESS_THAN, iterationsToRun),
                     unary(Operator.POST_PLUS_PLUS, identifier("i")),
                     block(
-                            info.bench.options.checkHeap ? statement(call(identifier("checkHeap"))) : comment("checkHeap()"),
-                            variable("testNumberToRun", getNumberToRun),
+                            info.options.checkHeap ? statement(call(identifier("checkHeap"))) : comment("checkHeap()"),
+                            variable("testNumberToRun", call(identifier("selectTest"))),
+                            ifThen(
+                                    binary(identifier("testNumberToRun"), Operator.LESS_THAN, number(0)),
+                                    breakStatement()
+                            ),
                             statement(methodCall(identifier("testOrderRecording"), "push", identifier("testNumberToRun"))),
                             tryCatch(
                                     AstBuilder.switchCase(
@@ -220,7 +219,7 @@ public class TestProgramBuilder {
             Type product = produces.iterator().next();
             int index = typeCreator.getTestProducesIndexes(test).iterator().next();
             saveResultStatement = block(
-                    checkType.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.bench.options.checkDepth),
+                    checkType.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepth),
                     statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result"))),
                     statement(call(identifier("registerValue"), number(index)))
             );
@@ -234,7 +233,7 @@ public class TestProgramBuilder {
                                 Type type = pair.getLeft();
                                 Integer valueIndex = pair.getRight();
                                 return block(
-                                        variable("passed" + valueIndex, checkType.checkResultingType(new TypeWithContext(type, test.getTypeContext()), identifier("result"), test.getPath(), info.bench.options.checkDepthForUnions)),
+                                        variable("passed" + valueIndex, checkType.checkResultingType(new TypeWithContext(type, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepthForUnions)),
                                         ifThen(
                                                 identifier("passed" + valueIndex),
                                                 statement(methodCall(identifier("passedResults"), "push", number(valueIndex)))
@@ -259,7 +258,7 @@ public class TestProgramBuilder {
                                                             number(0)
                                                     ),
                                                     string(test.getPath()),
-                                                    string(checkType.getTypeDescription(new TypeWithContext(createUnionType(produces), test.getTypeContext()), info.bench.options.checkDepthForUnions)),
+                                                    string(checkType.getTypeDescription(new TypeWithContext(createUnionType(produces), test.getTypeContext()), info.options.checkDepthForUnions)),
                                                     identifier("result"),
                                                     identifier("i")
                                             )

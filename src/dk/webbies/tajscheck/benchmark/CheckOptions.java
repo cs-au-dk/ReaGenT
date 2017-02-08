@@ -11,18 +11,20 @@ public final class CheckOptions {
     public final int checkDepthForUnions;
     public final boolean checkHeap;
     public final boolean splitUnions;
-    public final int iterationsToRun;
+    public final int maxIterationsToRun;
     public final boolean disableSizeOptimization;
     public final boolean combineAllUnconstrainedGenerics;
     public final boolean disableGenerics;
     public final boolean constructAllTypes;
+    public final int maxTime;
 
     private CheckOptions(Builder builder) {
         this.checkDepth = builder.checkDepth;
         this.checkDepthForUnions = builder.checkDepthForUnions;
         this.checkHeap = builder.checkHeap;
         this.splitUnions = builder.splitUnions;
-        this.iterationsToRun = builder.iterationsToRun;
+        this.maxIterationsToRun = builder.maxIterationsToRun;
+        this.maxTime = builder.maxTime;
         this.disableSizeOptimization = builder.disableSizeOptimization;
         this.combineAllUnconstrainedGenerics = builder.combineAllUnconstrainedGenerics;
         this.disableGenerics = builder.disableGenerics;
@@ -48,7 +50,8 @@ public final class CheckOptions {
         private int checkDepthForUnions = 1;
         private boolean checkHeap = false;
         private boolean splitUnions = true;
-        private int iterationsToRun = 10000;
+        private int maxIterationsToRun = 10000;
+        private int maxTime = 60 * 1000;
         private boolean disableSizeOptimization = false;
         private boolean combineAllUnconstrainedGenerics = true;
         private boolean disableGenerics = false;
@@ -62,6 +65,11 @@ public final class CheckOptions {
 
         public CheckOptions build() {
             return new CheckOptions(this);
+        }
+
+        public Builder setMaxTime(int maxTime) {
+            this.maxTime = maxTime;
+            return this;
         }
 
         public Builder setCheckDepth(int checkDepth) {
@@ -94,8 +102,8 @@ public final class CheckOptions {
             return this;
         }
 
-        public Builder setIterationsToRun(int iterationsToRun) {
-            this.iterationsToRun = iterationsToRun;
+        public Builder setMaxIterationsToRun(int maxIterationsToRun) {
+            this.maxIterationsToRun = maxIterationsToRun;
             return this;
         }
 

@@ -41,7 +41,7 @@ public class TypeCreator {
     private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
     TypeCreator(List<Test> tests, BenchmarkInfo info) {
-        this.options = info.bench.options;
+        this.options = info.options;
         this.valueLocations = new ArrayListMultiMap<>();
         this.typeIndexes = HashBiMap.create();
         this.info = info;

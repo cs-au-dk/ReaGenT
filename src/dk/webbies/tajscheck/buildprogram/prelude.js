@@ -328,3 +328,19 @@ function registerValue(valueIndex) {
         return !isEmpty;
     });
 }
+
+var startTime = +new Date();
+
+function selectTest() {
+    var timeSpent = (+new Date()) - startTime;
+    if (timeSpent > maxTime) {
+        return -1;
+    }
+
+    if (runRecording) {
+        return recording[i];
+    } else {
+        return testsThatCanRun[Math.floor(Math.random() * testsThatCanRun.length)];
+    }
+
+}

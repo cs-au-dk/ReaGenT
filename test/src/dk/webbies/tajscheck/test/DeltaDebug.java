@@ -192,7 +192,7 @@ public class DeltaDebug {
 
     private static boolean testHasError(Benchmark bench, String path) throws Exception {
         Main.writeFullDriver(bench);
-        bench = bench.withOptions(bench.options.getBuilder().setIterationsToRun(100).build());
+        bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(100).build());
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
 
         return result.typeErrors.stream().map(OutputParser.TypeError::getPath).filter(str -> str.equals(path)).count() >= 1;

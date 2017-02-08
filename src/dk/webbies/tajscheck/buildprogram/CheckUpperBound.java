@@ -144,7 +144,7 @@ public class CheckUpperBound {
         @Override
         public List<TypeCheck> visit(UnionType union, Arg arg) {
             return union.getElements().stream().map((type) -> {
-                TypeCheck check = checkType(arg, type, info.bench.options.checkDepthForUnions);
+                TypeCheck check = checkType(arg, type, info.options.checkDepthForUnions);
                 return new SimpleTypeCheck(check.getCheck(), "maybe " + check.getExpected());
             }).collect(Collectors.toList());
         }
