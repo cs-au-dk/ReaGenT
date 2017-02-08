@@ -382,7 +382,7 @@ public class TestCreator {
             }
 
             for (Type baseType : t.getBaseTypes()) {
-                recurse(baseType, arg.withThisType(null));
+                recurse(baseType, arg.withThisType(null).addDepth());
             }
 
             assert !t.getSignatures().isEmpty();
@@ -426,7 +426,7 @@ public class TestCreator {
             }
 
             for (Type base : t.getBaseTypes()) {
-                recurse(base, arg);
+                recurse(base, arg.addDepth());
             }
 
             if (t.getDeclaredStringIndexType() != null) {
@@ -458,7 +458,7 @@ public class TestCreator {
             }
 
             for (Type base : t.getBaseTypes()) {
-                recurse(base, arg);
+                recurse(base, arg.addDepth());
             }
 
             if (t.getDeclaredStringIndexType() != null) {
@@ -815,7 +815,7 @@ public class TestCreator {
             }
 
             for (Type baseType : t.getBaseTypes()) {
-                recurse(baseType, arg);
+                recurse(baseType, arg.addDepth());
             }
 
             if (t.getDeclaredStringIndexType() != null) {
@@ -866,7 +866,7 @@ public class TestCreator {
             }
 
             for (Type baseType : t.getBaseTypes()) {
-                recurse(baseType, arg);
+                recurse(baseType, arg.addDepth());
             }
 
             if (t.getDeclaredStringIndexType() != null) {
