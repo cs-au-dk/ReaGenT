@@ -87,21 +87,53 @@ function loadLibrary(path) {
     return module.exports;
 }
 
-var assertionFailures = [];
+function createFailDescription(path, expected, actual, iteration, sequence) {
+    var failDescription = path + ": (iteration: " + iteration + ")\n";
+    failDescription += "    Here i expected: " + expected + ", but instead i got: \n";
+    failDescription += "        typeof: " + typeof actual + "\n";
+    try {
+        var string = JSON.stringify(actual + "");
+        failDescription += "        toString: " + string.substring(1, string.length - 1) + "\n";
+    } catch (e) {
+        failDescription += "        toString: [ERROR] \n";
+    }
+    try {
+        var json = JSON.stringify(actual);
+        if (json.length < 200) {
+            failDescription += "        JSON: " + json + "\n";
+        } else {
+            failDescription += "        JSON: LONG!\n";
+        }
+    } catch (e) {
+    }
+    // failDescription += "        sequence: " + failure.sequence.toString() + "\n";
+    failDescription += "\n";
+    return failDescription;
+}
+
+var printedWarnings = [];
+var printedErrors = [];
+
+var print = console.log;
+
 var no_value = {noValueMarker: true};
 var testOrderRecording = [];
+var seenFailures = new Set();
 function assert(cond, path, expected, actual, iteration) {
     if (isTAJS) {
         TAJS_record(path + " | " + expected, cond);
         TAJS_record(path + " | " + expected + " | value", actual);
     } else if (!cond) {
-        assertionFailures.push({
-            path: path,
-            expected: expected,
-            actual: actual,
-            sequence: testOrderRecording.slice(),
-            iteration: iteration
-        });
+        var failDescription = createFailDescription(
+            path, expected, actual, iteration, testOrderRecording.slice()
+        );
+        var key = createFailDescription(
+            path, expected, actual, 0, []
+        );
+        if (!seenFailures.has(key)) {
+            print(failDescription);
+            seenFailures.add(key);
+        }
     }
     return cond;
 }
@@ -110,11 +142,6 @@ if (isTAJS) {
     TAJS_makeContextSensitive(assert, 1);
     TAJS_makeContextSensitive(assert, 2);
 }
-
-var printedWarnings = [];
-var printedErrors = [];
-
-var print = console.log;
 
 var isBrowser = new Function("try {return this===window;}catch(e){ return false;}");
 

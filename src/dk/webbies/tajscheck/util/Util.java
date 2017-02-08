@@ -26,6 +26,7 @@ import java.util.stream.StreamSupport;
  */
 public class Util {
     private static final boolean alwaysRecreate = false;
+
     public static String runNodeScript(String args, int timeout) throws IOException, TimeoutException {
         return runNodeScript(args, null, timeout);
     }
@@ -42,7 +43,7 @@ public class Util {
         return runScript(args, null, timeout);
     }
 
-    public static String runScript(String args, File dir, int timeout) throws IOException, TimeoutException {
+    public static String runScript(String args, File dir, int timeout) throws IOException {
         if (args.endsWith("\"")) args = args.replace("\"", "");
         Process process = Runtime.getRuntime().exec(args, null, dir);
 
@@ -55,6 +56,9 @@ public class Util {
                 waitForProcess(process, timeout);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
+            } catch (TimeoutException e) {
+                System.err.println("Had a timeout, continuing");
+                // continue
             }
         }
 
@@ -86,11 +90,12 @@ public class Util {
         worker.start();
         try {
             worker.join(timeout);
-            if (worker.exit != null)
+            if (worker.exit != null) {
                 return worker.exit;
-            else
+            } else {
                 throw new TimeoutException();
-        } catch(InterruptedException ex) {
+            }
+        } catch (InterruptedException ex) {
             worker.interrupt();
             Thread.currentThread().interrupt();
             throw ex;
@@ -107,11 +112,11 @@ public class Util {
         return result;
     }
 
-    public static <S, T, R> Function<Map.Entry<S,T>,Map.Entry<R, T>> mapKey(Function<S, R> mapper) {
+    public static <S, T, R> Function<Map.Entry<S, T>, Map.Entry<R, T>> mapKey(Function<S, R> mapper) {
         return (entry) -> new AbstractMap.SimpleEntry<>(mapper.apply(entry.getKey()), entry.getValue());
     }
 
-    public static <S, T, R> Function<Map.Entry<S,T>,Map.Entry<S, R>> mapValue(Function<T, R> mapper) {
+    public static <S, T, R> Function<Map.Entry<S, T>, Map.Entry<S, R>> mapValue(Function<T, R> mapper) {
         return (entry) -> new AbstractMap.SimpleEntry<>(entry.getKey(), mapper.apply(entry.getValue()));
     }
 
@@ -151,9 +156,11 @@ public class Util {
     private static class Worker extends Thread {
         private final Process process;
         private Integer exit;
+
         private Worker(Process process) {
             this.process = process;
         }
+
         public void run() {
             try {
                 exit = process.waitFor();
@@ -268,7 +275,7 @@ public class Util {
     public static String getCachedOrRun(String cachePath, List<File> checkAgainst, Supplier<String> run) throws IOException {
         cachePath = cachePath.replaceAll("/", "");
         cachePath = cachePath.replaceAll(":", "");
-         cachePath = cachePath.replaceAll("\\\\", "");
+        cachePath = cachePath.replaceAll("\\\\", "");
 
         List<Boolean> exists = checkAgainst.stream().map(File::exists).collect(Collectors.toList());
 
@@ -363,7 +370,9 @@ public class Util {
         }
     }
 
-    public static <T> Predicate<T> not(Predicate<T> p) { return o -> !p.test(o); }
+    public static <T> Predicate<T> not(Predicate<T> p) {
+        return o -> !p.test(o);
+    }
 
     // I would really like to force ColT and ColS to be the same subtype of Collection. But I don't think Java generics can handle that.
     public static <T, S, ColT extends Collection<T>, ColS extends Collection<S>> ColS cast(Class<S> clazz, ColT list) {
@@ -391,7 +400,7 @@ public class Util {
         writeFile(filename, data, 0);
     }
 
-    private static void writeFile(String filename, String data, int tries) throws IOException{
+    private static void writeFile(String filename, String data, int tries) throws IOException {
         try {
             BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(filename)));
             IOUtils.write(data, fileOut);
@@ -470,7 +479,7 @@ public class Util {
 
     public static <A, B> Stream<Pair<A, B>> zip(Stream<? extends A> a, Stream<? extends B> b) {
         //noinspection Convert2MethodRef
-        return zip(a, b, (one,two) -> new Pair<>(one, two));
+        return zip(a, b, (one, two) -> new Pair<>(one, two));
     }
 
     public static <E, S extends List<E>, T extends Collection<E>> S reduceList(S acc, T elem) {
@@ -521,6 +530,7 @@ public class Util {
     }
 
     public static Predicate<String> isInteger = Pattern.compile("^\\d+$").asPredicate();
+
     public static boolean isInteger(String str) {
         return isInteger.test(str);
     }
@@ -587,7 +597,7 @@ public class Util {
 
     // http://stackoverflow.com/questions/1667854/copy-all-values-from-fields-in-one-class-to-another-through-reflection#answer-35103361
     // Possibly only works on primitives, but that is all i use it for anyway, so that is ok.
-    public static <T > void copyAllFields(T to, T from) {
+    public static <T> void copyAllFields(T to, T from) {
         Class<?> clazz = from.getClass();
         List<Field> fields = new ArrayList<>();
         do {
@@ -598,7 +608,7 @@ public class Util {
         for (Field field : fields) {
             try {
                 field.setAccessible(true);
-                field.set(to,field.get(from));
+                field.set(to, field.get(from));
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }

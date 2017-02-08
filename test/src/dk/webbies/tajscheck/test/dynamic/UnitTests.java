@@ -64,7 +64,7 @@ public class UnitTests {
 
         Main.writeFullDriver(bench, new ExecutionRecording(null, seed));
 
-        String result = Main.runBenchmark(bench);
+        String result = Main.runBenchmark(bench, 30 * 1000);
 
         System.out.println("Result of running driver: ");
         System.out.println(result);
@@ -967,6 +967,14 @@ public class UnitTests {
         RunResult result = run("complexGenerics2", "foo");
 
         assertThat(result.typeErrors.size(), is(0));
+
+    }
+
+    @Test // TODO: Make a similar one for NODE. Also have a test with a graceful timeout.
+    public void canFindErrorsEvenWhenTimeout() throws Exception {
+        RunResult result = run("canFindErrorsEvenWhenTimeout", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
 
     }
 }
