@@ -80,6 +80,9 @@ public class BenchmarkInfo {
                 ((InterfaceType) type).setDeclaredProperties(fixUnderscoreNames(((InterfaceType) type).getDeclaredProperties()));
             } else if (type instanceof GenericType) {
                 ((GenericType) type).setDeclaredProperties(fixUnderscoreNames(((GenericType) type).getDeclaredProperties()));
+            } else if (type instanceof ClassType) {
+                ((ClassType) type).setStaticProperties(fixUnderscoreNames(((ClassType) type).getStaticProperties()));
+                ((ClassType) type).setInstanceProperties(fixUnderscoreNames(((ClassType) type).getInstanceProperties()));
             }
 
             if (type instanceof ClassInstanceType) {
