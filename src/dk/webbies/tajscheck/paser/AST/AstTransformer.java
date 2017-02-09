@@ -287,7 +287,7 @@ public class AstTransformer {
             return convert(finallyTree.block);
         } else if (tree instanceof DoWhileStatementTree) {
             DoWhileStatementTree doWhile = (DoWhileStatementTree) tree;
-            return new WhileStatement(loc, (Expression) convert(doWhile.condition), (Statement) convert(doWhile.body));
+            return new DoWhileStatement(loc, (Expression) convert(doWhile.condition), (Statement) convert(doWhile.body));
         } else if (tree instanceof EmptyStatementTree) {
             return new BlockStatement(loc, Collections.EMPTY_LIST);
         } else if (tree instanceof LabelledStatementTree) {

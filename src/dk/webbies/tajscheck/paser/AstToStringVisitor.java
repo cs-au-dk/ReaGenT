@@ -410,7 +410,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
     }
 
     private void writeParenthesizedExpression(Expression exp) {
-        if (exp instanceof BinaryExpression || exp instanceof UnaryExpression || exp instanceof ConditionalExpression || exp instanceof FunctionExpression || exp instanceof NumberLiteral) {
+        if (exp instanceof BinaryExpression || exp instanceof UnaryExpression || exp instanceof ConditionalExpression || exp instanceof FunctionExpression || exp instanceof NumberLiteral || exp instanceof NewExpression || exp instanceof CallExpression) {
             write("(");
             exp.accept(this);
             write(")");
@@ -497,10 +497,11 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
         write("for (");
 
-        if (forStatement.getInitialize() instanceof BlockStatement && ((BlockStatement) forStatement.getInitialize()).getStatements().size() == 1) {
+        Statement initializer = forStatement.getInitialize();
+        if (initializer instanceof BlockStatement && ((BlockStatement) initializer).getStatements().size() == 1) {
             forStatement = new ForStatement(
                     forStatement.location,
-                    ((BlockStatement) forStatement.getInitialize()).getStatements().iterator().next(),
+                    ((BlockStatement) initializer).getStatements().iterator().next(),
                     forStatement.getCondition(),
                     forStatement.getIncrement(),
                     forStatement.getBody()
@@ -509,15 +510,15 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
 
         if (forStatement.getInitialize() instanceof ExpressionStatement && ((ExpressionStatement) forStatement.getInitialize()).getExpression() instanceof NullLiteral) {
             write(";");
-        } else if (forStatement.getInitialize() instanceof VariableNode) {
+        } else if (initializer instanceof VariableNode) {
             write("var ");
-            ((VariableNode) forStatement.getInitialize()).getlValue().accept(this);
+            ((VariableNode) initializer).getlValue().accept(this);
             write(" = ");
-            ((VariableNode) forStatement.getInitialize()).getInit().accept(this);
+            ((VariableNode) initializer).getInit().accept(this);
 
             write("; ");
-        } else if (forStatement.getInitialize() instanceof BlockStatement) {
-            BlockStatement block = (BlockStatement) forStatement.getInitialize();
+        } else if (initializer instanceof BlockStatement) {
+            BlockStatement block = (BlockStatement) initializer;
             List<Statement> statements = new ArrayList<>(block.getStatements());
             assert statements.stream().allMatch(VariableNode.class::isInstance);
 
@@ -539,18 +540,22 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
                     write(";");
                 }
             }
-        } else if (forStatement.getInitialize() instanceof ExpressionStatement) {
-            ((ExpressionStatement) forStatement.getInitialize()).getExpression().accept(this);
+        } else if (initializer instanceof ExpressionStatement) {
+            ((ExpressionStatement) initializer).getExpression().accept(this);
             write(";");
         } else {
             throw new RuntimeException();
         }
 
-        forStatement.getCondition().accept(this);
+        if (!(forStatement.getCondition() instanceof NullLiteral)) {
+            forStatement.getCondition().accept(this);
+        }
 
         write("; ");
 
-        forStatement.getIncrement().accept(this);
+        if (!(forStatement.getIncrement() instanceof NullLiteral)) {
+            forStatement.getIncrement().accept(this);
+        }
 
         write(") {\n");
         ident++;
@@ -562,6 +567,10 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
         write("} \n");
 
         return null;
+    }
+
+    private boolean isNullStatement(Statement initializer) {
+        return initializer instanceof ExpressionStatement && ((ExpressionStatement) initializer).getExpression() instanceof NullLiteral;
     }
 
     @Override
@@ -677,6 +686,20 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
         ident--;
         ident();
         write("} \n");
+        return null;
+    }
+
+    @Override
+    public Void visit(DoWhileStatement doWhileStatement) {
+        ident();
+        write("do {\n");
+        ident++;
+        writeAsBlock(doWhileStatement.getBody());
+        ident--;
+        ident();
+        write("} while (");
+        doWhileStatement.getCondition().accept(this);
+        write(")\n");
         return null;
     }
 

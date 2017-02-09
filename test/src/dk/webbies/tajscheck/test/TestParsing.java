@@ -80,6 +80,19 @@ public class TestParsing {
     }
 
     @Test
+    public void emptyForLoop() throws Exception {
+        String content = "for(;;){}";
+        JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
+        Statement iteration1Ast = parser.parse("name", content).toTSCreateAST().getBody();
+
+        System.out.println("First parsing complete");
+
+        String iteration1String = AstToStringVisitor.toString(iteration1Ast);
+
+        assertThat(iteration1String, not(containsString("null")));
+    }
+
+    @Test
     public void fewerQuotesInFields() throws Exception {
         String content = "var test = {a: 123}";
         JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
@@ -106,13 +119,30 @@ public class TestParsing {
     }
 
     @Test
+    public void doWhile() throws Exception {
+        String content = "do {} while (true);";
+        JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
+        Statement iteration1Ast = parser.parse("name", content).toTSCreateAST().getBody();
+
+        System.out.println("First parsing complete");
+
+        String iteration1String = AstToStringVisitor.toString(iteration1Ast);
+
+        assertThat(iteration1String, containsString("do"));
+    }
+
+    @Test
     public void functionWithSemiColon() throws Exception {
         testParse(
                 "var test = function () {\n" +
                 "    ;\n" +
                 "}"
         );
+    }
 
+    @Test
+    public void doWhileTest() throws Exception {
+        testParse("do {} while (this.expect(','));");
     }
 
     public static void testFile(String file) throws IOException {

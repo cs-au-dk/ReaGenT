@@ -37,4 +37,6 @@ public interface StatementVisitor<T> {
     T visit(LabeledStatement labeledStatement);
 
     T visit(CommentStatement commentStatement);
+
+    T visit(DoWhileStatement doWhileStatement);
 }
