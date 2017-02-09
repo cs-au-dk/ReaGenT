@@ -14,7 +14,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BOOTSTRAP;
@@ -89,7 +88,7 @@ public class RunBenchmarks {
         benchmarks.put("PleaseJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/pleasejs/please.js", "test/benchmarks/pleasejs/please.d.ts", "Please", NODE, options));
         Benchmark webcomponents = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/webcomponents/webcomponents.js", "test/benchmarks/webcomponents/webcomponents.d.ts", "webcomponents", BROWSER, options); // Doesn't really directly expose an API, so I'm just keeping it as dependency only.
         benchmarks.put("Polymer", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/polymer/polymer.js", "test/benchmarks/polymer/polymer.d.ts", "Polymer", BROWSER, options).addDependencies(webcomponents));
-        benchmarks.put("q", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/q/q.js", "test/benchmarks/q/q.d.ts", "Q", BROWSER, options));
+        benchmarks.put("q", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/q/q.js", "test/benchmarks/q/q.d.ts", "Q", NODE, options));
         benchmarks.put("QUnit", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/qunit/qunit.js", "test/benchmarks/qunit/qunit.d.ts", "QUnit", BROWSER, options));
         Benchmark react = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/react/react.js", "test/benchmarks/react/react.d.ts", "React", BROWSER, options);
         benchmarks.put("React", react);
@@ -125,7 +124,9 @@ public class RunBenchmarks {
             .addDependencies(angular)
         );
 
-        benchmarks.put("Foundation", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/foundation/foundation.js", "test/benchmarks/foundation/foundation.d.ts", "Foundation", BROWSER, options));
+        benchmarks.put("Foundation", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/foundation/foundation.js", "test/benchmarks/foundation/foundation.d.ts", "Foundation", BROWSER, options)
+                .addDependencies(jQuery)
+        );
 
         benchmarks.put("Chart.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/chartjs/chart.js", "test/benchmarks/chartjs/chart.d.ts", "Chart", BROWSER, options));
 
@@ -178,7 +179,7 @@ public class RunBenchmarks {
     @Test
     @Ignore
     public void runSmallDrivers() throws Exception {
-        OutputParser.RunResult result = OutputParser.combine(RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark.run_method, 60 * 1000), 100, Integer.MAX_VALUE));
+        OutputParser.RunResult result = OutputParser.combine(RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark), 100, Integer.MAX_VALUE));
 
         for (OutputParser.TypeError typeError : result.typeErrors) {
             System.out.println(typeError);
@@ -191,14 +192,7 @@ public class RunBenchmarks {
         Main.writeFullDriver(benchmark);
 
         // Run the driver
-        String out;
-        try {
-            out = Main.runBenchmark(benchmark, 20 * 1000);
-        } catch (TimeoutException e) {
-            // this is ok, it happens.
-            System.out.println("Timeout!");
-            return;
-        }
+        String out = Main.runBenchmark(benchmark);
 //        System.out.println(out);
 
         System.out.println(out.split("\n")[0]);
@@ -232,14 +226,7 @@ public class RunBenchmarks {
         }
         Main.writeFullDriver(benchmark);
         System.out.println("Wrote driver");
-        Map<String, CoverageResult> out;
-        try {
-            out = Main.genCoverage(benchmark, 60 * 1000);
-        } catch (TimeoutException e) {
-            // this is ok, it happens.
-            System.out.println("Timeout!");
-            return;
-        }
+        Map<String, CoverageResult> out = Main.genCoverage(benchmark);
         System.out.println("Coverage for " + benchmark.dTSFile);
 
         System.out.println(out);
@@ -263,13 +250,7 @@ public class RunBenchmarks {
 
         Main.writeFullDriver(benchmark); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");
-        String output;
-        try {
-            output = Main.runBenchmark(benchmark, 60 * 1000);
-        } catch (TimeoutException e) {
-            System.out.println("Timeout");
-            return;
-        }
+        String output = Main.runBenchmark(benchmark);
         System.out.println(output);
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 

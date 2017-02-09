@@ -14,7 +14,6 @@ import dk.webbies.tajscheck.util.trie.Trie;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -92,14 +91,12 @@ public class RunSmall {
         return result;
     }
 
-    public static Function<String, CoverageResult> runCoverage(Benchmark bench, int timeout) {
+    public static Function<String, CoverageResult> runCoverage(Benchmark bench) {
         return (path) -> {
             try {
                 path = path.substring(Main.getFolderPath(bench).length());
-                Map<String, CoverageResult> coverage = Main.genCoverage(bench, timeout, path);
+                Map<String, CoverageResult> coverage = Main.genCoverage(bench, path);
                 return coverage.get(bench.getJSName());
-            } catch (TimeoutException e) {
-                return null;
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
@@ -107,12 +104,10 @@ public class RunSmall {
         };
     }
 
-    public static Function<String, OutputParser.RunResult> runDriver(Benchmark.RUN_METHOD run_method, int timeout) {
+    public static Function<String, OutputParser.RunResult> runDriver(Benchmark bench) {
         return (path) -> {
             try {
-                return OutputParser.parseDriverResult(Main.runBenchmark(path, run_method, timeout));
-            } catch (TimeoutException e) {
-                return null;
+                return OutputParser.parseDriverResult(Main.runBenchmark(path, bench));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

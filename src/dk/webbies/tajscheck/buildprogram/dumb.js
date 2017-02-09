@@ -18,14 +18,12 @@ if (!isTAJS) {
             // var printedWarnings = [];
             // var printedErrors = [];
             if (printedWarnings.length > 0) {
-                print("");
                 print("---- WARNINGS ----");
                 for (var i = 0; i < printedWarnings.length; i++) {
                     print(printedWarnings[i]);
                 }
             }
             if (printedErrors.length > 0) {
-                print("");
                 print("---- ERRORS ----");
                 for (var i = 0; i < printedErrors.length; i++) {
                     print(printedErrors[i]);
@@ -38,12 +36,9 @@ if (!isTAJS) {
                 } else {
                     printForReal(JSON.stringify(__coverage__));
                 }
-            } else {
-                if (isBrowser()) {
-                    sendResultToChecker(savedConsoleLog.join("\n"));
-                } else {
-                    // This is already handled just fine
-                }
+            }
+            if (isBrowser()) {
+                print("close");
             }
 
 

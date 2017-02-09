@@ -114,7 +114,40 @@ function createFailDescription(path, expected, actual, iteration, sequence) {
 var printedWarnings = [];
 var printedErrors = [];
 
-var print = console.log;
+var print = console.log.bind(console);
+
+var isBrowser = new Function("try {return this===window;}catch(e){ return false;}");
+
+if (isBrowser()) {
+    var orgPrint = print;
+    print = function (message) {
+        orgPrint(message);
+        sendResultToChecker(message);
+    };
+
+    window.onbeforeunload = function() {
+        return "Please don't navigate away.";
+    }
+}
+
+var runsWithCoverage = (function () {
+    try {
+        if (__coverage__) {
+            return true;
+        }
+    } catch (ignored) {
+        return false;
+    }
+})();
+
+var printForReal = print;
+if (runsWithCoverage) {
+    print = function () {
+        // Nothing.
+    }
+}
+
+
 
 var no_value = {noValueMarker: true};
 var testOrderRecording = [];
@@ -141,39 +174,6 @@ if (isTAJS) {
     TAJS_makeContextSensitive(assert, 0);
     TAJS_makeContextSensitive(assert, 1);
     TAJS_makeContextSensitive(assert, 2);
-}
-
-var isBrowser = new Function("try {return this===window;}catch(e){ return false;}");
-
-var savedConsoleLog = [];
-
-if (isBrowser()) {
-    var orgPrint = console.log;
-    print = function (message) {
-        orgPrint(message);
-        savedConsoleLog.push(message);
-    };
-
-    window.onbeforeunload = function() {
-        return "Please don't navigate away.";
-    }
-}
-
-var runsWithCoverage = (function () {
-    try {
-        if (__coverage__) {
-            return true;
-        }
-    } catch (ignored) {
-        return false;
-    }
-})();
-
-var printForReal = print;
-if (runsWithCoverage) {
-    print = function () {
-        // Nothing.
-    }
 }
 
 print("Initial random: " + JSON.stringify(initialRandomness));

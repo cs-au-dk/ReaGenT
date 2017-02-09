@@ -1,3 +1,23 @@
+Skru experiment sammen hvor jeg sammenligner med TSCheck (TSInfer).
+Få lavet nogle pull-requests.
+TODO: Få kørt soundness tests efter timeouts er blevet lavet om.
+Iterations on research-questions.
+
+Få noteret design-choices, få dem til research-questions, og evaluer dem.
+
+Reasons for complicated:
+    Declaring a native type (Array, Event, Selection), without the value actually extending that type: 7
+    Redux: a function <A>(a: A): A & B. In the result, only the functions from A are present, not the fields (which is what i test on): 1
+    Underscore: Incomplete modelling (the programmer is supposed to do the right thing): 1
+    Backbone: Maybe they are creating slightly to big quarentees in their types, but not enough for me to call it an error: 1
+    PeerJS: Prints an error to the console, and returns null, instead of throwing an exception: 1
+    Knockout: Private variable that is not declared, conflicts with string-indexer (this is really not possible to get around, given how string-indexers work): 1
+    Leaflet, Moment: the programmer is not really supposed to construct this type: 3
+
+
+
+
+
 TODO For paper:
     On something like Event, we check that is structually matches an Event, or it is instanceof (also because a native event, might not match the type given in lib.d.ts, because it contains errors).
 
@@ -33,13 +53,56 @@ TODO: For impl.
 
     Try to look at the exceptions that happen during runtime. See if they can be used for anything.
 
+
+
 Manual evaluation notes
-    Good/bad (when it's complicated).
+    Chose to put checkDepth to 0 for this test (makes evaluation more difficult, but that's my problem). Because otherwise very few errors might show up.
+    Example: For handlebars only a single error would show up, that the K method was missing from the handlebars object, therefore the handlebars object didn't type-check, therefore no further testing is performed.
+    Therefore checkDepth=0, and delta-debugging for the tricky cases.
+
+    // Round 1 (will not be used).
+    Good: 48
+    Bad: 0
+    Nulls: 31 (including null/undefined mishaps)
+    Unclassifiable: 20
+
+    // Round 2 (todo: fill out after impl. stuff is kinda done). First look at some coverage.
+
+
+
+    Unclassifiable.
         Underscore: _.each.[arg0].[arg0]
             Underscore has two each methods, one is only supposed to be used when underscore wraps an object, the other is only supposed to be used when it wraps a list.
             Calling the other results in a type-error with TAJSCheck.
             each(iterator: _.ListIterator<T, void>, context?: any): T[];
             each(iterator: _.ObjectIterator<T, void>, context?: any): T[];
+
+        jQuery Event and XMLHttpRequests, they have manual implementations (that doesn't even satisfy the full native api).
+        And in jQuery, they claim something to be an array, when in reality it is just array-like (there even is an ArrayLike interface in lib.d.ts).
+
+        pleaseJS: (exactly the same arguments, there exists no type satisfying that (if the function returns normally)):
+        They are basically hidden type assertions.
+            make_scheme(...): Array<string>;
+            make_scheme(...): Array<RGB>;
+
+        React.Component.new().props
+            It is not a problem in any way, if used correctly.
+
+
+
+    null/undefined mishaps:
+        Sometimes methods state that they return void, when in reality they return some value, this is classified under Nulls.
+        A good example is zepto.each, which is declared as returning nothing, but in reality always returns the first argument.
+
+    Rarely, the goods are questionable because it is that a function was called with a signature that it doesn't accept.
+    Example (only i've encountered) is moment.Locale.weekdaysMin(), where internally, it is called with 2 arguments instead of 1.
+    But this is ok, if the user is never supposed to construct such a function himself (which I can't really know).
+
+    Redux has a couple of instances where they use any, instead of a stronger types. And that (correctly) shows up as type-error.
+    Example:
+             redux.compose()(obj)
+                 Here i expected: a generic type marker (._isUnconstrainedGeneric), but instead i got:
+                     JSON: {"__isAnyMarker":{}}
 
     When it's obviously the wrong version.
         In PDFJS, PDFJS.PDFViewer is missing, obviously because major version. But the declaration file doesn't have a version annotated.
@@ -48,12 +111,21 @@ Manual evaluation notes
         /*The function to be called when the callback is executed.*/
         hook:number;
 
+        in hammer.d.ts:
+            MouseInput:MouseInput;
+        They meant typeof, it is the class itself, not an instance.
+
+        /*The function [...] returns the translated string for a given id...
+        _(id:number, message:string, ...args:any[]):void;
+
     Not strong enough types used:
         redux.combineReducers()(typeParameter, typeParameter)
         expected unconstrined generic, got an object (because they use an any).
 
-    Materialize only initializes it's API on $(document).ready
+    Materialize only initializes it's full API on $(document).ready (got around this, waiting a bit before initializing).
 
+    moment().isoWeekday(NaN) returns wrong thing.
+        I counted this one as good.
 
 Notes:
     -  What the analysis does, is say, if this code is reachable, then the following is true.

@@ -8,7 +8,6 @@ import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
@@ -21,7 +20,7 @@ public class AutomaticExperiments {
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth).setMaxIterationsToRun(1000).build());
-        List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench.run_method, TIMEOUT), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
+        List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
         long paths = OutputParser.combine(results).typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
 
@@ -32,7 +31,7 @@ public class AutomaticExperiments {
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> smallCoverage = new Pair<>(Arrays.asList("small-coverage(stmt)", "small-coverage(func)", "small-coverage(branches)"), (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(bench.options.checkDepth).setMaxIterationsToRun(1000).build());
-        List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench, TIMEOUT), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
+        List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
         CoverageResult result = CoverageResult.combine(results);
         return Arrays.asList(Util.toPercentage(result.statementCoverage()), Util.toPercentage(result.functionCoverage()), Util.toPercentage(result.branchCoverage()));
@@ -40,26 +39,14 @@ public class AutomaticExperiments {
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> uniquePaths = new Pair<>("uniquePaths", (bench) -> {
         Main.writeFullDriver(bench);
-        OutputParser.RunResult result;
-        try {
-            result = OutputParser.parseDriverResult(Main.runBenchmark(bench, TIMEOUT));
-        } catch (TimeoutException e) {
-            System.out.println("Timeout");
-            return null;
-        }
+        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
         long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
         return Long.toString(paths);
     });
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsConvergence = new Pair<>(Arrays.asList("uniquePaths", "uniquePathsConvergence", "iterationsUntilConvergence"), (bench) -> {
         Main.writeFullDriver(bench);
-        OutputParser.RunResult result;
-        try {
-            result = OutputParser.parseDriverResult(Main.runBenchmark(bench, TIMEOUT));
-        } catch (TimeoutException e) {
-            System.out.println("Timeout");
-            return Arrays.asList(null, null, null);
-        }
+        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
         Set<String> paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toSet());
         long firstPathCount = paths.size();
         System.out.println("Counted " + firstPathCount + " paths, trying to test again, to see if i get more");
@@ -69,13 +56,8 @@ public class AutomaticExperiments {
         int runs = 0;
         while (prevCount != count) {
             prevCount = count;
-            try {
-                result = OutputParser.parseDriverResult(Main.runBenchmark(bench, TIMEOUT));
-                runs++;
-            } catch (TimeoutException e) {
-                System.out.println("Timeout");
-                return Arrays.asList(Long.toString(firstPathCount), null, null);
-            }
+            result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+            runs++;
             result.typeErrors.stream().map(OutputParser.TypeError::getPath).forEach(paths::add);
             count = paths.size();
             System.out.println("Previously had " + prevCount + " paths, now i have seen " + count);
@@ -93,13 +75,9 @@ public class AutomaticExperiments {
 
         Map<String, CoverageResult> out;
         try {
-            out = Main.genCoverage(bench, TIMEOUT * 5); // <- More timeout
-        } catch (TimeoutException e) {
-            // this is ok, it happens.
-            System.out.println("Timeout on coverage");
-            return Arrays.asList(uniquePaths, null, null, null);
+            out = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5).build())); // <- More timeout
         } catch (Exception e) {
-            System.out.println("Exceotion: " + e.getClass().getSimpleName() + " while doing coverage.");
+            System.out.println("Exception: " + e.getClass().getSimpleName() + " while doing coverage.");
             return Arrays.asList(uniquePaths, null, null, null);
         }
 
@@ -120,7 +98,7 @@ public class AutomaticExperiments {
         CoverageResult firstCoverage = null;
         for (int i = 0; i < 5; i++) {
             try {
-                Map<String, CoverageResult> subResult = Main.genCoverage(bench, TIMEOUT * 5);
+                Map<String, CoverageResult> subResult = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5).build())); // <- More timeout
                 out = CoverageResult.combine(out, subResult);
                 if (firstCoverage == null) {
                     firstCoverage = out.get(bench.getJSName());
@@ -168,13 +146,8 @@ public class AutomaticExperiments {
     });
 
     public static void main(String[] args) throws Exception {
-//        Experiment experiment = new Experiment(
-//                RunBenchmarks.benchmarks.entrySet().stream()
-//                        .filter(entry -> !done.contains(entry.getKey()))
-//                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-//        );
-
-        Experiment experiment = new Experiment();
+//        Experiment experiment = new Experiment("Ember.js", "Foundation");
+        Experiment experiment = new Experiment("Foundation");
 
         experiment.addSingleExperiment(type);
 
@@ -201,58 +174,4 @@ public class AutomaticExperiments {
 
         Util.writeFile("experiment.csv", result);
     }
-
-    public static Set<String> done = new HashSet<>(Arrays.asList(
-            "P2.js",
-            "Vue.js",
-            "Sortable",
-            "box2dweb",
-            "async",
-            "PeerJS",
-            "pathjs",
-            "Materialize",
-            "RequireJS",
-            "Lodash",
-            "React",
-            "Sugar",
-            "Fabric.js",
-            "Knockout",
-            "Moment.js",
-            "lunr.js",
-            "PixiJS",
-            "intro.js",
-            "RxJS",
-            "axios",
-            "PDF.js",
-            "Ace",
-            "Zepto.js",
-            "Polymer",
-            "PhotoSwipe",
-            "Swiper",
-            "D3.js",
-            "Handlebars",
-            "CreateJS",
-            "Underscore.js",
-            "MathJax",
-            "accounting.js",
-            "Video.js",
-            "Chart.js",
-            "AngularJS",
-            "Redux",
-            "Leaflet",
-            "Ionic",
-            "bluebird",
-            "jQuery",
-            "PleaseJS",
-            "Backbone.js",
-            "highlight.js",
-            "Hammer.js",
-            "Medium Editor",
-            "QUnit",
-            "Jasmine",
-            "Modernizr",
-            "reveal.js"
-
-    ));
-
 }

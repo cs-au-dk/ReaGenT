@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.test;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Util;
@@ -10,7 +11,6 @@ import dk.webbies.tajscheck.util.Util;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -170,15 +170,31 @@ public class DeltaDebug {
 
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
-        Benchmark bench = RunBenchmarks.benchmarks.get("bluebird");
+//        Benchmark bench = RunBenchmarks.benchmarks.get("Ember.js");
+        Benchmark bench = RunBenchmarks.benchmarks.get("Ember.js").withOptions(CheckOptions.builder().setMaxTime(2 * 1000).build());
+
 //        Benchmark bench = RunBenchmarks.benchmark.get("AngularJS").withRunMethod(NODE);
-        String file = bench.dTSFile;
+        String file = bench.jsFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
+                Util.writeFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME, buildManualEmberTest());
+
+                String out2 = Main.runBenchmark(bench);
+
+                boolean manualCrashed = !out2.startsWith("Initial random: ");
+
+                if (manualCrashed) {
+                    return false;
+                }
+
                 Main.writeFullDriver(bench);
 
-                return Main.generateFullDriver(bench).contains("\"window.Bluebird.nodeify.[arg0].[arg1]\", \"(undefined or (a non null value and Array))\"");
+                String out = Main.runBenchmark(bench);
+
+                boolean parsedCrashed = !out.startsWith("Initial random: ");
+
+                return parsedCrashed;
             }catch (NullPointerException e) {
                 return false;
             } catch (IllegalArgumentException e) {
@@ -188,6 +204,17 @@ public class DeltaDebug {
                 return false;
             }
         });
+    }
+
+    private static String buildManualEmberTest() throws IOException {
+        StringBuilder manualTestBuilder = new StringBuilder();
+        manualTestBuilder.append(Util.readFile("test/benchmarks/jquery/jquery.js")).append("\n");
+        manualTestBuilder.append(Util.readFile("test/benchmarks/handlebars/handlebars.js")).append("\n");
+        manualTestBuilder.append(Util.readFile("test/benchmarks/ember/ember.js")).append("\n");
+        manualTestBuilder.append("sendResultToChecker('Initial random: fwff');\n");
+        manualTestBuilder.append("sendResultToChecker('close');\n");
+
+        return manualTestBuilder.toString();
     }
 
     private static boolean testHasError(Benchmark bench, String path) throws Exception {
@@ -226,13 +253,7 @@ public class DeltaDebug {
 
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");
-        String output;
-        try {
-            output = Main.runBenchmark(bench, 60 * 1000);
-        } catch (TimeoutException e) {
-            System.out.println("Timeout");
-            return false;
-        }
+        String output = Main.runBenchmark(bench);
         System.out.println(output);
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 

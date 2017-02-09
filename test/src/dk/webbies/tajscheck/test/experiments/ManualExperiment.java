@@ -70,9 +70,9 @@ public class ManualExperiment {
     private static OutputParser.RunResult getSomeResult(Benchmark benchmark) throws Exception {
         if (new Random().nextBoolean()) {
             Main.writeFullDriver(benchmark);
-            return OutputParser.parseDriverResult(Main.runBenchmark(benchmark, TIMEOUT));
+            return OutputParser.parseDriverResult(Main.runBenchmark(benchmark));
         } else {
-            List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark.run_method, TIMEOUT), 1, 10);
+            List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark), 1, 10);
             return OutputParser.combine(results);
         }
 

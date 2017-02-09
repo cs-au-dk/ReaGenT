@@ -9,7 +9,6 @@ import dk.webbies.tajscheck.util.Util;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -41,11 +40,9 @@ public class DeltaTest {
         return () -> {
             OutputParser.RunResult result;
             try {
-                result = OutputParser.parseDriverResult(Main.runBenchmark(bench, 2 * 60 * 1000));
+                result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
             } catch (IOException e) {
                 throw new RuntimeException(e);
-            } catch (TimeoutException e) {
-                return false;
             }
             return result.typeErrors.stream().anyMatch(te -> te.getPath().contains(typeError.getPath()) && te.typeof.equals(typeError.typeof));
         };

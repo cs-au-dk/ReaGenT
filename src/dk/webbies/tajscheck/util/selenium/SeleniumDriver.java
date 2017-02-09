@@ -3,10 +3,7 @@ package dk.webbies.tajscheck.util.selenium;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
+import org.apache.http.*;
 import org.apache.http.impl.DefaultHttpServerConnection;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.util.EntityUtils;
@@ -20,16 +17,14 @@ import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.service.DriverCommandExecutor;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -53,7 +48,7 @@ public class SeleniumDriver {
         }
     }
 
-    public static String executeScript(String script, int timeout) throws IOException, HttpException, TimeoutException {
+    public static String executeScript(String script, int timeout) throws IOException, HttpException {
         setDriverPath();
 
         ChromeDriver driver = new ChromeDriver(buldCapabilities());
@@ -78,34 +73,75 @@ public class SeleniumDriver {
             socket.setSoTimeout(timeout);
         }
 
-        String message;
+        StringBuilder message = new StringBuilder();
         try {
-            message = getResponse(socket);
-        } catch (SocketTimeoutException e) {
-            socket.close();
+            while(true) {
+                String partMessage = getResponse(socket);
+                if (partMessage.equals("close")) {
+                    driver.close();
+                    break;
+                }
 
-            driver.quit();
-            throw new TimeoutException("Timeout running the browser");
+                message.append(partMessage).append("\n");
+            }
+        } catch (SocketTimeoutException e) {
+            System.err.println("Had a timeout, continuing");
+        } catch (ConnectionClosedException e) {
+            System.err.println("Socket closed (did you close the window?), continuing");
         }
 
         socket.close();
 
-        driver.close();
         driver.quit();
 
 //        System.out.println("Message recieved, length: " + message.length());
 
-        return message;
+        return message.toString();
     }
 
+    @SuppressWarnings("deprecation")
     private static String getResponse(ServerSocket serverSocket) throws IOException, HttpException {
-        DefaultHttpServerConnection conn = new DefaultHttpServerConnection();
-        conn.bind(serverSocket.accept(), new BasicHttpParams());
-        HttpRequest request = conn.receiveRequestHeader();
-        conn.receiveRequestEntity((HttpEntityEnclosingRequest)request);
-        HttpEntity entity = ((HttpEntityEnclosingRequest)request).getEntity();
-        return EntityUtils.toString(entity);
+        try (Socket socket = serverSocket.accept()) {
+            Date today = new Date();
+            String httpResponse = "" +
+                    "HTTP/1.0 200 OK\r\n" +
+                    "Access-Control-Allow-Origin: *\r\n" +
+                    "\r\n" + today;
+
+            String input = readHttpRequest(socket.getInputStream());
+
+            socket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
+
+            return input;
+        }
     }
+
+    private static String readHttpRequest(InputStream in) throws IOException {
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        String line;
+
+        int contentLength = -1;
+
+        while (!(line = reader.readLine()).equals("")) {
+            if (line.startsWith("Content-Length: ")) {
+                String number = line.substring("Content-Length: ".length(), line.length());
+                contentLength = Integer.parseInt(number);
+            }
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < contentLength; i++) {
+            int read = reader.read();
+            if (read == -1) {
+                throw new RuntimeException();
+            }
+            builder.append((char) read);
+        }
+
+        return builder.toString();
+    }
+
 
     private static void setDriverPath() {
         String operatingSystem = System.getProperty("os.name");

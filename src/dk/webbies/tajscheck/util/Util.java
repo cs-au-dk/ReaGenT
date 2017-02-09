@@ -13,7 +13,6 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeoutException;
 import java.util.function.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -27,19 +26,15 @@ import java.util.stream.StreamSupport;
 public class Util {
     private static final boolean alwaysRecreate = false;
 
-    public static String runNodeScript(String args, int timeout) throws IOException, TimeoutException {
+    public static String runNodeScript(String args, int timeout) throws IOException {
         return runNodeScript(args, null, timeout);
     }
 
     public static String runNodeScript(String args, File dir) throws IOException {
-        try {
-            return runNodeScript(args, dir, -1);
-        } catch (TimeoutException e) {
-            throw new RuntimeException(e);
-        }
+        return runNodeScript(args, dir, -1);
     }
 
-    public static String runScript(String args, int timeout) throws IOException, TimeoutException {
+    public static String runScript(String args, int timeout) throws IOException {
         return runScript(args, null, timeout);
     }
 
@@ -56,9 +51,6 @@ public class Util {
                 waitForProcess(process, timeout);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
-            } catch (TimeoutException e) {
-                System.err.println("Had a timeout, continuing");
-                // continue
             }
         }
 
@@ -80,12 +72,11 @@ public class Util {
 
     public static boolean isDeltaDebugging = false;
 
-    public static String runNodeScript(String args, File dir, int timeout) throws IOException, TimeoutException {
+    public static String runNodeScript(String args, File dir, int timeout) throws IOException {
         return runScript("node " + args, dir, timeout);
     }
 
-    private static int waitForProcess(Process process, int timeout)
-            throws IOException, InterruptedException, TimeoutException {
+    private static int waitForProcess(Process process, int timeout) throws IOException, InterruptedException {
         Worker worker = new Worker(process);
         worker.start();
         try {
@@ -93,7 +84,8 @@ public class Util {
             if (worker.exit != null) {
                 return worker.exit;
             } else {
-                throw new TimeoutException();
+                System.err.println("Had a timeout, continuing");
+                return -1;
             }
         } catch (InterruptedException ex) {
             worker.interrupt();
@@ -265,11 +257,7 @@ public class Util {
     }
 
     public static String runNodeScript(String nodeArgs) throws IOException {
-        try {
-            return runNodeScript(nodeArgs, -1);
-        } catch (TimeoutException e) {
-            throw new RuntimeException(e);
-        }
+        return runNodeScript(nodeArgs, -1);
     }
 
     public static String getCachedOrRun(String cachePath, List<File> checkAgainst, Supplier<String> run) throws IOException {

@@ -10,14 +10,20 @@ import org.junit.Test;
 
 import java.io.IOException;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
 
 /**
  * Created by erik1 on 03-01-2017.
  */
 public class TestParsing {
+    // TODO: for(;i < length; i++) {}
+
+    // TODO: Fewer quotes in field-names.
+
     @Test
     public void testEscapedQuotes() throws Exception {
         testParse(
@@ -61,6 +67,23 @@ public class TestParsing {
                         "})));"
         );
     }
+
+    @Test
+    public void forLoopsWithNoInitializer() throws Exception {
+        firstParsingComplete = false;
+        JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
+        String content = "for(;i;i--){}";
+        Statement iteration1Ast = parser.parse("name", content).toTSCreateAST().getBody();
+
+        System.out.println("First parsing complete");
+        firstParsingComplete = true;
+
+        String iteration1String = AstToStringVisitor.toString(iteration1Ast);
+
+        assertThat(iteration1String, not(containsString("null")));
+    }
+
+
 
     @Test
     public void functionWithSemiColon() throws Exception {

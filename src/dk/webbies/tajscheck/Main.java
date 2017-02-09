@@ -20,7 +20,6 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -121,56 +120,40 @@ public class Main {
         return "./" + jsFile;
     }
 
-    public static String runBenchmark(Benchmark bench, int timeout) throws IOException, TimeoutException {
+    public static String runBenchmark(Benchmark bench) throws IOException {
         String testFilePath = getFolderPath(bench) + TEST_FILE_NAME;
-        Benchmark.RUN_METHOD run_method = bench.run_method;
-        return runBenchmark(testFilePath, run_method, timeout);
+        return runBenchmark(testFilePath, bench);
     }
 
-    private static String runBenchmark(String testFilePath, Benchmark.RUN_METHOD run_method) throws IOException {
-        try {
-            return runBenchmark(testFilePath, run_method, -1);
-        } catch (TimeoutException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String runBenchmark(String testFilePath, Benchmark.RUN_METHOD run_method, int timeout) throws IOException, TimeoutException {
-        switch (run_method) {
+    public static String runBenchmark(String testFilePath, Benchmark bench) throws IOException {
+        int timeout = bench.options.maxTime + Math.min(10 * 1000, bench.options.maxTime);
+        switch (bench.run_method) {
             case NODE:
                 return Util.runNodeScript(testFilePath, timeout);
             case BOOTSTRAP:
             case BROWSER:
                 try {
-                    String rawResult = SeleniumDriver.executeScript(Util.readFile(testFilePath), timeout);
-                    JSONObject json = new JSONObject("{res: " + rawResult + "}"); // Ugly, but works.
-                    return json.getString("res");
-                } catch (ConnectionClosedException | HttpException | JSONException e) {
+                    return SeleniumDriver.executeScript(Util.readFile(testFilePath), timeout);
+                } catch (ConnectionClosedException | HttpException e) {
                     throw new RuntimeException(e);
                 }
             default:
-                throw new RuntimeException("Unknown run method: " + run_method);
+                throw new RuntimeException("Unknown run method: " + bench.run_method);
         }
     }
 
     public static Map<String, CoverageResult> genCoverage(Benchmark bench) throws IOException {
-        try {
-            return genCoverage(bench, -1);
-        } catch (TimeoutException e) {
-            throw new RuntimeException(e);
-        }
+        return genCoverage(bench, Main.TEST_FILE_NAME);
     }
 
-    public static Map<String, CoverageResult> genCoverage(Benchmark bench, int timeout) throws IOException, TimeoutException {
-        return genCoverage(bench, timeout, Main.TEST_FILE_NAME);
-    }
-
-    public static Map<String, CoverageResult> genCoverage(Benchmark bench, int timeout, String testFileName) throws IOException, TimeoutException {
+    public static Map<String, CoverageResult> genCoverage(Benchmark bench, String testFileName) throws IOException {
         try {
             writeFullDriver(bench);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        int timeout = bench.options.maxTime + Math.min(10 * 1000, bench.options.maxTime);
 
         if (bench.run_method == Benchmark.RUN_METHOD.NODE) {
             StringBuilder prefix = new StringBuilder();
@@ -190,7 +173,7 @@ public class Main {
         String coverageFileName = getFolderPath(bench) + COVERAGE_FILE_NAME;
         Util.writeFile(coverageFileName, instrumented);
 
-        String coverageResult = runBenchmark(coverageFileName, bench.run_method, timeout);
+        String coverageResult = runBenchmark(coverageFileName, bench);
 
         Map<String, CoverageResult> result = CoverageResult.parse(coverageResult);
         assert result.size() == 1;
@@ -226,13 +209,5 @@ public class Main {
         }
 
         Util.runNodeScript(prefix + "node_modules/istanbul/lib/cli.js report --dir coverage", new File(getFolderPath(bench)));
-    }
-
-    public static String runBenchmark(Benchmark bench) throws IOException {
-        try {
-            return runBenchmark(bench, -1);
-        } catch (TimeoutException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

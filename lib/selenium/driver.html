@@ -16,16 +16,39 @@
             }, 100);
 
             function runTheThing() {
+
+                var sendQueue = [];
+                var busy = false;
+
+                var print = console.log;
+
                 Object.defineProperty(window, 'sendResultToChecker', {
                     enumerable: false,
                     configurable: false,
                     writable: false,
-                    value: function (json) {
+                    value: function send (json) {
+                        if (busy) {
+                            sendQueue.push(json);
+                            return;
+                        }
+                        busy = true;
                         var port = Number(getParameter("port"));
                         var xhttp = new XMLHttpRequest();
+                        xhttp.onreadystatechange = function() {
+                            if (this.readyState == 4) {
+                                busy = false;
+                                if (sendQueue.length) {
+                                    send(sendQueue.splice(0, 1)[0]);
+                                }
+                            }
+                        };
                         xhttp.open("POST", "http://localhost:" + port, true);
                         xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                        xhttp.send(JSON.stringify(json));
+                        if (typeof json === "string") {
+                            xhttp.send(json);
+                        } else {
+                            xhttp.send(JSON.stringify(json));
+                        }
                     }
                 });
 

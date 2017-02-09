@@ -57,6 +57,9 @@ public class OutputParser {
     }
 
     public static RunResult parseDriverResult(String output) {
+        if (output.isEmpty()) {
+            return new RunResult(new ArrayList<>(), new ArrayList<>());
+        }
         List<String> split = Arrays.stream(output.split("\n")).filter(line -> !line.trim().isEmpty()).collect(Collectors.toList());
         int errorsIndex = split.indexOf("---- ERRORS ----");
         List<String> errors = new ArrayList<>();

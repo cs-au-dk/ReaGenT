@@ -26,6 +26,7 @@ import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.Expe
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 /**
@@ -64,7 +65,7 @@ public class UnitTests {
 
         Main.writeFullDriver(bench, new ExecutionRecording(null, seed));
 
-        String result = Main.runBenchmark(bench, 30 * 1000);
+        String result = Main.runBenchmark(bench);
 
         System.out.println("Result of running driver: ");
         System.out.println(result);
@@ -970,11 +971,49 @@ public class UnitTests {
 
     }
 
-    @Test // TODO: Make a similar one for NODE. Also have a test with a graceful timeout.
+    @Test
     public void canFindErrorsEvenWhenTimeout() throws Exception {
-        RunResult result = run("canFindErrorsEvenWhenTimeout", "foo");
+        RunResult result = run(benchFromFolder("canFindErrorsEvenWhenTimeout", CheckOptions.builder().setMaxTime(5 * 1000).build()), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
 
+    }
+
+    @Test
+    public void canFindErrorsEvenWhenTimeoutChrome() throws Exception {
+        RunResult result = run(benchFromFolder("canFindErrorsEvenWhenTimeoutChrome", CheckOptions.builder().setMaxTime(5 * 1000).build()).withRunMethod(BROWSER), "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+    }
+
+    @Test // This should be stopped by the amount of iterations.
+    public void findSimpleErrorChrome() throws Exception {
+        long startTime = System.currentTimeMillis();
+
+        RunResult result = run(benchFromFolder("findSimpleErrorChrome", CheckOptions.builder().setMaxTime(60 * 1000).build()).withRunMethod(BROWSER), "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        long time = System.currentTimeMillis() - startTime;
+
+        System.out.println("Time taken: " + (time / 1000.0) + "s");
+
+        assertThat(time, is(lessThan((long)60 * 1000)));
+    }
+
+    @Test // This should be stopped by the amount of iterations.
+    public void findSimpleErrorChromeWithErrors() throws Exception {
+        long startTime = System.currentTimeMillis();
+
+        RunResult result = run(benchFromFolder("findSimpleErrorChromeWithErrors", CheckOptions.builder().setMaxTime(60 * 1000).build()).withRunMethod(BROWSER), "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        long time = System.currentTimeMillis() - startTime;
+
+        System.out.println("Time taken: " + (time / 1000.0) + "s");
+
+        assertThat(time, is(lessThan((long)60 * 1000)));
     }
 }
