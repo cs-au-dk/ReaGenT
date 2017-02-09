@@ -307,7 +307,11 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
                     ident();
                     write("}");
                 } else {
-                    string(property.name).accept(this);
+                    if (AstBuilder.testIdentifier.test(property.name)) {
+                        write(property.name);
+                    } else {
+                        string(property.name).accept(this);
+                    }
                     write(": ");
                     expression.accept(this);
                 }
@@ -503,7 +507,9 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
             );
         }
 
-        if (forStatement.getInitialize() instanceof VariableNode) {
+        if (forStatement.getInitialize() instanceof ExpressionStatement && ((ExpressionStatement) forStatement.getInitialize()).getExpression() instanceof NullLiteral) {
+            write(";");
+        } else if (forStatement.getInitialize() instanceof VariableNode) {
             write("var ");
             ((VariableNode) forStatement.getInitialize()).getlValue().accept(this);
             write(" = ");

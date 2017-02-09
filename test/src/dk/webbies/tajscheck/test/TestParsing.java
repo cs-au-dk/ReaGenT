@@ -20,8 +20,6 @@ import static org.hamcrest.core.IsNot.not;
  * Created by erik1 on 03-01-2017.
  */
 public class TestParsing {
-    // TODO: for(;i < length; i++) {}
-
     // TODO: Fewer quotes in field-names.
 
     @Test
@@ -70,20 +68,42 @@ public class TestParsing {
 
     @Test
     public void forLoopsWithNoInitializer() throws Exception {
-        firstParsingComplete = false;
-        JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
         String content = "for(;i;i--){}";
+        JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
         Statement iteration1Ast = parser.parse("name", content).toTSCreateAST().getBody();
 
         System.out.println("First parsing complete");
-        firstParsingComplete = true;
 
         String iteration1String = AstToStringVisitor.toString(iteration1Ast);
 
         assertThat(iteration1String, not(containsString("null")));
     }
 
+    @Test
+    public void fewerQuotesInFields() throws Exception {
+        String content = "var test = {a: 123}";
+        JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
+        Statement iteration1Ast = parser.parse("name", content).toTSCreateAST().getBody();
 
+        System.out.println("First parsing complete");
+
+        String iteration1String = AstToStringVisitor.toString(iteration1Ast);
+
+        assertThat(iteration1String, not(containsString("\"")));
+    }
+
+    @Test
+    public void stillSomeQuotesInFields() throws Exception {
+        String content = "var test = {\"-\": 123}";
+        JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
+        Statement iteration1Ast = parser.parse("name", content).toTSCreateAST().getBody();
+
+        System.out.println("First parsing complete");
+
+        String iteration1String = AstToStringVisitor.toString(iteration1Ast);
+
+        assertThat(iteration1String, containsString("\""));
+    }
 
     @Test
     public void functionWithSemiColon() throws Exception {
@@ -102,12 +122,10 @@ public class TestParsing {
     }
 
     private static void testParse(String content) {
-        firstParsingComplete = false;
         JavaScriptParser parser = new JavaScriptParser(ParseDeclaration.Environment.ES5DOM);
         Statement iteration1Ast = parser.parse("name", content).toTSCreateAST().getBody();
 
         System.out.println("First parsing complete");
-        firstParsingComplete = true;
 
         String iteration1String = AstToStringVisitor.toString(iteration1Ast);
 
@@ -117,6 +135,4 @@ public class TestParsing {
 
         assertThat(iteration1String, Is.is(equalTo(iteration2String)));
     }
-
-    public static boolean firstParsingComplete = false;
 }
