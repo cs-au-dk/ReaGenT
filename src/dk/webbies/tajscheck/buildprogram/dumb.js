@@ -38,7 +38,7 @@ if (!isTAJS) {
                 }
             }
             if (isBrowser()) {
-                print("close");
+                printForReal("close");
             }
 
 
