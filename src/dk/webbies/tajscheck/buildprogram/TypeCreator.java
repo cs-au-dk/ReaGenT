@@ -1257,7 +1257,7 @@ public class TypeCreator {
                                     ifThenElse(
                                             binary(identifier("existingValue"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
                                             Return(identifier("existingValue")),
-                                            throwStatement(newCall(identifier("RUNTIME_ERROR_NAME"), string("I will not construct this type, " + type.getClass().getSimpleName())))
+                                            throwStatement(newCall(identifier(RUNTIME_ERROR_NAME), string("I will not construct this type, " + type.getClass().getSimpleName())))
                                     )
                             )
                     )
