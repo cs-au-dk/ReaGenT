@@ -30,7 +30,7 @@ public class Experiment {
 
     public Experiment(List<Pair<String, Benchmark>> benchmarks) {
         this.benchmarks = benchmarks.stream().sorted(Comparator.comparing(Pair::getLeft)).collect(Collectors.toList());
-        Collections.shuffle(this.benchmarks);
+        Collections.sort(this.benchmarks, Comparator.comparing(Pair::getLeft));
     }
 
     public Experiment(String... names) {
