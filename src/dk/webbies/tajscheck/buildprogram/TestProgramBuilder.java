@@ -56,6 +56,8 @@ public class TestProgramBuilder {
 
         program.add(variable("isTAJS", bool(info.bench.useTAJS)));
 
+        program.add(variable("failOnAny", bool(info.options.failOnAny)));
+
         program.add(AstBuilder.programFromFile(this.getClass().getResource("prelude.js")));
 
         program.add(block(typeCreator.getValueVariableDeclarationList()));
