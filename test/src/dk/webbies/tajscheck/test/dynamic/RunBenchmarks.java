@@ -224,8 +224,6 @@ public class RunBenchmarks {
         if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts", "backbone.d.ts", "three.d.ts").anyMatch(benchmark.dTSFile::contains)) {
             return; // Too big, node runs out of memory generating the instrumented version.
         }
-        Main.writeFullDriver(benchmark);
-        System.out.println("Wrote driver");
         Map<String, CoverageResult> out = Main.genCoverage(benchmark);
         System.out.println("Coverage for " + benchmark.dTSFile);
 
