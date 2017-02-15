@@ -48,19 +48,25 @@ public class SeleniumDriver {
         }
     }
 
+    // TODO: Create a small HTTP server, use that to serve the script, also use it to serve files from the benchmark folder.
     public static String executeScript(String script, int timeout) throws IOException, HttpException {
         setDriverPath();
 
         ChromeDriver driver = new ChromeDriver(buldCapabilities());
 
-        File scriptFile;
+        File scriptFile = null;
         String tmpFileSuffix = "tmpFileSeleniumDriverThing.js";
         try {
             scriptFile = File.createTempFile("script-", tmpFileSuffix);
             FileWriter out = new FileWriter(scriptFile);
             IOUtils.write(script.getBytes(), out);
             out.close();
-        } catch (IOException e) {throw new RuntimeException(e);}
+        } catch (IOException e) {
+            if (scriptFile != null && scriptFile.exists()) {
+                scriptFile.delete();
+            }
+            throw new RuntimeException(e);
+        }
 
         ServerSocket socket = new ServerSocket(0);
         int port = socket.getLocalPort();
@@ -93,6 +99,8 @@ public class SeleniumDriver {
         socket.close();
 
         driver.quit();
+
+        scriptFile.delete();
 
 //        System.out.println("Message recieved, length: " + message.length());
 
