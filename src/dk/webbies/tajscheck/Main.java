@@ -11,11 +11,9 @@ import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
-import dk.webbies.tajscheck.util.selenium.SeleniumDriver;
+import dk.webbies.tajscheck.util.chromeRunner.SeleniumDriver;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -133,7 +131,7 @@ public class Main {
             case BOOTSTRAP:
             case BROWSER:
                 try {
-                    return SeleniumDriver.executeScript(Util.readFile(testFilePath), timeout);
+                    return SeleniumDriver.executeScript(new File(getFolderPath(bench)), Util.readFile(testFilePath), timeout);
                 } catch (ConnectionClosedException | HttpException e) {
                     throw new RuntimeException(e);
                 }
