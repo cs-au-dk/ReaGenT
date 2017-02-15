@@ -27,7 +27,7 @@ public class OutputParser {
         @Override
         public String toString() {
             return path + "\n" +
-                    "    Here i expected: " + expected + ", but instead i got: \n" +
+                    "    Here I expected: " + expected + ", but instead I got: \n" +
                     "        typeof: " + typeof + "\n" +
                     "        toString: " + toString + "\n" +
                     "        JSON: " + JSON;
@@ -105,10 +105,10 @@ public class OutputParser {
         assert header.lastIndexOf(':') == header.length() - 1;
         String path = header.substring(0, header.length() - 1);
 
-        String expectFinish = ", but instead i got: ";
-        assert lines.get(1).endsWith(expectFinish);
-        String expectStart = "    Here i expected: ";
+        String expectStart = "    Here I expected: ";
         assert lines.get(1).startsWith(expectStart);
+        String expectFinish = ", but instead I got: ";
+        assert lines.get(1).endsWith(expectFinish);
 
         String expected = lines.get(1).substring(expectStart.length(), lines.get(1).length() - expectFinish.length());
 
