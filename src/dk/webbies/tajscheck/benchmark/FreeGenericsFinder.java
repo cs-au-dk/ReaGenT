@@ -402,7 +402,7 @@ public class FreeGenericsFinder {
             }
             return false;
         }
-        if (baseType instanceof SimpleType || baseType instanceof BooleanLiteral || baseType instanceof StringLiteral || baseType instanceof NumberLiteral || baseType instanceof TypeParameterType || baseType instanceof SymbolType) {
+        if (baseType instanceof SimpleType || baseType instanceof BooleanLiteral || baseType instanceof StringLiteral || baseType instanceof NumberLiteral || baseType instanceof TypeParameterType || baseType instanceof SymbolType || baseType instanceof NeverType) {
             return false;
         }
 
