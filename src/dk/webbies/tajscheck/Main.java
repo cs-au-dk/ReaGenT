@@ -170,6 +170,10 @@ public class Main {
 
         String instrumented = Util.runNodeScript("node_modules/istanbul/lib/cli.js instrument " + getFolderPath(bench) + testFileName, timeout);
 
+        if (instrumented.isEmpty()) {
+            return new HashMap<>();
+        }
+
         String coverageFileName = getFolderPath(bench) + COVERAGE_FILE_NAME;
         Util.writeFile(coverageFileName, instrumented);
 

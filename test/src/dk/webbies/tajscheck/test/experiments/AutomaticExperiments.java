@@ -4,6 +4,7 @@ import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
+import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
@@ -34,7 +35,11 @@ public class AutomaticExperiments {
         List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
         CoverageResult result = CoverageResult.combine(results);
-        return Arrays.asList(Util.toPercentage(result.statementCoverage()), Util.toPercentage(result.functionCoverage()), Util.toPercentage(result.branchCoverage()));
+        if (result != null) {
+            return Arrays.asList(Util.toPercentage(result.statementCoverage()), Util.toPercentage(result.functionCoverage()), Util.toPercentage(result.branchCoverage()));
+        } else {
+            return Arrays.asList(null, null, null);
+        }
     });
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> uniquePaths = new Pair<>("uniquePaths", (bench) -> {
@@ -146,26 +151,25 @@ public class AutomaticExperiments {
     });
 
     public static void main(String[] args) throws Exception {
-//        Experiment experiment = new Experiment("Ember.js", "Foundation");
-        Experiment experiment = new Experiment("Foundation");
+//        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(bench -> bench.getValue().run_method == Benchmark.RUN_METHOD.NODE).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+//        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(pair -> !done.contains(pair.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+        Experiment experiment = new Experiment();
 
         experiment.addSingleExperiment(type);
 
-        experiment.addSingleExperiment(uniquePaths);
-        experiment.addSingleExperiment(uniquePaths);
-        experiment.addSingleExperiment(uniquePaths);
-
-//        experiment.addMultiExperiment(uniquePathsAndCoverage);
-//        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
-//        experiment.addMultiExperiment(uniquePathsConvergence);
-
-//        experiment.addMultiExperiment(driverSizes);
-//        experiment.addSingleExperiment(jsFileSize);
+        experiment.addMultiExperiment(driverSizes);
+        experiment.addSingleExperiment(jsFileSize);
 
 //        experiment.addSingleExperiment(uniquePaths);
 
-//        experiment.addMultiExperiment(smallCoverage);
-//        experiment.addSingleExperiment(runSmall);
+//        experiment.addMultiExperiment(uniquePathsAndCoverage);
+        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
+        experiment.addMultiExperiment(uniquePathsConvergence);
+
+//        experiment.addSingleExperiment(uniquePaths);*/
+
+        experiment.addMultiExperiment(smallCoverage);
+        experiment.addSingleExperiment(runSmall);
 
 
         String result = experiment.calculate(THREADS).toCSV();
