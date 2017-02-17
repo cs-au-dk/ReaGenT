@@ -101,6 +101,9 @@ public class OutputParser {
 
         String header = lines.get(0);
         assert header.substring(header.lastIndexOf('('), header.length()).startsWith("(iteration: ");
+        if (header.lastIndexOf('(') == -1) {
+            throw new RuntimeException();
+        }
         header = header.substring(0, header.lastIndexOf('(') - 1);
         assert header.lastIndexOf(':') == header.length() - 1;
         String path = header.substring(0, header.length() - 1);

@@ -13,6 +13,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 
@@ -26,7 +27,13 @@ public class SeleniumDriver {
 
         ChromeDriver driver = new ChromeDriver(buldCapabilities());
 
+        driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+        driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
+
+
         ServerSocket socket = new ServerSocket(0);
+
         int port = socket.getLocalPort();
 
 //        System.out.println("Listening for result at port: " + port);
@@ -35,9 +42,30 @@ public class SeleniumDriver {
             socket.setSoTimeout(timeout);
         }
 
-        SimpleMessageRecievingHTTPServer server = startServer(dir, script, socket);
+        SimpleMessageReceivingHTTPServer server = startServer(dir, script, socket);
 
-        driver.get("http://127.0.0.1:" + port);
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        while (true) {
+            try {
+                if (!socket.isBound() || socket.isClosed()) {
+                    System.out.println();
+                }
+                driver.get("http://127.0.0.1:" + port);
+                break;
+            } catch (org.openqa.selenium.TimeoutException e) {
+                System.err.println("Selenium driver had a timeout loading the index page, trying again!");
+                try {
+                    driver.quit();
+                    socket.close();
+                } catch (Exception ignored) { }
+                return executeScript(dir, script, timeout); // continue, try again
+            }
+        }
 
         String message = String.join("\n", server.getMessages());
 
@@ -46,7 +74,7 @@ public class SeleniumDriver {
         return message;
     }
 
-    private static SimpleMessageRecievingHTTPServer startServer(File dir, String script, ServerSocket socket) {
+    private static SimpleMessageReceivingHTTPServer startServer(File dir, String script, ServerSocket socket) {
         Map<String, String> customContents = new HashMap<>();
         customContents.put("test.js", script);
         try {
@@ -57,7 +85,7 @@ public class SeleniumDriver {
             throw new RuntimeException(e);
         }
 
-        SimpleMessageRecievingHTTPServer server = new SimpleMessageRecievingHTTPServer(dir, customContents, socket);
+        SimpleMessageReceivingHTTPServer server = new SimpleMessageReceivingHTTPServer(dir, customContents, socket);
 
         new Thread(server::start).start();
 

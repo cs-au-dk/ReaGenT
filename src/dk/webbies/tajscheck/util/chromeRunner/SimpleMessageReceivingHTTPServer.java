@@ -17,13 +17,13 @@ import java.util.concurrent.CountDownLatch;
 /**
  * Created by erik1 on 15-02-2017.
  */
-public class SimpleMessageRecievingHTTPServer {
+public class SimpleMessageReceivingHTTPServer {
     private final File dir;
     private final Map<String, String> customContents;
     private final ServerSocket serverSocket;
     private List<String> messages = new ArrayList<>();
 
-    SimpleMessageRecievingHTTPServer(File dir, Map<String, String> customContents, ServerSocket serverSocket) {
+    SimpleMessageReceivingHTTPServer(File dir, Map<String, String> customContents, ServerSocket serverSocket) {
         this.dir = dir;
         this.customContents = customContents;
         this.serverSocket = serverSocket;
@@ -103,7 +103,7 @@ public class SimpleMessageRecievingHTTPServer {
         String protocol = firstLine.split(" ")[0];
         String path = firstLine.split(" ")[1];
 
-        if (protocol.equals("POST")) {
+        if (protocol.equals("POST") && path.equals("/post")) {
             while (!(line = reader.readLine()).equals("")) {
                 if (line.startsWith("Content-Length: ")) {
                     String number = line.substring("Content-Length: ".length(), line.length());
@@ -122,14 +122,14 @@ public class SimpleMessageRecievingHTTPServer {
 
             return new Pair<>(path, builder.toString());
         } else {
-            assert protocol.equals("GET");
+            // I'm just pretending the protocol is "GET". Some libraries have API
             return new Pair<>(path, null);
         }
     }
 
-    CountDownLatch latch = new CountDownLatch(1);
+    private CountDownLatch latch = new CountDownLatch(1);
 
-    public List<String> getMessages() {
+    List<String> getMessages() {
         try {
             latch.await();
         } catch (InterruptedException e) {

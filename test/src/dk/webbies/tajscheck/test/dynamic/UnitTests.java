@@ -830,7 +830,7 @@ public class UnitTests {
 
     @Test
     public void intersectionWithFunction() throws Exception {
-        RunResult result = run(benchFromFolder("intersectionWithFunction").withRunMethod(BOOTSTRAP), "foo");
+        RunResult result = run(benchFromFolder("intersectionWithFunction", CheckOptions.builder().setConstructAllTypes(true).build()).withRunMethod(BOOTSTRAP), "foo");
 
         assertThat(result.typeErrors.size(), is(0));
         assertThat(result.errors, everyItem(is(equalTo("RuntimeError Cannot construct this IntersectionType")))); // <- this happens, it is ok, i cannot at runtime construct a type which is the intersection of two types.
