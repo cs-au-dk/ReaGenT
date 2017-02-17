@@ -89,6 +89,9 @@ public class AutomaticExperiments {
         assert out.containsKey(bench.getJSName());
 
         CoverageResult coverage = out.get(bench.getJSName());
+        if (coverage == null) {
+            return Arrays.asList(uniquePaths, null, null, null);
+        }
         return Arrays.asList(uniquePaths, Util.toPercentage(coverage.statementCoverage()), Util.toPercentage(coverage.functionCoverage()), Util.toPercentage(coverage.branchCoverage()));
     });
 
@@ -105,6 +108,10 @@ public class AutomaticExperiments {
             try {
                 Map<String, CoverageResult> subResult = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5).build())); // <- More timeout
                 out = CoverageResult.combine(out, subResult);
+                if (out.get(bench.getJSName()) == null) {
+                    return Arrays.asList(uniquePaths, null, null, null, null, null, null);
+                }
+
                 if (firstCoverage == null) {
                     firstCoverage = out.get(bench.getJSName());
                 }
@@ -121,6 +128,18 @@ public class AutomaticExperiments {
         assert out.containsKey(bench.getJSName());
 
         CoverageResult coverage = out.get(bench.getJSName());
+        if (coverage == null) {
+            if (firstCoverage == null) {
+                return Arrays.asList(uniquePaths,
+                        null, null, null,
+                        null, null, null
+                );
+            }
+            return Arrays.asList(uniquePaths,
+                    Util.toPercentage(firstCoverage.statementCoverage()), Util.toPercentage(firstCoverage.functionCoverage()), Util.toPercentage(firstCoverage.branchCoverage()),
+                    null, null, null
+            );
+        }
         return Arrays.asList(uniquePaths,
                 Util.toPercentage(firstCoverage.statementCoverage()), Util.toPercentage(firstCoverage.functionCoverage()), Util.toPercentage(firstCoverage.branchCoverage()),
                 Util.toPercentage(coverage.statementCoverage()), Util.toPercentage(coverage.functionCoverage()), Util.toPercentage(coverage.branchCoverage())
@@ -153,7 +172,7 @@ public class AutomaticExperiments {
     public static void main(String[] args) throws Exception {
 //        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(bench -> bench.getValue().run_method == Benchmark.RUN_METHOD.NODE).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 //        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(pair -> !done.contains(pair.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-        Experiment experiment = new Experiment();
+        Experiment experiment = new Experiment("AngularJS", "D3.js", "Ember.js", "three.js");
 
         experiment.addSingleExperiment(type);
 
@@ -166,7 +185,7 @@ public class AutomaticExperiments {
         experiment.addMultiExperiment(uniquePathsAnd5Coverage);
         experiment.addMultiExperiment(uniquePathsConvergence);
 
-//        experiment.addSingleExperiment(uniquePaths);*/
+//        experiment.addSingleExperiment(uniquePaths);
 
         experiment.addMultiExperiment(smallCoverage);
         experiment.addSingleExperiment(runSmall);
