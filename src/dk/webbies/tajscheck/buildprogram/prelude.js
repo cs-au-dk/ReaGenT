@@ -89,7 +89,7 @@ function loadLibrary(path) {
 
 function createFailDescription(path, expected, actual, iteration, sequence) {
     var failDescription = path + ": (iteration: " + iteration + ")\n";
-    failDescription += "    Here i expected: " + expected + ", but instead i got: \n";
+    failDescription += "    Here I expected: " + expected + ", but instead I got: \n";
     failDescription += "        typeof: " + typeof actual + "\n";
     try {
         var string = JSON.stringify(actual + "");
