@@ -7,7 +7,6 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
-import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
