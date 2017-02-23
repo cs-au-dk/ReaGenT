@@ -2,7 +2,7 @@ package dk.webbies.tajscheck;
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
+import dk.webbies.tajscheck.buildprogram.DriverProgramBuilder;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.paser.AstToStringVisitor;
 import dk.webbies.tajscheck.testcreator.test.Test;
@@ -22,7 +22,7 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
+import static dk.webbies.tajscheck.buildprogram.DriverProgramBuilder.*;
 
 /**
  * Created by erik1 on 01-11-2016.
@@ -61,7 +61,7 @@ public class Main {
         List<Test> tests = new TestCreator(info).createTests();
         tests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, bench));
 
-        Statement program = new TestProgramBuilder(tests, info).buildTestProgram(recording);
+        Statement program = new DriverProgramBuilder(tests, info).buildDriver(recording);
 
         return AstToStringVisitor.toString(program);
     }
@@ -83,7 +83,7 @@ public class Main {
             prevSize = testsArray.length;
             testsArray = MinimizeArray.minimizeArray((testsToTest) -> {
                 try {
-                    Statement program = new TestProgramBuilder(Arrays.asList(testsToTest), info).buildTestProgram(null);
+                    Statement program = new DriverProgramBuilder(Arrays.asList(testsToTest), info).buildDriver(null);
 
                     Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(program));
 
@@ -94,7 +94,7 @@ public class Main {
             }, testsArray);
         }
 
-        Statement program = new TestProgramBuilder(Arrays.asList(testsArray), info).buildTestProgram(null);
+        Statement program = new DriverProgramBuilder(Arrays.asList(testsArray), info).buildDriver(null);
 
         Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(program));
 

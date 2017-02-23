@@ -24,7 +24,7 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
 /**
  * Created by erik1 on 02-11-2016.
  */
-public class TestProgramBuilder {
+public class DriverProgramBuilder {
     public static final String VARIABLE_NO_VALUE = "no_value";
     public static final String VALUE_VARIABLE_PREFIX = "value_";
     public static final String RUNTIME_ERROR_NAME = "RuntimeError";
@@ -35,14 +35,14 @@ public class TestProgramBuilder {
 
     private TypeCreator typeCreator;
 
-    public TestProgramBuilder(List<Test> tests, BenchmarkInfo info) {
+    public DriverProgramBuilder(List<Test> tests, BenchmarkInfo info) {
         this.tests = new ArrayList<>(tests);
         this.info = info;
 
         this.typeCreator = new TypeCreator(tests, info);
     }
 
-    public Statement buildTestProgram(ExecutionRecording recording) throws IOException {
+    public Statement buildDriver(ExecutionRecording recording) throws IOException {
         List<Statement> program = new ArrayList<>();
 
         // var initialRandomness = Math.random()
@@ -102,6 +102,7 @@ public class TestProgramBuilder {
         }
 
         program.add(statement(function("testStuff", block(
+                statement(call(identifier("print"), string("total number of tests: " + tests.size()))),
                 whileLoop(bool(true),
                     block(
                             info.options.checkHeap ? statement(call(identifier("checkHeap"))) : comment("checkHeap()"),
@@ -194,6 +195,7 @@ public class TestProgramBuilder {
                     number(i),
                     block(
                             comment("path: " + test.getPath() + " type: " + test.getClass().getSimpleName()),
+                            statement(call(identifier("testCalled"), number(i))),
                             statement(call(function(block(buildTestCase(test))))),
                             breakStatement()
                     )

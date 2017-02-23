@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck;
 
+import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
@@ -41,10 +42,14 @@ public class OutputParser {
     public static final class RunResult {
         public final List<TypeError> typeErrors;
         public final List<String> errors;
+        private final Integer totalTests;
+        private final Set<Integer> testsCalled;
 
-        public RunResult(List<TypeError> typeErrors, List<String> errors) {
+        public RunResult(List<TypeError> typeErrors, List<String> errors, Integer totalTests, Set<Integer> testsCalled) {
             this.typeErrors = typeErrors;
             this.errors = errors;
+            this.totalTests = totalTests;
+            this.testsCalled = testsCalled;
         }
 
         public List<TypeError> getTypeErrors() {
@@ -54,13 +59,26 @@ public class OutputParser {
         public List<String> getErrors() {
             return errors;
         }
+
+        public Integer getTotalTests() {
+            return totalTests;
+        }
+
+        public Set<Integer> getTestsCalled() {
+            return testsCalled;
+        }
     }
 
     public static RunResult parseDriverResult(String output) {
         if (output.isEmpty()) {
-            return new RunResult(new ArrayList<>(), new ArrayList<>());
+            return new RunResult(new ArrayList<>(), new ArrayList<>(), -1, Collections.emptySet());
         }
         List<String> split = Arrays.stream(output.split("\n")).filter(line -> !line.trim().isEmpty()).collect(Collectors.toList());
+
+        Pair<List<String>, Pair<Integer, Set<Integer>>> testStats = extractTestStats(split);
+        split = testStats.getLeft();
+
+
         int errorsIndex = split.indexOf("---- ERRORS ----");
         List<String> errors = new ArrayList<>();
         if (errorsIndex != -1) {
@@ -72,7 +90,7 @@ public class OutputParser {
         assert split.get(0).startsWith("Initial random: ");
 
         if (split.size() == 1) {
-            return new RunResult(new ArrayList<>(), errors);
+            return new RunResult(new ArrayList<>(), errors, testStats.getRight().getLeft(), testStats.getRight().getRight());
         }
 
         List<String> singleResultCollector = new ArrayList<>();
@@ -93,10 +111,35 @@ public class OutputParser {
 
         assert typeErrors.stream().allMatch(Objects::nonNull);
 
-        return new RunResult(typeErrors, errors);
+        return new RunResult(typeErrors, errors, testStats.getRight().getLeft(), testStats.getRight().getRight());
+    }
+
+    // Test called:
+    // total number of tests:
+    private static Pair<List<String>, Pair<Integer, Set<Integer>>> extractTestStats(List<String> split) {
+        int totalTests = -1;
+        Set<Integer> testsCalled = new HashSet<>();
+        List<String> filtered = new ArrayList<>();
+
+        for (String str : split) {
+            if (str.startsWith("Test called: ")) {
+                int testCalled = Integer.parseInt(Util.removePrefix(str, "Test called: ").trim());
+                testsCalled.add(testCalled);
+            } else if (str.startsWith("total number of tests: ")) {
+                assert totalTests == -1;
+                totalTests = Integer.parseInt(Util.removePrefix(str, "total number of tests: ").trim());
+            } else {
+                filtered.add(str);
+            }
+        }
+
+        return new Pair<>(filtered, new Pair<>(totalTests, testsCalled));
     }
 
     private static TypeError parseSingleResult(List<String> lines) {
+        if (!(lines.size() == 5 || lines.size() == 4)) {
+            System.out.println();
+        }
         assert lines.size() == 5 || lines.size() == 4;
 
         String header = lines.get(0);
@@ -136,10 +179,14 @@ public class OutputParser {
     public static RunResult combine(List<RunResult> results) {
         results = results.stream().filter(Objects::nonNull).collect(Collectors.toList());
 
-        List<String> errors = results.stream().map(res -> res == null ? new RunResult(Collections.emptyList(), Collections.emptyList()) : res).map(RunResult::getErrors).reduce(new ArrayList<>(), Util::reduceList).stream().distinct().collect(Collectors.toList());
+        List<String> errors = results.stream().map(res -> res == null ? new RunResult(Collections.emptyList(), Collections.emptyList(), -1, Collections.emptySet()) : res).map(RunResult::getErrors).reduce(new ArrayList<>(), Util::reduceList).stream().distinct().collect(Collectors.toList());
 
         List<TypeError> typeErrors = results.stream().map(RunResult::getTypeErrors).reduce(new ArrayList<>(), Util::reduceList).stream().distinct().collect(Collectors.toList());
 
-        return new RunResult(typeErrors, errors);
+        int totalTests = results.stream().map(RunResult::getTotalTests).reduce(-1, Math::max);
+
+        Set<Integer> testsCalled = results.stream().map(RunResult::getTestsCalled).reduce(new HashSet<>(), Util::reduceSet);
+
+        return new RunResult(typeErrors, errors, totalTests, testsCalled);
     }
 }

@@ -363,6 +363,15 @@ function registerValue(valueIndex) {
 
 var startTime = +new RealDate();
 
+var alreadyCalled = {};
+function testCalled(number) {
+    if (alreadyCalled[number]) {
+        return;
+    }
+    alreadyCalled[number] = true;
+    print("Test called: " + number);
+}
+
 var i = 0;
 function selectTest() {
     var timeSpent = (+new RealDate()) - startTime;

@@ -2,7 +2,7 @@ package dk.webbies.tajscheck;
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.buildprogram.TestProgramBuilder;
+import dk.webbies.tajscheck.buildprogram.DriverProgramBuilder;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.paser.AstToStringVisitor;
 import dk.webbies.tajscheck.testcreator.TestCreator;
@@ -75,7 +75,7 @@ public class RunSmall {
             List<Test> specificTests = new TestCreator(info.withBench(bench)).createTests();
             specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, bench));
 
-            Statement program = new TestProgramBuilder(specificTests, info).buildTestProgram(null);
+            Statement program = new DriverProgramBuilder(specificTests, info).buildDriver(null);
 
             String filePath = Main.getFolderPath(bench) + Main.TEST_FILE_NAME;
 

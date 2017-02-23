@@ -22,7 +22,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tajscheck.buildprogram.TestProgramBuilder.*;
+import static dk.webbies.tajscheck.buildprogram.DriverProgramBuilder.*;
 import static dk.webbies.tajscheck.paser.AstBuilder.*;
 
 /**
@@ -209,7 +209,7 @@ public class TypeCreator {
                 // If the switch fails to return, check if anything can be returned.
                 block(cases.stream().map(Pair::getRight).collect(Collectors.toList())),
                 // If nothing has been returned, return the NO_VALUE object.
-                Return(identifier(TestProgramBuilder.VARIABLE_NO_VALUE))
+                Return(identifier(DriverProgramBuilder.VARIABLE_NO_VALUE))
         );
     }
 
