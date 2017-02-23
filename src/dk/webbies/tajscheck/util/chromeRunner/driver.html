@@ -10,9 +10,6 @@
 
     <script>
         (function () {
-            var sendQueue = [];
-            var busy = false;
-
             var print = console.log;
 
             Object.defineProperty(window, 'sendResultToChecker', {
@@ -20,19 +17,9 @@
                 configurable: false,
                 writable: false,
                 value: function send (json) {
-                    if (busy) {
-                        sendQueue.push(json);
-                        return;
-                    }
-                    busy = true;
                     var xhttp = new XMLHttpRequest();
                     xhttp.onreadystatechange = function() {
-                        if (this.readyState == 4) {
-                            busy = false;
-                            if (sendQueue.length) {
-                                send(sendQueue.splice(0, 1)[0]);
-                            }
-                        }
+                        // nothing (currently)
                     };
                     xhttp.open("POST", "post", true);
                     xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
