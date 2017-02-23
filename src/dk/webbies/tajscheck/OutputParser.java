@@ -89,14 +89,16 @@ public class OutputParser {
 
         assert split.get(0).startsWith("Initial random: ");
 
-        if (split.size() == 1) {
+        split = split.stream().filter(str -> !str.startsWith("Initial random: ")).collect(Collectors.toList());
+
+        if (split.size() == 0) {
             return new RunResult(new ArrayList<>(), errors, testStats.getRight().getLeft(), testStats.getRight().getRight());
         }
 
         List<String> singleResultCollector = new ArrayList<>();
 
-        singleResultCollector.add(split.get(1));
-        for (int i = 2; i < split.size(); i++) {
+        singleResultCollector.add(split.get(0));
+        for (int i = 1; i < split.size(); i++) {
             String line = split.get(i);
 
             if (!line.startsWith(" ")) {
