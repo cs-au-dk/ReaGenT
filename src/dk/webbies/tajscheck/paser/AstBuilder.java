@@ -159,6 +159,10 @@ public class AstBuilder {
         return new ForStatement(null, initializer, condition, increment, body);
     }
 
+    public static WhileStatement whileLoop(Expression condition, Statement body) {
+        return new WhileStatement(null, condition, body);
+    }
+
     public static NumberLiteral number(double number) {
         return new NumberLiteral(null, number);
     }

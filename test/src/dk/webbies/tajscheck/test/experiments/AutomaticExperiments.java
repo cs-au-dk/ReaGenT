@@ -15,8 +15,7 @@ import java.util.stream.Collectors;
  * Created by erik1 on 16-01-2017.
  */
 public class AutomaticExperiments {
-    private static final int TIMEOUT = 60 * 1000;
-    private static final int THREADS = 6;
+    private static final int THREADS = 4;
     private static int SMALL_DRIVER_RUNS_LIMIT = 100;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
@@ -47,6 +46,25 @@ public class AutomaticExperiments {
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
         long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
         return Long.toString(paths);
+    });
+
+
+    private static final Pair<String, Experiment.ExperimentSingleRunner> uniquePathsUnlimitedIterations = new Pair<>("uniquePathsUnlimited", (bench) -> {
+        bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(-1).build());
+        Main.writeFullDriver(bench);
+        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+        long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+        return Long.toString(paths);
+    });
+
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAndTime = new Pair<>(Arrays.asList("uniquePaths", "time"), (bench) -> {
+        long start = System.currentTimeMillis();
+        Main.writeFullDriver(bench);
+        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+        long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+        long end = System.currentTimeMillis();
+        double time = (end - start) / 1000.0;
+        return Arrays.asList(Long.toString(paths), Util.toFixed(time, 1) + "s");
     });
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsConvergence = new Pair<>(Arrays.asList("uniquePaths", "uniquePathsConvergence", "iterationsUntilConvergence"), (bench) -> {
@@ -172,23 +190,23 @@ public class AutomaticExperiments {
     public static void main(String[] args) throws Exception {
 //        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(bench -> bench.getValue().run_method == Benchmark.RUN_METHOD.NODE).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 //        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(pair -> !done.contains(pair.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-        Experiment experiment = new Experiment("AngularJS", "D3.js", "Ember.js", "three.js");
+        Experiment experiment = new Experiment();
 
         experiment.addSingleExperiment(type);
 
         experiment.addMultiExperiment(driverSizes);
         experiment.addSingleExperiment(jsFileSize);
 
-//        experiment.addSingleExperiment(uniquePaths);
+        experiment.addSingleExperiment(uniquePaths);
+        experiment.addMultiExperiment(uniquePathsAndTime);
+        experiment.addSingleExperiment(uniquePathsUnlimitedIterations);
 
-//        experiment.addMultiExperiment(uniquePathsAndCoverage);
+        experiment.addMultiExperiment(uniquePathsAndCoverage);
         experiment.addMultiExperiment(uniquePathsAnd5Coverage);
         experiment.addMultiExperiment(uniquePathsConvergence);
 
-//        experiment.addSingleExperiment(uniquePaths);
-
-        experiment.addMultiExperiment(smallCoverage);
-        experiment.addSingleExperiment(runSmall);
+//        experiment.addMultiExperiment(smallCoverage);
+//        experiment.addSingleExperiment(runSmall);
 
 
         String result = experiment.calculate(THREADS).toCSV();

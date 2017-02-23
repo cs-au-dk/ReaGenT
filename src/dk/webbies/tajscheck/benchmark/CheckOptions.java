@@ -18,6 +18,7 @@ public final class CheckOptions {
     public final boolean constructAllTypes;
     public final int maxTime;
     public final boolean failOnAny;
+    public final boolean makeTSInferLike;
 
     private CheckOptions(Builder builder) {
         this.checkDepth = builder.checkDepth;
@@ -31,6 +32,7 @@ public final class CheckOptions {
         this.disableGenerics = builder.disableGenerics;
         this.constructAllTypes = builder.constructAllTypes;
         this.failOnAny = builder.failOnAny;
+        this.makeTSInferLike = builder.makeTSInferLike;
         this.builder = builder;
     }
 
@@ -59,6 +61,7 @@ public final class CheckOptions {
         private boolean disableGenerics = false; // Disable all generics, the TypeContext becomes empty.
         private boolean constructAllTypes = false; // As in, also construct classes, class-instances, and the module itself we are trying to test (all of them only if there is a method taking it as parameter).
         private boolean failOnAny = true; // If "any" is returned (as in, something that has our "isAnyMarker"), it is a valid warning.
+        private boolean makeTSInferLike = false; // Restrict the driver to only check properties, and call constructors (where all arguments are ignored). Kinda equal to the dynamic part of TSInfer.
 
         private Builder() {}
 
@@ -68,6 +71,11 @@ public final class CheckOptions {
 
         public CheckOptions build() {
             return new CheckOptions(this);
+        }
+
+        public Builder setMakeTSInferLike(boolean makeTSInferLike) {
+            this.makeTSInferLike = makeTSInferLike;
+            return this;
         }
 
         public Builder setMaxTime(int maxTime) {

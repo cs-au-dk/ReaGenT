@@ -53,6 +53,7 @@ public class TestProgramBuilder {
         }
 
         program.add(variable("maxTime", number(info.options.maxTime)));
+        program.add(variable("maxIterations", number(info.options.maxIterationsToRun)));
 
         program.add(variable("isTAJS", bool(info.bench.useTAJS)));
 
@@ -100,13 +101,8 @@ public class TestProgramBuilder {
             ));
         }
 
-        program.add(variable("i", number(0)));
-
         program.add(statement(function("testStuff", block(
-                forLoop(
-                    statement(binary(identifier("i"), Operator.EQUAL, number(0))),
-                    binary(identifier("i"), Operator.LESS_THAN, iterationsToRun),
-                    unary(Operator.POST_PLUS_PLUS, identifier("i")),
+                whileLoop(bool(true),
                     block(
                             info.options.checkHeap ? statement(call(identifier("checkHeap"))) : comment("checkHeap()"),
                             variable("testNumberToRun", call(identifier("selectTest"))),
@@ -378,19 +374,31 @@ public class TestProgramBuilder {
 
         @Override
         public List<Statement> visit(MethodCallTest test) {
-            return callFunction(test, test.getObject(), test.getParameters(), test.isRestArgs(), (base, parameters) ->
-                    methodCall(identifier("base"), test.getPropertyName(), parameters)
-            );
+            if (info.options.makeTSInferLike) {
+                return Collections.singletonList(throwStatement(newCall(identifier("Error"))));
+            } else {
+                return callFunction(test, test.getObject(), test.getParameters(), test.isRestArgs(), (base, parameters) ->
+                        methodCall(identifier("base"), test.getPropertyName(), parameters)
+                );
+            }
         }
 
         @Override
         public List<Statement> visit(ConstructorCallTest test) {
-            return callFunction(test, test.getFunction(), test.getParameters(), test.isRestArgs(), AstBuilder::newCall);
+            if (info.options.makeTSInferLike) {
+                return callFunction(test, test.getFunction(), Collections.emptyList(), false, AstBuilder::newCall);
+            } else {
+                return callFunction(test, test.getFunction(), test.getParameters(), test.isRestArgs(), AstBuilder::newCall);
+            }
         }
 
         @Override
         public List<Statement> visit(FunctionCallTest test) {
-            return callFunction(test, test.getFunction(), test.getParameters(), test.isRestArgs(), AstBuilder::call);
+            if (info.options.makeTSInferLike) {
+                return Collections.singletonList(throwStatement(newCall(identifier("Error"))));
+            } else {
+                return callFunction(test, test.getFunction(), test.getParameters(), test.isRestArgs(), AstBuilder::call);
+            }
         }
 
         private List<Statement> callFunction(Test test, Type object, List<Type> orgParameterTypes, boolean restArgs, BiFunction<Expression, List<Expression>, Expression> callGenerator) {
