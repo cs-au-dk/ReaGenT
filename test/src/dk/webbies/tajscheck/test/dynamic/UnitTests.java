@@ -1040,8 +1040,4 @@ public class UnitTests {
                 .expected("A valid overload")
                 .got(JSON, "[true]");
     }
-
-    // TODO: Make sure there is a basic test of static properties. This should also test that static properties doesn't show up as instance properties (and the other way around).
-
-    // TODO: Test the "mixins" of TypeScript 2.2.
 }
