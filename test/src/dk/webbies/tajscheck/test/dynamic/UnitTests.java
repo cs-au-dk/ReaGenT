@@ -8,6 +8,7 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import dk.webbies.tajscheck.testcreator.test.check.Check;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
 import org.junit.Test;
@@ -67,7 +68,14 @@ public class UnitTests {
         String result = Main.runBenchmark(bench);
 
         System.out.println("Result of running driver: ");
-        System.out.println(result);
+        RunResult parsed = OutputParser.parseDriverResult(result);
+        for (TypeError error : parsed.typeErrors) {
+            System.out.println(error);
+        }
+        for (String error : parsed.errors) {
+            System.out.println(error);
+        }
+
         return result;
     }
 
@@ -1015,4 +1023,25 @@ public class UnitTests {
 
         assertThat(time, is(lessThan((long)60 * 1000)));
     }
+
+    @Test
+    public void classProperties() throws Exception {
+        RunResult result = run("classProperties", CheckOptions.builder().setConstructAllTypes(true).build(), "foo");
+
+        assertThat(result.typeErrors.size(), is(2)); // The tests are in the .js file.
+
+        expect(result)
+                .forPath("module.isCalled(class)")
+                .expected("true")
+                .got(JSON, "false");
+
+        expect(result)
+                .forPath("Class")
+                .expected("A valid overload")
+                .got(JSON, "[true]");
+    }
+
+    // TODO: Make sure there is a basic test of static properties. This should also test that static properties doesn't show up as instance properties (and the other way around).
+
+    // TODO: Test the "mixins" of TypeScript 2.2.
 }

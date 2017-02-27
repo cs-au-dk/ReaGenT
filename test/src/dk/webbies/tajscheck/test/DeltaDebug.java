@@ -171,30 +171,14 @@ public class DeltaDebug {
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
 //        Benchmark bench = RunBenchmarks.benchmarks.get("Ember.js");
-        Benchmark bench = RunBenchmarks.benchmarks.get("Ember.js").withOptions(CheckOptions.builder().setMaxTime(2 * 1000).build());
+        Benchmark bench = RunBenchmarks.benchmarks.get("axios");
 
 //        Benchmark bench = RunBenchmarks.benchmark.get("AngularJS").withRunMethod(NODE);
-        String file = bench.jsFile;
+        String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                Util.writeFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME, buildManualEmberTest());
-
-                String out2 = Main.runBenchmark(bench);
-
-                boolean manualCrashed = !out2.startsWith("Initial random: ");
-
-                if (manualCrashed) {
-                    return false;
-                }
-
-                Main.writeFullDriver(bench);
-
-                String out = Main.runBenchmark(bench);
-
-                boolean parsedCrashed = !out.startsWith("Initial random: ");
-
-                return parsedCrashed;
+                return testHasError(bench, "axios.all");
             }catch (NullPointerException e) {
                 return false;
             } catch (IllegalArgumentException e) {

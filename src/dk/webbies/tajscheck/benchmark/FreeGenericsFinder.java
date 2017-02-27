@@ -270,11 +270,6 @@ public class FreeGenericsFinder {
         }
 
         @Override
-        public Void visit(SymbolType t, Set<TypeParameterType> mapped) {
-            return null;
-        }
-
-        @Override
         public Void visit(StringLiteral t, Set<TypeParameterType> mapped) {
             return null;
         }
@@ -307,11 +302,6 @@ public class FreeGenericsFinder {
         public Void visit(ClassInstanceType t, Set<TypeParameterType> mapped) {
             ((ClassType)t.getClassType()).getInstanceType().accept(this, mapped);
 
-            return null;
-        }
-
-        @Override
-        public Void visit(NeverType t, Set<TypeParameterType> mapped) {
             return null;
         }
 
@@ -402,7 +392,7 @@ public class FreeGenericsFinder {
             }
             return false;
         }
-        if (baseType instanceof SimpleType || baseType instanceof BooleanLiteral || baseType instanceof StringLiteral || baseType instanceof NumberLiteral || baseType instanceof TypeParameterType || baseType instanceof SymbolType || baseType instanceof NeverType) {
+        if (baseType instanceof SimpleType || baseType instanceof BooleanLiteral || baseType instanceof StringLiteral || baseType instanceof NumberLiteral || baseType instanceof TypeParameterType) {
             return false;
         }
 

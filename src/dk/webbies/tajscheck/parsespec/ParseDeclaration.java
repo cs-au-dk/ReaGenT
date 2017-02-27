@@ -283,17 +283,6 @@ public class ParseDeclaration {
         }
 
         @Override
-        public Void visit(SymbolType t, Arg arg) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-            addName(t, arg.path);
-
-            return null;
-        }
-
-        @Override
         public Void visit(StringLiteral t, Arg arg) {
             return null;
         }
@@ -332,17 +321,6 @@ public class ParseDeclaration {
             addName(t, arg.path);
 
             queue.add(arg.append("[instanceOf]", t.getClassType()).extraDepth(1000));
-
-            return null;
-        }
-
-        @Override
-        public Void visit(NeverType t, Arg arg) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-            addName(t, arg.path);
 
             return null;
         }

@@ -67,6 +67,35 @@ public class AutomaticExperiments {
         return Arrays.asList(Long.toString(paths), Util.toFixed(time, 1) + "s");
     });
 
+
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsTestCoverage = new Pair<>(Arrays.asList("uniquePaths", "testsRun", "totalTests", "testsCoverage"), (bench) -> {
+        Main.writeFullDriver(bench);
+        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+        long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+        return Arrays.asList(
+                Long.toString(paths),
+                Integer.toString(result.getTestsCalled().size()),
+                Integer.toString(result.getTotalTests()),
+                Util.toPercentage((result.getTestsCalled().size() * 1.0) / result.getTotalTests())
+        );
+    });
+
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePaths5TestCoverage = new Pair<>(Arrays.asList("uniquePaths", "testsRun(5)", "totalTests(5)", "testsCoverage(5)"), (bench) -> {
+        Main.writeFullDriver(bench);
+        List<OutputParser.RunResult> results = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            results.add(OutputParser.parseDriverResult(Main.runBenchmark(bench)));
+        }
+        OutputParser.RunResult result = OutputParser.combine(results);
+        long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+        return Arrays.asList(
+                Long.toString(paths),
+                Integer.toString(result.getTestsCalled().size()),
+                Integer.toString(result.getTotalTests()),
+                Util.toPercentage((result.getTestsCalled().size() * 1.0) / result.getTotalTests())
+        );
+    });
+
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsConvergence = new Pair<>(Arrays.asList("uniquePaths", "uniquePathsConvergence", "iterationsUntilConvergence"), (bench) -> {
         Main.writeFullDriver(bench);
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
@@ -197,13 +226,14 @@ public class AutomaticExperiments {
         experiment.addMultiExperiment(driverSizes);
         experiment.addSingleExperiment(jsFileSize);
 
-        experiment.addSingleExperiment(uniquePaths);
+//        experiment.addSingleExperiment(uniquePaths);
         experiment.addMultiExperiment(uniquePathsAndTime);
+        experiment.addMultiExperiment(uniquePathsTestCoverage);
         experiment.addSingleExperiment(uniquePathsUnlimitedIterations);
+        experiment.addMultiExperiment(uniquePathsConvergence);
 
         experiment.addMultiExperiment(uniquePathsAndCoverage);
         experiment.addMultiExperiment(uniquePathsAnd5Coverage);
-        experiment.addMultiExperiment(uniquePathsConvergence);
 
 //        experiment.addMultiExperiment(smallCoverage);
 //        experiment.addSingleExperiment(runSmall);

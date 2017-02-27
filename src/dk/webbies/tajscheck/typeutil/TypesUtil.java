@@ -520,16 +520,6 @@ public class TypesUtil {
         }
 
         @Override
-        public Void visit(NeverType t) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-
-            return null;
-        }
-
-        @Override
         public Void visit(ThisType t) {
             if (seen.contains(t)) {
                 return null;
@@ -581,16 +571,6 @@ public class TypesUtil {
             if (t.getConstraint() != null) {
                 t.getConstraint().accept(this);
             }
-            return null;
-        }
-
-        @Override
-        public Void visit(SymbolType t) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-
             return null;
         }
 

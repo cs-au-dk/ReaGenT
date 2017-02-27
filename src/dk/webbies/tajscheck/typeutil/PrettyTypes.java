@@ -87,8 +87,6 @@ public class PrettyTypes {
             return "classInstance";
         } else if (type instanceof ClassType) {
             return "class";
-        } else if (type instanceof SymbolType) {
-            return "symbol";
         } else if (type instanceof ThisType) {
             return "this";
         }

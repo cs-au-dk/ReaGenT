@@ -438,6 +438,11 @@ public class TypeChecker {
                         new SimpleTypeCheck(Check.equalTo(nullLiteral()), "null")
                 );
             }
+            if (t.getKind() == SimpleTypeKind.Never) {
+                return Collections.singletonList(new SimpleTypeCheck(
+                        Check.equalTo(object()), "never" // equalTo check with a newly constructed object will always fail.
+                ));
+            }
             String typeOf = getTypeOf(t);
             return Collections.singletonList(new SimpleTypeCheck(Check.typeOf(typeOf), typeOf));
         }
@@ -503,13 +508,6 @@ public class TypeChecker {
         }
 
         @Override
-        public List<TypeCheck> visit(SymbolType t, Arg arg) {
-            return Collections.singletonList(
-                    new SimpleTypeCheck(Check.typeOf("symbol"), "symbol")
-            );
-        }
-
-        @Override
         public List<TypeCheck> visit(StringLiteral t, Arg arg) {
             return Collections.singletonList(
                     new SimpleTypeCheck(Check.equalTo(string(t.getText())), "\"" + t.getText() + "\"")
@@ -541,13 +539,6 @@ public class TypeChecker {
         @Override
         public List<TypeCheck> visit(ClassInstanceType t, Arg arg) {
             return ((ClassType) t.getClassType()).getInstanceType().accept(this, arg);
-        }
-
-        @Override
-        public List<TypeCheck> visit(NeverType t, Arg arg) {
-            return Collections.singletonList(new SimpleTypeCheck(
-                    Check.equalTo(object()), "never" // equalTo check with a newly constructed object will always fail.
-            ));
         }
 
         @Override
@@ -629,6 +620,8 @@ public class TypeChecker {
             case Void:
             case Undefined:
                 return "undefined";
+            case Symbol:
+                return "symbol";
             default:
                 throw new RuntimeException(type.getKind().toString());
         }

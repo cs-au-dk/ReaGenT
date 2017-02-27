@@ -9,12 +9,10 @@ import dk.au.cs.casa.typescript.types.IndexType;
 import dk.au.cs.casa.typescript.types.IndexedAccessType;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.IntersectionType;
-import dk.au.cs.casa.typescript.types.NeverType;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.ReferenceType;
 import dk.au.cs.casa.typescript.types.SimpleType;
 import dk.au.cs.casa.typescript.types.StringLiteral;
-import dk.au.cs.casa.typescript.types.SymbolType;
 import dk.au.cs.casa.typescript.types.ThisType;
 import dk.au.cs.casa.typescript.types.TupleType;
 import dk.au.cs.casa.typescript.types.Type;
@@ -165,11 +163,6 @@ public class CheckUpperBound {
         }
 
         @Override
-        public List<TypeCheck> visit(SymbolType t, Arg arg) {
-            return Collections.emptyList();
-        }
-
-        @Override
         public List<TypeCheck> visit(StringLiteral t, Arg arg) {
             return Collections.emptyList();
         }
@@ -192,11 +185,6 @@ public class CheckUpperBound {
         @Override
         public List<TypeCheck> visit(ClassInstanceType t, Arg arg) {
             return ((ClassType)t.getClassType()).getInstanceType().accept(this, arg);
-        }
-
-        @Override
-        public List<TypeCheck> visit(NeverType t, Arg arg) {
-            return Collections.emptyList();
         }
 
         @Override

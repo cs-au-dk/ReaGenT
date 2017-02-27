@@ -18,10 +18,10 @@ import java.util.stream.Collectors;
  */
 public class DeltaTest {
     public static void main(String[] args) throws IOException {
-        Benchmark bench = RunBenchmarks.benchmarks.get("async");
-        String testPath = "window.async.retry.[arg2].[arg0]";
-        String typeof = "object";
-        String expected = "(undefined or (a non null value and Array and (arrayIndex: (null or ([any] and a non null value and a generic type marker (._isUnconstrainedGeneric))))))";
+        Benchmark bench = RunBenchmarks.benchmarks.get("Handlebars");
+        String testPath = "Handlebars.K";
+        String typeof = "undefined";
+//        String expected = "(undefined or (a non null value and Array and (arrayIndex: (null or ([any] and a non null value and a generic type marker (._isUnconstrainedGeneric))))))";
 
         String driver = Util.readFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME);
         List<String> paths = Arrays.stream(driver.split(Pattern.quote("\n")))
@@ -32,11 +32,11 @@ public class DeltaTest {
                 .map(String::trim)
                 .collect(Collectors.toList());
 
-        bench = bench.withPathsToTest(paths);
+//        bench = bench.withPathsToTest(paths);
 
         while (true) {
             try {
-                Main.generateSmallestDriver(bench, testHasTypeError(bench, new OutputParser.TypeError(testPath, expected, typeof, "", "")));
+                Main.generateSmallestDriver(bench, testHasTypeError(bench, new OutputParser.TypeError(testPath, "", typeof, "", "")));
                 break;
             } catch (RuntimeException e) {
                 System.err.println(e.getMessage());
@@ -54,7 +54,7 @@ public class DeltaTest {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            return result.typeErrors.stream().anyMatch(te -> te.getPath().contains(typeError.getPath()));
+            return result.typeErrors.stream().anyMatch(te -> te.getPath().contains(typeError.getPath()) && te.typeof.equals(typeError.typeof));
         };
     }
 }

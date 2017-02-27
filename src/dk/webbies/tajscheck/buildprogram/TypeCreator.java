@@ -154,7 +154,7 @@ public class TypeCreator {
             } else {
                 // Do nothing
             }
-        } else if (type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType || type instanceof NeverType || type instanceof SymbolType) {
+        } else if (type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType) {
             // Do nothing.
         } else {
             throw new RuntimeException(type.getClass().getName());
@@ -464,6 +464,10 @@ public class TypeCreator {
                     return Return(nullLiteral());
                 case Enum:
                     return Return(expFromString("(Math.random() * 10) | 0"));
+                case Symbol:
+                    return Return(newCall(identifier("Symbol")));
+                case Never:
+                    return throwStatement(newCall(identifier("Error")));
                 default:
                     throw new RuntimeException("Cannot yet produce a simple: " + simple.getKind());
             }
@@ -520,12 +524,6 @@ public class TypeCreator {
                     ),
                     Return(identifier("result"))
             );
-        }
-
-        @Override
-        public Statement visit(SymbolType t, TypeContext typeContext) {
-            Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(info.bench));
-            return Return(call(identifier("Symbol"), constructString));
         }
 
         @Override
@@ -601,11 +599,6 @@ public class TypeCreator {
         @Override
         public Statement visit(ClassInstanceType t, TypeContext typeContext) {
             return ((ClassType) t.getClassType()).getInstanceType().accept(this, typeContext);
-        }
-
-        @Override
-        public Statement visit(NeverType t, TypeContext typeContext) {
-            return throwStatement(newCall(identifier("Error"), string("This is a correct result of a never-type")));
         }
 
         @Override
@@ -806,7 +799,7 @@ public class TypeCreator {
                                             AstBuilder.expFromString("Array.prototype.slice.call(args)"),
                                             identifier("i")
                                     )),
-                                    Return()
+                                    throwStatement(newCall(identifier("Error"), string("No valid overload found!")))
                             )
                     ),
                     ifThen(

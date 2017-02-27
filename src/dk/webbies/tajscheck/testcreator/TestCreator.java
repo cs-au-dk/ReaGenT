@@ -118,7 +118,7 @@ public class TestCreator {
             return new ArrayList<>();
         }
 
-        if (type instanceof SimpleType || type instanceof StringLiteral || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof AnonymousType || type instanceof ClassType /* The class in classType are handled in the visitor */ || type instanceof ClassInstanceType || type instanceof TupleType || type instanceof ThisType || type instanceof SymbolType) {
+        if (type instanceof SimpleType || type instanceof StringLiteral || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof AnonymousType || type instanceof ClassType /* The class in classType are handled in the visitor */ || type instanceof ClassInstanceType || type instanceof TupleType || type instanceof ThisType) {
             return Collections.emptyList();
         }
 
@@ -536,7 +536,7 @@ public class TestCreator {
                 }
                 return;
             }
-            if (propertyType instanceof SimpleType || propertyType instanceof StringLiteral || propertyType instanceof BooleanLiteral || propertyType instanceof NumberLiteral || propertyType instanceof ThisType || propertyType instanceof TupleType || propertyType instanceof SymbolType) {
+            if (propertyType instanceof SimpleType || propertyType instanceof StringLiteral || propertyType instanceof BooleanLiteral || propertyType instanceof NumberLiteral || propertyType instanceof ThisType || propertyType instanceof TupleType) {
                 return;
             }
 
@@ -577,7 +577,7 @@ public class TestCreator {
         @Override
         public Void visit(ReferenceType t, Arg arg) {
             TypeWithContext withParameters = new TypeWithContext(t, arg.getTypeContext());
-            if (seen.contains(withParameters) || info.nativeTypes.contains(t)) {
+            if (seen.contains(withParameters) || (info.nativeTypes.contains(t) && !("Array".equals(info.typeNames.get(t.getTarget()))))) {
                 return null;
             }
             seen.add(withParameters);
@@ -672,11 +672,6 @@ public class TestCreator {
         }
 
         @Override
-        public Void visit(SymbolType t, Arg arg) {
-            return null;
-        }
-
-        @Override
         public Void visit(StringLiteral t, Arg arg) {
             return null;
         }
@@ -715,11 +710,6 @@ public class TestCreator {
             // tests.add(new FilterTest(t, instanceType, arg.path, arg.typeContext, Check.alwaysTrue())); // Not needed, the TypeCreator will make sure the actual InstanceType is found.
 
             recurse(instanceType, arg);
-            return null;
-        }
-
-        @Override
-        public Void visit(NeverType t, Arg arg) {
             return null;
         }
 
@@ -948,11 +938,6 @@ public class TestCreator {
         }
 
         @Override
-        public Void visit(SymbolType t, Arg arg) {
-            throw new RuntimeException();
-        }
-
-        @Override
         public Void visit(StringLiteral t, Arg arg) {
             return null;
         }
@@ -983,11 +968,6 @@ public class TestCreator {
         @Override
         public Void visit(ClassInstanceType t, Arg arg) {
             return recurse(((ClassType) t.getClassType()).getInstanceType(), arg);
-        }
-
-        @Override
-        public Void visit(NeverType t, Arg arg) {
-            return null;
         }
 
         @Override
