@@ -166,6 +166,7 @@ public class TypeChecker {
                     case "Float64Array":
                     case "Selection":
                     case "Promise":
+                    case "Request":
                         return Collections.singletonList(
                                 new SimpleTypeCheck(
                                         Check.instanceOf(identifier(info.typeNames.get(t))),
@@ -293,6 +294,7 @@ public class TypeChecker {
                     case "NodeList":
                     case "HTMLCollection":
                     case "Range":
+                    case "Request":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "StyleMedia":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(expFromString("window.styleMedia.__proto__.constructor")), name));
@@ -331,6 +333,8 @@ public class TypeChecker {
                     case "Intl.DateTimeFormatOptions":
                     case "Intl.ResolvedDateTimeFormatOptions":
                     case "RTCIceServer":
+                    case "FocusNavigationOrigin":
+                    case "RequestInit":
                         arg = arg.withDepth(1);
                         break; // Testing manually.
                     default:
