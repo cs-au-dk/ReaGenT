@@ -1040,4 +1040,11 @@ public class UnitTests {
                 .expected("A valid overload")
                 .got(JSON, "[true]");
     }
+
+    @Test
+    public void booleans() throws Exception {
+        RunResult result = run("booleans", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+    }
 }

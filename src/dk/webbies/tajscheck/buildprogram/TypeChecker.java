@@ -81,7 +81,7 @@ public class TypeChecker {
         return ifThen(
                 unary(Operator.NOT, assertCall),
                 block(
-                        statement(binary(identifier("typeChecked"),Operator.EQUAL, bool(false))),
+                        statement(binary(identifier("typeChecked"), Operator.EQUAL, bool(false))),
                         Return(bool(false))
                 )
         );
@@ -205,11 +205,35 @@ public class TypeChecker {
                     case "Function":
                         return Collections.singletonList(new SimpleTypeCheck(Check.typeOf("function"), "function"));
                     case "String":
-                        return new SimpleType(SimpleTypeKind.String).accept(this, arg);
+                        return Collections.singletonList(
+                                new SimpleTypeCheck(
+                                        Check.or(
+                                                Check.typeOf("string"),
+                                                Check.instanceOf(identifier("String"))
+                                        ),
+                                        "String"
+                                )
+                        );
                     case "Boolean":
-                        return new SimpleType(SimpleTypeKind.Boolean).accept(this, arg);
+                        return Collections.singletonList(
+                                new SimpleTypeCheck(
+                                        Check.or(
+                                                Check.typeOf("boolean"),
+                                                Check.instanceOf(identifier("Boolean"))
+                                        ),
+                                        "Boolean"
+                                )
+                        );
                     case "Number":
-                        return new SimpleType(SimpleTypeKind.Number).accept(this, arg);
+                        return Collections.singletonList(
+                                new SimpleTypeCheck(
+                                        Check.or(
+                                                Check.typeOf("number"),
+                                                Check.instanceOf(identifier("Number"))
+                                        ),
+                                        "Number"
+                                )
+                        );
                     case "NumberConstructor":
                         return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("Number")), "NumberConstructor"));
                     case "BooleanConstructor":
@@ -437,6 +461,19 @@ public class TypeChecker {
                         new SimpleTypeCheck(Check.alwaysTrue(), "[any]")
                 );
             }
+
+            if (info.options.combineNullAndUndefined && (t.getKind() == SimpleTypeKind.Null || t.getKind() == SimpleTypeKind.Undefined)) {
+                return Collections.singletonList(
+                        new SimpleTypeCheck(
+                                Check.or(
+                                        Check.equalTo(nullLiteral()),
+                                        Check.typeOf("undefined")
+                                ),
+                                "(null or undefined)"
+                        )
+                );
+            }
+
             if (t.getKind() == SimpleTypeKind.Null) {
                 return Collections.singletonList(
                         new SimpleTypeCheck(Check.equalTo(nullLiteral()), "null")
@@ -634,8 +671,8 @@ public class TypeChecker {
     private static TypeCheck expectNotNull() {
         return new SimpleTypeCheck(
                 Check.and(
-                    Check.not(Check.typeOf("undefined")),
-                    Check.not(Check.equalTo(nullLiteral()))
+                        Check.not(Check.typeOf("undefined")),
+                        Check.not(Check.equalTo(nullLiteral()))
                 ),
                 "a non null value"
         );

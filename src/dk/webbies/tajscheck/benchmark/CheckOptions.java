@@ -19,6 +19,7 @@ public final class CheckOptions {
     public final int maxTime;
     public final boolean failOnAny;
     public final boolean makeTSInferLike;
+    public final boolean combineNullAndUndefined;
 
     private CheckOptions(Builder builder) {
         this.checkDepth = builder.checkDepth;
@@ -33,6 +34,7 @@ public final class CheckOptions {
         this.constructAllTypes = builder.constructAllTypes;
         this.failOnAny = builder.failOnAny;
         this.makeTSInferLike = builder.makeTSInferLike;
+        this.combineNullAndUndefined = builder.combineNullAndUndefined;
         this.builder = builder;
     }
 
@@ -62,6 +64,7 @@ public final class CheckOptions {
         private boolean constructAllTypes = false; // As in, also construct classes, class-instances, and the module itself we are trying to test (all of them only if there is a method taking it as parameter).
         private boolean failOnAny = true; // If "any" is returned (as in, something that has our "isAnyMarker"), it is a valid warning.
         private boolean makeTSInferLike = false; // Restrict the driver to only check properties, and call constructors (where all arguments are ignored). Kinda equal to the dynamic part of TSInfer.
+        private boolean combineNullAndUndefined = false; // null and undefined (last one is also called void) are different types. But errors related to this are anoying, and doesn't matter. Setting this to true makes it not an error.
 
         private Builder() {}
 
@@ -71,6 +74,10 @@ public final class CheckOptions {
 
         public CheckOptions build() {
             return new CheckOptions(this);
+        }
+
+        public void setCombineNullAndUndefined(boolean combineNullAndUndefined) {
+            this.combineNullAndUndefined = combineNullAndUndefined;
         }
 
         public Builder setMakeTSInferLike(boolean makeTSInferLike) {
