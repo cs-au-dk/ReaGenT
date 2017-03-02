@@ -122,7 +122,7 @@ public class SimpleMessageReceivingHTTPServer {
 
             return new Pair<>(path, builder.toString());
         } else {
-            // I'm just pretending the protocol is "GET". Some libraries have API
+            // I'm just pretending the protocol is "GET". Some libraries have APIs that call all kinds of weird protocols.
             return new Pair<>(path, null);
         }
     }
