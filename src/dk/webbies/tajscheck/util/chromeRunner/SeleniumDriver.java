@@ -21,22 +21,22 @@ import java.util.logging.Level;
  * Created by Erik Krogh Kristensen on 10-11-2015.
  */
 public class SeleniumDriver {
-    // TODO: Create a small HTTP server, use that to serve the script, also use it to serve files from the benchmark folder.
     public static String executeScript(File dir, String script, int timeout) throws IOException, HttpException {
+        return executeScript(dir, script, timeout, 10 * 1000);
+    }
+    private static String executeScript(File dir, String script, int timeout, int pageLoadTimeout) throws IOException, HttpException {
         setDriverPath();
 
         ChromeDriver driver = new ChromeDriver(buldCapabilities());
 
-        driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
-        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-        driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
+        driver.manage().timeouts().pageLoadTimeout(pageLoadTimeout, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(pageLoadTimeout, TimeUnit.SECONDS);
+        driver.manage().timeouts().setScriptTimeout(pageLoadTimeout, TimeUnit.SECONDS);
 
 
         ServerSocket socket = new ServerSocket(0);
 
         int port = socket.getLocalPort();
-
-//        System.out.println("Listening for result at port: " + port);
 
         if (timeout > 0) {
             socket.setSoTimeout(timeout);
@@ -63,7 +63,7 @@ public class SeleniumDriver {
                     driver.quit();
                     socket.close();
                 } catch (Exception ignored) { }
-                return executeScript(dir, script, timeout); // continue, try again
+                return executeScript(dir, script, timeout, pageLoadTimeout + 10); // continue, try again
             }
         }
 
