@@ -96,10 +96,12 @@ public class Experiment {
             int rowIndex = i + 1;
             Pair<String, Benchmark> benchmark = benchmarks.get(i);
 
-            List<String> row = Collections.synchronizedList(new ArrayList<>());
-            row.add(benchmark.getLeft());
-
             pool.submit(() -> {
+                List<String> row = Collections.synchronizedList(new ArrayList<>());
+                row.add(benchmark.getLeft());
+
+                table.setRow(rowIndex, row);
+
                 System.out.println("Running benchmark: " + benchmark.getLeft() + " (" + rowIndex + "/" + benchmarks.size() + ")");
                 try {
                     for (Pair<List<String>, ExperimentMultiRunner> pair : experiments) {
@@ -111,11 +113,12 @@ public class Experiment {
                             throw new RuntimeException(e);
                         }
                         row.addAll(subResult);
+
+                        System.out.println("\nSub result ready:");
+                        System.out.println(table.toCSV());
+                        System.out.println();
                     }
-                    table.setRow(rowIndex, row);
-                    System.out.println("\nSub result ready:");
-                    System.out.println(table.toCSV());
-                    System.out.println();
+                    table.consistencyCheck(rowIndex);
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }

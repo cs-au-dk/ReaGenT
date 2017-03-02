@@ -12,9 +12,9 @@ public class Table {
     private final List<List<String>> table = Collections.synchronizedList(new ArrayList<>());
     private int size = -1;
 
-    public void addRow(Collection<String> objects) {
+    public void addRow(List<String> objects) {
         assertSize(objects.size());
-        table.add(objects.stream().collect(Collectors.toList()));
+        table.add(objects);
     }
 
     private void assertSize(int newSize) {
@@ -25,10 +25,13 @@ public class Table {
         }
     }
 
-    public void setRow(int index, Collection<String> objects) {
+    public void setRow(int index, List<String> objects) {
         Util.ensureSize(table, index + 1);
-        assertSize(objects.size());
-        table.set(index, objects.stream().collect(Collectors.toList()));
+        table.set(index, objects);
+    }
+
+    public void consistencyCheck(int rowIndex) {
+        assertSize(table.get(rowIndex).size());
     }
 
     private String print(String columnSeparator, String rowSeparator) {
@@ -54,11 +57,13 @@ public class Table {
             double total = 0;
             for (int row = 1; row < table.size(); row++) {
                 List<String> rowList = table.get(row);
-                String value = rowList.get(column);
-                try {
-                    total += Double.parseDouble(onlyNumeric(value));
-                } catch (NumberFormatException | NullPointerException e) {
-                    // Ignored, continue.
+                if (rowList.size() > column) {
+                    String value = rowList.get(column);
+                    try {
+                        total += Double.parseDouble(onlyNumeric(value));
+                    } catch (NumberFormatException | NullPointerException e) {
+                        // Ignored, continue.
+                    }
                 }
             }
             if (total == 0) {
