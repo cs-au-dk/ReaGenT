@@ -494,7 +494,9 @@ public class TypeChecker {
             List<TypeCheck> result = new ArrayList<>(Arrays.asList(
                     expectNotNull(),
                     new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "tuple"),
-                    new SimpleTypeCheck(Check.field("length", Check.equalTo(number(size))), "tuple of " + size + " elements")
+                    new SimpleTypeCheck(Check.field("length", Check.expression((actualSize) ->
+                        binary(actualSize, Operator.GREATER_THAN_EQUAL, number(size))
+                    )), "tuple of " + size + " elements")
             ));
 
             if (arg.depthRemaining > 0) {

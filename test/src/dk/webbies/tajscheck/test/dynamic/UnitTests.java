@@ -1047,4 +1047,11 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size(), is(0));
     }
+
+    @Test
+    public void tupleSizes() throws Exception {
+        RunResult result = run("tupleSizes", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+    }
 }

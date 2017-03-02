@@ -94,7 +94,7 @@ public class CheckToExpression implements CheckVisitorWithArgument<Expression, E
 
     @Override
     public Expression visit(ExpressionCheck check, Expression expression) {
-        return check.getExpression();
+        return check.getGenerator().apply(expression);
     }
 
     public static Expression generate(Check check, Expression exp) {

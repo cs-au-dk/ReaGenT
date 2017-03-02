@@ -5,6 +5,7 @@ import dk.webbies.tajscheck.paser.AstBuilder;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Created by erik1 on 14-11-2016.
@@ -77,6 +78,10 @@ public interface Check {
     }
 
     static ExpressionCheck expression(Expression expression) {
-        return new ExpressionCheck(expression);
+        return expression((a) -> expression);
+    }
+
+    static ExpressionCheck expression(Function<Expression, Expression> generator) {
+        return new ExpressionCheck(generator);
     }
 }

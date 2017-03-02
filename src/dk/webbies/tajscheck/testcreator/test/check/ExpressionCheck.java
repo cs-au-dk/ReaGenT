@@ -2,18 +2,20 @@ package dk.webbies.tajscheck.testcreator.test.check;
 
 import dk.webbies.tajscheck.paser.AST.Expression;
 
+import java.util.function.Function;
+
 /**
  * Created by erik1 on 04-01-2017.
  */
 public class ExpressionCheck implements Check {
-    private Expression expression;
+    private Function<Expression, Expression> generator;
 
-    public ExpressionCheck(Expression expression) {
-        this.expression = expression;
+    public ExpressionCheck(Function<Expression, Expression> generator) {
+        this.generator = generator;
     }
 
-    public Expression getExpression() {
-        return expression;
+    public Function<Expression, Expression> getGenerator() {
+        return generator;
     }
 
     @Override
