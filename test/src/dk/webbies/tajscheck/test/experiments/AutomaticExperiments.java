@@ -48,13 +48,45 @@ public class AutomaticExperiments {
         return Long.toString(paths);
     });
 
-
-    private static final Pair<String, Experiment.ExperimentSingleRunner> uniquePathsUnlimitedIterations = new Pair<>("uniquePathsUnlimited", (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(-1).build());
+    private static final Pair<String, Experiment.ExperimentSingleRunner> uniquePaths5Minutes = new Pair<>("uniquePaths(5minutes)", (bench) -> {
+        bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(-1).setMaxTime(5 * 60 * 1000).build());
         Main.writeFullDriver(bench);
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
         long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
         return Long.toString(paths);
+    });
+
+    private static Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsDepth(int depth) {
+        return new Pair<>(Arrays.asList("size(depth" + depth + ")", "uniquePaths(depth" + depth + ")"), (bench) -> {
+
+            bench = bench.withOptions(bench.options.getBuilder().setCheckDepth(depth).setCheckDepthForUnions(Math.max(bench.options.checkDepthForUnions, depth)).build());
+
+            String size = driverSizes.getRight().run(bench).get(0);
+
+            Main.writeFullDriver(bench);
+            OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+            long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+            return Arrays.asList(size, Long.toString(paths));
+        });
+    }
+
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsUnlimitedIterations = new Pair<>(Arrays.asList("uniquePaths(unlimited)", "time(unlimited)", "testsCalled(unlimited)", "totalTests(unlimited)", "testCoverage(unlimited)"), (bench) -> {
+        bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(-1).build());
+        long start = System.currentTimeMillis();
+        Main.writeFullDriver(bench);
+        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+        long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+        long end = System.currentTimeMillis();
+        double time = (end - start) / 1000.0;
+//        return Arrays.asList(Long.toString(paths), Util.toFixed(time, 1) + "s");
+
+        return Arrays.asList(
+                Long.toString(paths),
+                Util.toFixed(time, 1) + "s",
+                Integer.toString(result.getTestsCalled().size()),
+                Integer.toString(result.getTotalTests()),
+                Util.toPercentage((result.getTestsCalled().size() * 1.0) / result.getTotalTests()
+        ));
     });
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAndTime = new Pair<>(Arrays.asList("uniquePaths", "time"), (bench) -> {
@@ -80,7 +112,7 @@ public class AutomaticExperiments {
         );
     });
 
-    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePaths5TestCoverage = new Pair<>(Arrays.asList("uniquePaths", "testsRun(5)", "totalTests(5)", "testsCoverage(5)"), (bench) -> {
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePaths5TestCoverage = new Pair<>(Arrays.asList("uniquePaths(5)", "testsRun(5)", "totalTests(5)", "testsCoverage(5)"), (bench) -> {
         Main.writeFullDriver(bench);
         List<OutputParser.RunResult> results = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
@@ -198,10 +230,7 @@ public class AutomaticExperiments {
         String SUFFIX = "mb";
         int DECIMALS = 1;
 
-        String fullSize = null;
-        if (!bench.options.disableGenerics) {
-            fullSize = Util.toFixed(Main.generateFullDriver(bench).length() / DIVIDE_BY, DECIMALS) + SUFFIX;
-        }
+        String fullSize = Util.toFixed(Main.generateFullDriver(bench).length() / DIVIDE_BY, DECIMALS) + SUFFIX;
 
         double noGenerics = Main.generateFullDriver(bench.withOptions(bench.options.getBuilder().setDisableGenerics(true).build())).length() / DIVIDE_BY;
 
@@ -226,14 +255,23 @@ public class AutomaticExperiments {
         experiment.addMultiExperiment(driverSizes);
         experiment.addSingleExperiment(jsFileSize);
 
-//        experiment.addSingleExperiment(uniquePaths);
-        experiment.addMultiExperiment(uniquePathsAndTime);
+//        experiment.addSingleExperiment(uniquePaths5Minutes);
+
+//        experiment.addMultiExperiment(uniquePathsDepth(0));
+//        experiment.addMultiExperiment(uniquePathsDepth(1));
+//        experiment.addMultiExperiment(uniquePathsDepth(2));
+//        experiment.addMultiExperiment(uniquePathsDepth(3));
+
+        /*experiment.addSingleExperiment(uniquePaths);
         experiment.addMultiExperiment(uniquePathsTestCoverage);
-        experiment.addSingleExperiment(uniquePathsUnlimitedIterations);
+        experiment.addMultiExperiment(uniquePaths5TestCoverage);
+        experiment.addMultiExperiment(uniquePathsUnlimitedIterations);
+        experiment.addMultiExperiment(uniquePathsAndTime);
+
         experiment.addMultiExperiment(uniquePathsConvergence);
 
         experiment.addMultiExperiment(uniquePathsAndCoverage);
-        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
+        experiment.addMultiExperiment(uniquePathsAnd5Coverage);*/
 
 //        experiment.addMultiExperiment(smallCoverage);
 //        experiment.addSingleExperiment(runSmall);
