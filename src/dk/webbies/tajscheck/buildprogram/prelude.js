@@ -340,7 +340,7 @@ function registerValue(valueIndex) {
         return;
     }
     var testList = testsWithUnmetDependencies[valueIndex];
-    if (!testList) {
+    if (!testList || testList.length == 0) {
         return;
     }
     for (var i = 0; i < testList.length; i++) {
