@@ -319,7 +319,7 @@ public class UnitTests {
         expect(result)
                 .forPath("module.foo()")
                 .expected("tuple of 3 elements")
-                .got(STRING, "1,2,3,4");
+                .got(STRING, "1,2");
     }
 
     @Test
@@ -1053,5 +1053,26 @@ public class UnitTests {
         RunResult result = run("tupleSizes", "foo");
 
         assertThat(result.typeErrors.size(), is(0));
+    }
+
+    @Test
+    public void complexThisTypes3() throws Exception {
+        RunResult result = run("complexThisTypes3", CheckOptions.builder().setCheckDepth(2).build(), "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+
+    }
+
+    @Test
+    public void staticFields() throws Exception {
+        RunResult result = run("staticFields", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.Foo.foo")
+                .expected("true")
+                .got(JSON, "false");
+
     }
 }

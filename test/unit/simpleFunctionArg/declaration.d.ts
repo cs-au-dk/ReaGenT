@@ -4,5 +4,5 @@ interface Container<T> {
 }
 
 export module module {
-    function foo(callback: (str: Container<String>) => boolean): boolean;
+    function foo(callback: (str: Container<string>) => boolean): boolean;
 }

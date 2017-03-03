@@ -65,6 +65,10 @@ public class TestCreator {
                 topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, info.nativeTypes, arg.depth, seenTopLevel));
             }
 
+            if (arg.path.equals("module.LayerGroup.new()")) {
+                System.out.println();
+            }
+
             element.type.accept(visitor, arg.noTopLevelFunctions());
         }
 
@@ -457,22 +461,19 @@ public class TestCreator {
                 arg = arg.withThisType(t);
             }
 
-            for (Type base : t.getBaseTypes()) {
-                recurse(base, arg.addDepth());
+            for (Type stringIndexer : TypesUtil.getAllStringIndexerTypes(t)) {
+                tests.add(new StringIndexTest(t, stringIndexer, arg.path, arg.typeContext));
+                recurse(stringIndexer, arg.append("[stringIndexer]"));
             }
 
-            if (t.getDeclaredStringIndexType() != null) {
-                tests.add(new StringIndexTest(t, t.getDeclaredStringIndexType(), arg.path, arg.typeContext));
-                recurse(t.getDeclaredStringIndexType(), arg.append("[stringIndexer]"));
-            }
-            if (t.getDeclaredNumberIndexType() != null) {
-                tests.add(new NumberIndexTest(t, t.getDeclaredNumberIndexType(), arg.path, arg.typeContext));
-                recurse(t.getDeclaredNumberIndexType(), arg.append("[numberIndexer]"));
+            for (Type numberIndexer : TypesUtil.getAllNumberIndexerTypes(t)) {
+                tests.add(new NumberIndexTest(t, numberIndexer, arg.path, arg.typeContext));
+                recurse(numberIndexer, arg.append("[numberIndexer]"));
             }
 
-            Map<String, Type> properties = t.getDeclaredProperties();
-            visitProperties(t, arg, properties);
-
+            for (Map<String, Type> properties : TypesUtil.getAllPropertyDeclarations(t)) {
+                visitProperties(t, arg, properties);
+            }
 
             return null;
         }

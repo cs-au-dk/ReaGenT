@@ -293,6 +293,95 @@ public class TypesUtil {
         return acc;
     }
 
+    public static Set<Type> getAllStringIndexerTypes(Type t) {
+        HashSet<Type> res = new HashSet<>();
+        getAllStringIndexerTypes(t, res);
+        return res.stream().filter(Objects::nonNull).collect(Collectors.toSet());
+    }
+
+    private static void getAllStringIndexerTypes(Type t, Set<Type> acc) {
+        if (t instanceof InterfaceType) {
+            acc.add(((InterfaceType) t).getDeclaredStringIndexType());
+            ((InterfaceType) t).getBaseTypes().forEach(type ->
+                    getAllStringIndexerTypes(type, acc)
+            );
+        } else if (t instanceof ClassInstanceType) {
+            InterfaceType instanceType = ((ClassType) ((ClassInstanceType) t).getClassType()).getInstanceType();
+            getAllStringIndexerTypes(instanceType, acc);
+        } else if (t instanceof ClassType) {
+            acc.add(((ClassType) t).getDeclaredStringIndexType());
+            ((ClassType) t).getBaseTypes().forEach(type -> {
+                getAllStringIndexerTypes(type, acc);
+            });
+        } else if (t instanceof GenericType) {
+            getAllStringIndexerTypes(((GenericType) t).toInterface(), acc);
+        } else if (t instanceof ReferenceType) {
+            getAllStringIndexerTypes(((ReferenceType) t).getTarget(), acc);
+        } else {
+            throw new RuntimeException(t.getClass().getSimpleName());
+        }
+    }
+
+
+    public static Set<Type> getAllNumberIndexerTypes(Type t) {
+        HashSet<Type> res = new HashSet<>();
+        getAllNumberIndexerTypes(t, res);
+        return res.stream().filter(Objects::nonNull).collect(Collectors.toSet());
+    }
+
+    private static void getAllNumberIndexerTypes(Type t, Set<Type> acc) {
+        if (t instanceof InterfaceType) {
+            acc.add(((InterfaceType) t).getDeclaredNumberIndexType());
+            ((InterfaceType) t).getBaseTypes().forEach(type ->
+                    getAllNumberIndexerTypes(type, acc)
+            );
+        } else if (t instanceof ClassInstanceType) {
+            InterfaceType instanceType = ((ClassType) ((ClassInstanceType) t).getClassType()).getInstanceType();
+            getAllNumberIndexerTypes(instanceType, acc);
+        } else if (t instanceof ClassType) {
+            acc.add(((ClassType) t).getDeclaredStringIndexType());
+            ((ClassType) t).getBaseTypes().forEach(type -> {
+                getAllNumberIndexerTypes(type, acc);
+            });
+        } else if (t instanceof GenericType) {
+            getAllNumberIndexerTypes(((GenericType) t).toInterface(), acc);
+        } else if (t instanceof ReferenceType) {
+            getAllNumberIndexerTypes(((ReferenceType) t).getTarget(), acc);
+        } else {
+            throw new RuntimeException(t.getClass().getSimpleName());
+        }
+    }
+
+
+    public static Set<Map<String, Type>> getAllPropertyDeclarations(Type t) {
+        HashSet<Map<String, Type>> res = new HashSet<>();
+        getAllPropertyDeclarations(t, res);
+        return res.stream().filter(Objects::nonNull).collect(Collectors.toSet());
+    }
+
+    private static void getAllPropertyDeclarations(Type t, Set<Map<String, Type>> acc) {
+        if (t instanceof InterfaceType) {
+            acc.add(((InterfaceType) t).getDeclaredProperties());
+            ((InterfaceType) t).getBaseTypes().forEach(type ->
+                    getAllPropertyDeclarations(type, acc)
+            );
+        } else if (t instanceof ClassInstanceType) {
+            InterfaceType instanceType = ((ClassType) ((ClassInstanceType) t).getClassType()).getInstanceType();
+            getAllPropertyDeclarations(instanceType, acc);
+        } else if (t instanceof ClassType) {
+            acc.add(((ClassType) t).getStaticProperties());
+            ((ClassType) t).getBaseTypes().forEach(type -> {
+                getAllPropertyDeclarations(type, acc);
+            });
+        } else if (t instanceof GenericType) {
+            getAllPropertyDeclarations(((GenericType) t).toInterface(), acc);
+        } else if (t instanceof ReferenceType) {
+            getAllPropertyDeclarations(((ReferenceType) t).getTarget(), acc);
+        } else {
+            throw new RuntimeException(t.getClass().getSimpleName());
+        }
+    }
+
 
     private static final class SignatureComparisonContainer {
         private final Signature signature;
