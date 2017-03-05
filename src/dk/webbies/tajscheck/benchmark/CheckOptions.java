@@ -46,6 +46,16 @@ public final class CheckOptions {
         return new Builder().build();
     }
 
+    public static CheckOptions errorFindingOptions(CheckOptions options) {
+        return options.getBuilder()
+                .setCheckDepthForUnions(2)
+                .setCheckDepth(2)
+                .setMaxTime(30 * 1000)
+                .setCombineNullAndUndefined(true)
+                .setFailOnAny(false)
+                .build();
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -76,8 +86,9 @@ public final class CheckOptions {
             return new CheckOptions(this);
         }
 
-        public void setCombineNullAndUndefined(boolean combineNullAndUndefined) {
+        public Builder setCombineNullAndUndefined(boolean combineNullAndUndefined) {
             this.combineNullAndUndefined = combineNullAndUndefined;
+            return this;
         }
 
         public Builder setMakeTSInferLike(boolean makeTSInferLike) {
