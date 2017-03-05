@@ -154,7 +154,7 @@ public class TypeCreator {
             } else {
                 // Do nothing
             }
-        } else if (type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType) {
+        } else if (type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType || type instanceof IndexedAccessType) {
             // Do nothing.
         } else {
             throw new RuntimeException(type.getClass().getName());
@@ -381,16 +381,7 @@ public class TypeCreator {
                 return constructArray(typeContext, indexType);
             }
 
-            Type target;
-            if (type.getTarget() instanceof GenericType) {
-                target = ((GenericType) type.getTarget()).toInterface();
-            } else if (type.getTarget() instanceof TupleType || type.getTarget() instanceof ClassType) {
-                target = type.getTarget();
-            } else {
-                assert type.getTarget() instanceof ClassInstanceType;
-                target = ((ClassType) ((ClassInstanceType) type.getTarget()).getClassType()).getInstanceType();
-            }
-            return Return(constructType(target, new TypesUtil(info.bench).generateParameterMap(type, typeContext)));
+            return Return(constructType(type.getTarget(), new TypesUtil(info.bench).generateParameterMap(type, typeContext)));
         }
 
         @Override
@@ -938,9 +929,9 @@ public class TypeCreator {
             case "Object":
                 return Return(constructType(SpecReader.makeEmptySyntheticInterfaceType(), typeContext));
             case "Number":
-                return Return(constructType(new SimpleType(SimpleTypeKind.Number), typeContext));
+                return Return(newCall(identifier("Number"), constructType(new SimpleType(SimpleTypeKind.Number), typeContext)));
             case "Boolean":
-                return Return(constructType(new SimpleType(SimpleTypeKind.Boolean), typeContext));
+                return Return(newCall(identifier("Boolean"), constructType(new SimpleType(SimpleTypeKind.Boolean), typeContext)));
             case "Function":
                 InterfaceType interfaceWithSimpleFunction = SpecReader.makeEmptySyntheticInterfaceType();
                 Signature callSignature = new Signature();
@@ -954,7 +945,7 @@ public class TypeCreator {
                 Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(info.bench));
                 return Return(newCall(identifier("RegExp"), constructString));
             case "String":
-                return Return(constructType(new SimpleType(SimpleTypeKind.String), typeContext));
+                return Return(newCall(identifier("String"), constructType(new SimpleType(SimpleTypeKind.String), typeContext)));
             case "HTMLCanvasElement":
                 return AstBuilder.stmtFromString("return document.createElement('canvas')");
             case "HTMLVideoElement":
@@ -1110,6 +1101,32 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return String");
             case "HTMLCollection":
                 return AstBuilder.stmtFromString("return document.forms");
+            case "WheelEvent":
+                return AstBuilder.stmtFromString("return new WheelEvent(1)");
+            case "HTMLSourceElement":
+                return AstBuilder.stmtFromString("return document.createElement(\"source\")");
+            case "FocusEvent":
+                return AstBuilder.stmtFromString("return new FocusEvent(\"iunb\")");
+            case "MessageEvent":
+                return AstBuilder.stmtFromString("return new MessageEvent(\"iunb\")");
+            case "UIEvent":
+                return AstBuilder.stmtFromString("return new UIEvent(1)");
+            case "KeyboardEvent":
+                return AstBuilder.stmtFromString("return new KeyboardEvent(1)");
+            case "PageTransitionEvent":
+                return AstBuilder.stmtFromString("return new PageTransitionEvent(1)");
+            case "StorageEvent":
+                return AstBuilder.stmtFromString("return new StorageEvent(1)");
+            case "HashChangeEvent":
+                return AstBuilder.stmtFromString("return new HashChangeEvent(1)");
+            case "PopStateEvent":
+                return AstBuilder.stmtFromString("return new PopStateEvent(1)");
+            case "Headers":
+                return AstBuilder.stmtFromString("return new PopStateEvent()");
+            case "CustomElementRegistry":
+                return AstBuilder.stmtFromString("return customElements");
+            case "CacheStorage":
+                return AstBuilder.stmtFromString("return caches");
             case "Int8Array":
             case "Uint8Array":
             case "Uint32Array":
@@ -1141,6 +1158,27 @@ public class TypeCreator {
             case "Intl.ResolvedNumberFormatOptions":
             case "Intl.DateTimeFormatOptions":
             case "Intl.ResolvedDateTimeFormatOptions":
+            case "RTCIceServer":
+            case "FrameRequestCallback":
+            case "Request":
+            case "MSPointerEvent":
+            case "MSGestureEvent":
+            case "BeforeUnloadEvent":
+            case "DeviceOrientationEvent":
+            case "FocusNavigationOrigin":
+            case "MediaStreamErrorEvent":
+            case "DeviceMotionEvent":
+            case "DeviceLightEvent":
+            case "RequestInit":
+            case "ScrollToOptions":
+            case "BlobPropertyBag":
+            case "DeviceAccelerationDict":
+            case "MediaStreamError":
+            case "DeviceAcceleration":
+            case "DeviceRotationRate":
+            case "ExtensionScriptApis":
+            case "SpeechSynthesis":
+            case "SpeechSynthesisVoice":
                 throw new ProduceManuallyException();
             default:
                 throw new RuntimeException("Unknown: " + name);
