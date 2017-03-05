@@ -84,7 +84,7 @@ public class UnitTests {
     }
 
     private static void sanityCheck(Benchmark bench, Benchmark.RUN_METHOD runMethod) throws Exception {
-        bench = bench.withOptions(bench.options.getBuilder().setConstructAllTypes(true).build());
+        bench = bench.withOptions(bench.options.getBuilder().setConstructAllTypes(true).setFailOnAny(false).build());
 
         // Performing a soundness check of the benchmark.
         Main.writeFullDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP));
@@ -637,6 +637,16 @@ public class UnitTests {
     @Test
     public void complexSanityCheck11() throws Exception {
         sanityCheck(benchFromFolder("complexSanityCheck11"));
+    }
+
+    @Test
+    public void complexSanityCheck12() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck12"), BROWSER);
+    }
+
+    @Test
+    public void complexSanityCheck13() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck13"), NODE);
     }
 
     @Test
