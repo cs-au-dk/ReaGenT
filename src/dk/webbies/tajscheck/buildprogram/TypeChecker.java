@@ -248,6 +248,8 @@ public class TypeChecker {
                         return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("String")), "StringConstructor"));
                     case "Object":
                         return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.typeOf("object"), "Object"));
+                    case "Console":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("console")), "console"));
                     case "Date":
                     case "Error":
                     case "WebGLRenderingContext":
@@ -319,6 +321,25 @@ public class TypeChecker {
                     case "HTMLCollection":
                     case "Range":
                     case "Request":
+                    case "Headers":
+                    case "CustomElementRegistry":
+                    case "CacheStorage":
+                    case "SpeechSynthesisUtterance":
+                    case "IDBFactory":
+                    case "Storage":
+                    case "Navigator":
+                    case "MediaQueryList":
+                    case "URL":
+                    case "BarProp":
+                    case "ApplicationCache":
+                    case "Screen":
+                    case "Blob":
+                    case "History":
+                    case "Crypto":
+                    case "CSSStyleDeclaration":
+                    case "CSSRuleList":
+                    case "Selection":
+                    case "Performance":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "StyleMedia":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(expFromString("window.styleMedia.__proto__.constructor")), name));
@@ -359,6 +380,16 @@ public class TypeChecker {
                     case "RTCIceServer":
                     case "FocusNavigationOrigin":
                     case "RequestInit":
+                    case "DeviceAccelerationDict":
+                    case "DeviceRotationRateDict":
+                    case "MediaStreamError":
+                    case "DeviceAcceleration":
+                    case "DeviceRotationRate":
+                    case "ExtensionScriptApis":
+                    case "ErrorEventHandler":
+                    case "SpeechSynthesis":
+                    case "SpeechSynthesisVoice":
+                    case "MSCredentials":
                         arg = arg.withDepth(1);
                         break; // Testing manually.
                     default:
@@ -591,12 +622,12 @@ public class TypeChecker {
 
         @Override
         public List<TypeCheck> visit(IndexType t, Arg arg) {
-            throw new RuntimeException();
+            return Collections.singletonList(new SimpleTypeCheck(Check.alwaysTrue(), "indexType(ignored)"));
         }
 
         @Override
         public List<TypeCheck> visit(IndexedAccessType t, Arg arg) {
-            throw new RuntimeException();
+            return Collections.singletonList(new SimpleTypeCheck(Check.alwaysTrue(), "indexedAccessType(ignored)"));
         }
     }
 
