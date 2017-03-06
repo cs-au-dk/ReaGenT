@@ -7,6 +7,7 @@ import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Util;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -16,6 +17,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BOOTSTRAP;
+import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.NODE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -170,18 +172,18 @@ public class DeltaDebug {
 
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
-//        Benchmark bench = RunBenchmarks.benchmarks.get("Ember.js");
-        Benchmark bench = RunBenchmarks.benchmarks.get("axios");
+        Benchmark bench = RunBenchmarks.benchmarks.get("P2.js");
 
-//        Benchmark bench = RunBenchmarks.benchmark.get("AngularJS").withRunMethod(NODE);
         String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                return testHasError(bench, "axios.all");
-            }catch (NullPointerException e) {
+                boolean result = testSoundness(bench);
+                System.out.println(result);
+                return result;
+            } catch (NullPointerException e) {
                 return false;
-            } catch (IllegalArgumentException e) {
+            } catch (RuntimeException e) {
                 return false;
             } catch (Error | Exception e) {
                 e.printStackTrace();
@@ -190,23 +192,12 @@ public class DeltaDebug {
         });
     }
 
-    private static String buildManualEmberTest() throws IOException {
-        StringBuilder manualTestBuilder = new StringBuilder();
-        manualTestBuilder.append(Util.readFile("test/benchmarks/jquery/jquery.js")).append("\n");
-        manualTestBuilder.append(Util.readFile("test/benchmarks/handlebars/handlebars.js")).append("\n");
-        manualTestBuilder.append(Util.readFile("test/benchmarks/ember/ember.js")).append("\n");
-        manualTestBuilder.append("sendResultToChecker('Initial random: fwff');\n");
-        manualTestBuilder.append("sendResultToChecker('close');\n");
-
-        return manualTestBuilder.toString();
-    }
-
     private static boolean testHasError(Benchmark bench, String path) throws Exception {
         Main.writeFullDriver(bench);
         bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(100).build());
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
 
-        return result.typeErrors.stream().map(OutputParser.TypeError::getPath).filter(str -> str.equals(path)).count() >= 1;
+        return result.typeErrors.stream().map(OutputParser.TypeError::getPath).filter(str -> str.contains(path)).count() >= 1;
     }
 
     private static boolean testBiggerWithNoGenerics(Benchmark bench) throws IOException {
@@ -233,11 +224,13 @@ public class DeltaDebug {
 
 
     private static boolean testSoundness(Benchmark bench) throws Exception {
-        bench = bench.withRunMethod(BOOTSTRAP);
+        Benchmark.RUN_METHOD node = bench.run_method;
+        bench = bench.withRunMethod(BOOTSTRAP).withOptions(bench.options.getBuilder().setConstructAllTypes(true).setFailOnAny(false).build());
 
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");
-        String output = Main.runBenchmark(bench);
+
+        String output = Main.runBenchmark(bench.withRunMethod(node));
         System.out.println(output);
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 
