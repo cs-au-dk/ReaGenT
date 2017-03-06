@@ -107,7 +107,7 @@ public class CheckUpperBound {
                 return Collections.emptyList();
             }
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(info.bench).constructSyntheticInterfaceWithBaseTypes(t, info.typeNames, info.freeGenericsFinder);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(info).constructSyntheticInterfaceWithBaseTypes(t, info.typeNames, info.freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             TypeContext typeContext = arg.context.append(pair.getRight());
 
@@ -124,7 +124,7 @@ public class CheckUpperBound {
 
         @Override
         public List<TypeCheck> visit(ReferenceType t, Arg arg) {
-            TypeContext newParameters = new TypesUtil(info.bench).generateParameterMap(t);
+            TypeContext newParameters = new TypesUtil(info).generateParameterMap(t);
 
             return t.getTarget().accept(this, arg.withParameters(newParameters));
         }

@@ -4,6 +4,7 @@ import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
+import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
@@ -15,7 +16,7 @@ import java.util.stream.Collectors;
  * Created by erik1 on 16-01-2017.
  */
 public class AutomaticExperiments {
-    private static final int THREADS = 4;
+    private static final int THREADS = 6;
     private static int SMALL_DRIVER_RUNS_LIMIT = 100;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
@@ -46,6 +47,17 @@ public class AutomaticExperiments {
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
         long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
         return Long.toString(paths);
+    });
+
+    private static final Pair<String, Experiment.ExperimentSingleRunner> consistencyCheck = new Pair<>("sound", (bench) -> {
+        Benchmark.RUN_METHOD runMethod = bench.run_method;
+        bench = bench.withOptions(bench.options.getBuilder().setConstructAllTypes(true).setFailOnAny(false).build());
+
+        // Performing a soundness check of the benchmark.
+        Main.writeFullDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP));
+        String output = Main.runBenchmark(bench.withRunMethod(runMethod));
+        OutputParser.RunResult result = OutputParser.parseDriverResult(output);
+        return Boolean.toString(result.typeErrors.size() == 0);
     });
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> uniquePaths5Minutes = new Pair<>("uniquePaths(5minutes)", (bench) -> {
@@ -248,12 +260,14 @@ public class AutomaticExperiments {
     public static void main(String[] args) throws Exception {
 //        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(bench -> bench.getValue().run_method == Benchmark.RUN_METHOD.NODE).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 //        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(pair -> !done.contains(pair.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-        Experiment experiment = new Experiment();
+        Experiment experiment = new Experiment("Backbone.js", "Ember.js", "Materialize");
 
         experiment.addSingleExperiment(type);
 
         experiment.addMultiExperiment(driverSizes);
         experiment.addSingleExperiment(jsFileSize);
+
+        experiment.addSingleExperiment(consistencyCheck);
 
 //        experiment.addSingleExperiment(uniquePaths5Minutes);
 

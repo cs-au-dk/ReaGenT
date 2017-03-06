@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
@@ -19,10 +20,11 @@ import java.util.stream.Collectors;
  * Created by erik1 on 01-11-2016.
  */
 public class TypesUtil {
-    private final Benchmark bench;
 
-    public TypesUtil(Benchmark bench) {
-        this.bench = bench;
+    private BenchmarkInfo info;
+
+    public TypesUtil(BenchmarkInfo info) {
+        this.info = info;
     }
 
     public static InterfaceType classToInterface(ClassType t, FreeGenericsFinder freeGenericsFinder) {
@@ -96,7 +98,7 @@ public class TypesUtil {
         for (int i = 0; i < arguments.size(); i++) {
             parameterMap.put(parameters.get(i), arguments.get(i));
         }
-        return TypeContext.create(bench).append(parameterMap);
+        return TypeContext.create(info.bench).append(parameterMap);
     }
 
     public static List<Type> getTypeParameters(Type target) {
@@ -261,7 +263,7 @@ public class TypesUtil {
         return getAllBaseTypes(type, acc, (subType) -> true);
     }
 
-    public static Set<Type> getAllBaseTypes(Type type, Set<Type> acc, Predicate<Type> shouldContinue) {
+    private static Set<Type> getAllBaseTypes(Type type, Set<Type> acc, Predicate<Type> shouldContinue) {
         if (acc.contains(type)) {
             return acc;
         }
@@ -293,90 +295,107 @@ public class TypesUtil {
         return acc;
     }
 
-    public static Set<Type> getAllStringIndexerTypes(Type t) {
-        HashSet<Type> res = new HashSet<>();
-        getAllStringIndexerTypes(t, res);
+    public Set<TypeWithContext> getAllStringIndexerTypes(Type t, TypeContext context) {
+        Set<TypeWithContext> res = new HashSet<>();
+        getAllStringIndexerTypes(t, context, res);
         return res.stream().filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
-    private static void getAllStringIndexerTypes(Type t, Set<Type> acc) {
+    private void getAllStringIndexerTypes(Type t, TypeContext context, Set<TypeWithContext> acc) {
+        if (info.nativeTypes.contains(t)) {
+            return;
+        }
         if (t instanceof InterfaceType) {
-            acc.add(((InterfaceType) t).getDeclaredStringIndexType());
+            if (((InterfaceType) t).getDeclaredStringIndexType() != null) {
+                acc.add(new TypeWithContext(((InterfaceType) t).getDeclaredStringIndexType(), context));
+            }
             ((InterfaceType) t).getBaseTypes().forEach(type ->
-                    getAllStringIndexerTypes(type, acc)
+                    getAllStringIndexerTypes(type, context, acc)
             );
         } else if (t instanceof ClassInstanceType) {
             InterfaceType instanceType = ((ClassType) ((ClassInstanceType) t).getClassType()).getInstanceType();
-            getAllStringIndexerTypes(instanceType, acc);
+            getAllStringIndexerTypes(instanceType, context, acc);
         } else if (t instanceof ClassType) {
-            acc.add(((ClassType) t).getDeclaredStringIndexType());
+            if (((ClassType) t).getDeclaredStringIndexType() != null) {
+                acc.add(new TypeWithContext(((ClassType) t).getDeclaredStringIndexType(), context));
+            }
             ((ClassType) t).getBaseTypes().forEach(type -> {
-                getAllStringIndexerTypes(type, acc);
+                getAllStringIndexerTypes(type, context, acc);
             });
         } else if (t instanceof GenericType) {
-            getAllStringIndexerTypes(((GenericType) t).toInterface(), acc);
+            getAllStringIndexerTypes(((GenericType) t).toInterface(), context, acc);
         } else if (t instanceof ReferenceType) {
-            getAllStringIndexerTypes(((ReferenceType) t).getTarget(), acc);
+            getAllStringIndexerTypes(((ReferenceType) t).getTarget(), generateParameterMap((ReferenceType) t, context), acc);
         } else {
             throw new RuntimeException(t.getClass().getSimpleName());
         }
     }
 
 
-    public static Set<Type> getAllNumberIndexerTypes(Type t) {
-        HashSet<Type> res = new HashSet<>();
-        getAllNumberIndexerTypes(t, res);
+    public Set<TypeWithContext> getAllNumberIndexerTypes(Type t, TypeContext context) {
+        Set<TypeWithContext> res = new HashSet<>();
+        getAllNumberIndexerTypes(t, context, res);
         return res.stream().filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
-    private static void getAllNumberIndexerTypes(Type t, Set<Type> acc) {
+    private void getAllNumberIndexerTypes(Type t, TypeContext context, Set<TypeWithContext> acc) {
+        if (info.nativeTypes.contains(t)) {
+            return;
+        }
         if (t instanceof InterfaceType) {
-            acc.add(((InterfaceType) t).getDeclaredNumberIndexType());
+            if (((InterfaceType) t).getDeclaredNumberIndexType() != null) {
+                acc.add(new TypeWithContext(((InterfaceType) t).getDeclaredNumberIndexType(), context));
+            }
             ((InterfaceType) t).getBaseTypes().forEach(type ->
-                    getAllNumberIndexerTypes(type, acc)
+                    getAllNumberIndexerTypes(type, context, acc)
             );
         } else if (t instanceof ClassInstanceType) {
             InterfaceType instanceType = ((ClassType) ((ClassInstanceType) t).getClassType()).getInstanceType();
-            getAllNumberIndexerTypes(instanceType, acc);
+            getAllNumberIndexerTypes(instanceType, context, acc);
         } else if (t instanceof ClassType) {
-            acc.add(((ClassType) t).getDeclaredStringIndexType());
+            if (((ClassType) t).getDeclaredStringIndexType() != null) {
+                acc.add(new TypeWithContext(((ClassType) t).getDeclaredStringIndexType(), context));
+            }
             ((ClassType) t).getBaseTypes().forEach(type -> {
-                getAllNumberIndexerTypes(type, acc);
+                getAllNumberIndexerTypes(type, context, acc);
             });
         } else if (t instanceof GenericType) {
-            getAllNumberIndexerTypes(((GenericType) t).toInterface(), acc);
+            getAllNumberIndexerTypes(((GenericType) t).toInterface(), context, acc);
         } else if (t instanceof ReferenceType) {
-            getAllNumberIndexerTypes(((ReferenceType) t).getTarget(), acc);
+            getAllNumberIndexerTypes(((ReferenceType) t).getTarget(), generateParameterMap((ReferenceType) t, context), acc);
         } else {
             throw new RuntimeException(t.getClass().getSimpleName());
         }
     }
 
 
-    public static Set<Map<String, Type>> getAllPropertyDeclarations(Type t) {
-        HashSet<Map<String, Type>> res = new HashSet<>();
-        getAllPropertyDeclarations(t, res);
+    public Set<Pair<TypeContext, Map<String, Type>>> getAllPropertyDeclarations(Type t, TypeContext context) {
+        Set<Pair<TypeContext, Map<String, Type>>> res = new HashSet<>();
+        getAllPropertyDeclarations(t, context, res);
         return res.stream().filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
-    private static void getAllPropertyDeclarations(Type t, Set<Map<String, Type>> acc) {
+    private void getAllPropertyDeclarations(Type t, TypeContext context, Set<Pair<TypeContext, Map<String, Type>>> acc) {
+        if (info.nativeTypes.contains(t)) {
+            return;
+        }
         if (t instanceof InterfaceType) {
-            acc.add(((InterfaceType) t).getDeclaredProperties());
+            acc.add(new Pair<>(context, ((InterfaceType) t).getDeclaredProperties()));
             ((InterfaceType) t).getBaseTypes().forEach(type ->
-                    getAllPropertyDeclarations(type, acc)
+                    getAllPropertyDeclarations(type, context, acc)
             );
         } else if (t instanceof ClassInstanceType) {
             InterfaceType instanceType = ((ClassType) ((ClassInstanceType) t).getClassType()).getInstanceType();
-            getAllPropertyDeclarations(instanceType, acc);
+            getAllPropertyDeclarations(instanceType, context, acc);
         } else if (t instanceof ClassType) {
-            acc.add(((ClassType) t).getStaticProperties());
+            acc.add(new Pair<>(context, ((ClassType) t).getStaticProperties()));
             ((ClassType) t).getBaseTypes().forEach(type -> {
-                getAllPropertyDeclarations(type, acc);
+                getAllPropertyDeclarations(type, context, acc);
             });
         } else if (t instanceof GenericType) {
-            getAllPropertyDeclarations(((GenericType) t).toInterface(), acc);
+            getAllPropertyDeclarations(((GenericType) t).toInterface(), context, acc);
         } else if (t instanceof ReferenceType) {
-            getAllPropertyDeclarations(((ReferenceType) t).getTarget(), acc);
+            getAllPropertyDeclarations(((ReferenceType) t).getTarget(), generateParameterMap((ReferenceType) t, context), acc);
         } else {
             throw new RuntimeException(t.getClass().getSimpleName());
         }
@@ -696,7 +715,7 @@ public class TypesUtil {
 
     public Pair<InterfaceType, TypeContext> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter, Map<Type, String> typeNames, FreeGenericsFinder freeGenericsFinder) {
         if (inter.getBaseTypes().isEmpty()) {
-            return new Pair<>(inter, TypeContext.create(bench));
+            return new Pair<>(inter, TypeContext.create(info.bench));
         }
 //        assert inter.getTypeParameters().isEmpty(); // This should only happen when constructed from a generic/reference type, and in that case we have handled the TypeParameters.
         Map<TypeParameterType, Type> newParameters = new HashMap<>();
@@ -741,7 +760,7 @@ public class TypesUtil {
                 result.getDeclaredProperties().put(entry.getKey(), entry.getValue());
             }
         });
-        return new Pair<>(result, TypeContext.create(bench).append(newParameters));
+        return new Pair<>(result, TypeContext.create(info.bench).append(newParameters));
     }
 
 

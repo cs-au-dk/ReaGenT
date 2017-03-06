@@ -646,7 +646,17 @@ public class UnitTests {
 
     @Test
     public void complexSanityCheck13() throws Exception {
-        sanityCheck(benchFromFolder("complexSanityCheck13"), NODE);
+        sanityCheck(benchFromFolder("complexSanityCheck13"), BROWSER);
+    }
+
+    @Test
+    public void complexSanityCheck14() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck14"), NODE);
+    }
+
+    @Test
+    public void extendingGenericClass() throws Exception {
+        sanityCheck(benchFromFolder("extendingGenericClass"), NODE);
     }
 
     @Test
@@ -662,6 +672,11 @@ public class UnitTests {
     @Test
     public void extendsEvent2() throws Exception {
         sanityCheck(benchFromFolder("extendsEvent2"), BROWSER);
+    }
+
+    @Test
+    public void extendsEvent3() throws Exception {
+        sanityCheck(benchFromFolder("extendsEvent3"), BROWSER);
     }
 
     @Test(expected = AssertionError.class)

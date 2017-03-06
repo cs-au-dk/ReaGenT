@@ -164,7 +164,7 @@ public class TestCreator {
 
 
         if (type instanceof ReferenceType) {
-            TypeContext newParameters = new TypesUtil(info.bench).generateParameterMap((ReferenceType) type);
+            TypeContext newParameters = new TypesUtil(info).generateParameterMap((ReferenceType) type);
             type = ((ReferenceType) type).getTarget();
             path = path + ".<>";
             typeContext = typeContext.append(newParameters);
@@ -461,18 +461,23 @@ public class TestCreator {
                 arg = arg.withThisType(t);
             }
 
-            for (Type stringIndexer : TypesUtil.getAllStringIndexerTypes(t)) {
-                tests.add(new StringIndexTest(t, stringIndexer, arg.path, arg.typeContext));
-                recurse(stringIndexer, arg.append("[stringIndexer]"));
+            TypesUtil typesUtil = new TypesUtil(info);
+
+            for (TypeWithContext stringIndexer : typesUtil.getAllStringIndexerTypes(t, arg.typeContext)) {
+                Arg subArg = arg.withTypeContext(stringIndexer.getTypeContext());
+                tests.add(new StringIndexTest(t, stringIndexer.getType(), arg.path, subArg.typeContext));
+                recurse(stringIndexer.getType(), subArg.append("[stringIndexer]"));
             }
 
-            for (Type numberIndexer : TypesUtil.getAllNumberIndexerTypes(t)) {
-                tests.add(new NumberIndexTest(t, numberIndexer, arg.path, arg.typeContext));
-                recurse(numberIndexer, arg.append("[numberIndexer]"));
+            for (TypeWithContext stringIndexer : typesUtil.getAllNumberIndexerTypes(t, arg.typeContext)) {
+                Arg subArg = arg.withTypeContext(stringIndexer.getTypeContext());
+                tests.add(new NumberIndexTest(t, stringIndexer.getType(), arg.path, subArg.typeContext));
+                recurse(stringIndexer.getType(), subArg.append("[numberIndexer]"));
             }
 
-            for (Map<String, Type> properties : TypesUtil.getAllPropertyDeclarations(t)) {
-                visitProperties(t, arg, properties);
+            for (Pair<TypeContext, Map<String, Type>> propertiesPair : typesUtil.getAllPropertyDeclarations(t, arg.typeContext)) {
+                Arg subArg = arg.withTypeContext(propertiesPair.getLeft());
+                visitProperties(t, subArg, propertiesPair.getRight());
             }
 
             return null;
@@ -542,7 +547,7 @@ public class TestCreator {
             }
 
             if (propertyType instanceof ReferenceType) {
-                TypeContext newParameters = new TypesUtil(info.bench).generateParameterMap((ReferenceType) propertyType);
+                TypeContext newParameters = new TypesUtil(info).generateParameterMap((ReferenceType) propertyType);
                 Type subType = ((ReferenceType) propertyType).getTarget();
                 Arg newArg = arg.append("<>").withParameters(newParameters);
                 addMethodCallTest(baseType, newArg, key, subType, seen);
@@ -583,7 +588,7 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            TypeContext newParameters = new TypesUtil(info.bench).generateParameterMap(t);
+            TypeContext newParameters = new TypesUtil(info).generateParameterMap(t);
 
             recurse(t.getTarget(), arg.append("<>").withParameters(newParameters));
 
@@ -879,7 +884,7 @@ public class TestCreator {
                 return null;
             }
 
-            TypeContext newParameters = new TypesUtil(info.bench).generateParameterMap(t);
+            TypeContext newParameters = new TypesUtil(info).generateParameterMap(t);
 
             recurse(t.getTarget(), arg.append("<>").withParameters(newParameters));
 

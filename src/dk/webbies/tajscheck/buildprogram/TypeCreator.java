@@ -128,7 +128,7 @@ public class TypeCreator {
             List<Type> baseTypes = ((IntersectionType) type).getElements();
             baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext));
         } else if (type instanceof ReferenceType) {
-            putProducedValueIndex(index, ((ReferenceType) type).getTarget(), new TypesUtil(info.bench).generateParameterMap((ReferenceType) type, typeContext));
+            putProducedValueIndex(index, ((ReferenceType) type).getTarget(), new TypesUtil(info).generateParameterMap((ReferenceType) type, typeContext));
         } else if (type instanceof GenericType) {
             putProducedValueIndex(index, ((GenericType) type).toInterface(), typeContext);
         } else if (type instanceof ClassType) {
@@ -231,7 +231,7 @@ public class TypeCreator {
 
             List<Signature> signatures = t.getSignatures().stream().map(sig -> TypesUtil.createConstructorSignature(t, sig)).collect(Collectors.toList());
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(info.bench).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, info.freeGenericsFinder), info.typeNames, info.freeGenericsFinder);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(info).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, info.freeGenericsFinder), info.typeNames, info.freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
 
@@ -298,7 +298,7 @@ public class TypeCreator {
                 typeContext = typeContext.withThisType(type);
             }
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(info.bench).constructSyntheticInterfaceWithBaseTypes(type, info.typeNames, info.freeGenericsFinder);
+            Pair<InterfaceType, TypeContext> pair = new TypesUtil(info).constructSyntheticInterfaceWithBaseTypes(type, info.typeNames, info.freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
@@ -381,7 +381,7 @@ public class TypeCreator {
                 return constructArray(typeContext, indexType);
             }
 
-            return Return(constructType(type.getTarget(), new TypesUtil(info.bench).generateParameterMap(type, typeContext)));
+            return Return(constructType(type.getTarget(), new TypesUtil(info).generateParameterMap(type, typeContext)));
         }
 
         @Override
@@ -966,7 +966,6 @@ public class TypeCreator {
             case "CanvasPathMethods":
                 return AstBuilder.stmtFromString("return document.createElement(\"canvas\").getContext(\"2d\")");
             case "MouseEvent":
-                return AstBuilder.stmtFromString("return new MouseEvent(null)");
             case "Event":
                 throw new ProduceManuallyException();
             case "WebGLProgram":
@@ -1179,6 +1178,8 @@ public class TypeCreator {
             case "ExtensionScriptApis":
             case "SpeechSynthesis":
             case "SpeechSynthesisVoice":
+            case "ArrayLike":
+            case "NodeListOf":
                 throw new ProduceManuallyException();
             default:
                 throw new RuntimeException("Unknown: " + name);
