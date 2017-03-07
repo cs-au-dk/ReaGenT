@@ -493,7 +493,7 @@ public class TypeChecker {
                 );
             }
 
-            if (info.options.combineNullAndUndefined && (t.getKind() == SimpleTypeKind.Null || t.getKind() == SimpleTypeKind.Undefined)) {
+            if (info.options.combineNullAndUndefined && (t.getKind() == SimpleTypeKind.Null || t.getKind() == SimpleTypeKind.Undefined || t.getKind() == SimpleTypeKind.Void)) {
                 return Collections.singletonList(
                         new SimpleTypeCheck(
                                 Check.or(
