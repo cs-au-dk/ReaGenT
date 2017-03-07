@@ -189,9 +189,8 @@ public class RunBenchmarks {
     @Test
     public void runFullDriver() throws Exception {
         // Write the driver
-        Main.writeFullDriver(benchmark);
+        Main.writeFullDriver(benchmark.withOptions(CheckOptions.errorFindingOptions(benchmark.options)));
 
-        // Run the driver
         String out = Main.runBenchmark(benchmark);
 //        System.out.println(out);
 
@@ -200,7 +199,7 @@ public class RunBenchmarks {
         // Parse and print the result
         OutputParser.RunResult result = OutputParser.parseDriverResult(out);
 
-        result.typeErrors.sort(Comparator.comparing(o -> o.path));
+        result.typeErrors.sort(Comparator.comparing(OutputParser.TypeError::getPath));
 
         for (OutputParser.TypeError typeError : result.typeErrors) {
             System.out.println(typeError.toString());
@@ -232,14 +231,15 @@ public class RunBenchmarks {
 
     @Test
     public void soundnessTest() throws Exception {
-        Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP);
+        Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP).withOptions(this.benchmark.options.getBuilder().setConstructAllTypes(true).setFailOnAny(false).build());
         if (
-                benchmark.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail.
+                benchmark.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail. (demonstrated in complexSanityCheck3)
                 benchmark.dTSFile.contains("leaflet.d.ts") || // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)
                 benchmark.dTSFile.contains("jquery.d.ts") || // Exactly the same thing, the two then methods of JQueryGenericPromise are being overridden in an unsound way.
                 benchmark.dTSFile.contains("ember.d.ts") || // It includes jQuery, therefore it fails.
                 benchmark.dTSFile.contains("fabric.d.ts") || // Unsoundness in the noTransform argument of the render method (and that is it!).
                 benchmark.dTSFile.contains("materialize.d.ts") || // Includes jQuery.
+                benchmark.dTSFile.contains("p2.d.ts") || // Has a class, that has a static length() function, this is not possible. (The class contains only static methods, go figure).
                 benchmark.dTSFile.contains("backbone.d.ts")  // Includes jQuery.
         ) {
             System.out.println("Is a benchmark which i know to fail. ");
