@@ -10,10 +10,13 @@ import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.ServerSocket;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 
@@ -42,36 +45,63 @@ public class SeleniumDriver {
             socket.setSoTimeout(timeout);
         }
 
+        AtomicBoolean killed = new AtomicBoolean(false);
+        AtomicBoolean gotPage = new AtomicBoolean(false);
+        new Thread(() -> {
+            try {
+                Thread.sleep(20 * 1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException();
+            }
+            if (!gotPage.get()) {
+                killed.set(true);
+                driver.quit();
+            }
+        }).start();
+
         SimpleMessageReceivingHTTPServer server = startServer(dir, script, socket);
 
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        get("http://127.0.0.1:" + port); // Making a blocking call, that makes sure that my server is up and running.
 
-        while (true) {
+        try {
+            if (!socket.isBound() || socket.isClosed()) {
+                System.out.println();
+            }
+            driver.get("http://127.0.0.1:" + port);
+            gotPage.set(true);
+        } catch (org.openqa.selenium.TimeoutException e) {
+            System.err.println("Selenium driver had a timeout loading the index page, trying again!");
             try {
-                if (!socket.isBound() || socket.isClosed()) {
-                    System.out.println();
-                }
-                driver.get("http://127.0.0.1:" + port);
-                break;
-            } catch (org.openqa.selenium.TimeoutException e) {
-                System.err.println("Selenium driver had a timeout loading the index page, trying again!");
-                try {
-                    driver.quit();
-                    socket.close();
-                } catch (Exception ignored) { }
+                driver.quit();
+                socket.close();
+            } catch (Exception ignored) {
+            }
+            return executeScript(dir, script, timeout, pageLoadTimeout + 10); // continue, try again
+        } catch (Exception e) {
+            if (killed.get()) {
                 return executeScript(dir, script, timeout, pageLoadTimeout + 10); // continue, try again
+            } else {
+                throw e;
             }
         }
+
 
         String message = String.join("\n", server.getMessages());
 
         driver.quit();
 
         return message;
+    }
+
+    public static int get(String url) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setRequestMethod("GET");
+
+        int res = connection.getResponseCode();
+
+        connection.getInputStream().close();
+
+        return res;
     }
 
     private static SimpleMessageReceivingHTTPServer startServer(File dir, String script, ServerSocket socket) {
