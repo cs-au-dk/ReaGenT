@@ -651,7 +651,7 @@ declare namespace moment {
   export function locale(language?: string[]): string | undefined;
   export function locale(language?: string, definition?: LocaleSpecification | null | undefined): string | undefined;
 
-  export function localeData(key?: string | string[]): Locale;
+  export function localeData(key?: string | string[]): Locale | null;
 
   export function duration(inp?: DurationInputArg1, unit?: DurationInputArg2): Duration;
 
@@ -701,7 +701,7 @@ declare namespace moment {
    */
   export function now(): number;
 
-  export function defineLocale(language: string, localeSpec: LocaleSpecification | null): Locale;
+  export function defineLocale(language: string, localeSpec: LocaleSpecification | null): Locale | null;
   export function updateLocale(language: string, localeSpec: LocaleSpecification | null): Locale | undefined;
 
   export function locales(): string[];

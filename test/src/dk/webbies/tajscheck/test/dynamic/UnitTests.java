@@ -518,7 +518,7 @@ public class UnitTests {
 
         expect(result)
                 .forPath("module.foo()")
-                .expected("(((function or object) and field[foo]:(((function or object) and field[bar]:(boolean)))) or ((function or object) and field[foo]:(((function or object) and field[bar]:(string)))))")
+                .expected("(((function or object) and not null and field[foo]:(((function or object) and not null and field[bar]:(boolean)))) or ((function or object) and not null and field[foo]:(((function or object) and not null and field[bar]:(string)))))")
                 .got(JSON, "{\"foo\":{\"bar\":123}}");
     }
 
@@ -571,7 +571,7 @@ public class UnitTests {
 
     @Test
     public void myFixedMomentHasNoError() throws Exception {
-        Benchmark benchmark = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", "moment", NODE, CheckOptions.builder().setSplitUnions(false).build());
+        Benchmark benchmark = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", "moment", NODE, CheckOptions.builder().setSplitUnions(false).build()).withOptions(CheckOptions::errorFindingOptions);
 
         RunResult result = run(benchmark, null);
 
