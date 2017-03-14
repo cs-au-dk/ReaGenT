@@ -1100,4 +1100,20 @@ public class UnitTests {
                 .got(JSON, "false");
 
     }
+
+    @Test
+    public void basicExample() throws Exception {
+        Main.writeFullDriver(benchFromFolder("basicExample"));
+    }
+
+    @Test
+    public void voidReturnCanBeAnything() throws Exception {
+        RunResult result = run("voidReturnCanBeAnything", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.bar()")
+                .got(STRING, "any");
+    }
 }
