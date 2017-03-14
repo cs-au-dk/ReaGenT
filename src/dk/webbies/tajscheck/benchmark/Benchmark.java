@@ -4,6 +4,7 @@ import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.testcreator.TestCreator;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -102,6 +103,20 @@ public class Benchmark {
                 this.pathsToTest,
                 this.useTAJS,
                 options,
+                this.dependencies
+        );
+    }
+
+    public Benchmark withOptions(Function<CheckOptions, CheckOptions> transformer) {
+        return new Benchmark(
+                this.environment,
+                this.jsFile,
+                this.dTSFile,
+                this.module,
+                this.run_method,
+                this.pathsToTest,
+                this.useTAJS,
+                transformer.apply(this.options),
                 this.dependencies
         );
     }
