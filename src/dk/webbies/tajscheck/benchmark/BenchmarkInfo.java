@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
+import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,7 +42,7 @@ public class BenchmarkInfo {
 
         Map<Type, String> typeNames = ParseDeclaration.getTypeNamesMap(spec);
 
-        Type typeToTest = getTypeToTest(bench, spec);
+        Type typeToTest = getTypeToTest(bench, spec, typeNames);
 
         FreeGenericsFinder freeGenericsFinder = new FreeGenericsFinder(typeToTest);
 
@@ -58,14 +59,16 @@ public class BenchmarkInfo {
         return new BenchmarkInfo(bench, typeToTest, nativeTypes, freeGenericsFinder, typeNames, typeParameterIndexer, globalProperties);
     }
 
-    private static Type getTypeToTest(Benchmark bench, SpecReader spec) {
+    private static Type getTypeToTest(Benchmark bench, SpecReader spec, Map<Type, String> typeNames) {
         Type result = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(bench.module);
 
         if (result == null) {
             throw new RuntimeException("Module: " + bench.module + " not found in benchmark");
         }
 
-        for (Type type : TypesUtil.collectAllTypes(result)) {
+        List<Type> allTypes = new ArrayList<>(TypesUtil.collectAllTypes(result));
+        for (Type type : allTypes) {
+            // splitting unions
             if (bench.options.splitUnions) {
                 if (type instanceof InterfaceType) {
                     InterfaceType inter = (InterfaceType) type;
@@ -78,6 +81,7 @@ public class BenchmarkInfo {
                 }
             }
 
+            // names starting with underscore has a bug; there are too many underscores.
             if (type instanceof InterfaceType) {
                 ((InterfaceType) type).setDeclaredProperties(fixUnderscoreNames(((InterfaceType) type).getDeclaredProperties()));
             } else if (type instanceof GenericType) {
@@ -87,11 +91,71 @@ public class BenchmarkInfo {
                 ((ClassType) type).setInstanceProperties(fixUnderscoreNames(((ClassType) type).getInstanceProperties()));
             }
 
+
+            // Setting the instance of a class to an existing instance instead of creating a new.
             if (type instanceof ClassInstanceType) {
                 ((ClassType) ((ClassInstanceType) type).getClassType()).instance = (ClassInstanceType) type;
             }
+
+            // An intersection of functions can be represented in a better way (to allow detecting overloads).
+            if (type instanceof IntersectionType) {
+                IntersectionType intersection = (IntersectionType) type;
+                assert !intersection.getElements().isEmpty();
+                if (intersection.getElements().stream().allMatch(t -> {
+                    if (!(t instanceof InterfaceType)) {
+                        return false;
+                    }
+                    InterfaceType inter = (InterfaceType) t;
+                    if (!inter.getDeclaredProperties().isEmpty()) {
+                        return false;
+                    }
+                    if (inter.getDeclaredNumberIndexType() != null) {
+                        return false;
+                    }
+                    if (inter.getDeclaredStringIndexType() != null) {
+                        return false;
+                    }
+                    if (!inter.getDeclaredConstructSignatures().isEmpty()) {
+                        return false;
+                    }
+                    if (inter.getDeclaredCallSignatures().isEmpty()) {
+                        return false;
+                    }
+                    return true;
+                })) {
+                    InterfaceType combinedInter = SpecReader.makeEmptySyntheticInterfaceType();
+
+                    String name = typeNames.get(type);
+                    typeNames.put(combinedInter, name +".[mergedIntersection]");
+
+                    for (InterfaceType inter : Util.cast(InterfaceType.class, intersection.getElements())) {
+                        combinedInter.getDeclaredCallSignatures().addAll(inter.getDeclaredCallSignatures());
+                    }
+                    intersection.setElements(Collections.singletonList(combinedInter));
+                }
+            }
         }
 
+        // It is only Void, if it is a function-return.
+        for (Type type : allTypes) {
+            if (type instanceof SimpleType && ((SimpleType) type).getKind() == SimpleTypeKind.Void) {
+                ((SimpleType) type).setKind(SimpleTypeKind.Undefined);
+            }
+        }
+        for (Type type : allTypes) {
+            if (type instanceof InterfaceType) {
+                InterfaceType inter = (InterfaceType) type;
+                setUndefinedReturnToVoid(inter.getDeclaredCallSignatures());
+                setUndefinedReturnToVoid(inter.getDeclaredConstructSignatures());
+            } else if (type instanceof GenericType) {
+                GenericType inter = (GenericType) type;
+                setUndefinedReturnToVoid(inter.getDeclaredCallSignatures());
+                setUndefinedReturnToVoid(inter.getDeclaredConstructSignatures());
+            }
+        }
+
+
+        // Fixing if the top-level export is a class, currently we get
         if (result instanceof InterfaceType) {
             InterfaceType inter = (InterfaceType) result;
             if (inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size() > 0) {
@@ -102,6 +166,15 @@ public class BenchmarkInfo {
         }
 
         return result;
+    }
+
+    private static void setUndefinedReturnToVoid(List<Signature> signatures) {
+        // A function that returns a value is assignable to a function type that returns void
+        for (Signature signature : signatures) {
+            if (signature.getResolvedReturnType() instanceof SimpleType && ((SimpleType) signature.getResolvedReturnType()).getKind() == SimpleTypeKind.Undefined) {
+                signature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Void));
+            }
+        }
     }
 
     private static Map<String, Type> fixUnderscoreNames(Map<String, Type> declaredProperties) {

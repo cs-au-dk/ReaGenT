@@ -493,7 +493,13 @@ public class TypeChecker {
                 );
             }
 
-            if (info.options.combineNullAndUndefined && (t.getKind() == SimpleTypeKind.Null || t.getKind() == SimpleTypeKind.Undefined || t.getKind() == SimpleTypeKind.Void)) {
+            if (t.getKind() == SimpleTypeKind.Void) {
+                return Collections.singletonList(
+                        new SimpleTypeCheck(Check.alwaysTrue(), "[any(void)]")
+                );
+            }
+
+            if (info.options.combineNullAndUndefined && (t.getKind() == SimpleTypeKind.Null || t.getKind() == SimpleTypeKind.Undefined)) {
                 return Collections.singletonList(
                         new SimpleTypeCheck(
                                 Check.or(
