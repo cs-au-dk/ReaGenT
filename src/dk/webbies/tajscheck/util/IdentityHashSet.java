@@ -8,6 +8,8 @@ import java.util.*;
 public class IdentityHashSet <T> implements Set<T> {
     private final Map<T, Void> map = new IdentityHashMap<>();
 
+    public IdentityHashSet() {}
+
     public IdentityHashSet(Collection<T> collection) {
         this.addAll(collection);
     }
