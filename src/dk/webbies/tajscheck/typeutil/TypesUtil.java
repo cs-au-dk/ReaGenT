@@ -9,6 +9,7 @@ import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
+import dk.webbies.tajscheck.util.IdentityHashSet;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
@@ -467,7 +468,7 @@ public class TypesUtil {
 
 
     private static class CollectAllTypesVisitor implements TypeVisitor<Void> {
-        private final Set<Type> seen = new HashSet<>();
+        private final Set<Type> seen = new IdentityHashSet<>();
 
         Set<Type> getSeen() {
             return seen;
