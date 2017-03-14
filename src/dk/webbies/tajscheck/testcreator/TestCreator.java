@@ -181,7 +181,7 @@ public class TestCreator {
             List<Signature> callSignatures = ((InterfaceType) type).getDeclaredCallSignatures();
             for (Signature callSignature : callSignatures) {
                 List<Type> parameters = callSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters, negativeTypesSeen);
+                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters);
                 result.add(
                         new FunctionCallTest(type, parameters, callSignature.getResolvedReturnType(), path, typeContext, callSignature.isHasRestParameter())
                 );
@@ -192,7 +192,7 @@ public class TestCreator {
             List<Signature> constructSignatures = ((InterfaceType) type).getDeclaredConstructSignatures();
             for (Signature constructSignature : constructSignatures) {
                 List<Type> parameters = constructSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters, negativeTypesSeen);
+                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters);
                 result.add(
                         new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, typeContext, constructSignature.isHasRestParameter())
                 );
@@ -204,7 +204,7 @@ public class TestCreator {
         throw new RuntimeException(type.getClass().getName());
     }
 
-    private void findPositiveTypesInParameters(CreateTestVisitor visitor, Arg arg, List<Type> parameters, Set<TypeWithContext> negativeTypesSeen) {
+    private void findPositiveTypesInParameters(CreateTestVisitor visitor, Arg arg, List<Type> parameters) {
         for (int i = 0; i < parameters.size(); i++) {
             Type parameter = parameters.get(i);
             findPositiveTypes(visitor, parameter, arg.append("[arg" + i + "]"));
@@ -416,7 +416,7 @@ public class TestCreator {
                     arrayType = parameterType;
                 }
                 tests.add(new NumberIndexTest(t, arrayType, arg.path, arg.typeContext));
-                recurse(arrayType, arg.append("[numberIndexer]"));
+                recurse(arrayType, arg.append("[numberIndexer]").withTopLevelFunctions());
 
                 return null;
             }
@@ -435,11 +435,11 @@ public class TestCreator {
 
             if (t.getDeclaredStringIndexType() != null) {
                 tests.add(new StringIndexTest(t, t.getDeclaredStringIndexType(), arg.path, arg.typeContext));
-                recurse(t.getDeclaredStringIndexType(), arg.append("[stringIndexer]"));
+                recurse(t.getDeclaredStringIndexType(), arg.append("[stringIndexer]").withTopLevelFunctions());
             }
             if (t.getDeclaredNumberIndexType() != null) {
                 tests.add(new NumberIndexTest(t, t.getDeclaredNumberIndexType(), arg.path, arg.typeContext));
-                recurse(t.getDeclaredNumberIndexType(), arg.append("[numberIndexer]"));
+                recurse(t.getDeclaredNumberIndexType(), arg.append("[numberIndexer]").withTopLevelFunctions());
             }
 
             Map<String, Type> properties = t.getDeclaredProperties();
@@ -466,13 +466,13 @@ public class TestCreator {
             for (TypeWithContext stringIndexer : typesUtil.getAllStringIndexerTypes(t, arg.typeContext)) {
                 Arg subArg = arg.withTypeContext(stringIndexer.getTypeContext());
                 tests.add(new StringIndexTest(t, stringIndexer.getType(), arg.path, subArg.typeContext));
-                recurse(stringIndexer.getType(), subArg.append("[stringIndexer]"));
+                recurse(stringIndexer.getType(), subArg.append("[stringIndexer]").withTopLevelFunctions());
             }
 
             for (TypeWithContext stringIndexer : typesUtil.getAllNumberIndexerTypes(t, arg.typeContext)) {
                 Arg subArg = arg.withTypeContext(stringIndexer.getTypeContext());
                 tests.add(new NumberIndexTest(t, stringIndexer.getType(), arg.path, subArg.typeContext));
-                recurse(stringIndexer.getType(), subArg.append("[numberIndexer]"));
+                recurse(stringIndexer.getType(), subArg.append("[numberIndexer]").withTopLevelFunctions());
             }
 
             for (Pair<TypeContext, Map<String, Type>> propertiesPair : typesUtil.getAllPropertyDeclarations(t, arg.typeContext)) {
@@ -507,7 +507,7 @@ public class TestCreator {
                 List<Signature> callSignatures = ((InterfaceType) propertyType).getDeclaredCallSignatures();
                 for (Signature signature : callSignatures) {
                     List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                    findPositiveTypesInParameters(this, arg.append(key), parameters, this.negativeTypesSeen);
+                    findPositiveTypesInParameters(this, arg.append(key), parameters);
                     tests.add(new MethodCallTest(baseType, propertyType, key, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext(), signature.isHasRestParameter()));
 
                     recurse(signature.getResolvedReturnType(), arg.append(key + "()").addDepth().withTopLevelFunctions());
@@ -516,7 +516,7 @@ public class TestCreator {
                 List<Signature> constructSignatures = ((InterfaceType) propertyType).getDeclaredConstructSignatures();
                 for (Signature signature : constructSignatures) {
                     List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                    findPositiveTypesInParameters(this, arg.append(key), parameters, this.negativeTypesSeen);
+                    findPositiveTypesInParameters(this, arg.append(key), parameters);
                     tests.add(new ConstructorCallTest(propertyType, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext(), signature.isHasRestParameter()));
 
                     recurse(signature.getResolvedReturnType(), arg.append(key + "new()").addDepth().withTopLevelFunctions());
@@ -830,6 +830,22 @@ public class TestCreator {
 
         @Override
         public Void visit(GenericType t, Arg arg) {
+            if (info.typeNames.get(t).equals("Array")) {
+                assert t.getTypeParameters().size() == 1;
+                TypeParameterType parameterType = (TypeParameterType) t.getTypeParameters().iterator().next();
+                Type arrayType;
+                if (arg.getTypeContext().containsKey(parameterType)) {
+                    TypeWithContext lookup = arg.typeContext.get(parameterType);
+                    arg = arg.withParameters(arg.getTypeContext());
+                    arrayType = lookup.getType();
+                } else {
+                    arrayType = parameterType;
+                }
+                recurse(arrayType, arg.append("[numberIndexer]").withTopLevelFunctions());
+
+                return null;
+            }
+
             if (info.nativeTypes.contains(t)) {
                 return null;
             }
