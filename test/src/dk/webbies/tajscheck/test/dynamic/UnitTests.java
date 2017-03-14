@@ -1103,7 +1103,13 @@ public class UnitTests {
 
     @Test
     public void basicExample() throws Exception {
-        Main.writeFullDriver(benchFromFolder("basicExample"));
+        RunResult result = run("basicExample", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.bar")
+                .got(STRING, "null");
     }
 
     @Test

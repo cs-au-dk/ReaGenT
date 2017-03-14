@@ -418,6 +418,8 @@ public class TypeChecker {
                 );
             }
 
+            result.add(new SimpleTypeCheck(Check.not(Check.equalTo(nullLiteral())), "not null"));
+
             // Adding all baseTypes
             for (Type base : t.getBaseTypes()) {
                 result.addAll(base.accept(this, arg));
