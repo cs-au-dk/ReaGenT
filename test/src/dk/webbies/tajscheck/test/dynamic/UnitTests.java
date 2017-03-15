@@ -1109,7 +1109,7 @@ public class UnitTests {
 
         expect(result)
                 .forPath("module.bar")
-                .got(STRING, "null");
+                .got(STRING, "123");
     }
 
     @Test

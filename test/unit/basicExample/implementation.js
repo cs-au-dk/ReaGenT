@@ -9,7 +9,7 @@ declare var module: Foo;
 module.exports = {
     bar: {
         bar: {
-            bar: null,
+            bar: 123,
             baz: false
         },
         baz: true
