@@ -1101,6 +1101,32 @@ public class UnitTests {
 
     }
 
+
+    @Test
+    public void voidReturnCanBeAnything() throws Exception {
+        RunResult result = run("voidReturnCanBeAnything", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.bar()")
+                .got(STRING, "any");
+    }
+
+    /*
+     * Examples used in the paper are below this:
+     */
+    @Test
+    public void firstOrderFunctions() throws Exception {
+        RunResult result = run("firstOrderFunctions", "foo");
+
+        expect(result)
+                .forPath("window.module.time.[arg1].[arg0]")
+                .expected("number")
+                .got(TYPEOF, "string");
+
+    }
+
     @Test
     public void basicExample() throws Exception {
         RunResult result = run("basicExample", "foo");
@@ -1113,13 +1139,13 @@ public class UnitTests {
     }
 
     @Test
-    public void voidReturnCanBeAnything() throws Exception {
-        RunResult result = run("voidReturnCanBeAnything", "foo");
-
-        assertThat(result.typeErrors.size(), is(1));
+    public void higherOrderFunctions() throws Exception {
+        RunResult result = run("higherOrderFunctions", "foo");
 
         expect(result)
-                .forPath("module.bar()")
-                .got(STRING, "any");
+                .forPath("window.module.twice.[arg1].[arg0]")
+                .expected("string")
+                .got(TYPEOF, "number");
+
     }
 }
