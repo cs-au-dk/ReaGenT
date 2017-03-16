@@ -194,8 +194,6 @@ public class RunBenchmarks {
         String out = Main.runBenchmark(benchmark);
 //        System.out.println(out);
 
-        System.out.println(out.split("\n")[0]);
-
         // Parse and print the result
         OutputParser.RunResult result = OutputParser.parseDriverResult(out);
 
@@ -206,13 +204,6 @@ public class RunBenchmarks {
             System.out.println();
         }
 
-        if (result.errors.size() > 0) {
-            System.out.println();
-            System.out.println("---- ERRORS ----");
-            for (String error : result.errors) {
-                System.out.println(error);
-            }
-        }
 
 
         assert !out.trim().isEmpty();
