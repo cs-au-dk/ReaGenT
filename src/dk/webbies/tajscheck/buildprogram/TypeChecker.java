@@ -32,12 +32,15 @@ public class TypeChecker {
     }
 
     public Statement assertResultingType(TypeWithContext type, Expression exp, String path, int depth) {
+        path = sanitizePath(path);
+
         List<TypeCheck> typeChecks = type.getType().accept(new CreateTypeCheckVisitor(info), new Arg(type.getTypeContext(), depth));
 
+        String finalPath = path;
         return block(
                 variable("typeChecked", bool(true)),
                 block(
-                        typeChecks.stream().map(check -> checkToAssertions(check, exp, path)).collect(Collectors.toList())
+                        typeChecks.stream().map(check -> checkToAssertions(check, exp, finalPath)).collect(Collectors.toList())
                 ),
                 ifThen(
                         unary(Operator.NOT, identifier("typeChecked")),
@@ -47,6 +50,8 @@ public class TypeChecker {
     }
 
     public Expression checkResultingType(TypeWithContext type, Expression exp, String path, int depth) {
+        path = sanitizePath(path);
+
         return call(function(
                 block(
                         statement(function("assert", block(
@@ -58,6 +63,14 @@ public class TypeChecker {
                         Return(bool(true)) // If it didn't return false, then the type check passed!
                 )
         ));
+    }
+
+    private String sanitizePath(String path) {
+        if (path.startsWith("window.")) {
+            return Util.removePrefix(path, "window.");
+        } else {
+            return path;
+        }
     }
 
     public String getTypeDescription(TypeWithContext type, int depth) {

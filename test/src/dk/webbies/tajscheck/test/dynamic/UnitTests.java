@@ -905,7 +905,7 @@ public class UnitTests {
         RunResult result = run("wrongSignaturePropagates", "foo");
 
         expect(result)
-                .forPath("window.module.foo.[arg0].[arg0]")
+                .forPath("module.foo.[arg0].[arg0]")
                 .expected("boolean")
                 .got(TYPEOF, "undefined");
 
@@ -1121,7 +1121,7 @@ public class UnitTests {
         RunResult result = run("firstOrderFunctions", "foo");
 
         expect(result)
-                .forPath("window.module.time.[arg1].[arg0]")
+                .forPath("module.time.[arg1].[arg0]")
                 .expected("number")
                 .got(TYPEOF, "string");
 
@@ -1143,7 +1143,7 @@ public class UnitTests {
         RunResult result = run("higherOrderFunctions", "foo");
 
         expect(result)
-                .forPath("window.module.twice.[arg1].[arg0]")
+                .forPath("module.twice.[arg1].[arg0]")
                 .expected("string")
                 .got(TYPEOF, "number");
 
