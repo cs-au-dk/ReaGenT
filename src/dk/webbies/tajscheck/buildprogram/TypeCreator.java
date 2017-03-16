@@ -886,6 +886,12 @@ public class TypeCreator {
 
         return block(
                 block(saveArgumentValues),
+                variable("result", constructType(signature.getResolvedReturnType(), typeContext)),
+                ifThenElse(
+                        binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
+                        Return(identifier("result")),
+                        throwStatement(newCall(identifier(RUNTIME_ERROR_NAME), string("Could not get an instance of the correct return-type, returning exceptionally instead.")))
+                ),
                 Return(constructType(signature.getResolvedReturnType(), typeContext))
         );
     }
