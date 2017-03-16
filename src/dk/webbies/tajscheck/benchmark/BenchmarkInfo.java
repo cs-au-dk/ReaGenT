@@ -155,7 +155,7 @@ public class BenchmarkInfo {
         }
 
 
-        // Fixing if the top-level export is a class, currently we get
+        // Fixing if the top-level export is a class, sometimes we can an interface with a prototype property instead of the actual class.
         if (result instanceof InterfaceType) {
             InterfaceType inter = (InterfaceType) result;
             if (inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size() > 0) {
