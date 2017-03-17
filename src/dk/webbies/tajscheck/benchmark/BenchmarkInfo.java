@@ -66,6 +66,24 @@ public class BenchmarkInfo {
             throw new RuntimeException("Module: " + bench.module + " not found in benchmark");
         }
 
+        // Various fixes, to transform the types into something more consistent (+ workarounds).
+        applyTypeFixes(bench, typeNames, result);
+
+
+        // Fixing if the top-level export is a class, sometimes we can an interface with a prototype property instead of the actual class.
+        if (result instanceof InterfaceType) {
+            InterfaceType inter = (InterfaceType) result;
+            if (inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size() > 0) {
+                if (inter.getDeclaredProperties().keySet().contains("prototype") && inter.getDeclaredProperties().get("prototype") instanceof ClassType) {
+                    return inter.getDeclaredProperties().get("prototype");
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static void applyTypeFixes(Benchmark bench, Map<Type, String> typeNames, Type result) {
         List<Type> allTypes = new ArrayList<>(TypesUtil.collectAllTypes(result));
         for (Type type : allTypes) {
             // splitting unions
@@ -153,19 +171,6 @@ public class BenchmarkInfo {
                 setUndefinedReturnToVoid(inter.getDeclaredConstructSignatures());
             }
         }
-
-
-        // Fixing if the top-level export is a class, sometimes we can an interface with a prototype property instead of the actual class.
-        if (result instanceof InterfaceType) {
-            InterfaceType inter = (InterfaceType) result;
-            if (inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size() > 0) {
-                if (inter.getDeclaredProperties().keySet().contains("prototype") && inter.getDeclaredProperties().get("prototype") instanceof ClassType) {
-                    return inter.getDeclaredProperties().get("prototype");
-                }
-            }
-        }
-
-        return result;
     }
 
     private static void setUndefinedReturnToVoid(List<Signature> signatures) {

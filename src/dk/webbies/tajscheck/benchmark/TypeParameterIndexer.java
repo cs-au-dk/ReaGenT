@@ -13,7 +13,7 @@ public class TypeParameterIndexer {
     private final Map<TypeParameterType, Integer> map = new HashMap<>();
     public static final String IS_UNSTRAINED_GENERIC_MARKER = "_isUnconstrainedGeneric";
 
-    public TypeParameterIndexer(CheckOptions options) {
+    TypeParameterIndexer(CheckOptions options) {
         this.combineAllUnconstrainedGenerics = options.combineAllUnconstrainedGenerics;
     }
 
@@ -22,7 +22,7 @@ public class TypeParameterIndexer {
             return IS_UNSTRAINED_GENERIC_MARKER;
         }
         if (map.containsKey(t)) {
-            return "typeParameterMarker_" + map.get(t);
+            return "_genericMarker" + map.get(t);
         } else {
             map.put(t, map.size());
             return getMarkerField(t);

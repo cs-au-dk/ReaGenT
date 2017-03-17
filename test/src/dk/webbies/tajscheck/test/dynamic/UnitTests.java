@@ -1148,4 +1148,12 @@ public class UnitTests {
                 .got(TYPEOF, "number");
 
     }
+
+    @Test
+    public void genericExtendMethod() throws Exception {
+        RunResult result = run("genericExtendMethod", CheckOptions.builder().setCombineAllUnconstrainedGenerics(false).build(), "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+
+    }
 }
