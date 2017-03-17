@@ -1113,6 +1113,14 @@ public class UnitTests {
                 .got(STRING, "any");
     }
 
+    @Test
+    public void genericClassFeedback() throws Exception {
+        RunResult result = run("genericClassFeedback", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+        // TODO: After this one, a new one where they both share the same constraint.
+    }
+
     /*
      * Examples used in the paper are below this:
      */
@@ -1136,6 +1144,11 @@ public class UnitTests {
         expect(result)
                 .forPath("module.bar")
                 .got(STRING, "123");
+    }
+
+    @Test
+    public void asyncBasicExample() throws Exception {
+        Main.writeFullDriver(benchFromFolder("asyncBasicExample"));
     }
 
     @Test
