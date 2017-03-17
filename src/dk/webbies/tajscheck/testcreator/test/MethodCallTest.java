@@ -51,6 +51,11 @@ public class MethodCallTest extends Test {
     }
 
     @Override
+    public String getTestType() {
+        return "method call";
+    }
+
+    @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
     }

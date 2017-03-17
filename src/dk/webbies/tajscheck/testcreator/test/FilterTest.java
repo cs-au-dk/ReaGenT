@@ -47,6 +47,11 @@ public class FilterTest extends Test {
         return super.hashCodeNoPathBase();
     }
 
+    @Override
+    public String getTestType() {
+        return "filter test(never fails)";
+    }
+
 
     @Override
     public int hashCode() {

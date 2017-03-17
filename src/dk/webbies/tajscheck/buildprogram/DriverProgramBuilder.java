@@ -178,7 +178,7 @@ public class DriverProgramBuilder {
                         ),
                         Return()
                 ),
-                new TypeChecker(info).assertResultingType(new TypeWithContext(info.typeToTest, TypeContext.create(info.bench)), identifier("module"), "require(" + info.bench.module + ")", Integer.MAX_VALUE)
+                new TypeChecker(info).assertResultingType(new TypeWithContext(info.typeToTest, TypeContext.create(info.bench)), identifier("module"), "require(" + info.bench.module + ")", Integer.MAX_VALUE, "heapcheck")
 
         )));
     }
@@ -219,7 +219,7 @@ public class DriverProgramBuilder {
             Type product = produces.iterator().next();
             int index = typeCreator.getTestProducesIndexes(test).iterator().next();
             saveResultStatement = block(
-                    checkType.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepth),
+                    checkType.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepth, test.getTestType()),
                     statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result"))),
                     statement(call(identifier("registerValue"), number(index)))
             );
@@ -260,7 +260,8 @@ public class DriverProgramBuilder {
                                                     string(test.getPath()),
                                                     string(checkType.getTypeDescription(new TypeWithContext(createUnionType(produces), test.getTypeContext()), info.options.checkDepthForUnions)),
                                                     identifier("result"),
-                                                    identifier("i")
+                                                    identifier("i"),
+                                                    string(test.getTestType())
                                             )
                                     ),
                                     Return()
@@ -315,7 +316,7 @@ public class DriverProgramBuilder {
 
         return Util.concat(
                 testCode,
-                info.bench.useTAJS && product != null ? new CheckUpperBound(info).checkType(product, test.getTypeContext(), identifier("result"), test.getPath()) : Collections.emptyList(),
+                info.bench.useTAJS && product != null ? new CheckUpperBound(info).checkType(product, test.getTypeContext(), identifier("result"), test.getPath(), test.getTestType()) : Collections.emptyList(),
                 Collections.singletonList(saveResultStatement)
         );
     }

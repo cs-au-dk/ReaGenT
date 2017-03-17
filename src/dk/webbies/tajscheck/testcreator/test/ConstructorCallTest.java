@@ -44,6 +44,11 @@ public class ConstructorCallTest extends Test {
     }
 
     @Override
+    public String getTestType() {
+        return "constructor call";
+    }
+
+    @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
     }

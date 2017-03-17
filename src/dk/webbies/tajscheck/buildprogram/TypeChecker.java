@@ -31,7 +31,7 @@ public class TypeChecker {
         this.info = info;
     }
 
-    public Statement assertResultingType(TypeWithContext type, Expression exp, String path, int depth) {
+    public Statement assertResultingType(TypeWithContext type, Expression exp, String path, int depth, String testType) {
         path = sanitizePath(path);
 
         List<TypeCheck> typeChecks = type.getType().accept(new CreateTypeCheckVisitor(info), new Arg(type.getTypeContext(), depth));
@@ -40,7 +40,7 @@ public class TypeChecker {
         return block(
                 variable("typeChecked", bool(true)),
                 block(
-                        typeChecks.stream().map(check -> checkToAssertions(check, exp, finalPath)).collect(Collectors.toList())
+                        typeChecks.stream().map(check -> checkToAssertions(check, exp, finalPath, testType)).collect(Collectors.toList())
                 ),
                 ifThen(
                         unary(Operator.NOT, identifier("typeChecked")),
@@ -59,7 +59,7 @@ public class TypeChecker {
                                 Return(identifier("cond"))
                         ), "cond")),
 
-                        assertResultingType(type, exp, path, depth), // This returns false, if the type check fails
+                        assertResultingType(type, exp, path, depth, "SHOULD NOT BE OUTPUTTED!"), // This returns false, if the type check fails
                         Return(bool(true)) // If it didn't return false, then the type check passed!
                 )
         ));
@@ -78,19 +78,19 @@ public class TypeChecker {
         return createIntersection(result).getExpected();
     }
 
-    private Statement checkToAssertions(TypeCheck typeCheck, Expression exp, String path) {
+    private Statement checkToAssertions(TypeCheck typeCheck, Expression exp, String path, String testType) {
         if (typeCheck instanceof FieldTypeCheck) {
             FieldTypeCheck fieldTypeCheck = (FieldTypeCheck) typeCheck;
             String field = fieldTypeCheck.getField();
             return statement(call(function(block(
-                    fieldTypeCheck.getFieldChecks().stream().map(subCheck -> checkToAssertions(subCheck, member(exp, field), path + "." + field)).collect(Collectors.toList())
+                    fieldTypeCheck.getFieldChecks().stream().map(subCheck -> checkToAssertions(subCheck, member(exp, field), path + "." + field, testType)).collect(Collectors.toList())
             ))));
         }
 
         assert typeCheck instanceof SimpleTypeCheck;
         // assert(cond, path, expected, actual)
         Expression checkExpression = CheckToExpression.generate(typeCheck.getCheck(), exp);
-        CallExpression assertCall = call(identifier("assert"), checkExpression, string(path), string(typeCheck.getExpected()), exp, identifier("i"));
+        CallExpression assertCall = call(identifier("assert"), checkExpression, string(path), string(typeCheck.getExpected()), exp, identifier("i"), string(testType));
         return ifThen(
                 unary(Operator.NOT, assertCall),
                 block(

@@ -39,6 +39,11 @@ public class StringIndexTest extends Test {
     }
 
     @Override
+    public String getTestType() {
+        return "string-indexer access";
+    }
+
+    @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
     }

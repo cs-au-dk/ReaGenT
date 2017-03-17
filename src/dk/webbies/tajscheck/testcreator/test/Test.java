@@ -82,4 +82,6 @@ public abstract class Test {
     public TypeContext getTypeContext() {
         return typeContext;
     }
+
+    public abstract String getTestType();
 }

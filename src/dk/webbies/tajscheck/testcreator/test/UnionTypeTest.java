@@ -40,5 +40,10 @@ public class UnionTypeTest extends Test {
         return super.hashCodeNoPathBase();
     }
 
+    @Override
+    public String getTestType() {
+        return "union type test";
+    }
+
 
 }

@@ -49,23 +49,23 @@ public class CheckUpperBound {
     }
 
 
-    List<Statement> checkType(Type type, TypeContext context, Expression exp, String path) {
+    List<Statement> checkType(Type type, TypeContext context, Expression exp, String path, String testType) {
         List<TypeCheck> typeChecks = type.accept(new CheckUpperBoundTypeVisitor(), new Arg(context));
 
-        return typeChecks.stream().map(check -> checkToAssertions(check, exp, path)).collect(Collectors.toList());
+        return typeChecks.stream().map(check -> checkToAssertions(check, exp, path, testType)).collect(Collectors.toList());
     }
 
-    private Statement checkToAssertions(TypeCheck typeCheck, Expression exp, String path) {
+    private Statement checkToAssertions(TypeCheck typeCheck, Expression exp, String path, String testType) {
         if (typeCheck instanceof FieldTypeCheck) {
             FieldTypeCheck fieldTypeCheck = (FieldTypeCheck) typeCheck;
             String field = fieldTypeCheck.getField();
             return statement(call(function(block(
-                    fieldTypeCheck.getFieldChecks().stream().map(subCheck -> checkToAssertions(subCheck, member(exp, field), path + "." + field)).collect(Collectors.toList())
+                    fieldTypeCheck.getFieldChecks().stream().map(subCheck -> checkToAssertions(subCheck, member(exp, field), path + "." + field, testType)).collect(Collectors.toList())
             ))));
         }
 
         Expression checkExpression = CheckToExpression.generate(typeCheck.getCheck(), exp);
-        return statement(call(identifier("assert"), checkExpression, string(path), string(typeCheck.getExpected()), exp, identifier("i")));
+        return statement(call(identifier("assert"), checkExpression, string(path), string(typeCheck.getExpected()), exp, identifier("i"), string(testType)));
     }
 
 

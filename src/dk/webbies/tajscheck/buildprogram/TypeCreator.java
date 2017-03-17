@@ -677,14 +677,15 @@ public class TypeCreator {
                         string(path + ".[restArgs]"),
                         string("valid rest-args"),
                         AstBuilder.expFromString("Array.prototype.slice.call(args)"),
-                        identifier("i")
+                        identifier("i"),
+                        string("rest args")
                 )));
 
                 parameters = parameters.subList(0, parameters.size() - 1);
             }
 
             Util.zip(args.stream(), parameters.stream(), (argName, par) ->
-                    typeChecker.assertResultingType(new TypeWithContext(par.getType(), typeContext), identifier(argName), path + ".[" + argName + "]", options.checkDepth)
+                    typeChecker.assertResultingType(new TypeWithContext(par.getType(), typeContext), identifier(argName), path + ".[" + argName + "]", options.checkDepth, "argument")
             ).forEach(typeChecks::add);
 
             typeChecks.add(checkNumberOfArgs(signature));
@@ -761,7 +762,8 @@ public class TypeCreator {
                                                 identifier("signatureCorrect" + signatureIndex),
                                                 string(path),
                                                 string("overload " + PrettyTypes.parameters(signature.getParameters()) + " to be called"), string("it was not called"),
-                                                identifier("i")
+                                                identifier("i"),
+                                                string("overload check TAJS")
                                         )
                                 ) : block(),
                                 ifThen(
@@ -788,7 +790,8 @@ public class TypeCreator {
                                             string(path),
                                             string("A valid overload"),
                                             AstBuilder.expFromString("Array.prototype.slice.call(args)"),
-                                            identifier("i")
+                                            identifier("i"),
+                                            string("overload check")
                                     )),
                                     throwStatement(newCall(identifier("Error"), string("No valid overload found!")))
                             )

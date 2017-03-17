@@ -89,9 +89,10 @@ function loadLibrary(path) {
     return module.exports;
 }
 
-function createFailDescription(path, expected, actual, iteration, sequence) {
+function createFailDescription(path, expected, actual, iteration, sequence, descrip) {
     var failDescription = path + ": (iteration: " + iteration + ")\n";
     failDescription += "    Here I expected: " + expected + ", but instead I got: \n";
+    failDescription += "        descrip: " + descrip + "\n";
     failDescription += "        typeof: " + typeof actual + "\n";
     try {
         var string = JSON.stringify(actual + "");
@@ -154,7 +155,7 @@ if (runsWithCoverage) {
 var no_value = {noValueMarker: true};
 var testOrderRecording = [];
 var seenFailures = new Set();
-function assert(cond, path, expected, actual, iteration) {
+function assert(cond, path, expected, actual, iteration, descrip) {
     if (!failOnAny && typeof actual === "object" && actual && actual.__isAnyMarker) {
         return true;
     }
@@ -163,10 +164,10 @@ function assert(cond, path, expected, actual, iteration) {
         TAJS_record(path + " | " + expected + " | value", actual);
     } else if (!cond) {
         var failDescription = createFailDescription(
-            path, expected, actual, iteration, testOrderRecording.slice()
+            path, expected, actual, iteration, testOrderRecording.slice(), descrip
         );
         var key = createFailDescription(
-            path, expected, actual, 0, []
+            path, expected, actual, 0, [], descrip
         );
         if (!seenFailures.has(key)) {
             print(failDescription);

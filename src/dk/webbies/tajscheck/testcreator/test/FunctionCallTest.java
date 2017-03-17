@@ -44,6 +44,11 @@ public class FunctionCallTest extends Test {
     }
 
     @Override
+    public String getTestType() {
+        return "function call";
+    }
+
+    @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
     }

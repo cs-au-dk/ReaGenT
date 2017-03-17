@@ -41,6 +41,11 @@ public class MemberAccessTest extends Test {
     }
 
     @Override
+    public String getTestType() {
+        return "property access";
+    }
+
+    @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
     }

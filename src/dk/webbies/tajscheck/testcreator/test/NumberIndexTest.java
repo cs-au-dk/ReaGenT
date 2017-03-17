@@ -39,6 +39,11 @@ public class NumberIndexTest extends Test {
     }
 
     @Override
+    public String getTestType() {
+        return "number-indexer access";
+    }
+
+    @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
     }

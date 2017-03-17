@@ -16,22 +16,25 @@ public class OutputParser {
         public String typeof;
         public String toString;
         public String JSON;
+        private String type;
 
-        public TypeError(String path, String expected, String typeof, String toString, String JSON) {
+        public TypeError(String path, String expected, String typeof, String toString, String JSON, String type) {
             this.path = path;
             this.expected = expected;
             this.typeof = typeof;
             this.toString = toString;
             this.JSON = JSON;
+            this.type = type;
         }
 
         @Override
         public String toString() {
-            return path + "\n" +
-                    "    Here I expected: " + expected + ", but instead I got: \n" +
-                    "        typeof: " + typeof + "\n" +
-                    "        toString: " + toString + "\n" +
-                    "        JSON: " + JSON;
+            return "*** Type error\n" +
+                    "  " + this.type + ": " + this.path + "\n" +
+                    "  expected: " + expected + "\n" +
+                    "  observed(typeof): " + typeof + "\n" +
+                    "  observed(string): " + toString + "\n" +
+                    "  observed(JSON): " + JSON + "\n";
         }
 
         public String getPath() {
@@ -139,10 +142,10 @@ public class OutputParser {
     }
 
     private static TypeError parseSingleResult(List<String> lines) {
-        if (!(lines.size() == 5 || lines.size() == 4)) {
+        if (!(lines.size() == 6 || lines.size() == 5)) {
             System.out.println();
         }
-        assert lines.size() == 5 || lines.size() == 4;
+        assert lines.size() == 6 || lines.size() == 5;
 
         String header = lines.get(0);
         assert header.substring(header.lastIndexOf('('), header.length()).startsWith("(iteration: ");
@@ -160,22 +163,26 @@ public class OutputParser {
 
         String expected = lines.get(1).substring(expectStart.length(), lines.get(1).length() - expectFinish.length());
 
+        String describStart = "        descrip: ";
+        assert lines.get(2).startsWith(describStart);
+        String type = Util.removePrefix(lines.get(2), describStart);
+
         String typeofPrefix = "        typeof: ";
-        assert lines.get(2).startsWith(typeofPrefix);
-        String typeof = lines.get(2).substring(typeofPrefix.length(), lines.get(2).length());
+        assert lines.get(3).startsWith(typeofPrefix);
+        String typeof = lines.get(3).substring(typeofPrefix.length(), lines.get(3).length());
 
         String toStringPrefix = "        toString: ";
-        assert lines.get(3).startsWith(toStringPrefix);
-        String toString = lines.get(3).substring(toStringPrefix.length(), lines.get(3).length());
+        assert lines.get(4).startsWith(toStringPrefix);
+        String toString = lines.get(4).substring(toStringPrefix.length(), lines.get(4).length());
 
         String JSON = null;
-        if (lines.size() >= 5) {
+        if (lines.size() >= 6) {
             String jsonPrefix = "        JSON: ";
-            assert lines.get(4).startsWith(jsonPrefix);
-            JSON = lines.get(4).substring(jsonPrefix.length(), lines.get(4).length());
+            assert lines.get(5).startsWith(jsonPrefix);
+            JSON = lines.get(5).substring(jsonPrefix.length(), lines.get(5).length());
         }
 
-        return new TypeError(path, expected, typeof, toString, JSON);
+        return new TypeError(path, expected, typeof, toString, JSON, type);
     }
 
     public static RunResult combine(List<RunResult> results) {

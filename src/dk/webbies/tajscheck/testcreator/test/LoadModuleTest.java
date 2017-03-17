@@ -48,6 +48,11 @@ public class LoadModuleTest extends Test {
     }
 
     @Override
+    public String getTestType() {
+        return "load module";
+    }
+
+    @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
     }
