@@ -22,6 +22,8 @@ public class BenchmarkInfo {
     public final CheckOptions options;
     private final Set<Type> globalProperties;
 
+    private final Map<Class<?>, Map<String, Object>> attributes = new HashMap<>();
+
     private BenchmarkInfo(Benchmark bench, Type typeToTest, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TypeParameterIndexer typeParameterIndexer, Set<Type> globalProperties) {
         this.bench = bench;
         this.typeToTest = typeToTest;
@@ -234,5 +236,18 @@ public class BenchmarkInfo {
         }
 
         throw new RuntimeException(type.getClass().getSimpleName());
+    }
+
+    public <T> T getAttribute(Class clazz, String key, T defaultValue) {
+        if (!attributes.containsKey(clazz)) {
+            attributes.put(clazz, new HashMap<>());
+        }
+        if (attributes.get(clazz).containsKey(key)) {
+            //noinspection unchecked
+            return (T) attributes.get(clazz).get(key);
+        } else {
+            attributes.get(clazz).put(key, defaultValue);
+            return defaultValue;
+        }
     }
 }
