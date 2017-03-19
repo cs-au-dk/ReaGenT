@@ -5,11 +5,13 @@ import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -48,6 +50,16 @@ public class AutomaticExperiments {
         long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
         return Long.toString(paths);
     });
+
+    private static Pair<String, Experiment.ExperimentSingleRunner> uniquePathsWithOptions(String name, Function<CheckOptions, CheckOptions> func) {
+        return new Pair<>("uniquePaths(" + name + ")", (bench) -> {
+            bench = bench.withOptions(func);
+            Main.writeFullDriver(bench);
+            OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+            long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+            return Long.toString(paths);
+        });
+    }
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> consistencyCheck = new Pair<>("sound", (bench) -> {
         Benchmark.RUN_METHOD runMethod = bench.run_method;
@@ -260,14 +272,17 @@ public class AutomaticExperiments {
     public static void main(String[] args) throws Exception {
 //        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(bench -> bench.getValue().run_method == Benchmark.RUN_METHOD.NODE).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 //        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(pair -> !done.contains(pair.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-        Experiment experiment = new Experiment("Backbone.js", "Ember.js", "Materialize");
+        Experiment experiment = new Experiment();
 
         experiment.addSingleExperiment(type);
 
         experiment.addMultiExperiment(driverSizes);
         experiment.addSingleExperiment(jsFileSize);
 
-        experiment.addSingleExperiment(consistencyCheck);
+        experiment.addSingleExperiment(uniquePaths);
+        experiment.addSingleExperiment(uniquePathsWithOptions("notCombined", options -> options.getBuilder().setCombineAllUnconstrainedGenerics(false).build()));
+
+//        experiment.addSingleExperiment(consistencyCheck);
 
 //        experiment.addSingleExperiment(uniquePaths5Minutes);
 
