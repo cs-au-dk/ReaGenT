@@ -951,7 +951,7 @@ public class TypeCreator {
                 info.typeNames.put(interfaceWithSimpleFunction, "Function");
                 return Return(constructType(interfaceWithSimpleFunction, typeContext));
             case "RegExp":
-                Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(info.bench));
+                Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(info));
                 return Return(newCall(identifier("RegExp"), constructString));
             case "String":
                 return Return(newCall(identifier("String"), constructType(new SimpleType(SimpleTypeKind.String), typeContext)));

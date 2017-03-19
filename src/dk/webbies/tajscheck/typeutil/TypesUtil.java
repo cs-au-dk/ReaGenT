@@ -99,7 +99,7 @@ public class TypesUtil {
         for (int i = 0; i < arguments.size(); i++) {
             parameterMap.put(parameters.get(i), arguments.get(i));
         }
-        return TypeContext.create(info.bench).append(parameterMap);
+        return TypeContext.create(info).append(parameterMap);
     }
 
     public static List<Type> getTypeParameters(Type target) {
@@ -716,7 +716,7 @@ public class TypesUtil {
 
     public Pair<InterfaceType, TypeContext> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter, Map<Type, String> typeNames, FreeGenericsFinder freeGenericsFinder) {
         if (inter.getBaseTypes().isEmpty()) {
-            return new Pair<>(inter, TypeContext.create(info.bench));
+            return new Pair<>(inter, TypeContext.create(info));
         }
 //        assert inter.getTypeParameters().isEmpty(); // This should only happen when constructed from a generic/reference type, and in that case we have handled the TypeParameters.
         Map<TypeParameterType, Type> newParameters = new HashMap<>();
@@ -761,7 +761,7 @@ public class TypesUtil {
                 result.getDeclaredProperties().put(entry.getKey(), entry.getValue());
             }
         });
-        return new Pair<>(result, TypeContext.create(info.bench).append(newParameters));
+        return new Pair<>(result, TypeContext.create(info).append(newParameters));
     }
 
 

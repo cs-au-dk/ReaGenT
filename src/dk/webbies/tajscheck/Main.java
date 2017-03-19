@@ -59,7 +59,7 @@ public class Main {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
 
         List<Test> tests = new TestCreator(info).createTests();
-        tests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, bench));
+        tests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, info));
 
         Statement program = new DriverProgramBuilder(tests, info).buildDriver(recording);
 
@@ -70,7 +70,7 @@ public class Main {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
 
         List<Test> tests = new TestCreator(info).createTests();
-        tests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, bench));
+        tests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, info));
 
         Test[] testsArray = tests.toArray(new Test[]{});
         int prevSize = -1;

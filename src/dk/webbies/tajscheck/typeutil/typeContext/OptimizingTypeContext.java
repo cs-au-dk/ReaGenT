@@ -5,6 +5,7 @@ import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 
@@ -16,38 +17,38 @@ import java.util.*;
 public class OptimizingTypeContext implements TypeContext {
     private final Map<TypeParameterType, Type> map;
     private final Type thisType;
-    public final Benchmark bench;
+    private final BenchmarkInfo info;
 
-    public OptimizingTypeContext(Benchmark bench) {
-        this.bench = bench;
+    public OptimizingTypeContext(BenchmarkInfo info) {
+        this.info = info;
         this.map = Collections.emptyMap();
         this.thisType = null;
     }
 
-    private OptimizingTypeContext(Map<TypeParameterType, Type> map, Type classType, Benchmark bench) {
+    private OptimizingTypeContext(Map<TypeParameterType, Type> map, Type classType, BenchmarkInfo info) {
         this.map = map;
         this.thisType = classType;
-        this.bench = bench;
+        this.info = info;
     }
 
     @Override
     public OptimizingTypeContext append(Map<TypeParameterType, Type> newParameters) {
         Map<TypeParameterType, Type> newMap = new HashMap<>(this.map);
         newMap.putAll(newParameters);
-        return new OptimizingTypeContext(newMap, this.thisType, bench);
+        return new OptimizingTypeContext(newMap, this.thisType, info);
     }
 
     @Override
     public OptimizingTypeContext withThisType(Type thisType) {
         if (thisType == null || this.thisType == null) {
-            return new OptimizingTypeContext(this.map, thisType, bench);
+            return new OptimizingTypeContext(this.map, thisType, info);
         }
         Set<Type> baseTypes = TypesUtil.getAllBaseTypes(this.thisType, new HashSet<>());
 
         if (baseTypes.contains(thisType)) {
             return this;
         } else {
-            return new OptimizingTypeContext(this.map, thisType, bench);
+            return new OptimizingTypeContext(this.map, thisType, info);
         }
     }
 
@@ -95,20 +96,20 @@ public class OptimizingTypeContext implements TypeContext {
 
         if (map != null ? !map.equals(that.map) : that.map != null) return false;
         if (thisType != null ? !thisType.equals(that.thisType) : that.thisType != null) return false;
-        return bench != null ? bench.equals(that.bench) : that.bench == null;
+        return info != null ? info.equals(that.info) : that.info == null;
     }
 
     @Override
     public int hashCode() {
         int result = map != null ? map.hashCode() : 0;
         result = 31 * result + (thisType != null ? thisType.hashCode() : 0);
-        result = 31 * result + (bench != null ? bench.hashCode() : 0);
+        result = 31 * result + (info != null ? info.hashCode() : 0);
         return result;
     }
 
     @Override
     public OptimizingTypeContext optimizeTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder) {
-        if (bench.options.disableSizeOptimization) {
+        if (info.bench.options.disableSizeOptimization) {
             return this;
         }
         OptimizingTypeContext clone = this.append(Collections.emptyMap());
@@ -139,7 +140,7 @@ public class OptimizingTypeContext implements TypeContext {
             }
         }
 
-        if (bench.options.combineAllUnconstrainedGenerics) {
+        if (info.bench.options.combineAllUnconstrainedGenerics) {
             boolean foundShortcut = false;
             for (Map.Entry<TypeParameterType, Type> entry : new HashMap<>(clone.map).entrySet()) {
                 if (entry.getValue() instanceof TypeParameterType) {
@@ -165,10 +166,5 @@ public class OptimizingTypeContext implements TypeContext {
     private static final TypeParameterType freeParameterType = new TypeParameterType();
     static {
         freeParameterType.setConstraint(SpecReader.makeEmptySyntheticInterfaceType());
-    }
-
-    @Override
-    public Benchmark getBenchmark() {
-        return bench;
     }
 }

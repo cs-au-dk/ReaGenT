@@ -73,7 +73,7 @@ public class RunSmall {
             System.out.println("Creating small driver for: " + path + "  " + (i + 1) + "/" + paths.size());
 
             List<Test> specificTests = new TestCreator(info.withBench(bench)).createTests();
-            specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, bench));
+            specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, info));
 
             Statement program = new DriverProgramBuilder(specificTests, info).buildDriver(null);
 

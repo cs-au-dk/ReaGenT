@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.typeutil.typeContext;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 
 import java.util.*;
@@ -27,13 +28,11 @@ public interface TypeContext {
 
     public TypeContext optimizeTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder);
 
-    public Benchmark getBenchmark();
-
-    public static TypeContext create(Benchmark benchmark) {
-        if (benchmark.options.disableGenerics) {
-            return new NullTypeContext(benchmark);
+    public static TypeContext create(BenchmarkInfo info) {
+        if (info.bench.options.disableGenerics) {
+            return new NullTypeContext(info.bench);
         } else {
-            return new OptimizingTypeContext(benchmark);
+            return new OptimizingTypeContext(info);
         }
     }
 }

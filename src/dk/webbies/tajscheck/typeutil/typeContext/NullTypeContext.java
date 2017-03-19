@@ -63,11 +63,6 @@ public class NullTypeContext implements TypeContext {
     }
 
     @Override
-    public Benchmark getBenchmark() {
-        return this.benchmark;
-    }
-
-    @Override
     public int hashCode() {
         return 1;
     }

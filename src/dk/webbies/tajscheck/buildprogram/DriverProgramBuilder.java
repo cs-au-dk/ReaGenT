@@ -171,14 +171,14 @@ public class DriverProgramBuilder {
                                 binary(
                                         identifier("module"),
                                         Operator.EQUAL,
-                                        typeCreator.getType(info.typeToTest, TypeContext.create(info.bench))
+                                        typeCreator.getType(info.typeToTest, TypeContext.create(info))
                                 ),
                                 Operator.EQUAL_EQUAL_EQUAL,
                                 identifier(VARIABLE_NO_VALUE)
                         ),
                         Return()
                 ),
-                new TypeChecker(info).assertResultingType(new TypeWithContext(info.typeToTest, TypeContext.create(info.bench)), identifier("module"), "require(" + info.bench.module + ")", Integer.MAX_VALUE, "heapcheck")
+                new TypeChecker(info).assertResultingType(new TypeWithContext(info.typeToTest, TypeContext.create(info)), identifier("module"), "require(" + info.bench.module + ")", Integer.MAX_VALUE, "heapcheck")
 
         )));
     }
