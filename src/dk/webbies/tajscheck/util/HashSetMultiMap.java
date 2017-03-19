@@ -26,7 +26,7 @@ public class HashSetMultiMap<K, T> implements MultiMap<K, T> {
     @Override
     public Collection<T> get(K key) {
         if (map.containsKey(key)) {
-            return map.get(key);
+            return Collections.unmodifiableCollection(map.get(key));
         } else {
             return Collections.emptySet();
         }
