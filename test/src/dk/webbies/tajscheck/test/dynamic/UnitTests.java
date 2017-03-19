@@ -1121,6 +1121,14 @@ public class UnitTests {
         // TODO: After this one, a new one where they both share the same constraint.
     }
 
+    @Test
+    public void genericInterfaceFeedback() throws Exception {
+        RunResult result = run("genericInterfaceFeedback", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+    }
+
     /*
      * Examples used in the paper are below this:
      */
