@@ -1258,7 +1258,16 @@ public class TypeCreator {
         for (TypeWithContext key : getTypeQueue) {
             int value = typeIndexes.get(key);
 
-            Collection<Integer> values = valueLocations.get(key).stream().distinct().collect(Collectors.toList());
+            List<Integer> values = new ArrayList<>(valueLocations.get(key));
+            while (key.getType() instanceof ReferenceType) {
+                ReferenceType ref = (ReferenceType) key.getType();
+                Type target = ref.getTarget();
+                TypeContext typeContext = new TypesUtil(info).generateParameterMap(ref, key.getTypeContext()).optimizeTypeParameters(target, info.freeGenericsFinder);
+                key = new TypeWithContext(target, typeContext);
+                values.addAll(valueLocations.get(key));
+            }
+
+            values = values.stream().distinct().collect(Collectors.toList());
 
             Statement returnTypeStatement;
 
