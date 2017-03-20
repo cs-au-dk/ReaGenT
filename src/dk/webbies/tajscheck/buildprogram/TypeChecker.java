@@ -488,7 +488,7 @@ public class TypeChecker {
                     new SimpleTypeCheck(Check.instanceOf(identifier(instance)), instance)
             ));
 
-            if (arg.depthRemaining > 0) {
+            if (arg.depthRemaining > 0 && !info.bench.options.disableGenerics) {
                 arg = arg.decreaseDepth();
                 TypeCheck indexCheck = createIntersection(indexType.accept(this, arg));
 

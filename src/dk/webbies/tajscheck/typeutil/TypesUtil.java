@@ -1,5 +1,7 @@
 package dk.webbies.tajscheck.typeutil;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -137,9 +139,25 @@ public class TypesUtil {
     public static Set<Type> collectNativeTypes(SpecReader spec, SpecReader emptySpec) {
         Map<Type, String> specNames = ParseDeclaration.getTypeNamesMap(spec);
 
-        Set<String> nativeNames = new HashSet<>(ParseDeclaration.getTypeNamesMap(emptySpec).values());
+        Map<Type, String> nativeNameMap = ParseDeclaration.getTypeNamesMap(emptySpec);
+        Set<String> nativeNames = new HashSet<>(nativeNameMap.values());
 
-        return specNames.entrySet().stream().filter(entry -> nativeNames.contains(entry.getValue())).map(Map.Entry::getKey).collect(Collectors.toSet());
+        Map<String, Type> inverseNativeNameMap = new HashMap<>();
+        for (Map.Entry<Type, String> entry : nativeNameMap.entrySet()) {
+            if (inverseNativeNameMap.containsKey(entry.getValue())) {
+                inverseNativeNameMap.put(entry.getValue(), null);
+            } else {
+                inverseNativeNameMap.put(entry.getValue(), entry.getKey());
+            }
+        }
+
+        return specNames.entrySet().stream().filter(entry -> {
+            if (!nativeNames.contains(entry.getValue())) {
+                return false;
+            }
+            Type type = inverseNativeNameMap.get(entry.getValue());
+            return type != null && entry.getKey().getClass().equals(type.getClass());
+        }).map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 
     public static boolean isEmptyInterface(InterfaceType type) {
@@ -256,9 +274,10 @@ public class TypesUtil {
         } else if (nativeBaseTypes.size() == 1) {
             return nativeBaseTypes.iterator().next();
         }
-        getAllBaseTypes(type, new HashSet<>(), Util.not(isNativeType));
-        throw new RuntimeException(nativeBaseTypes.stream().map(typeNames::get).collect(Collectors.toList()).toString());
+        return null; // Hard to do better.
     }
+
+
 
     public static Set<Type> getAllBaseTypes(Type type, Set<Type> acc) {
         return getAllBaseTypes(type, acc, (subType) -> true);
@@ -273,7 +292,11 @@ public class TypesUtil {
             type = ((ReferenceType) type).getTarget();
         }
         if (type instanceof GenericType) {
-            type = ((GenericType) type).toInterface();
+            if (shouldContinue.test(type)) {
+                for (Type base : ((GenericType) type).getBaseTypes()) {
+                    getAllBaseTypes(base, acc, shouldContinue);
+                }
+            }
         }
         if (type instanceof ClassInstanceType) {
             type = ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType();

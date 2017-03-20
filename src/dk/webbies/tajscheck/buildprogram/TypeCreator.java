@@ -1135,6 +1135,8 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return customElements");
             case "CacheStorage":
                 return AstBuilder.stmtFromString("return caches");
+            case "Request":
+                return AstBuilder.stmtFromString("return new Request(1);");
             case "Int8Array":
             case "Uint8Array":
             case "Uint32Array":
@@ -1168,7 +1170,6 @@ public class TypeCreator {
             case "Intl.ResolvedDateTimeFormatOptions":
             case "RTCIceServer":
             case "FrameRequestCallback":
-            case "Request":
             case "MSPointerEvent":
             case "MSGestureEvent":
             case "BeforeUnloadEvent":
@@ -1189,6 +1190,8 @@ public class TypeCreator {
             case "SpeechSynthesisVoice":
             case "ArrayLike":
             case "NodeListOf":
+            case "IterableIterator":
+            case "IteratorResult":
                 throw new ProduceManuallyException();
             default:
                 throw new RuntimeException("Unknown: " + name);
