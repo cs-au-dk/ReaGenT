@@ -173,6 +173,54 @@ public class BenchmarkInfo {
                 setUndefinedReturnToVoid(inter.getDeclaredConstructSignatures());
             }
         }
+
+
+        // Combining type-arguments, that are identical (have the same constraint). We can however only do that if it is not referenced anywhere.
+        if (bench.options.combineAllUnconstrainedGenerics) {
+            Set<TypeParameterType> parameters = new HashSet<>();
+            Set<TypeParameterType> arguments = new HashSet<>();
+            for (Type type : allTypes) {
+                if (type instanceof InterfaceType) {
+                    parameters.addAll(Util.cast(TypeParameterType.class, ((InterfaceType) type).getTypeParameters()));
+                } else if (type instanceof ClassInstanceType) {
+                    parameters.addAll(Util.cast(TypeParameterType.class, ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType().getTypeParameters()));
+                } else if (type instanceof ClassType) {
+                    parameters.addAll(Util.cast(TypeParameterType.class, ((ClassType) type).getInstanceType().getTypeParameters()));
+                } else if (type instanceof GenericType) {
+                    parameters.addAll(Util.cast(TypeParameterType.class, ((GenericType) type).getTypeParameters()));
+                } else if (type instanceof ReferenceType) {
+                    List<TypeParameterType> typeArguments = ((ReferenceType) type).getTypeArguments().stream().filter(TypeParameterType.class::isInstance).map(TypeParameterType.class::cast).collect(Collectors.toList());
+                    arguments.addAll(typeArguments);
+                }
+            }
+            arguments.removeAll(parameters); // Now i only have the ones that are only arguments.
+
+            Map<Type, TypeParameterType> map = new HashMap<>();
+            for (TypeParameterType parameterType : arguments) {
+                if (!map.containsKey(parameterType.getConstraint())) {
+                    map.put(parameterType.getConstraint(), parameterType);
+                }
+            }
+
+            for (Type type : allTypes) {
+                if (type instanceof ReferenceType) {
+                    ReferenceType ref = (ReferenceType) type;
+                    ref.setTypeArguments(ref.getTypeArguments().stream().map(typeArgument -> {
+                        //noinspection SuspiciousMethodCalls
+                        if (typeArgument instanceof TypeParameterType && arguments.contains(typeArgument)) {
+                            TypeParameterType parameter = (TypeParameterType) typeArgument;
+                            if (parameter.getConstraint() != null && map.containsKey(parameter.getConstraint())) {
+                                return map.get(parameter.getConstraint());
+                            } else {
+                                throw new RuntimeException();
+                            }
+                        } else {
+                            return typeArgument;
+                        }
+                    }).collect(Collectors.toList()));
+                }
+            }
+        }
     }
 
     private static void setUndefinedReturnToVoid(List<Signature> signatures) {
