@@ -9,11 +9,15 @@ declare module module {
 
 function Foo(t) {
     this.value = t;
+    this.private = true;
 }
 
 module.exports = {
     Foo: Foo,
-    returnsFalse: function () {
+    returnsFalse: function (foo) {
+        if (!foo.private) {
+            return "sanityCheck failed!";
+        }
         return false;
     }
 };

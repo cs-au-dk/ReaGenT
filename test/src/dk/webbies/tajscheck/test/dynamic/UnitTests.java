@@ -84,38 +84,28 @@ public class UnitTests {
     }
 
     private static void sanityCheck(Benchmark bench, Benchmark.RUN_METHOD runMethod) throws Exception {
-        bench = bench.withOptions(bench.options.getBuilder().setConstructAllTypes(true).setFailOnAny(false).build());
+        bench = bench.withRunMethod(BOOTSTRAP).withOptions(options -> options.getBuilder().setConstructAllTypes(true).setFailOnAny(false).build());
 
         // Performing a soundness check of the benchmark.
-        Main.writeFullDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP));
-        String output = Main.runBenchmark(bench.withRunMethod(runMethod));
-        RunResult result = OutputParser.parseDriverResult(output);
+        Main.writeFullDriver(bench);
+        System.out.println("Driver written");
+        String output = Main.runBenchmark(bench);
+        System.out.println(output);
+        OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 
-        if (result.errors.size() > 0) {
-            System.out.println("--- ERRORS ---");
-            for (String error : result.errors) {
-                System.out.println(error);
-            }
-        }
-
-        if (!result.typeErrors.isEmpty()) {
-            System.out.println(output);
-        }
-
-        for (TypeError typeError : result.typeErrors) {
+        for (OutputParser.TypeError typeError : result.typeErrors) {
             System.out.println(typeError);
         }
+
 
         assertThat(result.typeErrors.size(), is(0));
     }
 
     private static ParseResultTester expect(RunResult result) {
-        assertThat(result.errors.size(), is(0));
-
         return new ParseResultTester(result.typeErrors);
     }
 
-    static final class ParseResultTester {
+    public static final class ParseResultTester {
         private List<TypeError> results;
 
         private ParseResultTester(List<TypeError> result) {
@@ -137,17 +127,8 @@ public class UnitTests {
         ParseResultTester forPath(List<Matcher<String>> paths) {
             results = results.stream().filter(candidate -> paths.stream().anyMatch(matcher -> matcher.matches(candidate.path))).collect(Collectors.toList());
 
-            StringBuilder path = new StringBuilder();
-
-            Iterator<Matcher<String>> pathsIterator = paths.iterator();
-            while (pathsIterator.hasNext()) {
-                path.append(pathsIterator.next());
-                if (pathsIterator.hasNext()) {
-                    path.append(", ");
-                }
-            }
-
             assertThat("expected something on path: " + paths, results.size(),is(not(equalTo(0))));
+
             return this;
         }
 
@@ -655,6 +636,21 @@ public class UnitTests {
     }
 
     @Test
+    public void complexSanityCheck15() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck15", CheckOptions.builder().setDisableSizeOptimization(true).build()), NODE);
+    }
+
+    @Test
+    public void complexSanityCheck16() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck16", CheckOptions.builder().setDisableGenerics(true).setSplitUnions(false).build()), NODE);
+    }
+
+    @Test
+    public void complexSanityCheck17() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck17"), BROWSER);
+    }
+
+    @Test
     public void extendingGenericClass() throws Exception {
         sanityCheck(benchFromFolder("extendingGenericClass"), NODE);
     }
@@ -1118,7 +1114,23 @@ public class UnitTests {
         RunResult result = run("genericClassFeedback", "foo");
 
         assertThat(result.typeErrors.size(), is(1));
-        // TODO: After this one, a new one where they both share the same constraint.
+
+        expect(result)
+                .forPath("module.returnsFalse(obj)")
+                .expected("true")
+                .got(STRING, "false");
+    }
+
+    @Test
+    public void genericClassFeedbackWithConstraint() throws Exception {
+        RunResult result = run("genericClassFeedbackWithConstraint", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.returnsFalse(obj)")
+                .expected("true")
+                .got(STRING, "false");
     }
 
     @Test
