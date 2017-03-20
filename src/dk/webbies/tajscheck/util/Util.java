@@ -24,7 +24,7 @@ import java.util.stream.StreamSupport;
  * Created by erik1 on 01-09-2015.
  */
 public class Util {
-    private static final boolean alwaysRecreate = false;
+    public static boolean alwaysRecreate = false;
 
     public static String runNodeScript(String args, int timeout) throws IOException {
         return runNodeScript(args, null, timeout);
@@ -60,10 +60,16 @@ public class Util {
             throw new RuntimeException(e);
         }
 
-        if (!errGobbler.getResult().isEmpty()) {
-            System.err.println("Error running node script: " + errGobbler.getResult());
+        String error = errGobbler.getResult();
+
+        if (Util.isDeltaDebugging) {
+            error = String.join("\n", Arrays.stream(error.split("\n")).filter(str -> !str.contains("Initializers are not allowed in ambient contexts")).collect(Collectors.toList()));
+        }
+
+        if (!error.isEmpty()) {
+            System.err.println("Error running node script: " + error);
             if (isDeltaDebugging && args.contains("ts-spec-reader")) {
-                throw new RuntimeException("Got an error running a node script: " + errGobbler.getResult());
+                throw new RuntimeException("Got an error running a node script: " + error);
             }
         }
 
