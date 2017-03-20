@@ -7,7 +7,6 @@ import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Util;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -17,7 +16,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BOOTSTRAP;
-import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.NODE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -27,8 +25,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class DeltaDebug {
     public static void debug(String filePath, BooleanSupplier test) throws IOException {
 
-        if (!test.getAsBoolean()) {
-            throw new RuntimeException("Doesn't satisfy condition initially");
+        while (true) {
+            if (!test.getAsBoolean()) {
+                System.err.println("Did not satisfy initial condition, trying again!");
+            } else {
+                break;
+            }
         }
 
         boolean progress = false;
@@ -192,10 +194,24 @@ public class DeltaDebug {
         });
     }
 
-    private static boolean testHasError(Benchmark bench, String path) throws Exception {
+    private static boolean testHasSomeError(Benchmark bench) throws Exception {
+        bench = bench.withOptions(CheckOptions.errorFindingOptions(bench.options));
         Main.writeFullDriver(bench);
-        bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(100).build());
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+        for (OutputParser.TypeError typeError : result.typeErrors) {
+            System.out.println(typeError);
+        }
+
+        return result.typeErrors.size() > 0;
+
+    }
+
+    private static boolean testHasError(Benchmark bench, String path) throws Exception {
+        bench = bench.withOptions(CheckOptions.errorFindingOptions(bench.options));
+        Main.writeFullDriver(bench);
+        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+
+        result.typeErrors.forEach(System.out::println);
 
         return result.typeErrors.stream().map(OutputParser.TypeError::getPath).filter(str -> str.contains(path)).count() >= 1;
     }
