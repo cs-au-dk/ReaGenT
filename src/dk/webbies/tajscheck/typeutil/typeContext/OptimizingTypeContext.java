@@ -1,6 +1,8 @@
 package dk.webbies.tajscheck.typeutil.typeContext;
 
 import dk.au.cs.casa.typescript.SpecReader;
+import dk.au.cs.casa.typescript.types.ClassInstanceType;
+import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -8,6 +10,7 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
+import org.eclipse.jetty.util.TypeUtil;
 
 import java.util.*;
 
@@ -19,15 +22,13 @@ public class OptimizingTypeContext implements TypeContext {
     private final Type thisType;
     private final BenchmarkInfo info;
 
-    public OptimizingTypeContext(BenchmarkInfo info) {
-        this.info = info;
-        this.map = Collections.emptyMap();
-        this.thisType = null;
+    OptimizingTypeContext(BenchmarkInfo info) {
+        this(Collections.emptyMap(), null, info);
     }
 
-    private OptimizingTypeContext(Map<TypeParameterType, Type> map, Type classType, BenchmarkInfo info) {
+    private OptimizingTypeContext(Map<TypeParameterType, Type> map, Type thisType, BenchmarkInfo info) {
         this.map = map;
-        this.thisType = classType;
+        this.thisType = thisType;
         this.info = info;
     }
 
@@ -143,7 +144,15 @@ public class OptimizingTypeContext implements TypeContext {
         if (info.bench.options.combineAllUnconstrainedGenerics) {
             boolean foundShortcut = false;
             for (Map.Entry<TypeParameterType, Type> entry : new HashMap<>(clone.map).entrySet()) {
+                Type keyConstraint = entry.getKey().getConstraint();
+                if (keyConstraint != null && !(keyConstraint instanceof InterfaceType && TypesUtil.isEmptyInterface((InterfaceType) keyConstraint))) {
+                    continue;
+                }
                 if (entry.getValue() instanceof TypeParameterType) {
+                    Type valueConstraint = ((TypeParameterType) entry.getValue()).getConstraint();
+                    if (valueConstraint != null && !(valueConstraint instanceof InterfaceType && TypesUtil.isEmptyInterface((InterfaceType) valueConstraint))) {
+                        continue;
+                    }
                     if (!reachable.contains(entry.getValue())) {
                         foundShortcut = true;
                         clone.map.remove(entry.getKey());
@@ -161,10 +170,5 @@ public class OptimizingTypeContext implements TypeContext {
             }
         }
         return clone;
-    }
-
-    private static final TypeParameterType freeParameterType = new TypeParameterType();
-    static {
-        freeParameterType.setConstraint(SpecReader.makeEmptySyntheticInterfaceType());
     }
 }
