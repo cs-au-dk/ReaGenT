@@ -231,6 +231,7 @@ public class RunBenchmarks {
                 benchmark.dTSFile.contains("p2.d.ts") || // Has a class, that has a static length() function, this is not possible. (The class contains only static methods, go figure).
                 benchmark.dTSFile.contains("ember.d.ts") || // It includes jQuery, therefore it fails.
                 benchmark.dTSFile.contains("materialize.d.ts") || // Includes jQuery.
+                benchmark.dTSFile.contains("three.d.ts") || // bivariant function-arguments in the addGroup() method (the last argument is optional in the base class, but non-optional in the sub class).
                 benchmark.dTSFile.contains("backbone.d.ts")  // Includes jQuery.
         ) {
             System.out.println("Is a benchmark which i know to fail. ");
