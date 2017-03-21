@@ -6,7 +6,6 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
-import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
@@ -61,7 +60,7 @@ public class AutomaticExperiments {
         });
     }
 
-    private static final Pair<String, Experiment.ExperimentSingleRunner> consistencyCheck = new Pair<>("sound", (bench) -> {
+    private static final Pair<String, Experiment.ExperimentSingleRunner> soundnessTest = new Pair<>("sound", (bench) -> {
         Benchmark.RUN_METHOD runMethod = bench.run_method;
         bench = bench.withOptions(bench.options.getBuilder().setConstructAllTypes(true).setFailOnAny(false).build());
 
@@ -282,7 +281,7 @@ public class AutomaticExperiments {
         experiment.addSingleExperiment(uniquePaths);
         experiment.addSingleExperiment(uniquePathsWithOptions("notCombined", options -> options.getBuilder().setCombineAllUnconstrainedGenerics(false).build()));
 
-//        experiment.addSingleExperiment(consistencyCheck);
+//        experiment.addSingleExperiment(soundnessTest);
 
 //        experiment.addSingleExperiment(uniquePaths5Minutes);
 
