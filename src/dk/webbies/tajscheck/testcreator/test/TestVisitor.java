@@ -5,7 +5,7 @@ package dk.webbies.tajscheck.testcreator.test;
  */
 public interface TestVisitor<T> {
 
-    T visit(MemberAccessTest test);
+    T visit(PropertyReadTest test);
 
     T visit(LoadModuleTest test);
 
@@ -22,4 +22,6 @@ public interface TestVisitor<T> {
     T visit(NumberIndexTest test);
 
     T visit(StringIndexTest test);
+
+    T visit(PropertyWriteTest test);
 }

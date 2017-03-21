@@ -144,6 +144,12 @@ public class TypeCreator {
             if (info.freeGenericsFinder.hasThisTypes(instanceType.getClassType())) {
                 putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext.withThisType(instanceType));
             }
+
+            for (Type baseClassRaw : ((ClassType) instanceType.getClassType()).getBaseTypes()) {
+                ClassType baseClass = (ClassType) baseClassRaw;
+                putProducedValueIndex(index, baseClass.getInstance(), typeContext, touchedThisTypes);
+            }
+
         } else if (type instanceof ThisType) {
             Type thisType = typeContext.getThisType();
             putProducedValueIndex(index, thisType != null ? thisType : ((ThisType) type).getConstraint(), typeContext);
@@ -664,7 +670,7 @@ public class TypeCreator {
 
             List<Statement> typeChecks = new ArrayList<>();
 
-            if (signature.isHasRestParameter()) {
+            if (signature.isHasRestParameter() && parameters.size() > 0) {
                 Type restType = getArrayType(parameters.get(parameters.size() - 1).getType());
 
                 typeChecks.add(statement(call(
@@ -858,7 +864,7 @@ public class TypeCreator {
 
         List<Statement> saveArgumentValues = new ArrayList<>();
 
-        if (signature.isHasRestParameter()) {
+        if (signature.isHasRestParameter() && parameters.size() > 0) {
             Type restType = getArrayType(parameters.get(parameters.size() - 1).getType());
 
             parameters = parameters.subList(0, parameters.size() - 1);
@@ -946,6 +952,7 @@ public class TypeCreator {
                 Signature callSignature = new Signature();
                 callSignature.setParameters(new ArrayList<>());
                 callSignature.setMinArgumentCount(0);
+                callSignature.setHasRestParameter(true);
                 callSignature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
                 interfaceWithSimpleFunction.getDeclaredCallSignatures().add(callSignature);
                 info.typeNames.put(interfaceWithSimpleFunction, "Function");

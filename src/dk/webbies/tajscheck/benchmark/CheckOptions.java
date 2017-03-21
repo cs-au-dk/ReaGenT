@@ -20,6 +20,9 @@ public final class CheckOptions {
     public final boolean failOnAny;
     public final boolean makeTSInferLike;
     public final boolean combineNullAndUndefined;
+    public final boolean writePrimitives;
+    public final boolean writeAll;
+
 
     private CheckOptions(Builder builder) {
         this.checkDepth = builder.checkDepth;
@@ -35,6 +38,8 @@ public final class CheckOptions {
         this.failOnAny = builder.failOnAny;
         this.makeTSInferLike = builder.makeTSInferLike;
         this.combineNullAndUndefined = builder.combineNullAndUndefined;
+        this.writePrimitives = builder.writePrimitives;
+        this.writeAll = builder.writeAll;
         this.builder = builder;
     }
 
@@ -76,6 +81,9 @@ public final class CheckOptions {
         private boolean makeTSInferLike = false; // Restrict the driver to only check properties, and call constructors (where all arguments are ignored). Kinda equal to the dynamic part of TSInfer.
         private boolean combineNullAndUndefined = false; // null and undefined (last one is also called void) are different types. But errors related to this are anoying, and doesn't matter. Setting this to true makes it not an error.
 
+        private boolean writePrimitives = false; // We write to properties that have primitive values.
+        private boolean writeAll = false; // Only has effect if above is true. Every single property is potentially written to. Is VERY stupid, will likely overwrite the library before testing it.
+
         private Builder() {}
 
         private Builder(Builder builder) {
@@ -93,6 +101,17 @@ public final class CheckOptions {
 
         public Builder setMakeTSInferLike(boolean makeTSInferLike) {
             this.makeTSInferLike = makeTSInferLike;
+            return this;
+        }
+
+        public Builder setWritePrimitives(boolean writePrimitives) {
+            this.writePrimitives = writePrimitives;
+            return this;
+        }
+
+        public Builder setWriteAll(boolean writeAll) {
+            this.writePrimitives |= writeAll;
+            this.writeAll = writeAll;
             return this;
         }
 

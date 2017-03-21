@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.testcreator;
 
+import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -83,11 +84,28 @@ public class TestCreator {
             assert Util.intersection(paths, info.bench.pathsToTest).size() == info.bench.pathsToTest.size();
         }
 
-        if (concatDuplicates) {
-            return concatDuplicateTests(tests);
-        } else {
-            return tests;
+        tests = concatDuplicateTests(tests);
+
+        if (info.bench.options.writePrimitives) {
+            for (Test test : new ArrayList<>(tests)) {
+                if (test instanceof PropertyReadTest) {
+                    PropertyReadTest readTest = (PropertyReadTest) test;
+                    boolean shouldWrite = info.bench.options.writeAll;
+                    assert test.getProduces().size() == 1;
+                    Type produces = test.getProduces().iterator().next();
+                    shouldWrite |= produces instanceof SimpleType;
+
+                    if (shouldWrite) {
+                        tests.add(
+                                new PropertyWriteTest(readTest.getBaseType(), produces, readTest.getProperty(), test.getPath(), test.getTypeContext())
+                        );
+                    }
+                }
+            }
+
         }
+
+        return tests;
     }
 
     private boolean isRelevantPath(String path, Trie potentialPaths) {
@@ -488,7 +506,7 @@ public class TestCreator {
                 String key = entry.getKey();
                 Type type = entry.getValue();
 
-                tests.add(new MemberAccessTest(t, type, key, arg.path, arg.getTypeContext()));
+                tests.add(new PropertyReadTest(t, type, key, arg.path, arg.getTypeContext()));
 
                 addMethodCallTest(t, arg, key, type, new HashSet<>());
 
@@ -615,7 +633,7 @@ public class TestCreator {
 
             for (int i = 0; i < tuple.getElementTypes().size(); i++) {
                 Type type = tuple.getElementTypes().get(i);
-                tests.add(new MemberAccessTest(tuple, type, Integer.toString(i), arg.path, arg.typeContext));
+                tests.add(new PropertyReadTest(tuple, type, Integer.toString(i), arg.path, arg.typeContext));
                 recurse(type, arg.append(Integer.toString(i)));
             }
 

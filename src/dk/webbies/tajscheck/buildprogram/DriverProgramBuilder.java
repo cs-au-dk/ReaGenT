@@ -341,7 +341,7 @@ public class DriverProgramBuilder {
         }
 
         @Override
-        public List<Statement> visit(MemberAccessTest test) {
+        public List<Statement> visit(PropertyReadTest test) {
             List<Statement> result = new ArrayList<>();
             result.add(variable("base", getTypeExpression(test.getBaseType(), test.getTypeContext())));
             if (Util.isInteger(test.getProperty())) {
@@ -498,6 +498,20 @@ public class DriverProgramBuilder {
                     stmtFromString("if (keys.length == 0) {return false}"),
                     stmtFromString("var key = keys[Math.floor(Math.random()*keys.length)];"),
                     stmtFromString("var result = base[key]")
+            );
+        }
+
+        @Override
+        public List<Statement> visit(PropertyWriteTest test) {
+            return Arrays.asList(
+                    variable("base", getTypeExpression(test.getBaseType(), test.getTypeContext())),
+                    variable("newValue", typeCreator.constructType(test.getToWrite(), test.getTypeContext())),
+                    statement(binary(
+                            member(identifier("base"), test.getProperty()),
+                            Operator.EQUAL,
+                            identifier("newValue")
+                    )),
+                    stmtFromString("var result = {};")
             );
         }
 
