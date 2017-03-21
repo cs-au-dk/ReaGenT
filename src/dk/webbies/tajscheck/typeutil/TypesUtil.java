@@ -1,11 +1,8 @@
 package dk.webbies.tajscheck.typeutil;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
@@ -155,9 +152,42 @@ public class TypesUtil {
             if (!nativeNames.contains(entry.getValue())) {
                 return false;
             }
-            Type type = inverseNativeNameMap.get(entry.getValue());
-            return type != null && entry.getKey().getClass().equals(type.getClass());
+            Type nativeType = inverseNativeNameMap.get(entry.getValue());
+            if (nativeType == null) {
+                return false;
+            }
+            Type type = entry.getKey();
+            return pseudoEquals(nativeType, type);
         }).map(Map.Entry::getKey).collect(Collectors.toSet());
+    }
+
+    private static boolean pseudoEquals(Type nativeType, Type type) {
+        if (!type.getClass().equals(nativeType.getClass())) {
+            return false;
+        }
+        if (nativeType instanceof ReferenceType) {
+            nativeType = ((ReferenceType) nativeType).getTarget();
+            type = ((ReferenceType) type).getTarget();
+        }
+        if (nativeType instanceof GenericType) {
+            nativeType = ((GenericType) nativeType).toInterface();
+            type = ((GenericType) type).toInterface();
+        }
+        if (nativeType instanceof InterfaceType) {
+            Set<String> nativeProps = ((InterfaceType) nativeType).getDeclaredProperties().keySet();
+            Set<String> typeProps = ((InterfaceType) type).getDeclaredProperties().keySet();
+            return Util.intersection(nativeProps, typeProps).size() == Math.min(nativeProps.size(), typeProps.size());
+        }
+        if (nativeType instanceof IndexedAccessType || nativeType instanceof TypeParameterType || nativeType instanceof ThisType) {
+            return true;
+        }
+        if (nativeType instanceof UnionType) {
+            return ((UnionType) nativeType).getElements().size() == ((UnionType) type).getElements().size();
+        }
+        if (nativeType instanceof TupleType) {
+            return ((TupleType) nativeType).getElementTypes().size() == ((TupleType) type).getElementTypes().size();
+        }
+        throw new RuntimeException(type.getClass().getSimpleName());
     }
 
     public static boolean isEmptyInterface(InterfaceType type) {
