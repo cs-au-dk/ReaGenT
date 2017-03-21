@@ -44,8 +44,16 @@ public class UnitTests {
         return benchFromFolder(folderName, CheckOptions.defaultOptions());
     }
 
+    public static Benchmark benchFromFolder(String folderName, String moduleName) {
+        return benchFromFolder(folderName, CheckOptions.defaultOptions(), moduleName);
+    }
+
     private static Benchmark benchFromFolder(String folderName, CheckOptions options) {
-        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.RUN_METHOD.NODE, options);
+        return benchFromFolder(folderName, options, "module");
+    }
+
+    private static Benchmark benchFromFolder(String folderName, CheckOptions options, String moduleName) {
+        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", moduleName, Benchmark.RUN_METHOD.NODE, options);
     }
 
     private String runDriver(String folderName, String seed) throws Exception {
@@ -102,7 +110,7 @@ public class UnitTests {
         return new ParseResultTester(result.typeErrors);
     }
 
-    public static final class ParseResultTester {
+    static final class ParseResultTester {
         private List<TypeError> results;
 
         private ParseResultTester(List<TypeError> result) {
@@ -110,7 +118,7 @@ public class UnitTests {
         }
 
         ParseResultTester forPath(String path) {
-            return forPath(Collections.singletonList(containsString(path)));
+            return forPath(containsString(path));
         }
 
         ParseResultTester forPath(Matcher<String> path) {
@@ -148,11 +156,11 @@ public class UnitTests {
             return this;
         }
 
-        public ParseResultTester expected(String type) {
+        ParseResultTester expected(String type) {
             return expected(is(type));
         }
 
-        public ParseResultTester expected(Matcher<String> type) {
+        ParseResultTester expected(Matcher<String> type) {
             for (TypeError result : results) {
                 assertThat(result.expected, is(type));
             }
@@ -1185,5 +1193,12 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size(), is(0));
 
+    }
+
+    @Test
+    public void basicMemomizeExample() throws Exception {
+        RunResult result = run(benchFromFolder("basicMemomizeExample", "async"), "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
     }
 }
