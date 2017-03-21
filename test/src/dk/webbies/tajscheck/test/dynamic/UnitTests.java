@@ -88,15 +88,12 @@ public class UnitTests {
 
         // Performing a soundness check of the benchmark.
         Main.writeFullDriver(bench);
-        System.out.println("Driver written");
-        String output = Main.runBenchmark(bench);
-        System.out.println(output);
+        String output = Main.runBenchmark(bench.withRunMethod(runMethod));
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 
         for (OutputParser.TypeError typeError : result.typeErrors) {
             System.out.println(typeError);
         }
-
 
         assertThat(result.typeErrors.size(), is(0));
     }
