@@ -1143,6 +1143,33 @@ public class UnitTests {
         RunResult result = run("genericInterfaceFeedback", "foo");
 
         assertThat(result.typeErrors.size(), is(1));
+    }
+
+    @Test
+    public void canWritePrimitives() throws Exception {
+        RunResult resultNoWrite = run("canWritePrimitives", CheckOptions.builder().setWritePrimitives(false).build(), "foo");
+
+        assertThat(resultNoWrite.typeErrors.size(), is(0));
+
+        RunResult resultWithWrite = run("canWritePrimitives", CheckOptions.builder().setWritePrimitives(true).build(), "foo");
+
+        assertThat(resultWithWrite.typeErrors.size(), is(1));
+
+        expect(resultWithWrite)
+                .forPath("module.test(obj)")
+                .expected("true")
+                .got(STRING, "false");
+    }
+
+    @Test
+    public void canWriteComplex() throws Exception {
+        RunResult resultNoWrite = run("canWriteComplex", "foo");
+
+        assertThat(resultNoWrite.typeErrors.size(), is(0));
+
+        RunResult resultWithWrite = run("canWriteComplex", CheckOptions.builder().setWriteAll(true).build(), "1"); // <- Had a while-loop running, until i found a seed that works!
+
+        assertThat(resultWithWrite.typeErrors.size(), is(1));
 
     }
 
