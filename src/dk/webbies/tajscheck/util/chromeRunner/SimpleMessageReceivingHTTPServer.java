@@ -13,6 +13,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by erik1 on 15-02-2017.
@@ -29,51 +31,49 @@ public class SimpleMessageReceivingHTTPServer {
         this.serverSocket = serverSocket;
     }
 
-    private boolean readMessage() throws IOException, HttpException {
-        try (Socket socket = serverSocket.accept()) {
-            Pair<String, String> request = readHttpRequest(socket.getInputStream());
+    private boolean readMessage(Socket socket) throws IOException, HttpException {
+        Pair<String, String> request = readHttpRequest(socket.getInputStream());
 
-            if (request.getRight() != null) {
-                Date today = new Date();
-                String httpResponse = "" +
-                        "HTTP/1.0 200 OK\r\n" +
-                        "Access-Control-Allow-Origin: *\r\n" +
-                        "\r\n" + today;
-                socket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
+        if (request.getRight() != null) {
+            Date today = new Date();
+            String httpResponse = "" +
+                    "HTTP/1.0 200 OK\r\n" +
+                    "Access-Control-Allow-Origin: *\r\n" +
+                    "\r\n" + today;
+            socket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
 
-                if (request.getRight().equals("close")) {
-                    return true;
-                } else {
-                    messages.add(request.getRight());
-                    return false;
-                }
-            }
-
-            String content = getContentFromPath(request.getLeft());
-            if (content == null) {
-                errorReport(new PrintStream(socket.getOutputStream()), socket, "404", "Not Found",
-                        "The requested URL was not found " +
-                                "on this server.");
+            if (request.getRight().equals("close")) {
+                return true;
+            } else {
+                messages.add(request.getRight());
                 return false;
             }
+        }
 
-            String contentType = URLConnection.guessContentTypeFromName(request.getLeft());
-
-            StringBuilder response = new StringBuilder();
-
-            response.append("HTTP/1.0 200 OK\r\n");
-            if (contentType != null) {
-                response.append("Content-Type: ").append(contentType).append("\r\n");
-            }
-            response.append("Date: ").append(new Date()).append("\r\n")
-                    .append("Server: IXWT FileServer 1.0\r\n\r\n");
-
-            socket.getOutputStream().write(response.toString().getBytes());
-
-            socket.getOutputStream().write(content.getBytes());
-
+        String content = getContentFromPath(request.getLeft());
+        if (content == null) {
+            errorReport(new PrintStream(socket.getOutputStream()), socket, "404", "Not Found",
+                    "The requested URL was not found " +
+                            "on this server.");
             return false;
         }
+
+        String contentType = URLConnection.guessContentTypeFromName(request.getLeft());
+
+        StringBuilder response = new StringBuilder();
+
+        response.append("HTTP/1.0 200 OK\r\n");
+        if (contentType != null) {
+            response.append("Content-Type: ").append(contentType).append("\r\n");
+        }
+        response.append("Date: ").append(new Date()).append("\r\n")
+                .append("Server: IXWT FileServer 1.0\r\n\r\n");
+
+        socket.getOutputStream().write(response.toString().getBytes());
+
+        socket.getOutputStream().write(content.getBytes());
+
+        return false;
     }
 
     private String getContentFromPath(String path) throws IOException {
@@ -138,27 +138,34 @@ public class SimpleMessageReceivingHTTPServer {
         return this.messages;
     }
 
+    private static final ExecutorService pool = Executors.newCachedThreadPool();
+
     public void start() {
-        try {
-            while (true) {
-                try {
-                    boolean shouldClose = readMessage();
-                    if (shouldClose) {
-                        break;
-                    }
-                } catch (IOException | HttpException e) {
-                    e.printStackTrace();
-                    throw new RuntimeException(e);
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-            }
-        } finally {
-            latch.countDown();
+        while (true) {
+            Socket socket;
             try {
-                serverSocket.close();
-            } catch (IOException ignore) {
+                socket = serverSocket.accept();
+            } catch (IOException e) {
+                latch.countDown();
+                try {
+                    serverSocket.close();
+                } catch (IOException ignored) {}
+                break;
             }
+            pool.submit(() -> {
+                try {
+                    boolean shouldClose = readMessage(socket);
+                    if (shouldClose) {
+                        latch.countDown();
+                        serverSocket.close();
+                    }
+                } catch (IOException | HttpException ignored) {
+                } finally {
+                    try {
+                        socket.close();
+                    } catch (IOException ignored) {}
+                }
+            });
         }
     }
 
