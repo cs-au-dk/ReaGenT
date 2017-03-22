@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.test.dynamic;
 
 import dk.au.cs.casa.typescript.SpecReader;
+import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.ExecutionRecording;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
@@ -8,7 +9,6 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
-import dk.webbies.tajscheck.testcreator.test.check.Check;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
 import org.junit.Test;
@@ -20,14 +20,12 @@ import static dk.webbies.tajscheck.OutputParser.*;
 import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BOOTSTRAP;
 import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BROWSER;
 import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.NODE;
+import static dk.webbies.tajscheck.test.Matchers.emptyMap;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.JSON;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.TYPEOF;
-import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.lessThan;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Created by erik1 on 23-11-2016.
@@ -1167,10 +1165,39 @@ public class UnitTests {
 
         assertThat(resultNoWrite.typeErrors.size(), is(0));
 
-        RunResult resultWithWrite = run("canWriteComplex", CheckOptions.builder().setWriteAll(true).build(), "1"); // <- Had a while-loop running, until i found a seed that works!
+        boolean hadAnError = false;
+        for (int i = 0; i < 20; i++) {
+            System.out.println("Trying with seed: " + i);
+            RunResult resultWithWrite = run("canWriteComplex", CheckOptions.builder().setWriteAll(true).build(), i + "");
 
-        assertThat(resultWithWrite.typeErrors.size(), is(1));
+            if (resultWithWrite.typeErrors.size() > 0) {
+                hadAnError = true;
+                break;
+            }
+        }
+        assertThat(hadAnError, is(true));
+    }
 
+    @Test
+    public void noIterations() throws Exception {
+        RunResult result = run("noIterations", CheckOptions.builder().setMaxIterationsToRun(0).build(), "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+    }
+
+    @Test
+    public void browserCoverage() throws Exception {
+        Benchmark bench = benchFromFolder("browserCoverage").withRunMethod(BROWSER);
+
+        RunResult result = run(bench, "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+
+        Map<String, CoverageResult> coverage = Main.genCoverage(bench);
+
+        assertThat(coverage, is(not(emptyMap())));
+
+        assertThat(coverage.get("implementation.js").statementCoverage(), is(greaterThan(0.5)));
     }
 
     /*
