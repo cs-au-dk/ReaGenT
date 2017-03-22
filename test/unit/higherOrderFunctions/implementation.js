@@ -1,13 +1,9 @@
 /*
-interface MyFunction {
-    (a: number) : number;
-    (a: string) : string;
-}
-export module foo {
+export module module {
     function twice(
-        a: number | string | boolean,
-        b: MyFunction
-): string;
+        a: number | string,
+        b: (a: string) => string
+    ): string;
 }*/
 
 module.exports = {

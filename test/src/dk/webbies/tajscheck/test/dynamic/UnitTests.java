@@ -67,7 +67,13 @@ public class UnitTests {
     }
 
     private String runDriver(Benchmark bench, String seed) throws Exception {
-        sanityCheck(bench);
+        return runDriver(bench, seed, false);
+    }
+
+    private String runDriver(Benchmark bench, String seed, boolean skipConsistencyCheck) throws Exception {
+        if (!skipConsistencyCheck) {
+            sanityCheck(bench);
+        }
 
         Main.writeFullDriver(bench, new ExecutionRecording(null, seed));
 
@@ -1200,6 +1206,19 @@ public class UnitTests {
         assertThat(coverage.get("implementation.js").statementCoverage(), is(greaterThan(0.5)));
     }
 
+    @Test
+    public void nodeCoverage() throws Exception {
+        Benchmark bench = benchFromFolder("nodeCoverage").withOptions(options -> options.getBuilder().setMaxIterationsToRun(1).build());
+
+        RunResult result = run(bench, "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+
+        Map<String, CoverageResult> coverage = Main.genCoverage(bench);
+
+        assertThat(coverage, is(not(emptyMap())));
+    }
+
     /*
      * Examples used in the paper are below this:
      */
@@ -1254,5 +1273,13 @@ public class UnitTests {
         RunResult result = run(benchFromFolder("basicMemomizeExample", "async"), "foo");
 
         assertThat(result.typeErrors.size(), is(0));
+    }
+
+    @Test
+    public void unsoundSiblings() throws Exception {
+        CheckOptions options = CheckOptions.builder().setCheckDepth(2).build();
+        RunResult result = parseDriverResult(runDriver(benchFromFolder("unsoundSiblings", options, "Box2D"), "foo", true));
+
+        assertThat(result.typeErrors.size(), is(greaterThanOrEqualTo(1)));
     }
 }
