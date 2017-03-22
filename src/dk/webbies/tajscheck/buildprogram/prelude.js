@@ -380,7 +380,7 @@ function selectTest() {
         return -1;
     }
 
-    if (maxIterations > 0 && i > maxIterations) {
+    if (maxIterations >= 0 && i >= maxIterations) {
         return -1;
     }
 
