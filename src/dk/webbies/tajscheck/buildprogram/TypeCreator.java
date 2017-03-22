@@ -145,9 +145,20 @@ public class TypeCreator {
                 putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext.withThisType(instanceType));
             }
 
-            for (Type baseClassRaw : ((ClassType) instanceType.getClassType()).getBaseTypes()) {
-                ClassType baseClass = (ClassType) baseClassRaw;
-                putProducedValueIndex(index, baseClass.getInstance(), typeContext, touchedThisTypes);
+            for (Type baseClass : ((ClassType) instanceType.getClassType()).getBaseTypes()) {
+                TypeContext subTypeContext = typeContext;
+                if (baseClass instanceof ReferenceType) {
+                    subTypeContext = new TypesUtil(info).generateParameterMap((ReferenceType) baseClass, typeContext);
+                    baseClass = ((ReferenceType) baseClass).getTarget();
+                } else if (baseClass instanceof ClassInstanceType) {
+                    baseClass = ((ClassInstanceType) baseClass).getClassType();
+                }
+                if (baseClass instanceof ClassType) {
+                    baseClass = ((ClassType) baseClass).getInstance();
+                } else if (!(baseClass instanceof InterfaceType || baseClass instanceof GenericType)) {
+                    throw new RuntimeException("Not sure about: " + baseClass.getClass().getSimpleName());
+                }
+                putProducedValueIndex(index, baseClass, subTypeContext, touchedThisTypes);
             }
 
         } else if (type instanceof ThisType) {
