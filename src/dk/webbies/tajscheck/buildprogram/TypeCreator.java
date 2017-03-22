@@ -155,7 +155,7 @@ public class TypeCreator {
                 }
                 if (baseClass instanceof ClassType) {
                     baseClass = ((ClassType) baseClass).getInstance();
-                } else if (!(baseClass instanceof InterfaceType || baseClass instanceof GenericType)) {
+                } else if (!(baseClass instanceof InterfaceType || baseClass instanceof GenericType || baseClass instanceof ClassInstanceType)) {
                     throw new RuntimeException("Not sure about: " + baseClass.getClass().getSimpleName());
                 }
                 putProducedValueIndex(index, baseClass, subTypeContext, touchedThisTypes);
