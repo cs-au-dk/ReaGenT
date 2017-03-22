@@ -12,14 +12,32 @@
         (function () {
             var print = console.log;
 
+            var concurrentCount = 0;
+            var sendClose = false;
+
             Object.defineProperty(window, 'sendResultToChecker', {
                 enumerable: false,
                 configurable: false,
                 writable: false,
                 value: function send (json) {
+                    if (json == "close") {
+                        if (concurrentCount) {
+                            sendClose = true;
+                            return;
+                        } else {
+                            // Just send it.
+                        }
+                    } else {
+                        concurrentCount++;
+                    }
                     var xhttp = new XMLHttpRequest();
                     xhttp.onreadystatechange = function() {
-                        // nothing (currently)
+                        if (this.readyState == 4) {
+                            concurrentCount--;
+                            if (sendClose && concurrentCount == 0) {
+                                send("close");
+                            }
+                        }
                     };
                     xhttp.open("POST", "post", true);
                     xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");

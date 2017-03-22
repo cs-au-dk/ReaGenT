@@ -31,11 +31,7 @@ if (!isTAJS) {
             }
 
             if (runsWithCoverage) {
-                if (isBrowser()) {
-                    sendResultToChecker(JSON.stringify(__coverage__));
-                } else {
-                    printForReal(JSON.stringify(__coverage__));
-                }
+                printForReal(JSON.stringify(__coverage__));
             }
             if (isBrowser()) {
                 printForReal("close");
