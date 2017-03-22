@@ -12,7 +12,7 @@ module.exports = {
         var result = function () {
             var key = hasher(arguments);
             return cache[key] ||
-                   cache[key] = fn.apply(this, arguments);
+                (cache[key] = fn.apply(this, arguments));
         };
         result.unmemoized = fn;
         return result
@@ -22,6 +22,7 @@ module.exports = {
     }
 };
 
+/*
 
 var async = {
   memoize: function (fn, hasher) {
@@ -30,8 +31,7 @@ var async = {
     var cache = {};
     var result = function () {
       var key = hasher(arguments);
-      return cache[key] ||
-      cache[key] = fn.apply(this, arguments);
+      return cache[key] || (cache[key] = fn.apply(this, arguments));
     };
     result.unmemoized = fn;
     return result
@@ -39,4 +39,4 @@ var async = {
   unmemoize: function (fn) {
     return fn.unmemoized || fn;
   }
-};
+}*/
