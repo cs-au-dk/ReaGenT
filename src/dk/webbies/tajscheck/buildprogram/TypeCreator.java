@@ -440,8 +440,8 @@ public class TypeCreator {
                 case Number:
                     return AstBuilder.stmtFromString(
                             "    switch(Math.random() * 3 | 0) {\n" +
-                            "        case 0: return Math.random() * 10;\n" +
-                            "        case 1: return Math.random() * 100 | 0;\n" +
+                            "        case 0: return (Math.random() * 20) - 10;\n" +
+                            "        case 1: return (Math.random() * 200) - 100 | 0;\n" +
                             "        case 2: {\n" +
                             "            switch(Math.random() * 3 | 0) {\n" +
                             "                case 0: return NaN;\n" +
