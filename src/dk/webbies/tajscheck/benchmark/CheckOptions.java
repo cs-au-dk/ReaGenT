@@ -7,7 +7,8 @@ import dk.webbies.tajscheck.util.Util;
  */
 public final class CheckOptions {
     private Builder builder;
-    public final int checkDepth;
+    public final int checkDepthUseValue;
+    public final int checkDepthReport;
     public final int checkDepthForUnions;
     public final boolean checkHeap;
     public final boolean splitUnions;
@@ -25,7 +26,7 @@ public final class CheckOptions {
 
 
     private CheckOptions(Builder builder) {
-        this.checkDepth = builder.checkDepth;
+        this.checkDepthUseValue = builder.checkDepthUseValue;
         this.checkDepthForUnions = builder.checkDepthForUnions;
         this.checkHeap = builder.checkHeap;
         this.splitUnions = builder.splitUnions;
@@ -40,6 +41,7 @@ public final class CheckOptions {
         this.combineNullAndUndefined = builder.combineNullAndUndefined;
         this.writePrimitives = builder.writePrimitives;
         this.writeAll = builder.writeAll;
+        this.checkDepthReport = builder.checkDepthReport;
         this.builder = builder;
     }
 
@@ -52,9 +54,9 @@ public final class CheckOptions {
     }
 
     public static CheckOptions errorFindingOptions(CheckOptions options) {
-        return options.getBuilder()
+        return options.getBuilder() // TODO: Change these.
                 .setCheckDepthForUnions(2)
-                .setCheckDepth(2)
+                .setCheckDepthUseValue(2)
                 .setMaxTime(30 * 1000)
                 .setCombineNullAndUndefined(true)
                 .setFailOnAny(false)
@@ -67,7 +69,8 @@ public final class CheckOptions {
 
     @SuppressWarnings("SameParameterValue")
     public static final class Builder {
-        private int checkDepth = 0; // How deeply should objects be checked when checking (remember, sub-properties are checked in later tests)
+        private int checkDepthUseValue = 0; // How deeply should objects be checked, when seeing if the value should be used.
+        private int checkDepthReport = 2; // How deeply should objects be checked when seeing if an error should be reported. (The above will also report warnings).
         private int checkDepthForUnions = 1; // How deep should the checking be, when determining which
         private boolean checkHeap = false; // Test the loaded module, including all its properties, recursively (no function calls).
         private boolean splitUnions = true; // Split function-signatures, such that no function-signature has a union-type as parameter, they are instead distinct signatures (explodes size of some larger benchmarks, but can be useful for more precise warnings).
@@ -104,6 +107,11 @@ public final class CheckOptions {
             return this;
         }
 
+        public Builder setCheckDepthReport(int checkDepthReport) {
+            this.checkDepthReport = checkDepthReport;
+            return this;
+        }
+
         public Builder setWritePrimitives(boolean writePrimitives) {
             this.writePrimitives = writePrimitives;
             return this;
@@ -125,8 +133,8 @@ public final class CheckOptions {
             return this;
         }
 
-        public Builder setCheckDepth(int checkDepth) {
-            this.checkDepth = checkDepth;
+        public Builder setCheckDepthUseValue(int checkDepthUseValue) {
+            this.checkDepthUseValue = checkDepthUseValue;
             return this;
         }
 

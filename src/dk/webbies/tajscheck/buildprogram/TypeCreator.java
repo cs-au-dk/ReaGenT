@@ -262,7 +262,7 @@ public class TypeCreator {
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
 
-            addProperties.addAll(addProperties(typeContext, properties));
+            addProperties.addAll(addProperties(typeContext, properties, identifier("result")));
 
             return createCachedConstruction(
                     Return(createFunction(signatures, typeContext, info.typeNames.get(t))),
@@ -272,7 +272,7 @@ public class TypeCreator {
         }
 
         int propertyCounter = 0;
-        private List<Statement> addProperties(TypeContext typeContext, List<Pair<String, Type>> properties) {
+        private List<Statement> addProperties(TypeContext typeContext, List<Pair<String, Type>> properties, Expression exp) {
             List<Statement> addProperties = new ArrayList<>();
             for (Pair<String, Type> property : properties) {
                 int count = propertyCounter++;
@@ -280,7 +280,7 @@ public class TypeCreator {
                         variable("prop_" + count, constructType(property.getRight(), typeContext)),
                         ifThen(
                                 binary(unary(Operator.TYPEOF, identifier("prop_" + count)), Operator.NOT_EQUAL_EQUAL, string("undefined")),
-                                statement(binary(member(identifier("result"), property.getLeft()), Operator.EQUAL, identifier("prop_" + count)))
+                                statement(binary(member(exp, property.getLeft()), Operator.EQUAL, identifier("prop_" + count)))
                         )
                 ));
             }
@@ -346,7 +346,7 @@ public class TypeCreator {
 
             List<Pair<String, Type>> properties = inter.getDeclaredProperties().entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList());
 
-            addProperties.addAll(addProperties(typeContext, properties));
+            addProperties.addAll(addProperties(typeContext, properties, identifier("result")));
 
 
             return createCachedConstruction(
@@ -375,7 +375,7 @@ public class TypeCreator {
                 properties.add(new Pair<>(key, type));
             }
 
-            return addProperties(context, properties);
+            return addProperties(context, properties, exp);
         }
 
         private Collection<Statement> addNumberIndexerType(Type type, TypeContext context, Expression exp, int seed) {
@@ -388,7 +388,7 @@ public class TypeCreator {
                 properties.add(new Pair<>(Integer.toString(random.nextInt(100)), type));
             }
 
-            return addProperties(context, properties);
+            return addProperties(context, properties, exp);
         }
 
         @Override
@@ -684,11 +684,31 @@ public class TypeCreator {
             if (signature.isHasRestParameter() && parameters.size() > 0) {
                 Type restType = getArrayType(parameters.get(parameters.size() - 1).getType());
 
-                typeChecks.add(statement(call(
+                // The check used to see if an error should be reported.
+                if (options.checkDepthUseValue != options.checkDepthReport) {
+                    typeChecks.add(block(
+                            comment("This is just the call to see if an error should be reported, the check to see if the signature is valid is below. "),
+                            statement(call(function(statement(call(
+                            identifier("assert"),
+                            call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
+                                    function(block(
+                                            Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.checkDepthReport))
+                                    ), "exp")
+                            ),
+                            string(path + ".[restArgs]"),
+                            string("valid rest-args"),
+                            AstBuilder.expFromString("Array.prototype.slice.call(args)"),
+                            identifier("i"),
+                            string("rest args")
+                    )))))));
+                }
+
+                // The check used to see if the value should be used.
+                typeChecks.add(ifThen(unary(Operator.NOT, call(
                         identifier("assert"),
                         call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
                                 function(block(
-                                        Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.checkDepth))
+                                        Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.checkDepthUseValue))
                                 ), "exp")
                         ),
                         string(path + ".[restArgs]"),
@@ -696,13 +716,21 @@ public class TypeCreator {
                         AstBuilder.expFromString("Array.prototype.slice.call(args)"),
                         identifier("i"),
                         string("rest args")
-                )));
+                )), Return(bool(false))));
 
                 parameters = parameters.subList(0, parameters.size() - 1);
             }
 
             Util.zip(args.stream(), parameters.stream(), (argName, par) ->
-                    typeChecker.assertResultingType(new TypeWithContext(par.getType(), typeContext), identifier(argName), path + ".[" + argName + "]", options.checkDepth, "argument")
+                    block(
+                            options.checkDepthReport == options.checkDepthUseValue ? block() : expressionStatement(call(function(
+                                    block(
+                                            comment("There warnings are just reported, not used to see if the value should be used (that comes below). "),
+                                            typeChecker.assertResultingType(new TypeWithContext(par.getType(), typeContext), identifier(argName), path + ".[" + argName + "]", info.options.checkDepthReport, "argument")
+                                    )
+                            ))),
+                            typeChecker.assertResultingType(new TypeWithContext(par.getType(), typeContext), identifier(argName), path + ".[" + argName + "]", options.checkDepthUseValue, "argument")
+                    )
             ).forEach(typeChecks::add);
 
             typeChecks.add(checkNumberOfArgs(signature));
@@ -746,7 +774,7 @@ public class TypeCreator {
                             checkRestArgs = ifThen(unary(Operator.NOT,
                                     call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
                                             function(block(
-                                                    Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.checkDepth))
+                                                    Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.checkDepthForUnions))
                                             ), "exp")
                                     )),
                                     Return(bool(false))
@@ -764,7 +792,7 @@ public class TypeCreator {
                                             Signature.Parameter arg = parameterPair.getLeft();
 
                                             return block(
-                                                    variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(new TypeWithContext(arg.getType(), typeContext), identifier("arg" + argIndex), path + ".[arg" + argIndex + "]", options.checkDepth)),
+                                                    variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(new TypeWithContext(arg.getType(), typeContext), identifier("arg" + argIndex), path + ".[arg" + argIndex + "]", options.checkDepthForUnions)),
                                                     ifThen(
                                                             unary(Operator.NOT, identifier("arg" + argIndex + "Correct")),
                                                             Return(bool(false))
@@ -1077,6 +1105,7 @@ public class TypeCreator {
             case "ProgressEvent":
                 return AstBuilder.stmtFromString("return new ProgressEvent(1)");
             case "NodeList":
+            case "NodeListOf":
                 return AstBuilder.stmtFromString("return document.childNodes");
             case "HTMLScriptElement":
                 return AstBuilder.stmtFromString("return document.createElement(\"script\")");
@@ -1207,7 +1236,6 @@ public class TypeCreator {
             case "SpeechSynthesis":
             case "SpeechSynthesisVoice":
             case "ArrayLike":
-            case "NodeListOf":
             case "IterableIterator":
             case "IteratorResult":
                 throw new ProduceManuallyException();

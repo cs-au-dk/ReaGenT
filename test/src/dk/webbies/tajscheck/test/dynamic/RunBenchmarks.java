@@ -189,7 +189,7 @@ public class RunBenchmarks {
     @Test
     public void runFullDriver() throws Exception {
         // Write the driver
-        Main.writeFullDriver(benchmark.withOptions(CheckOptions.errorFindingOptions(benchmark.options)));
+        Main.writeFullDriver(benchmark.withOptions(CheckOptions::errorFindingOptions));
 
         String out = Main.runBenchmark(benchmark);
 //        System.out.println(out);
@@ -222,7 +222,7 @@ public class RunBenchmarks {
 
     @Test
     public void soundnessTest() throws Exception {
-        Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP).withOptions(this.benchmark.options.getBuilder().setConstructAllTypes(true).setFailOnAny(false).build());
+        Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP).withOptions(this.benchmark.options.getBuilder().setMaxIterationsToRun(100 * 1000).setConstructAllTypes(true).setFailOnAny(false).build());
         if (
                 benchmark.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail. (demonstrated in complexSanityCheck3)
                 benchmark.dTSFile.contains("leaflet.d.ts") || // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)
@@ -232,7 +232,9 @@ public class RunBenchmarks {
                 benchmark.dTSFile.contains("ember.d.ts") || // It includes jQuery, therefore it fails.
                 benchmark.dTSFile.contains("materialize.d.ts") || // Includes jQuery.
                 benchmark.dTSFile.contains("three.d.ts") || // bivariant function-arguments in the addGroup() method (the last argument is optional in the base class, but non-optional in the sub class).
-                benchmark.dTSFile.contains("backbone.d.ts")  // Includes jQuery.
+                benchmark.dTSFile.contains("backbone.d.ts")  || // Includes jQuery.
+                benchmark.dTSFile.contains("foundation.d.ts")  || // Includes jQuery.
+                benchmark.dTSFile.contains("angular1.d.ts")  // Includes jQuery.
         ) {
             System.out.println("Is a benchmark which i know to fail. ");
             return;

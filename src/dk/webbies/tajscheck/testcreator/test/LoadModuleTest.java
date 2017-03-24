@@ -14,12 +14,12 @@ public class LoadModuleTest extends Test {
     private final String module;
     private Type moduleType;
 
-    public LoadModuleTest(String module, Type moduleType, BenchmarkInfo info) {
+    public LoadModuleTest(String module, Type moduleType, BenchmarkInfo info, String path) {
         super(
                 Collections.emptyList(),
                 info.bench.run_method == Benchmark.RUN_METHOD.BOOTSTRAP ? Collections.singletonList(moduleType) : Collections.emptyList(),
                 moduleType,
-                "require(\"" + module + "\")",
+                path,
                 TypeContext.create(info)
         );
         this.module = module;

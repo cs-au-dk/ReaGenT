@@ -109,7 +109,7 @@ public class TypeChecker {
             this.depthRemaining = depthRemaining;
         }
 
-        public Arg withParameters(TypeContext map) {
+        public Arg withContext(TypeContext map) {
             return new Arg(map, this.depthRemaining);
         }
 
@@ -142,8 +142,6 @@ public class TypeChecker {
                     Check.typeOf("function"),
                     "a constructor"
             ));
-
-            t.getBaseTypes().stream().filter(ClassType.class::isInstance).forEach(base -> result.addAll(base.accept(this, arg)));
 
             if (arg.depthRemaining > 0) {
                 Arg subArg = arg.decreaseDepth();
@@ -191,7 +189,7 @@ public class TypeChecker {
                         return checkArrayThinghy(t.getTypeArguments().get(0), "Array", arg);
                     case "NodeListOf":
                         assert t.getTypeArguments().size() == 1;
-                        return checkArrayThinghy(t.getTypeArguments().get(0), "NodeList", arg);
+                        return checkArrayThinghy(t.getTypeArguments().get(0), "NodeList", arg.withDepth(0)); // NodeLists not checked.
                     case "ArrayLike":
                         break; // Check manually.
                     default:
@@ -410,6 +408,10 @@ public class TypeChecker {
                 }
             }
 
+            if (info.freeGenericsFinder.hasThisTypes(t)) {
+                arg = arg.withContext(arg.typeContext.withThisType(t));
+            }
+
             List<TypeCheck> result = new ArrayList<>();
 
             if (!t.getDeclaredCallSignatures().isEmpty() || !t.getDeclaredConstructSignatures().isEmpty()) {
@@ -479,7 +481,7 @@ public class TypeChecker {
             if (info.nativeTypes.contains(t.getTarget()) && !(t.getTarget() instanceof TupleType) && !(info.typeNames.get(t) != null && info.typeNames.get(t).startsWith("window."))) {
                 throw new RuntimeException(info.typeNames.get(t));
             }
-            return t.getTarget().accept(this, arg.withParameters(arg.typeContext.append(new TypesUtil(info).generateParameterMap(t))));
+            return t.getTarget().accept(this, arg.withContext(arg.typeContext.append(new TypesUtil(info).generateParameterMap(t))));
         }
 
         private List<TypeCheck> checkArrayThinghy(Type indexType, String instance, Arg arg) {
@@ -586,7 +588,7 @@ public class TypeChecker {
                 }
                 arg = arg.decreaseDepth();
                 TypeWithContext lookup = typeContext.get(parameter);
-                return lookup.getType().accept(this, arg.withParameters(lookup.getTypeContext()));
+                return lookup.getType().accept(this, arg.withContext(lookup.getTypeContext()));
             }
 
             List<TypeCheck> checks = new ArrayList<>(parameter.getConstraint() != null ? parameter.getConstraint().accept(this, arg) : Collections.emptyList());
@@ -638,6 +640,9 @@ public class TypeChecker {
 
         @Override
         public List<TypeCheck> visit(ThisType t, Arg arg) {
+            if (arg.typeContext.getThisType() == null) {
+                System.out.println();
+            }
             return arg.typeContext.getThisType().accept(this, arg);
         }
 

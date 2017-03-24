@@ -255,12 +255,13 @@ function extend(result) {
     return result;
 }
 
-function arrayIndexCheck(obj, check) {
-    if (typeof obj.length !== "number" || obj.length < 0) {
-        return false;
-    }
-    for (var i = 0; i < obj.length; i++) {
-        if (!check(obj[i])) {
+function arrayIndexCheck (obj, check) {
+    var keys = getAllKeys(obj).filter(function (e) {
+        return Number(e) + "" === e;
+    });
+
+    for (var i = 0; i < keys.length; i++) {
+        if (!(check(obj[keys[i]]))) {
             return false;
         }
     }
