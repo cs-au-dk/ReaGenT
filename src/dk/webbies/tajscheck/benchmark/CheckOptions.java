@@ -54,9 +54,7 @@ public final class CheckOptions {
     }
 
     public static CheckOptions errorFindingOptions(CheckOptions options) {
-        return options.getBuilder() // TODO: Change these.
-                .setCheckDepthForUnions(2)
-                .setCheckDepthUseValue(2)
+        return options.getBuilder()
                 .setMaxTime(30 * 1000)
                 .setCombineNullAndUndefined(true)
                 .setFailOnAny(false)
