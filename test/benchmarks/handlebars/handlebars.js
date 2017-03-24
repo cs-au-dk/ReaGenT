@@ -1,35 +1,8 @@
-/**!
+/*!
 
- @license
- handlebars v4.0.6
+ handlebars v4.0.5
 
- Copyright (C) 2011-2016 by Yehuda Katz
-
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in
- all copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- THE SOFTWARE.
-
- */
-/**!
-
- @license
- handlebars v4.0.6
-
- Copyright (C) 2011-2016 by Yehuda Katz
+ Copyright (C) 2011-2015 by Yehuda Katz
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -49,32 +22,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
 
- */
-/**!
-
  @license
- handlebars v4.0.6
-
- Copyright (C) 2011-2016 by Yehuda Katz
-
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in
- all copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- THE SOFTWARE.
-
  */
 (function webpackUniversalModuleDefinition(root, factory) {
     if(typeof exports === 'object' && typeof module === 'object')
@@ -144,23 +92,23 @@
 
             // Compiler imports
 
-            var _handlebarsCompilerAst = __webpack_require__(24);
+            var _handlebarsCompilerAst = __webpack_require__(21);
 
             var _handlebarsCompilerAst2 = _interopRequireDefault(_handlebarsCompilerAst);
 
-            var _handlebarsCompilerBase = __webpack_require__(25);
+            var _handlebarsCompilerBase = __webpack_require__(22);
 
-            var _handlebarsCompilerCompiler = __webpack_require__(30);
+            var _handlebarsCompilerCompiler = __webpack_require__(27);
 
-            var _handlebarsCompilerJavascriptCompiler = __webpack_require__(31);
+            var _handlebarsCompilerJavascriptCompiler = __webpack_require__(28);
 
             var _handlebarsCompilerJavascriptCompiler2 = _interopRequireDefault(_handlebarsCompilerJavascriptCompiler);
 
-            var _handlebarsCompilerVisitor = __webpack_require__(28);
+            var _handlebarsCompilerVisitor = __webpack_require__(25);
 
             var _handlebarsCompilerVisitor2 = _interopRequireDefault(_handlebarsCompilerVisitor);
 
-            var _handlebarsNoConflict = __webpack_require__(23);
+            var _handlebarsNoConflict = __webpack_require__(20);
 
             var _handlebarsNoConflict2 = _interopRequireDefault(_handlebarsNoConflict);
 
@@ -204,8 +152,8 @@
 
             exports["default"] = function (obj) {
                 return obj && obj.__esModule ? obj : {
-                        "default": obj
-                    };
+                    "default": obj
+                };
             };
 
             exports.__esModule = true;
@@ -229,7 +177,7 @@
             // Each of these augment the Handlebars object. No need to setup here.
             // (This is done to easily share code between commonjs and browse envs)
 
-            var _handlebarsSafeString = __webpack_require__(21);
+            var _handlebarsSafeString = __webpack_require__(18);
 
             var _handlebarsSafeString2 = _interopRequireDefault(_handlebarsSafeString);
 
@@ -241,11 +189,11 @@
 
             var Utils = _interopRequireWildcard(_handlebarsUtils);
 
-            var _handlebarsRuntime = __webpack_require__(22);
+            var _handlebarsRuntime = __webpack_require__(19);
 
             var runtime = _interopRequireWildcard(_handlebarsRuntime);
 
-            var _handlebarsNoConflict = __webpack_require__(23);
+            var _handlebarsNoConflict = __webpack_require__(20);
 
             var _handlebarsNoConflict2 = _interopRequireDefault(_handlebarsNoConflict);
 
@@ -319,11 +267,11 @@
 
             var _exception2 = _interopRequireDefault(_exception);
 
-            var _helpers = __webpack_require__(10);
+            var _helpers = __webpack_require__(7);
 
-            var _decorators = __webpack_require__(18);
+            var _decorators = __webpack_require__(15);
 
-            var _logger = __webpack_require__(20);
+            var _logger = __webpack_require__(17);
 
             var _logger2 = _interopRequireDefault(_logger);
 
@@ -539,11 +487,9 @@
 
             /***/ },
         /* 6 */
-        /***/ function(module, exports, __webpack_require__) {
+        /***/ function(module, exports) {
 
             'use strict';
-
-            var _Object$defineProperty = __webpack_require__(7)['default'];
 
             exports.__esModule = true;
 
@@ -572,20 +518,9 @@
                     Error.captureStackTrace(this, Exception);
                 }
 
-                try {
-                    if (loc) {
-                        this.lineNumber = line;
-
-                        // Work around issue under safari where we can't directly set the column value
-                        /* istanbul ignore next */
-                        if (_Object$defineProperty) {
-                            Object.defineProperty(this, 'column', { value: column });
-                        } else {
-                            this.column = column;
-                        }
-                    }
-                } catch (nop) {
-                    /* Ignore if the browser is very particular */
+                if (loc) {
+                    this.lineNumber = line;
+                    this.column = column;
                 }
             }
 
@@ -598,39 +533,6 @@
         /* 7 */
         /***/ function(module, exports, __webpack_require__) {
 
-            module.exports = { "default": __webpack_require__(8), __esModule: true };
-
-            /***/ },
-        /* 8 */
-        /***/ function(module, exports, __webpack_require__) {
-
-            var $ = __webpack_require__(9);
-            module.exports = function defineProperty(it, key, desc){
-                return $.setDesc(it, key, desc);
-            };
-
-            /***/ },
-        /* 9 */
-        /***/ function(module, exports) {
-
-            var $Object = Object;
-            module.exports = {
-                create:     $Object.create,
-                getProto:   $Object.getPrototypeOf,
-                isEnum:     {}.propertyIsEnumerable,
-                getDesc:    $Object.getOwnPropertyDescriptor,
-                setDesc:    $Object.defineProperty,
-                setDescs:   $Object.defineProperties,
-                getKeys:    $Object.keys,
-                getNames:   $Object.getOwnPropertyNames,
-                getSymbols: $Object.getOwnPropertySymbols,
-                each:       [].forEach
-            };
-
-            /***/ },
-        /* 10 */
-        /***/ function(module, exports, __webpack_require__) {
-
             'use strict';
 
             var _interopRequireDefault = __webpack_require__(1)['default'];
@@ -638,31 +540,31 @@
             exports.__esModule = true;
             exports.registerDefaultHelpers = registerDefaultHelpers;
 
-            var _helpersBlockHelperMissing = __webpack_require__(11);
+            var _helpersBlockHelperMissing = __webpack_require__(8);
 
             var _helpersBlockHelperMissing2 = _interopRequireDefault(_helpersBlockHelperMissing);
 
-            var _helpersEach = __webpack_require__(12);
+            var _helpersEach = __webpack_require__(9);
 
             var _helpersEach2 = _interopRequireDefault(_helpersEach);
 
-            var _helpersHelperMissing = __webpack_require__(13);
+            var _helpersHelperMissing = __webpack_require__(10);
 
             var _helpersHelperMissing2 = _interopRequireDefault(_helpersHelperMissing);
 
-            var _helpersIf = __webpack_require__(14);
+            var _helpersIf = __webpack_require__(11);
 
             var _helpersIf2 = _interopRequireDefault(_helpersIf);
 
-            var _helpersLog = __webpack_require__(15);
+            var _helpersLog = __webpack_require__(12);
 
             var _helpersLog2 = _interopRequireDefault(_helpersLog);
 
-            var _helpersLookup = __webpack_require__(16);
+            var _helpersLookup = __webpack_require__(13);
 
             var _helpersLookup2 = _interopRequireDefault(_helpersLookup);
 
-            var _helpersWith = __webpack_require__(17);
+            var _helpersWith = __webpack_require__(14);
 
             var _helpersWith2 = _interopRequireDefault(_helpersWith);
 
@@ -677,7 +579,7 @@
             }
 
             /***/ },
-        /* 11 */
+        /* 8 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -720,7 +622,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 12 */
+        /* 9 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -817,7 +719,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 13 */
+        /* 10 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -845,7 +747,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 14 */
+        /* 11 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -878,7 +780,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 15 */
+        /* 12 */
         /***/ function(module, exports) {
 
             'use strict';
@@ -908,7 +810,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 16 */
+        /* 13 */
         /***/ function(module, exports) {
 
             'use strict';
@@ -924,7 +826,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 17 */
+        /* 14 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -961,7 +863,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 18 */
+        /* 15 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -971,7 +873,7 @@
             exports.__esModule = true;
             exports.registerDefaultDecorators = registerDefaultDecorators;
 
-            var _decoratorsInline = __webpack_require__(19);
+            var _decoratorsInline = __webpack_require__(16);
 
             var _decoratorsInline2 = _interopRequireDefault(_decoratorsInline);
 
@@ -980,7 +882,7 @@
             }
 
             /***/ },
-        /* 19 */
+        /* 16 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -1013,7 +915,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 20 */
+        /* 17 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -1064,7 +966,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 21 */
+        /* 18 */
         /***/ function(module, exports) {
 
             // Build out our basic SafeString type
@@ -1083,7 +985,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 22 */
+        /* 19 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -1248,7 +1150,7 @@
                         blockParams = templateSpec.useBlockParams ? [] : undefined;
                     if (templateSpec.useDepths) {
                         if (options.depths) {
-                            depths = context != options.depths[0] ? [context].concat(options.depths) : options.depths;
+                            depths = context !== options.depths[0] ? [context].concat(options.depths) : options.depths;
                         } else {
                             depths = [context];
                         }
@@ -1297,7 +1199,7 @@
                     var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
                     var currentDepths = depths;
-                    if (depths && context != depths[0]) {
+                    if (depths && context !== depths[0]) {
                         currentDepths = [context].concat(depths);
                     }
 
@@ -1315,12 +1217,7 @@
             function resolvePartial(partial, context, options) {
                 if (!partial) {
                     if (options.name === '@partial-block') {
-                        var data = options.data;
-                        while (data['partial-block'] === noop) {
-                            data = data._parent;
-                        }
-                        partial = data['partial-block'];
-                        data['partial-block'] = noop;
+                        partial = options.data['partial-block'];
                     } else {
                         partial = options.partials[options.name];
                     }
@@ -1381,7 +1278,7 @@
             }
 
             /***/ },
-        /* 23 */
+        /* 20 */
         /***/ function(module, exports) {
 
             /* WEBPACK VAR INJECTION */(function(global) {/* global window */
@@ -1406,7 +1303,7 @@
                 /* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
             /***/ },
-        /* 24 */
+        /* 21 */
         /***/ function(module, exports) {
 
             'use strict';
@@ -1441,7 +1338,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 25 */
+        /* 22 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -1453,15 +1350,15 @@
             exports.__esModule = true;
             exports.parse = parse;
 
-            var _parser = __webpack_require__(26);
+            var _parser = __webpack_require__(23);
 
             var _parser2 = _interopRequireDefault(_parser);
 
-            var _whitespaceControl = __webpack_require__(27);
+            var _whitespaceControl = __webpack_require__(24);
 
             var _whitespaceControl2 = _interopRequireDefault(_whitespaceControl);
 
-            var _helpers = __webpack_require__(29);
+            var _helpers = __webpack_require__(26);
 
             var Helpers = _interopRequireWildcard(_helpers);
 
@@ -1490,7 +1387,7 @@
             }
 
             /***/ },
-        /* 26 */
+        /* 23 */
         /***/ function(module, exports) {
 
             /* istanbul ignore next */
@@ -2219,7 +2116,7 @@
                                 break;
                         }
                     };
-                    lexer.rules = [/^(?:[^\x00]*?(?=(\{\{)))/, /^(?:[^\x00]+)/, /^(?:[^\x00]{2,}?(?=(\{\{|\\\{\{|\\\\\{\{|$)))/, /^(?:\{\{\{\{(?=[^\/]))/, /^(?:\{\{\{\{\/[^\s!"#%-,\.\/;->@\[-\^`\{-~]+(?=[=}\s\/.])\}\}\}\})/, /^(?:[^\x00]*?(?=(\{\{\{\{)))/, /^(?:[\s\S]*?--(~)?\}\})/, /^(?:\()/, /^(?:\))/, /^(?:\{\{\{\{)/, /^(?:\}\}\}\})/, /^(?:\{\{(~)?>)/, /^(?:\{\{(~)?#>)/, /^(?:\{\{(~)?#\*?)/, /^(?:\{\{(~)?\/)/, /^(?:\{\{(~)?\^\s*(~)?\}\})/, /^(?:\{\{(~)?\s*else\s*(~)?\}\})/, /^(?:\{\{(~)?\^)/, /^(?:\{\{(~)?\s*else\b)/, /^(?:\{\{(~)?\{)/, /^(?:\{\{(~)?&)/, /^(?:\{\{(~)?!--)/, /^(?:\{\{(~)?![\s\S]*?\}\})/, /^(?:\{\{(~)?\*?)/, /^(?:=)/, /^(?:\.\.)/, /^(?:\.(?=([=~}\s\/.)|])))/, /^(?:[\/.])/, /^(?:\s+)/, /^(?:\}(~)?\}\})/, /^(?:(~)?\}\})/, /^(?:"(\\["]|[^"])*")/, /^(?:'(\\[']|[^'])*')/, /^(?:@)/, /^(?:true(?=([~}\s)])))/, /^(?:false(?=([~}\s)])))/, /^(?:undefined(?=([~}\s)])))/, /^(?:null(?=([~}\s)])))/, /^(?:-?[0-9]+(?:\.[0-9]+)?(?=([~}\s)])))/, /^(?:as\s+\|)/, /^(?:\|)/, /^(?:([^\s!"#%-,\.\/;->@\[-\^`\{-~]+(?=([=~}\s\/.)|]))))/, /^(?:\[(\\\]|[^\]])*\])/, /^(?:.)/, /^(?:$)/];
+                    lexer.rules = [/^(?:[^\x00]*?(?=(\{\{)))/, /^(?:[^\x00]+)/, /^(?:[^\x00]{2,}?(?=(\{\{|\\\{\{|\\\\\{\{|$)))/, /^(?:\{\{\{\{(?=[^/]))/, /^(?:\{\{\{\{\/[^\s!"#%-,\.\/;->@\[-\^`\{-~]+(?=[=}\s\/.])\}\}\}\})/, /^(?:[^\x00]*?(?=(\{\{\{\{)))/, /^(?:[\s\S]*?--(~)?\}\})/, /^(?:\()/, /^(?:\))/, /^(?:\{\{\{\{)/, /^(?:\}\}\}\})/, /^(?:\{\{(~)?>)/, /^(?:\{\{(~)?#>)/, /^(?:\{\{(~)?#\*?)/, /^(?:\{\{(~)?\/)/, /^(?:\{\{(~)?\^\s*(~)?\}\})/, /^(?:\{\{(~)?\s*else\s*(~)?\}\})/, /^(?:\{\{(~)?\^)/, /^(?:\{\{(~)?\s*else\b)/, /^(?:\{\{(~)?\{)/, /^(?:\{\{(~)?&)/, /^(?:\{\{(~)?!--)/, /^(?:\{\{(~)?![\s\S]*?\}\})/, /^(?:\{\{(~)?\*?)/, /^(?:=)/, /^(?:\.\.)/, /^(?:\.(?=([=~}\s\/.)|])))/, /^(?:[\/.])/, /^(?:\s+)/, /^(?:\}(~)?\}\})/, /^(?:(~)?\}\})/, /^(?:"(\\["]|[^"])*")/, /^(?:'(\\[']|[^'])*')/, /^(?:@)/, /^(?:true(?=([~}\s)])))/, /^(?:false(?=([~}\s)])))/, /^(?:undefined(?=([~}\s)])))/, /^(?:null(?=([~}\s)])))/, /^(?:-?[0-9]+(?:\.[0-9]+)?(?=([~}\s)])))/, /^(?:as\s+\|)/, /^(?:\|)/, /^(?:([^\s!"#%-,\.\/;->@\[-\^`\{-~]+(?=([=~}\s\/.)|]))))/, /^(?:\[(\\\]|[^\]])*\])/, /^(?:.)/, /^(?:$)/];
                     lexer.conditions = { "mu": { "rules": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44], "inclusive": false }, "emu": { "rules": [2], "inclusive": false }, "com": { "rules": [6], "inclusive": false }, "raw": { "rules": [3, 4, 5], "inclusive": false }, "INITIAL": { "rules": [0, 1, 44], "inclusive": true } };
                     return lexer;
                 })();
@@ -2232,7 +2129,7 @@
             exports['default'] = handlebars;
 
             /***/ },
-        /* 27 */
+        /* 24 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -2241,7 +2138,7 @@
 
             exports.__esModule = true;
 
-            var _visitor = __webpack_require__(28);
+            var _visitor = __webpack_require__(25);
 
             var _visitor2 = _interopRequireDefault(_visitor);
 
@@ -2456,7 +2353,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 28 */
+        /* 25 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -2599,7 +2496,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 29 */
+        /* 26 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -2832,7 +2729,7 @@
             }
 
             /***/ },
-        /* 30 */
+        /* 27 */
         /***/ function(module, exports, __webpack_require__) {
 
             /* eslint-disable new-cap */
@@ -2852,7 +2749,7 @@
 
             var _utils = __webpack_require__(5);
 
-            var _ast = __webpack_require__(24);
+            var _ast = __webpack_require__(21);
 
             var _ast2 = _interopRequireDefault(_ast);
 
@@ -3407,7 +3304,7 @@
             }
 
             /***/ },
-        /* 31 */
+        /* 28 */
         /***/ function(module, exports, __webpack_require__) {
 
             'use strict';
@@ -3424,7 +3321,7 @@
 
             var _utils = __webpack_require__(5);
 
-            var _codeGen = __webpack_require__(32);
+            var _codeGen = __webpack_require__(29);
 
             var _codeGen2 = _interopRequireDefault(_codeGen);
 
@@ -4195,11 +4092,11 @@
                         child = children[i];
                         compiler = new this.compiler(); // eslint-disable-line new-cap
 
-                        var existing = this.matchExistingProgram(child);
+                        var index = this.matchExistingProgram(child);
 
-                        if (existing == null) {
+                        if (index == null) {
                             this.context.programs.push(''); // Placeholder to prevent name conflicts for nested children
-                            var index = this.context.programs.length;
+                            index = this.context.programs.length;
                             child.index = index;
                             child.name = 'program' + index;
                             this.context.programs[index] = compiler.compile(child, options, this.context, !this.precompile);
@@ -4208,14 +4105,12 @@
 
                             this.useDepths = this.useDepths || compiler.useDepths;
                             this.useBlockParams = this.useBlockParams || compiler.useBlockParams;
-                            child.useDepths = this.useDepths;
-                            child.useBlockParams = this.useBlockParams;
                         } else {
-                            child.index = existing.index;
-                            child.name = 'program' + existing.index;
+                            child.index = index;
+                            child.name = 'program' + index;
 
-                            this.useDepths = this.useDepths || existing.useDepths;
-                            this.useBlockParams = this.useBlockParams || existing.useBlockParams;
+                            this.useDepths = this.useDepths || child.useDepths;
+                            this.useBlockParams = this.useBlockParams || child.useBlockParams;
                         }
                     }
                 },
@@ -4223,7 +4118,7 @@
                     for (var i = 0, len = this.context.environments.length; i < len; i++) {
                         var environment = this.context.environments[i];
                         if (environment && environment.equals(child)) {
-                            return environment;
+                            return i;
                         }
                     }
                 },
@@ -4538,7 +4433,7 @@
             module.exports = exports['default'];
 
             /***/ },
-        /* 32 */
+        /* 29 */
         /***/ function(module, exports, __webpack_require__) {
 
             /* global define */
