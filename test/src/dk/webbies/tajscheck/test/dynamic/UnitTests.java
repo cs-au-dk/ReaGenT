@@ -122,7 +122,7 @@ public class UnitTests {
         }
 
         ParseResultTester forPath(String path) {
-            return forPath(containsString(path));
+            return forPath(is(path));
         }
 
         ParseResultTester forPath(Matcher<String> path) {
@@ -172,6 +172,14 @@ public class UnitTests {
             return this;
         }
 
+        ParseResultTester type(String type) {
+            results = results.stream().filter(candidate -> type.equals(candidate.type)).collect(Collectors.toList());
+
+            assertThat("expected something with type: " + type, results.size(),is(not(equalTo(0))));
+
+            return this;
+        }
+
         enum ExpectType {
             TYPEOF,
             STRING,
@@ -204,7 +212,7 @@ public class UnitTests {
     public void wrongSimpleType() throws Exception {
         RunResult result = run("wrongSimpleType", "aSeed");
 
-        assertThat(result.typeErrors.size(), is(1));
+        assertThat(result.typeErrors.size(), is(2));
 
         expect(result)
                 .forPath("module.foo.bar")
@@ -263,7 +271,7 @@ public class UnitTests {
     public void genericClass() throws Exception {
         RunResult result = run("genericClass", "mySeed");
 
-        assertThat(result.typeErrors.size(), is(1));
+        assertThat(result.typeErrors.size(), is(2));
 
         expect(result)
                 .forPath("module.Container.create().<>.value", "module.Container.new().value")
@@ -357,7 +365,7 @@ public class UnitTests {
 
     @Test
     public void arrayType() throws Exception {
-        RunResult result = run(benchFromFolder("arrayType", CheckOptions.builder().setCheckDepth(2).build()), "foo");
+        RunResult result = run(benchFromFolder("arrayType", CheckOptions.builder().setCheckDepthUseValue(2).build()), "foo");
 
         expect(result)
                 .forPath("module.foo()")
@@ -377,18 +385,23 @@ public class UnitTests {
     public void numberIndexer() throws Exception {
         RunResult result = run("numberIndexer", "foo");
 
-        assertThat(result.typeErrors.size(), is(1));
+        assertThat(result.typeErrors.size(), is(2));
 
         expect(result)
                 .forPath("module.foo().[numberIndexer]")
                 .expected("number")
                 .got(TYPEOF, "string");
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("(numberIndexer: number)")
+                .got(JSON, "{\"1\":1,\"3\":4,\"7\":1,\"10\":\"blah\"}");
     }
 
     @Test
     public void deepNumberIndexer() throws Exception {
         CheckOptions options = CheckOptions.builder()
-                .setCheckDepth(1)
+                .setCheckDepthUseValue(1)
                 .build();
 
         RunResult result = run("numberIndexer", options, "foo");
@@ -403,7 +416,7 @@ public class UnitTests {
 
     @Test
     public void stringIndexer() throws Exception {
-        RunResult result = run("stringIndexer", "foo");
+        RunResult result = run("stringIndexer", CheckOptions.builder().setCheckDepthReport(0).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -660,6 +673,11 @@ public class UnitTests {
     }
 
     @Test
+    public void nodeList() throws Exception {
+        sanityCheck(benchFromFolder("nodeList", CheckOptions.builder().setCheckDepthReport(1).setCheckDepthUseValue(1).build()), BROWSER);
+    }
+
+    @Test
     public void extendingGenericClass() throws Exception {
         sanityCheck(benchFromFolder("extendingGenericClass"), NODE);
     }
@@ -749,13 +767,13 @@ public class UnitTests {
 
     @Test
     public void genericsAreOptimized() throws Exception {
-        CheckOptions options = CheckOptions.builder().setDisableSizeOptimization(false).build();
+        CheckOptions options = CheckOptions.builder().setDisableSizeOptimization(false).setCheckDepthReport(0).build();
         RunResult optimized = run(benchFromFolder("genericsAreOptimized", options), "seed");
 
         assertThat(optimized.typeErrors.size(), is(1));
 
 
-        options = CheckOptions.builder().setDisableSizeOptimization(true).build();
+        options = CheckOptions.builder().setDisableSizeOptimization(true).setCheckDepthReport(0).build();
         RunResult unOptimzed = run(benchFromFolder("genericsAreOptimized", options), "seed");
 
         assertThat(unOptimzed.typeErrors.size(), is(2));
@@ -775,7 +793,7 @@ public class UnitTests {
         CheckOptions options = CheckOptions.builder().setDisableSizeOptimization(true).build();
         RunResult result = run(benchFromFolder("genericsWithNoOptimization", options), "seed");
 
-        assertThat(result.typeErrors.size(), is(1));
+        assertThat(result.typeErrors.size(), is(2));
     }
 
     @Test
@@ -792,7 +810,7 @@ public class UnitTests {
 
     @Test
     public void thisTypesAreOptimized() throws Exception {
-        RunResult result = run("thisTypesAreOptimized", "foo");
+        RunResult result = run("thisTypesAreOptimized", CheckOptions.builder().setCheckDepthUseValue(0).setCheckDepthReport(0).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
     }
@@ -877,7 +895,7 @@ public class UnitTests {
     public void extendsArray3() throws Exception {
         RunResult result = run("extendsArray3", "foo");
 
-        assertThat(result.typeErrors.size(), is(equalTo(1)));
+        assertThat(result.typeErrors.size(), is(equalTo(3)));
 
         expect(result)
                 .forPath("module.bar().<>.[numberIndexer].<>.[numberIndexer]")
@@ -894,7 +912,7 @@ public class UnitTests {
 
     @Test
     public void unconstrainedGenericsAreNotDuplicated() throws Exception {
-        RunResult result = run("unconstrainedGenericsAreNotDuplicated", "foo");
+        RunResult result = run("unconstrainedGenericsAreNotDuplicated", CheckOptions.builder().setCheckDepthReport(0).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(lessThanOrEqualTo(1)));
 
@@ -1087,7 +1105,7 @@ public class UnitTests {
 
     @Test
     public void complexThisTypes3() throws Exception {
-        RunResult result = run("complexThisTypes3", CheckOptions.builder().setCheckDepth(2).build(), "foo");
+        RunResult result = run("complexThisTypes3", CheckOptions.builder().setCheckDepthUseValue(2).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -1097,7 +1115,7 @@ public class UnitTests {
     public void staticFields() throws Exception {
         RunResult result = run("staticFields", "foo");
 
-        assertThat(result.typeErrors.size(), is(1));
+        assertThat(result.typeErrors.size(), is(2));
 
         expect(result)
                 .forPath("module.Foo.foo")
@@ -1219,9 +1237,31 @@ public class UnitTests {
         assertThat(coverage, is(not(emptyMap())));
     }
 
+    @Test
+    public void combinedShallowDeepChecking() throws Exception {
+        RunResult result = run("combinedShallowDeepChecking", "foo");
+
+        expect(result)
+                .forPath("module.K")
+                .type("load module")
+                .expected("function")
+                .got(TYPEOF, "undefined");
+
+        expect(result)
+                .forPath("module.K")
+                .type("property access")
+                .expected("function")
+                .got(TYPEOF, "undefined");
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("true")
+                .got(STRING, "false");
+    }
+
     /*
-     * Examples used in the paper are below this:
-     */
+         * Examples used in the paper are below this:
+         */
     @Test
     public void firstOrderFunctions() throws Exception {
         RunResult result = run("firstOrderFunctions", "foo");
@@ -1235,7 +1275,7 @@ public class UnitTests {
 
     @Test
     public void basicExample() throws Exception {
-        RunResult result = run("basicExample", "foo");
+        RunResult result = run("basicExample", CheckOptions.builder().setCheckDepthReport(0).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1277,7 +1317,7 @@ public class UnitTests {
 
     @Test
     public void unsoundSiblings() throws Exception {
-        CheckOptions options = CheckOptions.builder().setCheckDepth(2).build();
+        CheckOptions options = CheckOptions.builder().setCheckDepthUseValue(2).build();
         RunResult result = parseDriverResult(runDriver(benchFromFolder("unsoundSiblings", options, "Box2D"), "foo", true));
 
         assertThat(result.typeErrors.size(), is(greaterThanOrEqualTo(1)));

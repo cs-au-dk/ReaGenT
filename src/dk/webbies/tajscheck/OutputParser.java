@@ -16,7 +16,7 @@ public class OutputParser {
         public String typeof;
         public String toString;
         public String JSON;
-        private String type;
+        public String type;
 
         public TypeError(String path, String expected, String typeof, String toString, String JSON, String type) {
             this.path = path;
