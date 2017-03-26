@@ -1105,8 +1105,9 @@ public class TypeCreator {
             case "ProgressEvent":
                 return AstBuilder.stmtFromString("return new ProgressEvent(1)");
             case "NodeList":
-            case "NodeListOf":
                 return AstBuilder.stmtFromString("return document.childNodes");
+            case "NodeListOf":
+                return AstBuilder.stmtFromString("return document.querySelectorAll(\"foo bar baz\")"); // <- returns an empty node-list.
             case "HTMLScriptElement":
                 return AstBuilder.stmtFromString("return document.createElement(\"script\")");
             case "HTMLAudioElement":
