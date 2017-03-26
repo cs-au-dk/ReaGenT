@@ -146,7 +146,7 @@ public class Main {
 
     public static Map<String, CoverageResult> genCoverage(Benchmark bench, String testFileName) throws IOException {
         try {
-            writeFullDriver(bench);
+            writeFullDriver(bench.withOptions(options -> options.getBuilder().setCheckDepthReport(options.checkDepthUseValue).build()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
