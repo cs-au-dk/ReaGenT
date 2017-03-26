@@ -98,7 +98,11 @@ public class RunBenchmarks {
         benchmarks.put("PhotoSwipe", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/photoswipe/photoswipe.js", "test/benchmarks/photoswipe/photoswipe.d.ts", "PhotoSwipe", BROWSER, options));
         benchmarks.put("CreateJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/createjs/createjs.js", "test/benchmarks/createjs/createjs.d.ts", "createjs", BROWSER, options));
         benchmarks.put("Vue.js", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/vue/vue.js", "test/benchmarks/vue/index.d.ts", "Vue", BROWSER, options));
-        benchmarks.put("three.js", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/three/three.js", "test/benchmarks/three/three.d.ts", "THREE", BROWSER, options));
+        benchmarks.put("three.js", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/three/three.js", "test/benchmarks/three/three.d.ts", "THREE", BROWSER,
+                options.getBuilder()
+                .setCheckDepthReport(1)
+                .build()
+        ));
         benchmarks.put("Leaflet", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/leaflet/leaflet.js", "test/benchmarks/leaflet/leaflet.d.ts", "L", BROWSER, options));
 
         benchmarks.put("Backbone.js",
