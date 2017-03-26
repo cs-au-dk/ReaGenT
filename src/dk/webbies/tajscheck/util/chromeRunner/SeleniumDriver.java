@@ -88,7 +88,11 @@ public class SeleniumDriver {
 
         String message = String.join("\n", server.getMessages());
 
-        driver.quit();
+        try {
+            driver.quit();
+        } catch (Exception e) {
+            System.err.println("Had an error while quiting the chrome driver, continueing anyway");
+        }
 
         return message;
     }
