@@ -84,8 +84,6 @@ public class TestCreator {
             assert Util.intersection(paths, info.bench.pathsToTest).size() == info.bench.pathsToTest.size();
         }
 
-        tests = concatDuplicateTests(tests);
-
         if (info.bench.options.writePrimitives) {
             for (Test test : new ArrayList<>(tests)) {
                 if (test instanceof PropertyReadTest) {
@@ -102,7 +100,10 @@ public class TestCreator {
                     }
                 }
             }
+        }
 
+        if (concatDuplicates) {
+            tests = concatDuplicateTests(tests);
         }
 
         return tests;
