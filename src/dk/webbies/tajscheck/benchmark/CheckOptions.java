@@ -14,7 +14,7 @@ public final class CheckOptions {
     public final boolean splitUnions;
     public final int maxIterationsToRun;
     public final boolean disableSizeOptimization;
-    public final boolean combineAllUnconstrainedGenerics;
+    public final boolean combineAllUnboundGenerics;
     public final boolean disableGenerics;
     public final boolean constructAllTypes;
     public final int maxTime;
@@ -33,7 +33,7 @@ public final class CheckOptions {
         this.maxIterationsToRun = builder.maxIterationsToRun;
         this.maxTime = builder.maxTime;
         this.disableSizeOptimization = builder.disableSizeOptimization;
-        this.combineAllUnconstrainedGenerics = builder.combineAllUnconstrainedGenerics;
+        this.combineAllUnboundGenerics = builder.combineAllUnboundGenerics;
         this.disableGenerics = builder.disableGenerics;
         this.constructAllTypes = builder.constructAllTypes;
         this.failOnAny = builder.failOnAny;
@@ -75,7 +75,7 @@ public final class CheckOptions {
         private int maxIterationsToRun = 10000; // The maximum number of iteration to run in the loop, before returning
         private int maxTime = 60 * 1000; // The maximum time to run (the driver tries to exist gracefully, but 10 seconds after the timeout, it is forcefully shutdown).
         private boolean disableSizeOptimization = false; // Disable optimizations for generics (don't do this)
-        private boolean combineAllUnconstrainedGenerics = true; // Instead of having distinct values for each unconstrained generic, combine them all into 1. (If disabled, there is a small unsoundness if a generic method extends another generic method).
+        private boolean combineAllUnboundGenerics = true; // Instead of having distinct values for each unbound generic, combine them all into 1. (If disabled, there is a small unsoundness if a generic method extends another generic method).
         private boolean disableGenerics = false; // Disable all generics, the TypeContext becomes empty.
         private boolean constructAllTypes = false; // As in, also construct classes, class-instances, and the module itself we are trying to test (all of them only if there is a method taking it as parameter).
         private boolean failOnAny = true; // If "any" is returned (as in, something that has our "isAnyMarker"), it is a valid warning.
@@ -141,8 +141,8 @@ public final class CheckOptions {
             return this;
         }
 
-        public Builder setCombineAllUnconstrainedGenerics(boolean combineAllUnconstrainedGenerics) {
-            this.combineAllUnconstrainedGenerics = combineAllUnconstrainedGenerics;
+        public Builder setCombineAllUnboundGenerics(boolean combineAllUnboundGenerics) {
+            this.combineAllUnboundGenerics = combineAllUnboundGenerics;
             return this;
         }
 

@@ -1,16 +1,12 @@
 package dk.webbies.tajscheck.typeutil.typeContext;
 
-import dk.au.cs.casa.typescript.SpecReader;
-import dk.au.cs.casa.typescript.types.ClassInstanceType;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
-import org.eclipse.jetty.util.TypeUtil;
 
 import java.util.*;
 
@@ -141,7 +137,7 @@ public class OptimizingTypeContext implements TypeContext {
             }
         }
 
-        if (info.bench.options.combineAllUnconstrainedGenerics) {
+        if (info.bench.options.combineAllUnboundGenerics) {
             boolean foundShortcut = false;
             for (Map.Entry<TypeParameterType, Type> entry : new HashMap<>(clone.map).entrySet()) {
                 Type keyConstraint = entry.getKey().getConstraint();

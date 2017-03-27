@@ -176,7 +176,7 @@ public class BenchmarkInfo {
 
 
         // Combining type-arguments, that are identical (have the same constraint). We can however only do that if it is not referenced anywhere.
-        if (bench.options.combineAllUnconstrainedGenerics) {
+        if (bench.options.combineAllUnboundGenerics) {
             Set<TypeParameterType> parameters = new HashSet<>();
             Set<TypeParameterType> arguments = new HashSet<>();
             for (Type type : allTypes) {

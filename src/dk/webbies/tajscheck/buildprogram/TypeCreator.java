@@ -429,14 +429,7 @@ public class TypeCreator {
 
             switch (simple.getKind()) {
                 case String:
-                    // Math.random().toString(36).substring(Math.random() * 20);
-                    MethodCallExpression produceRandomString = methodCall(methodCall(call(identifier("random")), "toString", number(26)), "substring",
-                            binary(
-                                    call(identifier("random")),
-                                    Operator.MULT,
-                                    number(20)
-                            ));
-                    return Return(produceRandomString);
+                    return AstBuilder.stmtFromString("return Math.random().toString(36).substring(Math.random() * 20)");
                 case Number:
                     return AstBuilder.stmtFromString(
                             "    switch(Math.random() * 3 | 0) {\n" +
@@ -451,23 +444,12 @@ public class TypeCreator {
                             "        }\n" +
                             "    }");
                 case Boolean:
-                    // Math.random() > 0.5
-                    return Return(
-                            binary(
-                                    call(identifier("random")),
-                                    Operator.LESS_THAN,
-                                    number(0.5)
-                            )
-                    );
+                    return stmtFromString("return Math.random() > 0.5");
                 case Any:
-                    return Return(
-                            object(new ObjectLiteral.Property("__isAnyMarker", object()))
-                    );
+                    return stmtFromString("return {__isAnyMarker: {}}");
                 case Undefined:
                 case Void:
-                    return Return(
-                            unary(Operator.VOID, number(0))
-                    );
+                    return stmtFromString("return void(0);");
                 case Null:
                     return Return(nullLiteral());
                 case Enum:

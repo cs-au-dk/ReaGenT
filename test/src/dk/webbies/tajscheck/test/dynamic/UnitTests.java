@@ -911,8 +911,8 @@ public class UnitTests {
     }
 
     @Test
-    public void unconstrainedGenericsAreNotDuplicated() throws Exception {
-        RunResult result = run("unconstrainedGenericsAreNotDuplicated", CheckOptions.builder().setCheckDepthReport(0).build(), "foo");
+    public void unboundGenericsAreNotDuplicated() throws Exception {
+        RunResult result = run("unboundGenericsAreNotDuplicated", CheckOptions.builder().setCheckDepthReport(0).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(lessThanOrEqualTo(1)));
 
@@ -963,7 +963,7 @@ public class UnitTests {
 
     @Test
     public void genericsAreNotTooOptimized() throws Exception {
-        Benchmark bench = benchFromFolder("genericsAreNotTooOptimized", CheckOptions.builder().setCombineAllUnconstrainedGenerics(true).build());
+        Benchmark bench = benchFromFolder("genericsAreNotTooOptimized", CheckOptions.builder().setCombineAllUnboundGenerics(true).build());
         String driver = Main.generateFullDriver(bench);
         Main.writeFullDriver(bench);
 
@@ -1302,7 +1302,7 @@ public class UnitTests {
 
     @Test
     public void genericExtendMethod() throws Exception {
-        RunResult result = run("genericExtendMethod", CheckOptions.builder().setCombineAllUnconstrainedGenerics(false).build(), "foo");
+        RunResult result = run("genericExtendMethod", CheckOptions.builder().setCombineAllUnboundGenerics(false).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(0));
 

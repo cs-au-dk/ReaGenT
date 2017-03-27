@@ -23,7 +23,7 @@ public class DeltaTest {
         bench = bench.withOptions(CheckOptions.errorFindingOptions(bench.options.getBuilder().setMaxIterationsToRun(100 * 1000).build()));
         String testPath = "window.async.timesLimit.[arg3].[arg1]";
         String typeof = "object";
-//        String expected = "(undefined or (a non null value and Array and (arrayIndex: (null or ([any] and a non null value and a generic type marker (._isUnconstrainedGeneric))))))";
+//        String expected = "(undefined or (a non null value and Array and (arrayIndex: (null or ([any] and a non null value and a generic type marker (._isUnboundGeneric))))))";
 
         String driver = Util.readFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME);
         List<String> paths = Arrays.stream(driver.split(Pattern.quote("\n")))
@@ -57,7 +57,7 @@ public class DeltaTest {
                 throw new RuntimeException(e);
             }
             result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().forEach(System.out::println);
-            return result.typeErrors.stream().anyMatch(te -> te.getPath().contains(typeError.getPath()) && te.typeof.equals(typeError.typeof) && te.JSON.contains("null") && te.JSON.contains("isUnconstrained"));
+            return result.typeErrors.stream().anyMatch(te -> te.getPath().contains(typeError.getPath()) && te.typeof.equals(typeError.typeof) && te.JSON.contains("null") && te.JSON.contains("isUnboundGeneric"));
         };
     }
 }
