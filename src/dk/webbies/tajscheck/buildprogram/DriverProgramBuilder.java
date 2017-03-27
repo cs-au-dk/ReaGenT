@@ -219,7 +219,7 @@ public class DriverProgramBuilder {
             Type product = produces.iterator().next();
             int index = typeCreator.getTestProducesIndexes(test).iterator().next();
             saveResultStatement = block(
-                    expressionStatement(call(function(
+                    info.options.checkDepthReport == info.options.checkDepthUseValue ? block() : expressionStatement(call(function(
                             block(
                                     comment("There warnings are just reported, not used to see if the value should be used (that comes below). "),
                                     checkType.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepthReport, test.getTestType())
