@@ -118,17 +118,9 @@ public class DriverProgramBuilder {
                                             buildTestCases()),
                                     catchBlock(
                                             identifier("e"),
-                                            block(
-    //                                                statement(call(identifier("print"), identifier("e"))),
-                                                    ifThen(
-                                                            binary(identifier("e"), Operator.INSTANCEOF, identifier(RUNTIME_ERROR_NAME)),
-                                                            block(
-                                                                    statement(call(identifier("error"),
-                                                                            binary(string(RUNTIME_ERROR_NAME), Operator.PLUS, member(identifier("e"), "message"))
-                                                                    ))
-                                                            )
-                                                    )
-                                            )))
+                                            block()
+                                    )
+                            )
                     )
                 )
         ))));
