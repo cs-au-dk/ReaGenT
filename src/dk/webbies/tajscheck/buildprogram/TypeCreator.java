@@ -8,6 +8,7 @@ import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -17,6 +18,7 @@ import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.util.*;
+import org.apache.bcel.generic.RET;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.*;
@@ -62,9 +64,21 @@ public class TypeCreator {
             for (Type type : test.getTypeToTest()) {
                 getType(type, test.getTypeContext());
             }
+            if (test instanceof FunctionTest) {
+                if (!((FunctionTest) test).getPrecedingSignatures().isEmpty()) {
+                    InterfaceType precedingSignaturesInterface = TypesUtil.signaturesToInterface(((FunctionTest) test).getPrecedingSignatures(), info.typeNames);
+                    constructType(precedingSignaturesInterface, test.getTypeContext());
+                    precedingSignaturesType.put((FunctionTest) test, getTypeIndex(precedingSignaturesInterface, test.getTypeContext()));
+                }
+            }
         }
         finish();
+    }
 
+    private final Map<FunctionTest, Integer> precedingSignaturesType = new IdentityHashMap<>();
+
+    public int getPrecedingSignaturesType(FunctionTest test) {
+        return precedingSignaturesType.get(test);
     }
 
     public List<Integer> getTestProducesIndexes(Test test) {
@@ -728,7 +742,7 @@ public class TypeCreator {
                     ))),
                     ifThenElse(
                             identifier("signatureCorrect"),
-                            saveArgsAndReturnValue(signature, typeContext), // Saving the arguments, and returning something
+                            saveArgsAndReturnValue(signature, typeContext, path), // Saving the arguments, and returning something
                             Return(constructType(signature.getResolvedReturnType(), typeContext)) // Just returning the correct type, no saving arguments.
                     )
 
@@ -842,7 +856,7 @@ public class TypeCreator {
                                 Signature signature = pair.getLeft();
                                 return new Pair<Expression, Statement>(
                                         number(signatureIndex),
-                                        saveArgsAndReturnValue(signature, typeContext)
+                                        saveArgsAndReturnValue(signature, typeContext, path)
                                 );
                             }).collect(Collectors.toList())
                     )
@@ -880,7 +894,7 @@ public class TypeCreator {
         );
     }
 
-    private BlockStatement saveArgsAndReturnValue(Signature signature, TypeContext typeContext) {
+    private BlockStatement saveArgsAndReturnValue(Signature signature, TypeContext typeContext, String path) {
         List<Signature.Parameter> parameters = signature.getParameters();
 
         List<Statement> saveArgumentValues = new ArrayList<>();
@@ -914,15 +928,20 @@ public class TypeCreator {
                 }
         ).forEach(saveArgumentValues::add);
 
+        if (path.equals("mockFunctionForFirstMatchPolicy")) {
+            return block(Return());
+        }
+
+        Type returnType = signature.getResolvedReturnType();
         return block(
                 block(saveArgumentValues),
-                variable("result", constructType(signature.getResolvedReturnType(), typeContext)),
+                variable("result", constructType(returnType, typeContext)),
                 ifThenElse(
                         binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
                         Return(identifier("result")),
                         throwStatement(newCall(identifier(RUNTIME_ERROR_NAME), string("Could not get an instance of the correct return-type, returning exceptionally instead.")))
                 ),
-                Return(constructType(signature.getResolvedReturnType(), typeContext))
+                Return(identifier("result"))
         );
     }
 

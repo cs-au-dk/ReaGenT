@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.testcreator.test;
 
+import dk.au.cs.casa.typescript.types.Signature;
 import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
 import java.util.Collections;
@@ -10,21 +10,14 @@ import java.util.List;
 /**
  * Created by erik1 on 02-11-2016.
  */
-public class ConstructorCallTest extends Test {
+public class ConstructorCallTest extends FunctionTest {
     private final Type function;
-    private List<Type> parameters;
     private final boolean restArgs;
 
-    public ConstructorCallTest(Type function, List<Type> parameters, Type returnType, String path, TypeContext typeContext, boolean restArgs) {
-        super(Collections.singletonList(function), parameters, returnType, path + ".new" + PrettyTypes.parametersTypes(parameters), typeContext);
+    public ConstructorCallTest(Type function, List<Type> parameters, Type returnType, String path, TypeContext typeContext, boolean restArgs, List<Signature> precedingSignatures) {
+        super(Collections.singletonList(function), parameters, returnType, path + ".new", typeContext, precedingSignatures);
         this.function = function;
-        this.parameters = parameters;
         this.restArgs = restArgs;
-    }
-
-
-    public List<Type> getParameters() {
-        return parameters;
     }
 
     public Type getFunction() {

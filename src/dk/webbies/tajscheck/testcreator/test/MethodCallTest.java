@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.testcreator.test;
 
+import dk.au.cs.casa.typescript.types.Signature;
 import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
 import java.util.Arrays;
@@ -10,26 +10,20 @@ import java.util.List;
 /**
  * Created by erik1 on 02-11-2016.
  */
-public class MethodCallTest extends Test {
+public class MethodCallTest extends FunctionTest {
     private Type object;
     private final String propertyName;
-    private List<Type> parameters;
     private final boolean restArgs;
 
-    public MethodCallTest(Type object, Type function, String propertyName, List<Type> parameters, Type returnType, String path, TypeContext typeContext, boolean restArgs) {
-        super(Arrays.asList(object, function), parameters, returnType, path + PrettyTypes.parametersTypes(parameters), typeContext);
+    public MethodCallTest(Type object, Type function, String propertyName, List<Type> parameters, Type returnType, String path, TypeContext typeContext, boolean restArgs, List<Signature> precedingSignatures) {
+        super(Arrays.asList(object, function), parameters, returnType, path, typeContext, precedingSignatures);
         this.object = object;
         this.propertyName = propertyName;
-        this.parameters = parameters;
         this.restArgs = restArgs;
     }
 
     public Type getObject() {
         return object;
-    }
-
-    public List<Type> getParameters() {
-        return parameters;
     }
 
     public String getPropertyName() {

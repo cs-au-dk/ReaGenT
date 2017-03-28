@@ -673,6 +673,11 @@ public class UnitTests {
     }
 
     @Test
+    public void complexSanityCheck18() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck18"), BROWSER);
+    }
+
+    @Test
     public void nodeList() throws Exception {
         sanityCheck(benchFromFolder("nodeList", CheckOptions.builder().setCheckDepthReport(1).setCheckDepthUseValue(1).build()), BROWSER);
     }
@@ -888,7 +893,7 @@ public class UnitTests {
         RunResult result = run(benchFromFolder("intersectionWithFunction", CheckOptions.builder().setConstructAllTypes(true).build()).withRunMethod(BOOTSTRAP), "foo");
 
         assertThat(result.typeErrors.size(), is(0));
-        assertThat(result.errors, everyItem(is(equalTo("RuntimeError Cannot construct this IntersectionType")))); // <- this happens, it is ok, i cannot at runtime construct a type which is the intersection of two types.
+        assertThat(result.errors, everyItem(is(equalTo("RuntimeError: Cannot construct this IntersectionType")))); // <- this happens, it is ok, i cannot at runtime construct a type which is the intersection of two types.
     }
 
     @Test
@@ -1259,9 +1264,21 @@ public class UnitTests {
                 .got(STRING, "false");
     }
 
+    @Test // TODO: Get this to work like it should.
+    public void infiniteGenerics() throws Exception {
+        Main.writeFullDriver(benchFromFolder("infiniteGenerics", CheckOptions.builder().setCheckDepthReport(5).build()));
+    }
+
+    @Test
+    public void firstMatchPolicy() throws Exception {
+        RunResult result = run("firstMatchPolicy", "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+    }
+
     /*
-         * Examples used in the paper are below this:
-         */
+                 * Examples used in the paper are below this:
+                 */
     @Test
     public void firstOrderFunctions() throws Exception {
         RunResult result = run("firstOrderFunctions", "foo");

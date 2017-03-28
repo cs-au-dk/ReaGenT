@@ -74,6 +74,40 @@ public class TypesUtil {
         return interfaceType;
     }
 
+    public static InterfaceType signaturesToInterface(List<Signature> signatures, Map<Type, String> typeNames) {
+        if (signatures.isEmpty()) {
+            throw new RuntimeException();
+        }
+        InterfaceType result = SpecReader.makeEmptySyntheticInterfaceType();
+        ArrayList<Signature> clonedSignatures = new ArrayList<>(signatures);
+        if (clonedSignatures.size() == 1) {
+            // To force it into being a type-overloaded signature
+            Signature neverSignature = emptySignature();
+            neverSignature.setMinArgumentCount(1);
+            Signature.Parameter parameter = new Signature.Parameter();
+            parameter.setName("x");
+            parameter.setType(new SimpleType(SimpleTypeKind.Never));
+            neverSignature.setParameters(Collections.singletonList(parameter));
+            clonedSignatures.add(neverSignature);
+        }
+        result.setDeclaredCallSignatures(clonedSignatures);
+        typeNames.put(result, "mockFunctionForFirstMatchPolicy");
+        return result;
+    }
+
+    private static Signature emptySignature() {
+        Signature signature = new Signature();
+        signature.setHasRestParameter(false);
+        signature.setIsolatedSignatureType(null);
+        signature.setMinArgumentCount(0);
+        signature.setParameters(new ArrayList<>());
+        signature.setTarget(null);
+        signature.setTypeParameters(new ArrayList<>());
+        signature.setUnionSignatures(new ArrayList<>());
+        signature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
+        return signature;
+    }
+
     public static Signature createConstructorSignature(ClassType t, Signature signature) {
         Signature constructor = new Signature();
         constructor.setHasRestParameter(signature.isHasRestParameter());

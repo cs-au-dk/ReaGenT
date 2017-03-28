@@ -402,7 +402,7 @@ public class DriverProgramBuilder {
             }
         }
 
-        private List<Statement> callFunction(Test test, Type object, List<Type> orgParameterTypes, boolean restArgs, BiFunction<Expression, List<Expression>, Expression> callGenerator) {
+        private List<Statement> callFunction(FunctionTest test, Type object, List<Type> orgParameterTypes, boolean restArgs, BiFunction<Expression, List<Expression>, Expression> callGenerator) {
             if (restArgs) {
                 Type restArgArr = orgParameterTypes.get(orgParameterTypes.size() - 1);
                 assert restArgArr instanceof ReferenceType;
@@ -442,7 +442,7 @@ public class DriverProgramBuilder {
             }
         }
 
-        private List<Statement> callFunction(Test test, Type object, List<Type> parameterTypes, BiFunction<Expression, List<Expression>, Expression> callGenerator) {
+        private List<Statement> callFunction(FunctionTest test, Type object, List<Type> parameterTypes, BiFunction<Expression, List<Expression>, Expression> callGenerator) {
             List<Statement> result = new ArrayList<>();
 
             result.add(variable("base", getTypeExpression(object, test.getTypeContext())));
@@ -451,6 +451,27 @@ public class DriverProgramBuilder {
                 result.add(variable(identifier("argument_" + index), typeCreator.constructType(type, test.getTypeContext())));
                 return identifier("argument_" + index);
             }).collect(Collectors.toList());
+
+            if (!test.getPrecedingSignatures().isEmpty()) {
+                result.add(block(
+                        tryCatch(
+                                block(
+                                        variable("signatureCheckFunction", typeCreator.constructType(typeCreator.getPrecedingSignaturesType(test))),
+                                        statement(call(identifier("signatureCheckFunction"), parameters)),
+                                        comment("No exception thrown, I'm not continuing"),
+                                        Return()
+                                ),
+                                catchBlock("e", block(
+                                        comment("An exception was thrown, only continue if it contains 'no valid overload found'"),
+                                        ifThenElse(expFromString("e.message.toLowerCase().indexOf('no valid overload found') !== -1"),
+                                                comment("continue"),
+                                                Return()
+                                        )
+                                ))
+                        )
+                ));
+            }
+
 
             Expression newCall = callGenerator.apply(identifier("base"), parameters);
             result.add(variable("result", newCall));

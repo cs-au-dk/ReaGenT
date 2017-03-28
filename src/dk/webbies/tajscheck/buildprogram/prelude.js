@@ -162,7 +162,7 @@ function assert(cond, path, expected, actual, iteration, descrip) {
     if (isTAJS) {
         TAJS_record(path + " | " + expected, cond);
         TAJS_record(path + " | " + expected + " | value", actual);
-    } else if (!cond) {
+    } else if (!cond && path !== "mockFunctionForFirstMatchPolicy") {
         var failDescription = createFailDescription(
             path, expected, actual, iteration, testOrderRecording.slice(), descrip
         );
@@ -204,7 +204,7 @@ for (var key in console) {
 }
 
 function RuntimeError(message) {
-    error("RuntimeError" + message);
+    error("RuntimeError: " + message);
     message = " " + message;
     this.message = message;
     Error.call(this, message);

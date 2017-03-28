@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck.testcreator;
 
-import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -198,23 +197,29 @@ public class TestCreator {
         if (type instanceof InterfaceType) {
             List<Test> result = new ArrayList<>();
             List<Signature> callSignatures = ((InterfaceType) type).getDeclaredCallSignatures();
+
+            List<Signature> precedingSignatures = new ArrayList<>();
             for (Signature callSignature : callSignatures) {
                 List<Type> parameters = callSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                 findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters);
                 result.add(
-                        new FunctionCallTest(type, parameters, callSignature.getResolvedReturnType(), path, typeContext, callSignature.isHasRestParameter())
+                        new FunctionCallTest(type, parameters, callSignature.getResolvedReturnType(), path, typeContext, callSignature.isHasRestParameter(), new ArrayList<>(precedingSignatures))
                 );
+                precedingSignatures.add(callSignature);
 
                 visitor.recurse(callSignature.getResolvedReturnType(), new Arg(path + "()", typeContext, depth + 1).withTopLevelFunctions());
             }
+
+            precedingSignatures.clear();
 
             List<Signature> constructSignatures = ((InterfaceType) type).getDeclaredConstructSignatures();
             for (Signature constructSignature : constructSignatures) {
                 List<Type> parameters = constructSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                 findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters);
                 result.add(
-                        new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, typeContext, constructSignature.isHasRestParameter())
+                        new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, typeContext, constructSignature.isHasRestParameter(), new ArrayList<>(precedingSignatures))
                 );
+                precedingSignatures.add(constructSignature);
 
                 visitor.recurse(constructSignature.getResolvedReturnType(), new Arg(path + ".new()", typeContext, depth + 1).withTopLevelFunctions());
             }
@@ -409,8 +414,10 @@ public class TestCreator {
             }
 
             assert !t.getSignatures().isEmpty();
+            ArrayList<Signature> precedingSignatures = new ArrayList<>();
             for (Signature signature : t.getSignatures()) {
-                tests.add(new ConstructorCallTest(t, signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList()), t.getInstance(), arg.path, arg.typeContext, signature.isHasRestParameter()));
+                tests.add(new ConstructorCallTest(t, signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList()), t.getInstance(), arg.path, arg.typeContext, signature.isHasRestParameter(), new ArrayList<>(precedingSignatures)));
+                precedingSignatures.add(signature);
             }
 
             recurse(t.getInstanceType(), arg.append("new()"));
@@ -524,19 +531,23 @@ public class TestCreator {
 
             if (propertyType instanceof InterfaceType) {
                 List<Signature> callSignatures = ((InterfaceType) propertyType).getDeclaredCallSignatures();
+                List<Signature> precedingSignatures = new ArrayList<>();
                 for (Signature signature : callSignatures) {
                     List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                     findPositiveTypesInParameters(this, arg.append(key), parameters);
-                    tests.add(new MethodCallTest(baseType, propertyType, key, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext(), signature.isHasRestParameter()));
+                    tests.add(new MethodCallTest(baseType, propertyType, key, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext(), signature.isHasRestParameter(), new ArrayList<>(precedingSignatures)));
+                    precedingSignatures.add(signature);
 
                     recurse(signature.getResolvedReturnType(), arg.append(key + "()").addDepth().withTopLevelFunctions());
                 }
 
+                precedingSignatures.clear();
                 List<Signature> constructSignatures = ((InterfaceType) propertyType).getDeclaredConstructSignatures();
                 for (Signature signature : constructSignatures) {
                     List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
                     findPositiveTypesInParameters(this, arg.append(key), parameters);
-                    tests.add(new ConstructorCallTest(propertyType, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext(), signature.isHasRestParameter()));
+                    tests.add(new ConstructorCallTest(propertyType, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext(), signature.isHasRestParameter(), new ArrayList<>(precedingSignatures)));
+                    precedingSignatures.add(signature);
 
                     recurse(signature.getResolvedReturnType(), arg.append(key + "new()").addDepth().withTopLevelFunctions());
                 }
