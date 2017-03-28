@@ -172,11 +172,19 @@ public class AstBuilder {
     }
 
     public static TryStatement tryCatch(Statement tryBlock, CatchStatement catchBlock) {
-        return new TryStatement(null, tryBlock, catchBlock, null);
+        return tryCatchFinally(tryBlock, catchBlock, null);
+    }
+
+    public static TryStatement tryCatchFinally(Statement tryBlock, CatchStatement catchBlock, Statement finallyBlock) {
+        return new TryStatement(null, tryBlock, catchBlock, finallyBlock);
     }
 
     public static CatchStatement catchBlock(Identifier id, Statement body) {
         return new CatchStatement(null, id, body);
+    }
+
+    public static CatchStatement catchBlock(String id, Statement body) {
+        return new CatchStatement(null, identifier(id), body);
     }
 
     public static SwitchStatement switchCase(Expression expression, List<Pair<Expression, Statement>> cases) {
