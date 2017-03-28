@@ -114,6 +114,7 @@ public class RunBenchmarks {
         benchmarks.put("Lodash", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lodash/lodash.js", "test/benchmarks/lodash/lodash.d.ts", "_", NODE,
                 options.getBuilder()
                         .setDisableGenerics(true)
+                        .setCheckDepthReport(1)
                         .build()
         ));
 
@@ -226,7 +227,7 @@ public class RunBenchmarks {
 
     @Test
     public void soundnessTest() throws Exception {
-        Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP).withOptions(this.benchmark.options.getBuilder().setMaxIterationsToRun(100 * 1000).setConstructAllTypes(true).setFailOnAny(false).build());
+        Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP).withOptions(options -> options.getBuilder().setMaxIterationsToRun(100 * 1000).setConstructAllTypes(true).setFailOnAny(false).setCheckDepthReport(0).build());
         if (
                 benchmark.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail. (demonstrated in complexSanityCheck3)
                 benchmark.dTSFile.contains("leaflet.d.ts") || // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)
