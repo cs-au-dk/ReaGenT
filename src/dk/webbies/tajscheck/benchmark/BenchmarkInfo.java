@@ -20,11 +20,12 @@ public class BenchmarkInfo {
     public final Map<Type, String> typeNames;
     public final TypeParameterIndexer typeParameterIndexer;
     public final CheckOptions options;
+    private SpecReader spec;
     private final Set<Type> globalProperties;
 
     private final Map<Class<?>, Map<String, Object>> attributes = new HashMap<>();
 
-    private BenchmarkInfo(Benchmark bench, Type typeToTest, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TypeParameterIndexer typeParameterIndexer, Set<Type> globalProperties) {
+    private BenchmarkInfo(Benchmark bench, Type typeToTest, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TypeParameterIndexer typeParameterIndexer, Set<Type> globalProperties, SpecReader spec) {
         this.bench = bench;
         this.typeToTest = typeToTest;
         this.nativeTypes = nativeTypes;
@@ -33,6 +34,11 @@ public class BenchmarkInfo {
         this.typeParameterIndexer = typeParameterIndexer;
         this.globalProperties = globalProperties;
         this.options = bench.options;
+        this.spec = spec;
+    }
+
+    public SpecReader getSpec() {
+        return spec;
     }
 
     public static BenchmarkInfo create(Benchmark bench) {
@@ -58,7 +64,7 @@ public class BenchmarkInfo {
             }
         }).collect(Collectors.toSet());
 
-        return new BenchmarkInfo(bench, typeToTest, nativeTypes, freeGenericsFinder, typeNames, typeParameterIndexer, globalProperties);
+        return new BenchmarkInfo(bench, typeToTest, nativeTypes, freeGenericsFinder, typeNames, typeParameterIndexer, globalProperties, spec);
     }
 
     private static Type getTypeToTest(Benchmark bench, SpecReader spec, Map<Type, String> typeNames) {
@@ -255,7 +261,7 @@ public class BenchmarkInfo {
                 this.freeGenericsFinder,
                 this.typeNames,
                 this.typeParameterIndexer,
-                globalProperties);
+                globalProperties, spec);
     }
 
     public boolean shouldConstructType(Type type) {
