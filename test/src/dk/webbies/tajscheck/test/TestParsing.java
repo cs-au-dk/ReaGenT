@@ -20,8 +20,6 @@ import static org.hamcrest.core.IsNot.not;
  * Created by erik1 on 03-01-2017.
  */
 public class TestParsing {
-    // TODO: Fewer quotes in field-names.
-
     @Test
     public void testEscapedQuotes() throws Exception {
         testParse(
