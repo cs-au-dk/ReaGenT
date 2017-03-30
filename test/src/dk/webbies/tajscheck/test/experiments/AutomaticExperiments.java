@@ -6,12 +6,14 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
+import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by erik1 on 16-01-2017.
@@ -24,9 +26,11 @@ public class AutomaticExperiments {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(bench.options.checkDepthUseValue).setMaxIterationsToRun(1000).build());
         List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
-        long paths = OutputParser.combine(results).typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+        List<String> paths = OutputParser.combine(results).typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toList());
 
-        return Long.toString(paths);
+        int warnings = CountUniques.uniqueWarnings(paths, bench);
+
+        return Integer.toString(warnings);
     });
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> type = new Pair<>("type", (bench) -> bench.run_method.toString());
@@ -43,20 +47,19 @@ public class AutomaticExperiments {
         }
     });
 
-    private static final Pair<String, Experiment.ExperimentSingleRunner> uniquePaths = new Pair<>("uniquePaths", (bench) -> {
-        Main.writeFullDriver(bench);
-        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
-        long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
-        return Long.toString(paths);
-    });
+    private static final Pair<String, Experiment.ExperimentSingleRunner> uniquePaths = uniquePathsWithOptions("", Function.identity());
 
-    private static Pair<String, Experiment.ExperimentSingleRunner> uniquePathsWithOptions(String name, Function<CheckOptions, CheckOptions> func) {
-        return new Pair<>("uniquePaths(" + name + ")", (bench) -> {
+    private static Pair<String, Experiment.ExperimentSingleRunner> uniquePathsWithOptions(String suffix, Function<CheckOptions, CheckOptions> func) {
+        return new Pair<>("uniquePaths" + suffix, (bench) -> {
             bench = bench.withOptions(func);
             Main.writeFullDriver(bench);
             OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
-            long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
-            return Long.toString(paths);
+
+            List<String> paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toList());
+
+            int warnings = CountUniques.uniqueWarnings(paths, bench);
+
+            return Integer.toString(warnings);
         });
     }
 
@@ -71,40 +74,24 @@ public class AutomaticExperiments {
         return Boolean.toString(result.typeErrors.size() == 0);
     });
 
-    private static final Pair<String, Experiment.ExperimentSingleRunner> uniquePaths5Minutes = new Pair<>("uniquePaths(5minutes)", (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(-1).setMaxTime(5 * 60 * 1000).build());
-        Main.writeFullDriver(bench);
-        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
-        long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
-        return Long.toString(paths);
-    });
-
-    private static Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsDepth(int depth) {
-        return new Pair<>(Arrays.asList("size(depth" + depth + ")", "uniquePaths(depth" + depth + ")"), (bench) -> {
-
-            bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(depth).setCheckDepthForUnions(Math.max(bench.options.checkDepthForUnions, depth)).build());
-
-            String size = driverSizes.getRight().run(bench).get(0);
-
-            Main.writeFullDriver(bench);
-            OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
-            long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
-            return Arrays.asList(size, Long.toString(paths));
-        });
-    }
+    private static final Pair<String, Experiment.ExperimentSingleRunner> uniquePaths5Minutes = uniquePathsWithOptions("(5minutes)", options -> options.getBuilder().setMaxTime(5 * 60 * 1000).build());
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsUnlimitedIterations = new Pair<>(Arrays.asList("uniquePaths(unlimited)", "time(unlimited)", "testsCalled(unlimited)", "totalTests(unlimited)", "testCoverage(unlimited)"), (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(-1).build());
         long start = System.currentTimeMillis();
         Main.writeFullDriver(bench);
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
-        long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+
+        List<String> paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toList());
+
+        int warnings = CountUniques.uniqueWarnings(paths, bench);
+
         long end = System.currentTimeMillis();
         double time = (end - start) / 1000.0;
 //        return Arrays.asList(Long.toString(paths), Util.toFixed(time, 1) + "s");
 
         return Arrays.asList(
-                Long.toString(paths),
+                Integer.toString(warnings),
                 Util.toFixed(time, 1) + "s",
                 Integer.toString(result.getTestsCalled().size()),
                 Integer.toString(result.getTotalTests()),
@@ -116,19 +103,25 @@ public class AutomaticExperiments {
         long start = System.currentTimeMillis();
         Main.writeFullDriver(bench);
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
-        long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+        List<String> paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toList());
+
+        int warnings = CountUniques.uniqueWarnings(paths, bench);
+
         long end = System.currentTimeMillis();
         double time = (end - start) / 1000.0;
-        return Arrays.asList(Long.toString(paths), Util.toFixed(time, 1) + "s");
+        return Arrays.asList(Integer.toString(warnings), Util.toFixed(time, 1) + "s");
     });
 
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsTestCoverage = new Pair<>(Arrays.asList("uniquePaths", "testsRun", "totalTests", "testsCoverage"), (bench) -> {
         Main.writeFullDriver(bench);
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
-        long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+        List<String> paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toList());
+
+        int warnings = CountUniques.uniqueWarnings(paths, bench);
+
         return Arrays.asList(
-                Long.toString(paths),
+                Integer.toString(warnings),
                 Integer.toString(result.getTestsCalled().size()),
                 Integer.toString(result.getTotalTests()),
                 Util.toPercentage((result.getTestsCalled().size() * 1.0) / result.getTotalTests())
@@ -142,9 +135,12 @@ public class AutomaticExperiments {
             results.add(OutputParser.parseDriverResult(Main.runBenchmark(bench)));
         }
         OutputParser.RunResult result = OutputParser.combine(results);
-        long paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).distinct().count();
+        List<String> paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toList());
+
+        int warnings = CountUniques.uniqueWarnings(paths, bench);
+
         return Arrays.asList(
-                Long.toString(paths),
+                Long.toString(warnings),
                 Integer.toString(result.getTestsCalled().size()),
                 Integer.toString(result.getTotalTests()),
                 Util.toPercentage((result.getTestsCalled().size() * 1.0) / result.getTotalTests())
@@ -285,16 +281,18 @@ public class AutomaticExperiments {
     });
 
     public static void main(String[] args) throws Exception {
-//        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(bench -> bench.getValue().run_method == Benchmark.RUN_METHOD.NODE).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-//        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream().filter(pair -> !done.contains(pair.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-//        Experiment experiment = new Experiment("Ace", "Backbone.js", "CodeMirror", "CreateJS", "Knockout", "MathJax", "Modernizr", "P2.js", "PixiJS", "React", "Zepto.js", "box2dweb", "jQuery");
+        /*Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream()
+//                .filter(bench -> bench.getValue().run_method == Benchmark.RUN_METHOD.NODE)
+                        .filter(bench -> Stream.of("" )
+                        .noneMatch(str -> str.equals(bench.getKey())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));*/
         Experiment experiment = new Experiment();
 
         experiment.addSingleExperiment(type);
 
-        experiment.addMultiExperiment(driverSizes);
+//        experiment.addMultiExperiment(driverSizes);
 
-//        experiment.addSingleExperiment(uniquePaths);
+        experiment.addSingleExperiment(uniquePaths);
 
 //        experiment.addMultiExperiment(driverSizes("-0", options -> options.getBuilder().setCheckDepthUseValue(0).build()));
 //        experiment.addMultiExperiment(driverSizes("-1", options -> options.getBuilder().setCheckDepthUseValue(1).build()));
@@ -342,5 +340,7 @@ public class AutomaticExperiments {
         System.out.println(result);
 
         Util.writeFile("experiment.csv", result);
+
+        System.exit(0); // It would shut down by itself after a little, but I don't wanna wait.
     }
 }

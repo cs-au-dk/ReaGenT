@@ -90,9 +90,6 @@ public class CountUniques {
 
         Type result = new LookupTypeVisitor(info).recurse(spec.getGlobal(), new Arg(path, TypeContext.create(info)));
         if (result == null) {
-            System.out.println();
-            result = new LookupTypeVisitor(info).recurse(spec.getGlobal(), new Arg(path, TypeContext.create(info))); // TODO: Remove.
-
             for (SpecReader.NamedType namedType : spec.getNamedTypes()) {
                 String name = String.join(".", namedType.qName);
                 if (path.startsWith(name)) {
@@ -106,8 +103,6 @@ public class CountUniques {
                     }
                 }
             }
-            System.out.println();
-
         }
         return result;
     }
