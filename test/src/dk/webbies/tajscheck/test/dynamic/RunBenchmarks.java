@@ -62,13 +62,17 @@ public class RunBenchmarks {
 
         benchmarks.put("box2dweb", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/box2dweb/box2dweb.js", "test/benchmarks/box2dweb/box2dweb.d.ts", "Box2D", BROWSER, options));
 
-        Benchmark underscore = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/underscore/underscore.js", "test/benchmarks/underscore/underscore.d.ts", "_", NODE, options);
+        Benchmark underscore = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/underscore/underscore.js", "test/benchmarks/underscore/underscore.d.ts", "_", NODE,
+                options.getBuilder()
+                .setFirstMatchSignaturePolicy(false)
+                .build()
+        );
         benchmarks.put("Underscore.js", underscore);
 
         Benchmark handlebars = new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", "Handlebars", BROWSER, options);
         benchmarks.put("Handlebars", handlebars);
 
-        benchmarks.put("Hammer.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", "Hammer", BROWSER, options));
+        benchmarks.put("Hammer.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", "Hammer", BROWSER, options.getBuilder().setCheckDepthForUnions(2).build()));
 
         benchmarks.put("Jasmine", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jasmine/jasmine.js", "test/benchmarks/jasmine/jasmine.d.ts", "jasmine", NODE, options));
 
@@ -93,7 +97,13 @@ public class RunBenchmarks {
         Benchmark react = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/react/react.js", "test/benchmarks/react/react.d.ts", "React", BROWSER, options);
         benchmarks.put("React", react);
         benchmarks.put("RequireJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/requirejs/require.js", "test/benchmarks/requirejs/requirejs.d.ts", "requirejs", BROWSER, options).addDependencies(jQuery));
-        benchmarks.put("Sugar", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/sugar/sugar.js", "test/benchmarks/sugar/sugar.d.ts", "Sugar", NODE, options.getBuilder().setDisableGenerics(true).build()));
+        benchmarks.put("Sugar", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/sugar/sugar.js", "test/benchmarks/sugar/sugar.d.ts", "Sugar", NODE,
+                options.getBuilder()
+                .setDisableGenerics(true)
+                .setCheckDepthReport(1)
+                .build()
+
+        ));
 
         benchmarks.put("PhotoSwipe", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/photoswipe/photoswipe.js", "test/benchmarks/photoswipe/photoswipe.d.ts", "PhotoSwipe", BROWSER, options));
         benchmarks.put("CreateJS", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/createjs/createjs.js", "test/benchmarks/createjs/createjs.d.ts", "createjs", BROWSER, options));
@@ -115,6 +125,7 @@ public class RunBenchmarks {
                 options.getBuilder()
                         .setDisableGenerics(true)
                         .setCheckDepthReport(1)
+                        .setFirstMatchSignaturePolicy(false)
                         .build()
         ));
 
@@ -227,7 +238,7 @@ public class RunBenchmarks {
 
     @Test
     public void soundnessTest() throws Exception {
-        Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP).withOptions(options -> options.getBuilder().setMaxIterationsToRun(100 * 1000).setConstructAllTypes(true).setFailOnAny(false).setCheckDepthReport(0).build());
+        Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP).withOptions(options -> options.getBuilder().setMaxIterationsToRun(100 * 1000).setConstructAllTypes(true).setCheckDepthReport(0).build());
         if (
                 benchmark.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail. (demonstrated in complexSanityCheck3)
                 benchmark.dTSFile.contains("leaflet.d.ts") || // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)

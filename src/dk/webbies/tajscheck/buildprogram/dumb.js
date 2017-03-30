@@ -15,18 +15,26 @@ if (!isTAJS) {
 
     function dumbMessages() {
         (function (print) {
-            // var printedWarnings = [];
-            // var printedErrors = [];
+            var shownWarnings = new Set();
+            var shownErrors = new Set();
             if (printedWarnings.length > 0) {
                 print("---- WARNINGS ----");
                 for (var i = 0; i < printedWarnings.length; i++) {
-                    print(printedWarnings[i]);
+                    var warning = printedWarnings[i];
+                    if (!shownWarnings.has(warning)) {
+                        print(warning);
+                        shownWarnings.add(warning);
+                    }
                 }
             }
             if (printedErrors.length > 0) {
                 print("---- ERRORS ----");
                 for (var i = 0; i < printedErrors.length; i++) {
-                    print(printedErrors[i]);
+                    var error = printedErrors[i];
+                    if (!shownErrors.has(error)) {
+                        print(error);
+                        shownErrors.add(error);
+                    }
                 }
             }
 

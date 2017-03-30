@@ -64,7 +64,7 @@ public class TypeCreator {
             for (Type type : test.getTypeToTest()) {
                 getType(type, test.getTypeContext());
             }
-            if (test instanceof FunctionTest) {
+            if (test instanceof FunctionTest && info.bench.options.firstMatchSignaturePolicy) {
                 if (!((FunctionTest) test).getPrecedingSignatures().isEmpty()) {
                     InterfaceType precedingSignaturesInterface = TypesUtil.signaturesToInterface(((FunctionTest) test).getPrecedingSignatures(), info.typeNames);
                     constructType(precedingSignaturesInterface, test.getTypeContext());
@@ -443,7 +443,22 @@ public class TypeCreator {
 
             switch (simple.getKind()) {
                 case String:
-                    return AstBuilder.stmtFromString("return Math.random().toString(36).substring(Math.random() * 20)");
+                    return AstBuilder.stmtFromString(
+                            "var result = \"\";\n" +
+                            "var prop = 1;\n" +
+                            "while((0.97 * prop) > Math.random()) {\n" +
+                            "    if (Math.random() > 0.1) {\n" +
+                            "        result += Math.random().toString(26).substring(3, 4); // A random alpha-numeric char.\n" +
+                            "    } else {\n" +
+                            "        if (Math.random() > 0.1) {\n" +
+                            "            result += String.fromCharCode(Math.random() * 128 | 0); // Random ASCII char\n" +
+                            "        } else {\n" +
+                            "            result += String.fromCharCode(Math.random() * (Math.pow(2, 16)) | 0); // Random ANY char.\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}\n" +
+                            "return result;"
+                    );
                 case Number:
                     return AstBuilder.stmtFromString(
                             "    switch(Math.random() * 3 | 0) {\n" +

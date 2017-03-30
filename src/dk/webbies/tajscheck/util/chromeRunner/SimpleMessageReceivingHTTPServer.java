@@ -8,13 +8,11 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 /**
  * Created by erik1 on 15-02-2017.
@@ -23,7 +21,7 @@ public class SimpleMessageReceivingHTTPServer {
     private final File dir;
     private final Map<String, String> customContents;
     private final ServerSocket serverSocket;
-    private List<String> messages = new ArrayList<>();
+    private final List<String> messages = new ArrayList<>();
 
     SimpleMessageReceivingHTTPServer(File dir, Map<String, String> customContents, ServerSocket serverSocket) {
         this.dir = dir;
@@ -42,10 +40,20 @@ public class SimpleMessageReceivingHTTPServer {
                     "\r\n" + today;
             socket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
 
-            if (request.getRight().equals("close")) {
+            if (request.getRight().endsWith("close")) {
                 return true;
             } else {
-                messages.add(request.getRight());
+                String message = request.getRight();
+                assert message.contains(":") && message.indexOf(":") < 10;
+
+                int sequencer = Integer.parseInt(message.substring(0, message.indexOf(":")));
+                synchronized (messages) {
+                    while (messages.size() <= sequencer) {
+                        messages.add(null);
+                    }
+
+                    messages.set(sequencer, message.substring(message.indexOf(":") + 1, message.length()).trim());
+                }
                 return false;
             }
         }
@@ -135,7 +143,7 @@ public class SimpleMessageReceivingHTTPServer {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return this.messages;
+        return this.messages.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     private static final ExecutorService pool = Executors.newCachedThreadPool();

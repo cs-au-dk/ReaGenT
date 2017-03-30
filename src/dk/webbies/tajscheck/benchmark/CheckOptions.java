@@ -23,6 +23,7 @@ public final class CheckOptions {
     public final boolean combineNullAndUndefined;
     public final boolean writePrimitives;
     public final boolean writeAll;
+    public final boolean firstMatchSignaturePolicy;
 
 
     private CheckOptions(Builder builder) {
@@ -42,6 +43,7 @@ public final class CheckOptions {
         this.writePrimitives = builder.writePrimitives;
         this.writeAll = builder.writeAll;
         this.checkDepthReport = builder.checkDepthReport;
+        this.firstMatchSignaturePolicy = builder.firstMatchSignaturePolicy;
         this.builder = builder;
     }
 
@@ -57,7 +59,6 @@ public final class CheckOptions {
         return options.getBuilder()
                 .setMaxTime(30 * 1000)
                 .setCombineNullAndUndefined(true)
-                .setFailOnAny(false)
                 .build();
     }
 
@@ -84,6 +85,7 @@ public final class CheckOptions {
 
         private boolean writePrimitives = false; // We write to properties that have primitive values.
         private boolean writeAll = false; // Only has effect if above is true. Every single property is potentially written to. Is VERY stupid, will likely overwrite the library before testing it.
+        private boolean firstMatchSignaturePolicy = true; // If the first-match-signature policy of TypeScript should be enforced.
 
         private Builder() {}
 
@@ -97,6 +99,11 @@ public final class CheckOptions {
 
         public Builder setCombineNullAndUndefined(boolean combineNullAndUndefined) {
             this.combineNullAndUndefined = combineNullAndUndefined;
+            return this;
+        }
+
+        public Builder setFirstMatchSignaturePolicy(boolean firstMatchSignaturePolicy) {
+            this.firstMatchSignaturePolicy = firstMatchSignaturePolicy;
             return this;
         }
 

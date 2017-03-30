@@ -18,6 +18,7 @@ public class OptimizingTypeContext implements TypeContext {
     private final Type thisType;
     private final BenchmarkInfo info;
 
+    // TODO: Try to cannonicalize these.
     OptimizingTypeContext(BenchmarkInfo info) {
         this(Collections.emptyMap(), null, info);
     }

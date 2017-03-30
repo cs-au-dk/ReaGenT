@@ -452,7 +452,7 @@ public class DriverProgramBuilder {
                 return identifier("argument_" + index);
             }).collect(Collectors.toList());
 
-            if (!test.getPrecedingSignatures().isEmpty()) {
+            if (!test.getPrecedingSignatures().isEmpty() && info.bench.options.firstMatchSignaturePolicy) {
                 result.add(block(
                         tryCatch(
                                 block(

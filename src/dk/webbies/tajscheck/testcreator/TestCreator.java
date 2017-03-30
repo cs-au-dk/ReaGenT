@@ -549,7 +549,7 @@ public class TestCreator {
                     tests.add(new ConstructorCallTest(propertyType, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext(), signature.isHasRestParameter(), new ArrayList<>(precedingSignatures)));
                     precedingSignatures.add(signature);
 
-                    recurse(signature.getResolvedReturnType(), arg.append(key + "new()").addDepth().withTopLevelFunctions());
+                    recurse(signature.getResolvedReturnType(), arg.append(key + ".new()").addDepth().withTopLevelFunctions());
                 }
                 return;
             }

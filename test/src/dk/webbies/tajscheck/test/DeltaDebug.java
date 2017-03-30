@@ -241,7 +241,7 @@ public class DeltaDebug {
 
     private static boolean testSoundness(Benchmark bench) throws Exception {
         Benchmark.RUN_METHOD node = bench.run_method;
-        bench = bench.withRunMethod(BOOTSTRAP).withOptions(bench.options.getBuilder().setConstructAllTypes(true).setFailOnAny(false).build());
+        bench = bench.withRunMethod(BOOTSTRAP).withOptions(bench.options.getBuilder().setConstructAllTypes(true).build());
 
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");
