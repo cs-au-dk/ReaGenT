@@ -20,4 +20,19 @@ public class EqualityCheck implements Check {
     public <T, A> T accept(CheckVisitorWithArgument<T, A> visitor, A a) {
         return visitor.visit(this, a);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        EqualityCheck that = (EqualityCheck) o;
+
+        return expression != null ? expression.equals(that.expression) : that.expression == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return expression != null ? expression.hashCode() : 0;
+    }
 }

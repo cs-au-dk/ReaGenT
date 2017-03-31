@@ -26,4 +26,22 @@ public class FieldCheck implements Check {
     public <T, A> T accept(CheckVisitorWithArgument<T, A> visitor, A a) {
         return visitor.visit(this, a);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FieldCheck that = (FieldCheck) o;
+
+        if (checks != null ? !checks.equals(that.checks) : that.checks != null) return false;
+        return field != null ? field.equals(that.field) : that.field == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = checks != null ? checks.hashCode() : 0;
+        result = 31 * result + (field != null ? field.hashCode() : 0);
+        return result;
+    }
 }

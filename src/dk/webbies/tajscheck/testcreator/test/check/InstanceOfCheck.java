@@ -21,4 +21,18 @@ public class InstanceOfCheck implements Check {
         return visitor.visit(this, a);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        InstanceOfCheck that = (InstanceOfCheck) o;
+
+        return exp != null ? exp.equals(that.exp) : that.exp == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return exp != null ? exp.hashCode() : 0;
+    }
 }

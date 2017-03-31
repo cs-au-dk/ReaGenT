@@ -18,4 +18,19 @@ public class NotCheck implements Check {
     public <T, A> T accept(CheckVisitorWithArgument<T, A> visitor, A a) {
         return visitor.visit(this, a);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        NotCheck notCheck = (NotCheck) o;
+
+        return check != null ? check.equals(notCheck.check) : notCheck.check == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return check != null ? check.hashCode() : 0;
+    }
 }
