@@ -196,7 +196,6 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
         write("function ");
         if (func.getName() != null) {
             write(func.getName().getName());
-            write(" ");
         }
         writeArgs(func.getArguments());
         if (!explode(func.getBody()).isEmpty()) {
