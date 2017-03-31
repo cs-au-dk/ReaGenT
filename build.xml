@@ -9,13 +9,13 @@
         <pathelement location="${build-directory}"/>
         <fileset dir="." includes="lib/*.jar" />
         <pathelement location="lib/selenium/"/>
-        <pathelement location="lib/selenium/selenium-server-standalone-3.0.1.jar"/>
+        <pathelement location="lib/selenium/selenium-server-standalone-3.3.1.jar"/>
         <fileset dir="." includes="TAJS-private/lib/*.jar" />
         <pathelement location="ts-spec-reader/deserializers/java/src"/>
     </path>
 
     <target name="help">
-        <echo>
+        <echo><!-- TODO: Actually do something -->
             TODO: Do something.
         </echo>
     </target>
@@ -86,6 +86,37 @@
 
     <target name="manual-experiment" depends="build-all">
         <java fork="yes" classname="dk.webbies.tajscheck.test.experiments.ManualExperiment">
+            <classpath>
+                <path refid="class-path"/>
+            </classpath>
+        </java>
+    </target>
+
+    <target name="RQ1" depends="build-all">
+        <java fork="yes" classname="dk.webbies.tajscheck.test.experiments.AutomaticExperiments">
+            <arg value="RQ1"/>
+            <classpath>
+                <path refid="class-path"/>
+            </classpath>
+        </java>
+    </target>
+
+    <target name="RQ2" depends="build-all">
+        <java fork="yes" classname="dk.webbies.tajscheck.test.experiments.AutomaticExperiments">
+            <arg value="RQ2"/>
+            <classpath>
+                <path refid="class-path"/>
+            </classpath>
+        </java>
+    </target>
+
+    <target name="RQ3" depends="manual-experiment" />
+
+    <target name="RQ4" depends="manual-experiment" />
+
+    <target name="RQ5" depends="build-all">
+        <java fork="yes" classname="dk.webbies.tajscheck.test.experiments.AutomaticExperiments">
+            <arg value="RQ5"/>
             <classpath>
                 <path refid="class-path"/>
             </classpath>
