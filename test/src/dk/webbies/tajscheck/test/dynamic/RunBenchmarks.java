@@ -72,7 +72,7 @@ public class RunBenchmarks {
         Benchmark handlebars = new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", "Handlebars", BROWSER, options);
         benchmarks.put("Handlebars", handlebars);
 
-        benchmarks.put("Hammer.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", "Hammer", BROWSER, options.getBuilder().setCheckDepthForUnions(2).build()));
+        benchmarks.put("Hammer.js", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", "Hammer", BROWSER, options));
 
         benchmarks.put("Jasmine", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/jasmine/jasmine.js", "test/benchmarks/jasmine/jasmine.d.ts", "jasmine", NODE, options));
 
@@ -100,7 +100,6 @@ public class RunBenchmarks {
         benchmarks.put("Sugar", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/sugar/sugar.js", "test/benchmarks/sugar/sugar.d.ts", "Sugar", NODE,
                 options.getBuilder()
                 .setDisableGenerics(true)
-                .setCheckDepthReport(1)
                 .build()
 
         ));
@@ -124,8 +123,6 @@ public class RunBenchmarks {
         benchmarks.put("Lodash", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/lodash/lodash.js", "test/benchmarks/lodash/lodash.d.ts", "_", NODE,
                 options.getBuilder()
                         .setDisableGenerics(true)
-                        .setCheckDepthReport(1)
-                        .setFirstMatchSignaturePolicy(false)
                         .build()
         ));
 

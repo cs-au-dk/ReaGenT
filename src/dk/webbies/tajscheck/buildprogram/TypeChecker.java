@@ -33,24 +33,6 @@ public class TypeChecker {
         this.info = info;
     }
 
-    public Statement assertResultingType(TypeWithContext type, Expression exp, String path, int depth, String testType) {
-        path = sanitizePath(path);
-
-        List<TypeCheck> typeChecks = type.getType().accept(new CreateTypeCheckVisitor(info), new Arg(type.getTypeContext(), depth));
-
-        String finalPath = path;
-        return block(
-                variable("typeChecked", bool(true)),
-                block(
-                        typeChecks.stream().map(check -> checkToAssertions(check, exp, finalPath, testType)).collect(Collectors.toList())
-                ),
-                ifThen(
-                        unary(Operator.NOT, identifier("typeChecked")),
-                        Return(bool(false))
-                )
-        );
-    }
-
     public Expression checkResultingType(TypeWithContext type, Expression exp, String path, int depth) {
         path = sanitizePath(path);
 
@@ -80,27 +62,95 @@ public class TypeChecker {
         return createIntersection(result).getExpected();
     }
 
-    // TODO: returns CallExpression
-    // TODO: Pass the assert function as an argument, that way it can support both "mock" testing and real assertions.
-    private Statement checkToAssertions(TypeCheck typeCheck, Expression exp, String path, String testType) {
-        // TODO: This entire function cached using useAssertTypeFunction. Let this function take a list of TypeChecks, and make a cache of lists.
+    public Statement assertResultingType(TypeWithContext type, Expression exp, String path, int depth, String testType) {
+        path = sanitizePath(path);
+
+        List<TypeCheck> typeChecks = type.getType().accept(new CreateTypeCheckVisitor(info), new Arg(type.getTypeContext(), depth));
+        if (info.bench.options.useAssertTypeFunctions) {
+            return block(
+                    ifThen(
+                            unary(Operator.NOT, checkToAssertions(typeChecks, exp, string(path), string(testType))),
+                            Return(bool(false))
+                    )
+            );
+        } else {
+            String finalPath = path;
+            return block(
+                    variable("typeChecked", bool(true)),
+                    block(
+                            typeChecks.stream().map(check -> inlineCheckToAssertions(check, exp, finalPath, testType)).collect(Collectors.toList())
+                    ),
+                    ifThen(
+                            unary(Operator.NOT, identifier("typeChecked")),
+                            Return(bool(false))
+                    )
+            );
+        }
+    }
+
+    private CallExpression checkToAssertions(List<TypeCheck> typeChecks, Expression exp, Expression path, Expression testType) {
+        Expression function = createAssertTypeFunction(typeChecks);
+
+        return call(function, identifier("assert"), exp, path, testType);
+    }
+
+    private Expression createAssertTypeFunction(List<TypeCheck> typeChecks) {
+        if (!typeCheckFunctionNameCache.containsKey(typeChecks)) {
+            Identifier exp = identifier("exp");
+            Identifier path = identifier("path");
+            Identifier testType = identifier("testType");
+
+            List<Statement> result = new ArrayList<>();
+
+            for (TypeCheck typeCheck : typeChecks) {
+                if (typeCheck instanceof FieldTypeCheck) {
+
+                    FieldTypeCheck fieldTypeCheck = (FieldTypeCheck) typeCheck;
+                    String field = fieldTypeCheck.getField();
+
+                    result.add(ifThen(
+                            unary(Operator.NOT, checkToAssertions(fieldTypeCheck.getFieldChecks(), member(exp, field), binary(path, Operator.PLUS, string("." + field)), testType)),
+                            block(
+                                    Return(bool(false))
+                            )
+                    ));
+                } else {
+                    assert typeCheck instanceof SimpleTypeCheck;
+                    Expression checkExpression = CheckToExpression.generate(typeCheck.getCheck(), exp);
+                    CallExpression assertCall = call(identifier("assert"), checkExpression, path, string(typeCheck.getExpected()), exp, identifier("i"), testType);
+                    result.add(ifThen(
+                            unary(Operator.NOT, assertCall),
+                            block(
+                                    Return(bool(false))
+                            )
+                    ));
+                }
+            }
+            result.add(Return(bool(true)));
+
+
+            String name = "assertType_" + typeCheckingFunctionList.size();
+            FunctionExpression function = function(name, block(result), "assert", "exp", "path", "testType");
+
+            typeCheckingFunctionList.add(statement(function));
+
+            typeCheckFunctionNameCache.put(typeChecks, name);
+        }
+
+        return identifier(typeCheckFunctionNameCache.get(typeChecks));
+    }
+
+    private Statement inlineCheckToAssertions(TypeCheck typeCheck, Expression exp, String path, String testType) {
         if (typeCheck instanceof FieldTypeCheck) {
             FieldTypeCheck fieldTypeCheck = (FieldTypeCheck) typeCheck;
             String field = fieldTypeCheck.getField();
             return statement(call(function(block(
-                    fieldTypeCheck.getFieldChecks().stream().map(subCheck -> checkToAssertions(subCheck, member(exp, field), path + "." + field, testType)).collect(Collectors.toList()) // <- TODO: Pass a list to checkToAssertions, once i change it.
+                    fieldTypeCheck.getFieldChecks().stream().map(subCheck -> inlineCheckToAssertions(subCheck, member(exp, field), path + "." + field, testType)).collect(Collectors.toList())
             ))));
         }
 
         assert typeCheck instanceof SimpleTypeCheck;
-        Expression checkExpression;
-        if (info.bench.options.useAssertTypeFunctions) {
-            String assertTypeName = getTypeCheckFunctionName(typeCheck);
-
-            checkExpression = call(identifier(assertTypeName), exp);
-        } else {
-            checkExpression = CheckToExpression.generate(typeCheck.getCheck(), exp);
-        }
+        Expression checkExpression = CheckToExpression.generate(typeCheck.getCheck(), exp);
         CallExpression assertCall = call(identifier("assert"), checkExpression, string(path), string(typeCheck.getExpected()), exp, identifier("i"), string(testType));
         return ifThen(
                 unary(Operator.NOT, assertCall),
@@ -111,21 +161,7 @@ public class TypeChecker {
         );
     }
 
-    private final Map<Check, String> typeCheckFunctionNameCache = new HashMap<>();
-
-    private String getTypeCheckFunctionName(TypeCheck typeCheck) {
-        if (typeCheckFunctionNameCache.containsKey(typeCheck.getCheck())) {
-            return typeCheckFunctionNameCache.get(typeCheck.getCheck());
-        }
-        String assertTypeName = "assertType_" + typeCheckingFunctionList.size();
-        typeCheckingFunctionList.add(statement(function(
-                assertTypeName,
-                Return(CheckToExpression.generate(typeCheck.getCheck(), identifier("arg"))),
-                "arg"
-        )));
-        typeCheckFunctionNameCache.put(typeCheck.getCheck(), assertTypeName);
-        return assertTypeName;
-    }
+    private final Map<List<TypeCheck>, String> typeCheckFunctionNameCache = new HashMap<>();
 
     public List<Statement> getTypeCheckingFunctionList() {
         return typeCheckingFunctionList;

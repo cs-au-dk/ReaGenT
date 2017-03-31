@@ -4,7 +4,7 @@ declare function moment(inp?: moment.MomentInput, format?: moment.MomentFormatSp
 declare namespace moment {
   type RelativeTimeKey = 's' | 'm' | 'mm' | 'h' | 'hh' | 'd' | 'dd' | 'M' | 'MM' | 'y' | 'yy';
   type CalendarKey = 'sameDay' | 'nextDay' | 'lastDay' | 'nextWeek' | 'lastWeek' | 'sameElse' | string;
-  type LongDateFormatKey = 'LTS' | 'LT' | 'L' | 'LL' | 'LLL' | 'LLLL' | 'lts' | 'lt' | 'l' | 'll' | 'lll' | 'llll' | "[Z]"| "[T]" | "[\")]" | "[moment(\"]" | "[moment.utc(\"]" | "[moment.parseZone(\"]" | "[GMT]" | "[object Object]"; // I suspect some of these to be errors, but it is the Moment implementation that has given me all these values, they have been concretely used where a LongDateFormatKey is expected.
+  type LongDateFormatKey = 'LTS' | 'LT' | 'L' | 'LL' | 'LLL' | 'LLLL' | 'lts' | 'lt' | 'l' | 'll' | 'lll' | 'llll' | string; // I suspect some of these to be errors, but it is the Moment implementation that has given me all these values, they have been concretely used where a LongDateFormatKey is expected.
 
   interface Locale {
     calendar(key?: CalendarKey, m?: Moment, now?: Moment): string | undefined;

@@ -363,12 +363,9 @@ public class AutomaticExperiments {
 
         experiment.addSingleExperiment(type);
 
-//        experiment.addMultiExperiment(driverSizes);
+        experiment.addMultiExperiment(driverSizes);
 
 //        experiment.addSingleExperiment(uniquePaths);
-
-        experiment.addMultiExperiment(uniquePathsWithOptions("-combined", 5, false, options -> options.getBuilder().setCombineAllUnboundGenerics(true).build()));
-        experiment.addMultiExperiment(uniquePathsWithOptions("-split", 5, false, options -> options.getBuilder().setCombineAllUnboundGenerics(false).build()));
 
 //        experiment.addMultiExperiment(driverSizes("-0", options -> options.getBuilder().setCheckDepthUseValue(0).build()));
 //        experiment.addMultiExperiment(driverSizes("-1", options -> options.getBuilder().setCheckDepthUseValue(1).build()));

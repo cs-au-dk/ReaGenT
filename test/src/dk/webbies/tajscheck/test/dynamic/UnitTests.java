@@ -402,6 +402,7 @@ public class UnitTests {
     public void deepNumberIndexer() throws Exception {
         CheckOptions options = CheckOptions.builder()
                 .setCheckDepthUseValue(1)
+                .setCheckDepthReport(1)
                 .build();
 
         RunResult result = run("numberIndexer", options, "foo");
@@ -756,7 +757,7 @@ public class UnitTests {
 
     @Test
     public void thisTypesInInterfaces() throws Exception {
-        RunResult result = run("thisTypesInInterfaces", "foo");
+        RunResult result = run("thisTypesInInterfaces", CheckOptions.builder().setCheckDepthReport(0).setCheckDepthUseValue(0).build(), "foo");
 
         expect(result)
                 .forPath("module.baz().bar")

@@ -24,6 +24,7 @@ public final class CheckOptions {
     public final boolean writePrimitives;
     public final boolean writeAll;
     public final boolean firstMatchSignaturePolicy;
+    public final boolean useAssertTypeFunctions;
 
 
     private CheckOptions(Builder builder) {
@@ -44,6 +45,7 @@ public final class CheckOptions {
         this.writeAll = builder.writeAll;
         this.checkDepthReport = builder.checkDepthReport;
         this.firstMatchSignaturePolicy = builder.firstMatchSignaturePolicy;
+        this.useAssertTypeFunctions = builder.useAssertTypeFunctions;
         this.builder = builder;
     }
 
@@ -86,6 +88,7 @@ public final class CheckOptions {
         private boolean writePrimitives = false; // We write to properties that have primitive values.
         private boolean writeAll = false; // Only has effect if above is true. Every single property is potentially written to. Is VERY stupid, will likely overwrite the library before testing it.
         private boolean firstMatchSignaturePolicy = true; // If the first-match-signature policy of TypeScript should be enforced.
+        private boolean useAssertTypeFunctions = true; // Wether or not to combine type-cheks into assertType functions, if not they are inlined (slightly bigger, easier to read).
 
         private Builder() {}
 
@@ -104,6 +107,11 @@ public final class CheckOptions {
 
         public Builder setFirstMatchSignaturePolicy(boolean firstMatchSignaturePolicy) {
             this.firstMatchSignaturePolicy = firstMatchSignaturePolicy;
+            return this;
+        }
+
+        public Builder setUseAssertTypeFunctions(boolean useAssertTypeFunctions) {
+            this.useAssertTypeFunctions = useAssertTypeFunctions;
             return this;
         }
 
