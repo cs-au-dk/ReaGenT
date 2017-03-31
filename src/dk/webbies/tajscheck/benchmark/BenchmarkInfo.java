@@ -123,6 +123,13 @@ public class BenchmarkInfo {
                 ((ClassType) ((ClassInstanceType) type).getClassType()).instance = (ClassInstanceType) type;
             }
 
+            // Collapsing nested unions
+            if (type instanceof UnionType) {
+                UnionType union = (UnionType) type;
+                HashSet<UnionType> es = new HashSet<>(Collections.singletonList(union));
+                union.setElements(collectAllUnionElements(union.getElements(), es));
+            }
+
             // An intersection of functions can be represented in a better way (to allow detecting overloads).
             if (type instanceof IntersectionType) {
                 IntersectionType intersection = (IntersectionType) type;
@@ -227,6 +234,23 @@ public class BenchmarkInfo {
                 }
             }
         }
+    }
+
+    private static List<Type> collectAllUnionElements(List<Type> elements, Set<UnionType> seenUnions) {
+        ArrayList<Type> result = new ArrayList<>();
+        for (Type type : elements) {
+            if (type instanceof UnionType) {
+                UnionType union = (UnionType) type;
+                if (!seenUnions.contains(union)) {
+                    seenUnions.add(union);
+                    result.addAll(collectAllUnionElements(union.getElements(), seenUnions));
+                }
+            } else {
+                result.add(type);
+            }
+        }
+
+        return result.stream().distinct().collect(Collectors.toList());
     }
 
     private static void setUndefinedReturnToVoid(List<Signature> signatures) {
