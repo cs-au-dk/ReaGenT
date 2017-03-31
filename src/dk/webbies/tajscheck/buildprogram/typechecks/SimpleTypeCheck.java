@@ -21,4 +21,22 @@ public class SimpleTypeCheck implements TypeCheck {
     public Check getCheck() {
         return check;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SimpleTypeCheck that = (SimpleTypeCheck) o;
+
+        if (check != null ? !check.equals(that.check) : that.check != null) return false;
+        return expected != null ? expected.equals(that.expected) : that.expected == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = check != null ? check.hashCode() : 0;
+        result = 31 * result + (expected != null ? expected.hashCode() : 0);
+        return result;
+    }
 }

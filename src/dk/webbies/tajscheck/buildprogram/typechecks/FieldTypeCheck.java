@@ -35,4 +35,22 @@ public class FieldTypeCheck implements TypeCheck {
     public Check getCheck() {
         return Check.field(this.field, fieldChecks.stream().map(TypeCheck::getCheck).collect(Collectors.toList()));
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FieldTypeCheck that = (FieldTypeCheck) o;
+
+        if (field != null ? !field.equals(that.field) : that.field != null) return false;
+        return fieldChecks != null ? fieldChecks.equals(that.fieldChecks) : that.fieldChecks == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = field != null ? field.hashCode() : 0;
+        result = 31 * result + (fieldChecks != null ? fieldChecks.hashCode() : 0);
+        return result;
+    }
 }
