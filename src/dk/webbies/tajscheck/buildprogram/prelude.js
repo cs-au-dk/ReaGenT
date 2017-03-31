@@ -156,7 +156,7 @@ var no_value = {noValueMarker: true};
 var testOrderRecording = [];
 var seenFailures = new Set();
 function assert(cond, path, expected, actual, iteration, descrip) {
-    if (!failOnAny && typeof actual === "object" && actual && actual.__isAnyMarker) {
+    if (!failOnAny && typeof actual === "object" && actual && actual._any) {
         return true;
     }
     if (isTAJS) {
