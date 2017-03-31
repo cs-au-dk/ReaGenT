@@ -35,6 +35,7 @@ public class TypeCreator {
     private final MultiMap<TypeWithContext, Integer> valueLocations;
     private final Map<Test, List<Integer>> testValueLocations = new IdentityHashMap<>();
     private final CheckOptions options;
+    private TypeChecker typeChecker;
     private final BenchmarkInfo info;
     private ArrayList<Statement> functions = new ArrayList<>();
 
@@ -42,8 +43,9 @@ public class TypeCreator {
     private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
     private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
-    TypeCreator(List<Test> tests, BenchmarkInfo info) {
+    TypeCreator(List<Test> tests, BenchmarkInfo info, TypeChecker typeChecker) {
         this.options = info.options;
+        this.typeChecker = typeChecker;
         this.valueLocations = new ArrayListMultiMap<>();
         this.typeIndexes = HashBiMap.create();
         this.info = info;
@@ -423,7 +425,7 @@ public class TypeCreator {
                         return Return(call(identifier("TAJS_make"), string("AnyStr")));
                     case Any:
                         return Return(
-                                object(new ObjectLiteral.Property("__isAnyMarker", object()))
+                                object(new ObjectLiteral.Property("_any", object()))
                         );
                     case Boolean:
                         return Return(call(identifier("TAJS_make"), string("AnyBool")));
@@ -475,7 +477,7 @@ public class TypeCreator {
                 case Boolean:
                     return stmtFromString("return Math.random() > 0.5");
                 case Any:
-                    return stmtFromString("return {__isAnyMarker: {}}");
+                    return stmtFromString("return {_any: {}}");
                 case Undefined:
                 case Void:
                     return stmtFromString("return void(0);");
@@ -679,9 +681,6 @@ public class TypeCreator {
         for (int i = 0; i < maxArgs; i++) {
             args.add("arg" + i);
         }
-
-        TypeChecker typeChecker = new TypeChecker(info);
-
 
         assert !signatures.isEmpty();
 

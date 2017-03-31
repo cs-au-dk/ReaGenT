@@ -32,6 +32,7 @@ public class DriverProgramBuilder {
 
     private final List<Test> tests;
     private final BenchmarkInfo info;
+    private final TypeChecker typeChecker;
 
     private TypeCreator typeCreator;
 
@@ -39,7 +40,8 @@ public class DriverProgramBuilder {
         this.tests = new ArrayList<>(tests);
         this.info = info;
 
-        this.typeCreator = new TypeCreator(tests, info);
+        this.typeChecker = new TypeChecker(info);
+        this.typeCreator = new TypeCreator(tests, info, typeChecker);
     }
 
     public Statement buildDriver(ExecutionRecording recording) throws IOException {
@@ -62,6 +64,8 @@ public class DriverProgramBuilder {
         program.add(AstBuilder.programFromFile(this.getClass().getResource("prelude.js")));
 
         program.add(block(typeCreator.getValueVariableDeclarationList()));
+
+        program.add(block(typeChecker.getTypeCheckingFunctionList()));
 
         // Adding all the getType_X functions.
 
@@ -170,7 +174,7 @@ public class DriverProgramBuilder {
                         ),
                         Return()
                 ),
-                new TypeChecker(info).assertResultingType(new TypeWithContext(info.typeToTest, TypeContext.create(info)), identifier("module"), "require(" + info.bench.module + ")", Integer.MAX_VALUE, "heapcheck")
+                typeChecker.assertResultingType(new TypeWithContext(info.typeToTest, TypeContext.create(info)), identifier("module"), "require(" + info.bench.module + ")", Integer.MAX_VALUE, "heapcheck")
 
         )));
     }
@@ -204,7 +208,6 @@ public class DriverProgramBuilder {
         assert produces.size() == typeCreator.getTestProducesIndexes(test).size();
 
         Statement saveResultStatement;
-        TypeChecker checkType = new TypeChecker(info);
         if (produces.size() == 0) {
             saveResultStatement = block();
         } else if (produces.size() == 1) {
@@ -214,10 +217,10 @@ public class DriverProgramBuilder {
                     info.options.checkDepthReport == info.options.checkDepthUseValue ? block() : expressionStatement(call(function(
                             block(
                                     comment("There warnings are just reported, not used to see if the value should be used (that comes below). "),
-                                    checkType.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepthReport, test.getTestType())
+                                    typeChecker.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepthReport, test.getTestType())
                             )
                     ))),
-                    checkType.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepthUseValue, test.getTestType()),
+                    typeChecker.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepthUseValue, test.getTestType()),
                     statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result"))),
                     statement(call(identifier("registerValue"), number(index)))
             );
@@ -231,7 +234,7 @@ public class DriverProgramBuilder {
                                 Type type = pair.getLeft();
                                 Integer valueIndex = pair.getRight();
                                 return block(
-                                        variable("passed" + valueIndex, checkType.checkResultingType(new TypeWithContext(type, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepthForUnions)),
+                                        variable("passed" + valueIndex, typeChecker.checkResultingType(new TypeWithContext(type, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepthForUnions)),
                                         ifThen(
                                                 identifier("passed" + valueIndex),
                                                 statement(methodCall(identifier("passedResults"), "push", number(valueIndex)))
@@ -256,7 +259,7 @@ public class DriverProgramBuilder {
                                                             number(0)
                                                     ),
                                                     string(test.getPath()),
-                                                    string(checkType.getTypeDescription(new TypeWithContext(createUnionType(produces), test.getTypeContext()), info.options.checkDepthForUnions)),
+                                                    string(typeChecker.getTypeDescription(new TypeWithContext(createUnionType(produces), test.getTypeContext()), info.options.checkDepthForUnions)),
                                                     identifier("result"),
                                                     identifier("i"),
                                                     string(test.getTestType())

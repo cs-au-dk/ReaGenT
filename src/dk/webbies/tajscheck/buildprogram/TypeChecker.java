@@ -26,6 +26,7 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
  */
 public class TypeChecker {
     private final BenchmarkInfo info;
+    private List<Statement> typeCheckingFunctionList = new ArrayList<>();
 
     // TODO: Make the CheckType calls into function-calls. And then re-use them (not the assert calls).
     public TypeChecker(BenchmarkInfo info) {
@@ -79,18 +80,27 @@ public class TypeChecker {
         return createIntersection(result).getExpected();
     }
 
+    // TODO: returns CallExpression
+    // TODO: Pass the assert function as an argument, that way it can support both "mock" testing and real assertions.
     private Statement checkToAssertions(TypeCheck typeCheck, Expression exp, String path, String testType) {
+        // TODO: This entire function cached using useAssertTypeFunction. Let this function take a list of TypeChecks, and make a cache of lists.
         if (typeCheck instanceof FieldTypeCheck) {
             FieldTypeCheck fieldTypeCheck = (FieldTypeCheck) typeCheck;
             String field = fieldTypeCheck.getField();
             return statement(call(function(block(
-                    fieldTypeCheck.getFieldChecks().stream().map(subCheck -> checkToAssertions(subCheck, member(exp, field), path + "." + field, testType)).collect(Collectors.toList())
+                    fieldTypeCheck.getFieldChecks().stream().map(subCheck -> checkToAssertions(subCheck, member(exp, field), path + "." + field, testType)).collect(Collectors.toList()) // <- TODO: Pass a list to checkToAssertions, once i change it.
             ))));
         }
 
         assert typeCheck instanceof SimpleTypeCheck;
-        // assert(cond, path, expected, actual)
-        Expression checkExpression = CheckToExpression.generate(typeCheck.getCheck(), exp);
+        Expression checkExpression;
+        if (info.bench.options.useAssertTypeFunctions) {
+            String assertTypeName = getTypeCheckFunctionName(typeCheck);
+
+            checkExpression = call(identifier(assertTypeName), exp);
+        } else {
+            checkExpression = CheckToExpression.generate(typeCheck.getCheck(), exp);
+        }
         CallExpression assertCall = call(identifier("assert"), checkExpression, string(path), string(typeCheck.getExpected()), exp, identifier("i"), string(testType));
         return ifThen(
                 unary(Operator.NOT, assertCall),
@@ -99,6 +109,26 @@ public class TypeChecker {
                         Return(bool(false))
                 )
         );
+    }
+
+    private final Map<Check, String> typeCheckFunctionNameCache = new HashMap<>();
+
+    private String getTypeCheckFunctionName(TypeCheck typeCheck) {
+        if (typeCheckFunctionNameCache.containsKey(typeCheck.getCheck())) {
+            return typeCheckFunctionNameCache.get(typeCheck.getCheck());
+        }
+        String assertTypeName = "assertType_" + typeCheckingFunctionList.size();
+        typeCheckingFunctionList.add(statement(function(
+                assertTypeName,
+                Return(CheckToExpression.generate(typeCheck.getCheck(), identifier("arg"))),
+                "arg"
+        )));
+        typeCheckFunctionNameCache.put(typeCheck.getCheck(), assertTypeName);
+        return assertTypeName;
+    }
+
+    public List<Statement> getTypeCheckingFunctionList() {
+        return typeCheckingFunctionList;
     }
 
     static final class Arg {
@@ -550,7 +580,7 @@ public class TypeChecker {
                     expectNotNull(),
                     new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "tuple"),
                     new SimpleTypeCheck(Check.field("length", Check.expression((actualSize) ->
-                        binary(actualSize, Operator.GREATER_THAN_EQUAL, number(size))
+                            binary(actualSize, Operator.GREATER_THAN_EQUAL, number(size))
                     )), "tuple of " + size + " elements")
             ));
 
