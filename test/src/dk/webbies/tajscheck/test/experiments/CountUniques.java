@@ -354,7 +354,21 @@ public class CountUniques {
 
         @Override
         public Type visit(IntersectionType t, Arg arg) {
-            throw new RuntimeException();
+            if (!arg.path.startsWith("[intersection")) {
+                for (Type type : t.getElements()) {
+                    Type result = recurse(type, arg);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+                return null;
+            }
+            int index = Integer.parseInt(firstPath(arg.path).substring("[intersection".length(), firstPath(arg.path).length() - 1));
+            if (t.getElements().size() > index) {
+                return recurse(t.getElements().get(index), arg.rest());
+            } else {
+                return null;
+            }
         }
 
         @Override
