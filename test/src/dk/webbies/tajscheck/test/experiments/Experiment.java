@@ -106,11 +106,20 @@ public class Experiment {
                 try {
                     for (Pair<List<String>, ExperimentMultiRunner> pair : experiments) {
                         List<String> subResult;
-                        try {
-                            subResult = pair.getRight().run(benchmark.getRight());
-                        } catch (Throwable e) {
-                            e.printStackTrace();
-                            throw new RuntimeException(e);
+                        int tries = 0;
+                        while (true) {
+                            try {
+                                subResult = pair.getRight().run(benchmark.getRight());
+                                break;
+                            } catch (Throwable e) {
+                                if (tries == 5) {
+                                    throw new RuntimeException(e);
+                                } else {
+                                    tries++;
+                                    System.out.println("Had an exception while running a benchmark (for the " + tries + ". time)");
+                                    System.out.println("Trying again");
+                                }
+                            }
                         }
                         row.addAll(subResult);
 
