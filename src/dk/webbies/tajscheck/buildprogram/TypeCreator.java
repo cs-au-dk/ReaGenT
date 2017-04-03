@@ -18,7 +18,6 @@ import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.util.*;
-import org.apache.bcel.generic.RET;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.*;
@@ -89,7 +88,24 @@ public class TypeCreator {
 
 
     public Collection<Integer> getValueIndex(Type type, TypeContext context) {
-        return valueLocations.get(new TypeWithContext(type, context));
+        TypeWithContext key = new TypeWithContext(type, context);
+
+        List<Integer> values = new ArrayList<>(valueLocations.get(key));
+        while (key.getType() instanceof ReferenceType) {
+            ReferenceType ref = (ReferenceType) key.getType();
+            Type target = ref.getTarget();
+            TypeContext typeContext = new TypesUtil(info).generateParameterMap(ref, key.getTypeContext()).optimizeTypeParameters(target, info.freeGenericsFinder);
+            key = new TypeWithContext(target, typeContext);
+            values.addAll(valueLocations.get(key));
+        }
+
+        TypeContext optimized = context.optimizeTypeParameters(type, info.freeGenericsFinder);
+
+        if (!optimized.equals(context)) {
+            values.addAll(getValueIndex(type, optimized));
+        }
+
+        return values.stream().distinct().collect(Collectors.toList());
     }
 
     private int valueCounter = 0;
@@ -909,6 +925,10 @@ public class TypeCreator {
     }
 
     private BlockStatement saveArgsAndReturnValue(Signature signature, TypeContext typeContext, String path) {
+        if (path.equals("mockFunctionForFirstMatchPolicy")) {
+            return block(Return());
+        }
+
         List<Signature.Parameter> parameters = signature.getParameters();
 
         List<Statement> saveArgumentValues = new ArrayList<>();
@@ -941,10 +961,6 @@ public class TypeCreator {
                     );
                 }
         ).forEach(saveArgumentValues::add);
-
-        if (path.equals("mockFunctionForFirstMatchPolicy")) {
-            return block(Return());
-        }
 
         Type returnType = signature.getResolvedReturnType();
         return block(
@@ -1323,16 +1339,7 @@ public class TypeCreator {
         for (TypeWithContext key : getTypeQueue) {
             int value = typeIndexes.get(key);
 
-            List<Integer> values = new ArrayList<>(valueLocations.get(key));
-            while (key.getType() instanceof ReferenceType) {
-                ReferenceType ref = (ReferenceType) key.getType();
-                Type target = ref.getTarget();
-                TypeContext typeContext = new TypesUtil(info).generateParameterMap(ref, key.getTypeContext()).optimizeTypeParameters(target, info.freeGenericsFinder);
-                key = new TypeWithContext(target, typeContext);
-                values.addAll(valueLocations.get(key));
-            }
-
-            values = values.stream().distinct().collect(Collectors.toList());
+            Collection<Integer> values = getValueIndex(key.getType(), key.getTypeContext());
 
             Statement returnTypeStatement;
 
