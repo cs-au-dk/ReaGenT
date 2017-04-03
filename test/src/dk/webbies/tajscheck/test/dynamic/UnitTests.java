@@ -39,11 +39,11 @@ public class UnitTests {
     }
 
     public static Benchmark benchFromFolder(String folderName) {
-        return benchFromFolder(folderName, CheckOptions.defaultOptions());
+        return benchFromFolder(folderName, "module");
     }
 
     public static Benchmark benchFromFolder(String folderName, String moduleName) {
-        return benchFromFolder(folderName, CheckOptions.defaultOptions(), moduleName);
+        return benchFromFolder(folderName, CheckOptions.builder().setMaxIterationsToRun(10000).build(), moduleName);
     }
 
     private static Benchmark benchFromFolder(String folderName, CheckOptions options) {
@@ -355,7 +355,7 @@ public class UnitTests {
 
     @Test
     public void constructClass() throws Exception {
-        RunResult result = run("constructClass", CheckOptions.builder().setConstructAllTypes(true).build(), "seed");
+        RunResult result = run("constructClass", CheckOptions.builder().setMaxIterationsToRun(10000).setConstructAllTypes(true).build(), "seed");
 
         expect(result)
                 .forPath("module.foo(class)")
@@ -365,7 +365,7 @@ public class UnitTests {
 
     @Test
     public void arrayType() throws Exception {
-        RunResult result = run(benchFromFolder("arrayType", CheckOptions.builder().setCheckDepthUseValue(2).build()), "foo");
+        RunResult result = run(benchFromFolder("arrayType", CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthUseValue(2).build()), "foo");
 
         expect(result)
                 .forPath("module.foo()")
@@ -403,6 +403,7 @@ public class UnitTests {
         CheckOptions options = CheckOptions.builder()
                 .setCheckDepthUseValue(1)
                 .setCheckDepthReport(1)
+                .setMaxIterationsToRun(10000)
                 .build();
 
         RunResult result = run("numberIndexer", options, "foo");
@@ -417,7 +418,7 @@ public class UnitTests {
 
     @Test
     public void stringIndexer() throws Exception {
-        RunResult result = run("stringIndexer", CheckOptions.builder().setCheckDepthReport(0).build(), "foo");
+        RunResult result = run("stringIndexer", CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthReport(0).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -516,6 +517,7 @@ public class UnitTests {
     public void deepUnions() throws Exception {
         CheckOptions options = CheckOptions.builder()
                 .setCheckDepthForUnions(2)
+                .setMaxIterationsToRun(10000)
                 .build();
 
         RunResult result = run("deepUnion", options, "foo");
@@ -575,7 +577,7 @@ public class UnitTests {
 
     @Test
     public void myFixedMomentHasNoError() throws Exception {
-        Benchmark benchmark = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", "moment", NODE, CheckOptions.builder().setSplitUnions(false).build()).withOptions(CheckOptions::errorFindingOptions);
+        Benchmark benchmark = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", "moment", NODE, CheckOptions.builder().setMaxIterationsToRun(10000).setSplitUnions(false).build()).withOptions(CheckOptions::errorFindingOptions);
 
         RunResult result = run(benchmark, null);
 
@@ -660,12 +662,12 @@ public class UnitTests {
 
     @Test
     public void complexSanityCheck15() throws Exception {
-        sanityCheck(benchFromFolder("complexSanityCheck15", CheckOptions.builder().setDisableSizeOptimization(true).build()), NODE);
+        sanityCheck(benchFromFolder("complexSanityCheck15", CheckOptions.builder().setMaxIterationsToRun(10000).setDisableSizeOptimization(true).build()), NODE);
     }
 
     @Test
     public void complexSanityCheck16() throws Exception {
-        sanityCheck(benchFromFolder("complexSanityCheck16", CheckOptions.builder().setDisableGenerics(true).setSplitUnions(false).build()), NODE);
+        sanityCheck(benchFromFolder("complexSanityCheck16", CheckOptions.builder().setMaxIterationsToRun(10000).setDisableGenerics(true).setSplitUnions(false).build()), NODE);
     }
 
     @Test
@@ -680,7 +682,7 @@ public class UnitTests {
 
     @Test
     public void nodeList() throws Exception {
-        sanityCheck(benchFromFolder("nodeList", CheckOptions.builder().setCheckDepthReport(1).setCheckDepthUseValue(1).build()), BROWSER);
+        sanityCheck(benchFromFolder("nodeList", CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthReport(1).setCheckDepthUseValue(1).build()), BROWSER);
     }
 
     @Test
@@ -714,7 +716,7 @@ public class UnitTests {
         // When a function (with e.g. 2 parameters) is overridden, with a function that takes 1 parameter.
         // Then the second parameter kind-of gets the bottom type.
         // TypeScript allows this, but it is unsound (just like complexSanityCheck9
-        sanityCheck(benchFromFolder("overrideNumberOfArguments", CheckOptions.builder().setConstructAllTypes(false).build()), BROWSER);
+        sanityCheck(benchFromFolder("overrideNumberOfArguments", CheckOptions.builder().setMaxIterationsToRun(10000).setConstructAllTypes(false).build()), BROWSER);
     }
 
     @Test
@@ -757,7 +759,7 @@ public class UnitTests {
 
     @Test
     public void thisTypesInInterfaces() throws Exception {
-        RunResult result = run("thisTypesInInterfaces", CheckOptions.builder().setCheckDepthReport(0).setCheckDepthUseValue(0).build(), "foo");
+        RunResult result = run("thisTypesInInterfaces", CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthReport(0).setCheckDepthUseValue(0).build(), "foo");
 
         expect(result)
                 .forPath("module.baz().bar")
@@ -773,13 +775,13 @@ public class UnitTests {
 
     @Test
     public void genericsAreOptimized() throws Exception {
-        CheckOptions options = CheckOptions.builder().setDisableSizeOptimization(false).setCheckDepthReport(0).build();
+        CheckOptions options = CheckOptions.builder().setMaxIterationsToRun(10000).setDisableSizeOptimization(false).setCheckDepthReport(0).build();
         RunResult optimized = run(benchFromFolder("genericsAreOptimized", options), "seed");
 
         assertThat(optimized.typeErrors.size(), is(1));
 
 
-        options = CheckOptions.builder().setDisableSizeOptimization(true).setCheckDepthReport(0).build();
+        options = CheckOptions.builder().setMaxIterationsToRun(10000).setDisableSizeOptimization(true).setCheckDepthReport(0).build();
         RunResult unOptimzed = run(benchFromFolder("genericsAreOptimized", options), "seed");
 
         assertThat(unOptimzed.typeErrors.size(), is(2));
@@ -787,7 +789,7 @@ public class UnitTests {
 
     @Test
     public void genericsWithNoOptimization2() throws Exception {
-        CheckOptions options = CheckOptions.builder().setDisableSizeOptimization(true).build();
+        CheckOptions options = CheckOptions.builder().setMaxIterationsToRun(10000).setDisableSizeOptimization(true).build();
         RunResult result = run(benchFromFolder("genericsWithNoOptimization2", options), "seed");
 
         assertThat(result.typeErrors.size(), is(greaterThan(0)));
@@ -796,7 +798,7 @@ public class UnitTests {
 
     @Test
     public void genericsWithNoOptimization() throws Exception {
-        CheckOptions options = CheckOptions.builder().setDisableSizeOptimization(true).build();
+        CheckOptions options = CheckOptions.builder().setMaxIterationsToRun(10000).setDisableSizeOptimization(true).build();
         RunResult result = run(benchFromFolder("genericsWithNoOptimization", options), "seed");
 
         assertThat(result.typeErrors.size(), is(2));
@@ -816,7 +818,7 @@ public class UnitTests {
 
     @Test
     public void thisTypesAreOptimized() throws Exception {
-        RunResult result = run("thisTypesAreOptimized", CheckOptions.builder().setCheckDepthUseValue(0).setCheckDepthReport(0).build(), "foo");
+        RunResult result = run("thisTypesAreOptimized", CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthUseValue(0).setCheckDepthReport(0).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
     }
@@ -891,7 +893,7 @@ public class UnitTests {
 
     @Test
     public void intersectionWithFunction() throws Exception {
-        RunResult result = run(benchFromFolder("intersectionWithFunction", CheckOptions.builder().setConstructAllTypes(true).build()).withRunMethod(BOOTSTRAP), "foo");
+        RunResult result = run(benchFromFolder("intersectionWithFunction", CheckOptions.builder().setMaxIterationsToRun(10000).setConstructAllTypes(true).build()).withRunMethod(BOOTSTRAP), "foo");
 
         assertThat(result.typeErrors.size(), is(0));
         assertThat(result.errors, everyItem(is(equalTo("RuntimeError: Cannot construct this IntersectionType")))); // <- this happens, it is ok, i cannot at runtime construct a type which is the intersection of two types.
@@ -918,7 +920,7 @@ public class UnitTests {
 
     @Test
     public void unboundGenericsAreNotDuplicated() throws Exception {
-        RunResult result = run("unboundGenericsAreNotDuplicated", CheckOptions.builder().setCheckDepthReport(0).build(), "foo");
+        RunResult result = run("unboundGenericsAreNotDuplicated", CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthReport(0).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(lessThanOrEqualTo(1)));
 
@@ -943,7 +945,7 @@ public class UnitTests {
 
     @Test
     public void thisTypesAreOptimized2() throws Exception {
-        RunResult result = run("thisTypesAreOptimized2", CheckOptions.builder().setConstructAllTypes(false).build(), "foo");
+        RunResult result = run("thisTypesAreOptimized2", CheckOptions.builder().setMaxIterationsToRun(10000).setConstructAllTypes(false).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
     }
@@ -969,7 +971,7 @@ public class UnitTests {
 
     @Test
     public void genericsAreNotTooOptimized() throws Exception {
-        Benchmark bench = benchFromFolder("genericsAreNotTooOptimized", CheckOptions.builder().setCombineAllUnboundGenerics(true).build());
+        Benchmark bench = benchFromFolder("genericsAreNotTooOptimized", CheckOptions.builder().setMaxIterationsToRun(10000).setCombineAllUnboundGenerics(true).build());
         String driver = Main.generateFullDriver(bench);
         Main.writeFullDriver(bench);
 
@@ -1034,7 +1036,7 @@ public class UnitTests {
 
     @Test
     public void canFindErrorsEvenWhenTimeout() throws Exception {
-        RunResult result = run(benchFromFolder("canFindErrorsEvenWhenTimeout", CheckOptions.builder().setMaxTime(5 * 1000).build()), "foo");
+        RunResult result = run(benchFromFolder("canFindErrorsEvenWhenTimeout", CheckOptions.builder().setMaxIterationsToRun(10000).setMaxTime(5 * 1000).build()), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1042,7 +1044,7 @@ public class UnitTests {
 
     @Test
     public void canFindErrorsEvenWhenTimeoutChrome() throws Exception {
-        RunResult result = run(benchFromFolder("canFindErrorsEvenWhenTimeoutChrome", CheckOptions.builder().setMaxTime(5 * 1000).build()).withRunMethod(BROWSER), "foo");
+        RunResult result = run(benchFromFolder("canFindErrorsEvenWhenTimeoutChrome", CheckOptions.builder().setMaxIterationsToRun(10000).setMaxTime(5 * 1000).build()).withRunMethod(BROWSER), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1052,7 +1054,7 @@ public class UnitTests {
     public void findSimpleErrorChrome() throws Exception {
         long startTime = System.currentTimeMillis();
 
-        RunResult result = run(benchFromFolder("findSimpleErrorChrome", CheckOptions.builder().setMaxTime(60 * 1000).build()).withRunMethod(BROWSER), "foo");
+        RunResult result = run(benchFromFolder("findSimpleErrorChrome", CheckOptions.builder().setMaxIterationsToRun(10000).setMaxTime(60 * 1000).build()).withRunMethod(BROWSER), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1067,7 +1069,7 @@ public class UnitTests {
     public void findSimpleErrorChromeWithErrors() throws Exception {
         long startTime = System.currentTimeMillis();
 
-        RunResult result = run(benchFromFolder("findSimpleErrorChromeWithErrors", CheckOptions.builder().setMaxTime(60 * 1000).build()).withRunMethod(BROWSER), "foo");
+        RunResult result = run(benchFromFolder("findSimpleErrorChromeWithErrors", CheckOptions.builder().setMaxIterationsToRun(10000).setMaxTime(60 * 1000).build()).withRunMethod(BROWSER), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1080,7 +1082,7 @@ public class UnitTests {
 
     @Test
     public void classProperties() throws Exception {
-        RunResult result = run("classProperties", CheckOptions.builder().setConstructAllTypes(true).build(), "foo");
+        RunResult result = run("classProperties", CheckOptions.builder().setMaxIterationsToRun(10000).setConstructAllTypes(true).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(2)); // The tests are in the .js file.
 
@@ -1111,7 +1113,7 @@ public class UnitTests {
 
     @Test
     public void complexThisTypes3() throws Exception {
-        RunResult result = run("complexThisTypes3", CheckOptions.builder().setCheckDepthUseValue(2).build(), "foo");
+        RunResult result = run("complexThisTypes3", CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthUseValue(2).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -1175,11 +1177,11 @@ public class UnitTests {
 
     @Test
     public void canWritePrimitives() throws Exception {
-        RunResult resultNoWrite = run("canWritePrimitives", CheckOptions.builder().setWritePrimitives(false).build(), "foo");
+        RunResult resultNoWrite = run("canWritePrimitives", CheckOptions.builder().setMaxIterationsToRun(10000).setWritePrimitives(false).build(), "foo");
 
         assertThat(resultNoWrite.typeErrors.size(), is(0));
 
-        RunResult resultWithWrite = run("canWritePrimitives", CheckOptions.builder().setWritePrimitives(true).build(), "foo");
+        RunResult resultWithWrite = run("canWritePrimitives", CheckOptions.builder().setMaxIterationsToRun(10000).setWritePrimitives(true).build(), "foo");
 
         assertThat(resultWithWrite.typeErrors.size(), is(1));
 
@@ -1198,7 +1200,7 @@ public class UnitTests {
         boolean hadAnError = false;
         for (int i = 0; i < 20; i++) {
             System.out.println("Trying with seed: " + i);
-            RunResult resultWithWrite = run("canWriteComplex", CheckOptions.builder().setWriteAll(true).build(), i + "");
+            RunResult resultWithWrite = run("canWriteComplex", CheckOptions.builder().setMaxIterationsToRun(10000).setWriteAll(true).build(), i + "");
 
             if (resultWithWrite.typeErrors.size() > 0) {
                 hadAnError = true;
@@ -1210,7 +1212,7 @@ public class UnitTests {
 
     @Test
     public void noIterations() throws Exception {
-        RunResult result = run("noIterations", CheckOptions.builder().setMaxIterationsToRun(0).build(), "foo");
+        RunResult result = run("noIterations", CheckOptions.builder().setMaxIterationsToRun(10000).setMaxIterationsToRun(0).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(0));
     }
@@ -1218,6 +1220,23 @@ public class UnitTests {
     @Test
     public void browserCoverage() throws Exception {
         Benchmark bench = benchFromFolder("browserCoverage").withRunMethod(BROWSER);
+
+        RunResult result = run(bench, "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+
+        Map<String, CoverageResult> coverage = Main.genCoverage(bench);
+
+        assertThat(coverage, is(not(emptyMap())));
+
+        assertThat(coverage.get("implementation.js").statementCoverage(), is(greaterThan(0.5)));
+    }
+
+    // TODO: Node coverage when timeout.
+
+    @Test
+    public void browserCoverageTimeout() throws Exception {
+        Benchmark bench = benchFromFolder("browserCoverageTimeout", CheckOptions.builder().setMaxTime(10 * 1000).setMaxIterationsToRun(-1).build()).withRunMethod(BROWSER);
 
         RunResult result = run(bench, "foo");
 
@@ -1267,7 +1286,7 @@ public class UnitTests {
 
     @Test // TODO: Get this to work like it should.
     public void infiniteGenerics() throws Exception {
-        Main.writeFullDriver(benchFromFolder("infiniteGenerics", CheckOptions.builder().setCheckDepthReport(5).build()));
+        Main.writeFullDriver(benchFromFolder("infiniteGenerics", CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthReport(5).build()));
     }
 
     @Test
@@ -1280,6 +1299,20 @@ public class UnitTests {
     /*
                  * Examples used in the paper are below this:
                  */
+
+    @Test
+    public void genericsSplit() throws Exception {
+        // Combine generics, find the error.
+        RunResult result = run("genericsSplit", CheckOptions.builder().setMaxIterationsToRun(10000).setCombineAllUnboundGenerics(true).build(), "foo");
+        assertThat(result.typeErrors.size(), is(1));
+
+        // Not combining, error remain unfound
+        result = run("genericsSplit", CheckOptions.builder().setMaxIterationsToRun(10000).setCombineAllUnboundGenerics(false).build(), "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+
+    }
+
     @Test
     public void firstOrderFunctions() throws Exception {
         RunResult result = run("firstOrderFunctions", "foo");
@@ -1293,7 +1326,7 @@ public class UnitTests {
 
     @Test
     public void basicExample() throws Exception {
-        RunResult result = run("basicExample", CheckOptions.builder().setCheckDepthReport(0).build(), "foo");
+        RunResult result = run("basicExample", CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthReport(0).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1320,7 +1353,7 @@ public class UnitTests {
 
     @Test
     public void genericExtendMethod() throws Exception {
-        RunResult result = run("genericExtendMethod", CheckOptions.builder().setCombineAllUnboundGenerics(false).build(), "foo");
+        RunResult result = run("genericExtendMethod", CheckOptions.builder().setMaxIterationsToRun(10000).setCombineAllUnboundGenerics(false).build(), "foo");
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -1335,7 +1368,7 @@ public class UnitTests {
 
     @Test
     public void unsoundSiblings() throws Exception {
-        CheckOptions options = CheckOptions.builder().setCheckDepthUseValue(2).build();
+        CheckOptions options = CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthUseValue(2).build();
         RunResult result = parseDriverResult(runDriver(benchFromFolder("unsoundSiblings", options, "Box2D"), "foo", true));
 
         assertThat(result.typeErrors.size(), is(greaterThanOrEqualTo(1)));
