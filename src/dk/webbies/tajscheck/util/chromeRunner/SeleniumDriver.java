@@ -86,7 +86,7 @@ public class SeleniumDriver {
         }
 
 
-        String message = String.join("\n", server.getMessages());
+        String message = String.join("\n", server.awaitMessages());
 
         try {
             driver.quit();

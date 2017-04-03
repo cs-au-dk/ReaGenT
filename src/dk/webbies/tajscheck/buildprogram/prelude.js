@@ -137,11 +137,20 @@ if (isBrowser()) {
 
 var runsWithCoverage = (function () {
     try {
+        // Runing coverage inside a browser.
         if (__coverage__) {
             return true;
         }
     } catch (ignored) {
-        return false;
+        try {
+            // Running coverage with NODE
+            var istanbulKey = Object.keys(global).filter(function (key) {
+                return key.indexOf("$$cov") !== -1;
+            })[0];
+            return !!istanbulKey;
+        } catch (ignored) {
+            return false;
+        }
     }
 })();
 
@@ -152,9 +161,29 @@ if (runsWithCoverage) {
     }
 }
 
+function post(host, port, path, value) {
+    var request = require('sync-request');
+
+    if (typeof value !== "string") {
+        value = JSON.stringify(value);
+    }
+
+    request('POST', "http://" + host + ":" + port + path, {body: value});
+}
 function dumbCoverage() {
-    if (runsWithCoverage && isBrowser()) {
-        printForReal("::COVERAGE::" + JSON.stringify(__coverage__) + "::/COVERAGE::");
+    if (runsWithCoverage) {
+        if (isBrowser()) {
+            printForReal(("::COVERAGE::" + JSON.stringify(__coverage__)) + "::/COVERAGE::");
+        } else {
+            var istanbulKey = Object.keys(global).filter(function (key) {
+                return key.indexOf("$$cov") !== -1;
+            })[0];
+
+            var ISTANBUL_PORT_FOR_PARTIAL_RESULTS = 0;
+
+            // The first "0:" is to emulate the sequencer.
+            post("localhost", ISTANBUL_PORT_FOR_PARTIAL_RESULTS, "/post", "0:::COVERAGE::" + JSON.stringify(global[istanbulKey]) + "::/COVERAGE::");
+        }
     }
 }
 

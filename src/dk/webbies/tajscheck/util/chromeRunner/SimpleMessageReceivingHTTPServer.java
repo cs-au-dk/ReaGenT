@@ -23,7 +23,7 @@ public class SimpleMessageReceivingHTTPServer {
     private final ServerSocket serverSocket;
     private final List<String> messages = new ArrayList<>();
 
-    SimpleMessageReceivingHTTPServer(File dir, Map<String, String> customContents, ServerSocket serverSocket) {
+    public SimpleMessageReceivingHTTPServer(File dir, Map<String, String> customContents, ServerSocket serverSocket) {
         this.dir = dir;
         this.customContents = customContents;
         this.serverSocket = serverSocket;
@@ -145,7 +145,7 @@ public class SimpleMessageReceivingHTTPServer {
 
     private CountDownLatch latch = new CountDownLatch(1);
 
-    List<String> getMessages() {
+    public List<String> awaitMessages() {
         try {
             latch.await();
         } catch (InterruptedException e) {
@@ -197,5 +197,14 @@ public class SimpleMessageReceivingHTTPServer {
                         con.getLocalAddress().getHostName() +
                         " Port " + con.getLocalPort() + "</ADDRESS>\r\n" +
                         "</BODY></HTML>\r\n");
+    }
+
+    public static void main(String[] args) throws IOException {
+        ServerSocket socket = new ServerSocket(0);
+        int port = socket.getLocalPort();
+
+        System.out.println(port);
+
+        new SimpleMessageReceivingHTTPServer(new File(""), Collections.emptyMap(), socket).start();
     }
 }

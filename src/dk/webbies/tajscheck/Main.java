@@ -12,11 +12,13 @@ import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import dk.webbies.tajscheck.util.chromeRunner.SeleniumDriver;
+import dk.webbies.tajscheck.util.chromeRunner.SimpleMessageReceivingHTTPServer;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -159,10 +161,36 @@ public class Main {
             for (int i = 0; i < foldersDeep; i++) {
                 prefix.append("../");
             }
+            String coverageJsonPath = getFolderPath(bench) + "coverage/coverage.json";
+
+            Util.deleteFile(coverageJsonPath);
+
+            String testScript = Util.readFile(getFolderPath(bench) + testFileName);
+
+            ServerSocket socket = new ServerSocket(0);
+            socket.setSoTimeout(timeout + 10 * 1000);
+            SimpleMessageReceivingHTTPServer server = new SimpleMessageReceivingHTTPServer(new File(""), Collections.emptyMap(), socket);
+            new Thread(server::start).start();
+
+            testScript = testScript.replace("ISTANBUL_PORT_FOR_PARTIAL_RESULTS = 0", "ISTANBUL_PORT_FOR_PARTIAL_RESULTS = " + socket.getLocalPort());
+            Util.writeFile(getFolderPath(bench) + testFileName, testScript);
 
             Util.runNodeScript(prefix + "node_modules/istanbul/lib/cli.js cover " + testFileName, new File(getFolderPath(bench)), timeout);
 
-            return CoverageResult.parse(Util.readFile(getFolderPath(bench) + "coverage/coverage.json"));
+            if (new File(coverageJsonPath).exists()) {
+                return CoverageResult.parse(Util.readFile(coverageJsonPath));
+            } else {
+                socket.close();
+                List<String> messages = server.awaitMessages();
+
+                assert messages.size() == 1;
+                String coverageResult = messages.get(0);
+                coverageResult = Util.removeSuffix(Util.removePrefix(coverageResult, "::COVERAGE::"), "::/COVERAGE::");
+
+                genCoverageReport(coverageResult, bench);
+
+                return CoverageResult.parse(coverageResult);
+            }
         }
 
 
