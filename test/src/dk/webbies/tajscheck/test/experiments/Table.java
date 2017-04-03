@@ -12,7 +12,7 @@ public class Table {
     private final List<List<String>> table = Collections.synchronizedList(new ArrayList<>());
     private int size = -1;
 
-    public void addRow(List<String> objects) {
+    public synchronized void addRow(List<String> objects) {
         assertSize(objects.size());
         table.add(objects);
     }
@@ -25,16 +25,16 @@ public class Table {
         }
     }
 
-    public void setRow(int index, List<String> objects) {
+    public synchronized void setRow(int index, List<String> objects) {
         Util.ensureSize(table, index + 1);
         table.set(index, objects);
     }
 
-    public void consistencyCheck(int rowIndex) {
+    public synchronized void consistencyCheck(int rowIndex) {
         assertSize(table.get(rowIndex).size());
     }
 
-    private String print(String columnSeparator, String rowSeparator) {
+    private synchronized String print(String columnSeparator, String rowSeparator) {
         List<List<String>> table = new ArrayList<>(this.table);
         table.add(totalRow());
 
