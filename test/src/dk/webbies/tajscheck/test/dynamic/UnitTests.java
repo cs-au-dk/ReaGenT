@@ -9,6 +9,7 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
 import org.junit.Test;
@@ -80,6 +81,8 @@ public class UnitTests {
         String result = Main.runBenchmark(bench);
 
         System.out.println("Result of running driver: ");
+        System.out.println(result);
+
         RunResult parsed = OutputParser.parseDriverResult(result);
         for (TypeError error : parsed.typeErrors) {
             System.out.println(error);
@@ -1260,6 +1263,36 @@ public class UnitTests {
         Map<String, CoverageResult> coverage = Main.genCoverage(bench);
 
         assertThat(coverage, is(not(emptyMap())));
+
+        assertThat(coverage.get("test.js").statementCoverage(), is(greaterThan(0.2)));
+    }
+
+    @Test
+    public void nodeCoverageTimeout() throws Exception {
+        Benchmark bench = benchFromFolder("nodeCoverageTimeout").withOptions(options -> options.getBuilder().setMaxIterationsToRun(-1).build());
+
+        Map<String, CoverageResult> coverage = Main.genCoverage(bench);
+
+        assertThat(coverage, is(not(emptyMap())));
+
+        assertThat(coverage.get("test.js").statementCoverage(), is(greaterThan(0.2)));
+    }
+
+    @Test
+    public void notDuplicatedAssertTypeFunctions() throws Exception {
+        Main.writeFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", CheckOptions.builder().setUseAssertTypeFunctions(true).build()));
+
+        String driver = Main.generateFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", CheckOptions.builder().setUseAssertTypeFunctions(true).build()));
+
+        int matches = StringUtils.countMatches(driver,
+                "(assert, exp, path, testType) {\n" +
+                "        if (!(assert(true, path, \"[any]\", exp, i, testType))) {\n" +
+                "            return false;\n" +
+                "        }\n" +
+                "        return true;\n" +
+                "    }");
+
+        assertThat(matches, is(1));
     }
 
     @Test
