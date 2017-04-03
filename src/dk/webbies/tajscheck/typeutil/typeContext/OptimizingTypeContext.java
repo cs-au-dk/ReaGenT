@@ -17,17 +17,8 @@ public class OptimizingTypeContext implements TypeContext {
     private final BenchmarkInfo info;
     private final HashMap<OptimizingTypeContext, OptimizingTypeContext> cache;
 
-    static int cannocilizationRequests = 0;
-    static int cacheHits = 0;
-
     private OptimizingTypeContext cannonicalize() {
-        if (cannocilizationRequests % 1000 == 0) {
-            System.out.println("Total requests: " + cannocilizationRequests);
-            System.out.println("Cache hits: " + cacheHits);
-        }
-        cannocilizationRequests++;
         if (cache.containsKey(this)) {
-            cacheHits++;
             return cache.get(this);
         }
         cache.put(this, this);
