@@ -177,6 +177,19 @@ public class CountUniques {
             if (firstPath(arg.path).startsWith("[static]")) {
                 return recurse(t.getStaticProperties().get(Util.removePrefix(firstPath(arg.path), "[static]")), arg.rest());
             }
+            if (firstPath(arg.path).startsWith("[arg")) {
+                int argNumber = Integer.parseInt(firstPath(arg.path).substring("[arg".length(), firstPath(arg.path).length() - 1));
+                for (Signature signature : t.getSignatures()) {
+                    if (signature.getParameters().size() > argNumber) {
+                        Type result = recurse(signature.getParameters().get(argNumber).getType(), arg.rest());
+                        if (result != null) {
+                            return result;
+                        }
+                    }
+                }
+                return null;
+
+            }
             if (firstPath(arg.path).contains("(") || firstPath(arg.path).contains("[") || firstPath(arg.path).contains("<")) {
                 throw new RuntimeException();
             }
@@ -299,8 +312,9 @@ public class CountUniques {
                 } else {
                     return null;
                 }
+            } else {
+                return null;
             }
-            throw new RuntimeException();
         }
 
         @Override
