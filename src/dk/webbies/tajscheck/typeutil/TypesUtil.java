@@ -342,9 +342,25 @@ public class TypesUtil {
     }
 
 
+    public static Set<Type> getAllBaseTypes(Type type) {
+        return getAllBaseTypes(type, new HashSet<>());
+    }
 
     public static Set<Type> getAllBaseTypes(Type type, Set<Type> acc) {
         return getAllBaseTypes(type, acc, (subType) -> true);
+    }
+
+    public static Type normalize(Type type) {
+        if (type instanceof ClassInstanceType) {
+            return normalize(((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType());
+        }
+        if (type instanceof GenericType) {
+            return normalize(((GenericType) type).toInterface());
+        }
+        if (type instanceof ReferenceType) {
+            return normalize(((ReferenceType) type).getTarget());
+        }
+        return type;
     }
 
     private static Set<Type> getAllBaseTypes(Type type, Set<Type> acc, Predicate<Type> shouldContinue) {
