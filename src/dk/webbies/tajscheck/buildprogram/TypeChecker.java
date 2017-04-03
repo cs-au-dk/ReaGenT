@@ -28,7 +28,6 @@ public class TypeChecker {
     private final BenchmarkInfo info;
     private List<Statement> typeCheckingFunctionList = new ArrayList<>();
 
-    // TODO: Make the CheckType calls into function-calls. And then re-use them (not the assert calls).
     public TypeChecker(BenchmarkInfo info) {
         this.info = info;
     }
