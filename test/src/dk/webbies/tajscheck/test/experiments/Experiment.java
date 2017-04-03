@@ -117,6 +117,7 @@ public class Experiment {
                                 } else {
                                     tries++;
                                     System.out.println("Had an exception while running a benchmark (for the " + tries + ". time)");
+                                    e.printStackTrace();
                                     System.out.println("Trying again");
                                 }
                             }
