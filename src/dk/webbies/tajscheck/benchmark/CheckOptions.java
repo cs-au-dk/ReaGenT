@@ -75,8 +75,8 @@ public final class CheckOptions {
         private int checkDepthForUnions = 1; // How deep should the checking be, when determining which
         private boolean checkHeap = false; // Test the loaded module, including all its properties, recursively (no function calls).
         private boolean splitUnions = true; // Split function-signatures, such that no function-signature has a union-type as parameter, they are instead distinct signatures (explodes size of some larger benchmarks, but can be useful for more precise warnings).
-        private int maxIterationsToRun = 10000; // The maximum number of iteration to run in the loop, before returning
-        private int maxTime = 60 * 1000; // The maximum time to run (the driver tries to exist gracefully, but 10 seconds after the timeout, it is forcefully shutdown).
+        private int maxIterationsToRun = -1; // The maximum number of iteration to run in the loop, before returning
+        private int maxTime = 10 * 1000; // The maximum time to run (the driver tries to exist gracefully, but 10 seconds after the timeout, it is forcefully shutdown).
         private boolean disableSizeOptimization = false; // Disable optimizations for generics (don't do this)
         private boolean combineAllUnboundGenerics = true; // Instead of having distinct values for each unbound generic, combine them all into 1. (If disabled, there is a small unsoundness if a generic method extends another generic method).
         private boolean disableGenerics = false; // Disable all generics, the TypeContext becomes empty.
