@@ -1,6 +1,8 @@
 package dk.webbies.tajscheck.testcreator.test.check;
 
 import dk.webbies.tajscheck.paser.AST.Expression;
+import dk.webbies.tajscheck.paser.AstBuilder;
+import dk.webbies.tajscheck.paser.AstToStringVisitor;
 
 import java.util.function.Function;
 
@@ -28,13 +30,20 @@ public class ExpressionCheck implements Check {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ExpressionCheck that = (ExpressionCheck) o;
-
-        return generator != null ? generator.equals(that.generator) : that.generator == null;
+        return genRepresentative().equals(((ExpressionCheck) o).genRepresentative());
     }
 
     @Override
     public int hashCode() {
-        return generator != null ? generator.hashCode() : 0;
+        return genRepresentative().hashCode();
+    }
+
+    private String representative = null;
+    private String genRepresentative() {
+        if (representative == null) {
+            return representative = AstToStringVisitor.toString(generator.apply(AstBuilder.identifier("foo")));
+        } else {
+            return representative;
+        }
     }
 }
