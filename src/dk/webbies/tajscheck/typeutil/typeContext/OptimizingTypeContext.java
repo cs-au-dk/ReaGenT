@@ -15,9 +15,30 @@ public class OptimizingTypeContext implements TypeContext {
     private final Map<TypeParameterType, Type> map;
     private final Type thisType;
     private final BenchmarkInfo info;
+    private final HashMap<OptimizingTypeContext, OptimizingTypeContext> cache;
 
-    // TODO: Try to cannonicalize these.
-    OptimizingTypeContext(BenchmarkInfo info) {
+    static int cannocilizationRequests = 0;
+    static int cacheHits = 0;
+
+    private OptimizingTypeContext cannonicalize() {
+        if (cannocilizationRequests % 1000 == 0) {
+            System.out.println("Total requests: " + cannocilizationRequests);
+            System.out.println("Cache hits: " + cacheHits);
+        }
+        cannocilizationRequests++;
+        if (cache.containsKey(this)) {
+            cacheHits++;
+            return cache.get(this);
+        }
+        cache.put(this, this);
+        return this;
+    }
+
+    static OptimizingTypeContext create(BenchmarkInfo info) {
+        return new OptimizingTypeContext(info).cannonicalize();
+    }
+
+    private OptimizingTypeContext(BenchmarkInfo info) {
         this(Collections.emptyMap(), null, info);
     }
 
@@ -25,6 +46,7 @@ public class OptimizingTypeContext implements TypeContext {
         this.map = map;
         this.thisType = thisType;
         this.info = info;
+        this.cache = info.getAttribute(OptimizingTypeContext.class, "cache", new HashMap<>());
     }
 
     @Override
@@ -44,7 +66,7 @@ public class OptimizingTypeContext implements TypeContext {
         if (baseTypes.contains(thisType)) {
             return this;
         } else {
-            return new OptimizingTypeContext(this.map, thisType, info);
+            return new OptimizingTypeContext(this.map, thisType, info).cannonicalize();
         }
     }
 
@@ -75,9 +97,8 @@ public class OptimizingTypeContext implements TypeContext {
 
     @Override
     public TypeContext append(TypeContext other) {
-        OptimizingTypeContext result = append(other.getMap());
         if (other instanceof OptimizingTypeContext) {
-            return result;
+            return append(other.getMap());
         } else {
             throw new RuntimeException();
         }
@@ -105,7 +126,10 @@ public class OptimizingTypeContext implements TypeContext {
 
     @Override
     public OptimizingTypeContext optimizeTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder) {
+        return uncannocilizatingOptimizeTypeParameters(baseType, freeGenericsFinder).cannonicalize();
+    }
 
+    private OptimizingTypeContext uncannocilizatingOptimizeTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder) {
         info.freeGenericsFinder.isThisTypeVisible(baseType, this.thisType);
 
         if (info.bench.options.disableSizeOptimization) {
@@ -158,7 +182,7 @@ public class OptimizingTypeContext implements TypeContext {
                 }
             }
             if (foundShortcut) {
-                return clone.optimizeTypeParameters(baseType, freeGenericsFinder);
+                return clone.uncannocilizatingOptimizeTypeParameters(baseType, freeGenericsFinder);
             }
         }
 

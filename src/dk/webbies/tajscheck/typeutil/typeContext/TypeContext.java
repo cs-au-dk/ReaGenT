@@ -32,7 +32,7 @@ public interface TypeContext {
         if (info.bench.options.disableGenerics) {
             return new NullTypeContext(info.bench);
         } else {
-            return new OptimizingTypeContext(info);
+            return OptimizingTypeContext.create(info);
         }
     }
 }
