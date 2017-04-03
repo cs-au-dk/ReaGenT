@@ -131,6 +131,8 @@ if (isBrowser()) {
     window.onbeforeunload = function() {
         return "Please don't navigate away.";
     }
+    window.alert = function () {};
+    window.confirm = function () {};
 }
 
 var runsWithCoverage = (function () {
@@ -150,6 +152,11 @@ if (runsWithCoverage) {
     }
 }
 
+function dumbCoverage() {
+    if (runsWithCoverage && isBrowser()) {
+        printForReal("::COVERAGE::" + JSON.stringify(__coverage__) + "::/COVERAGE::");
+    }
+}
 
 
 var no_value = {noValueMarker: true};
@@ -387,6 +394,10 @@ function selectTest() {
     }
 
     var index = i++;
+
+    if (index % 1000 === 0) {
+        dumbCoverage();
+    }
 
     if (runRecording) {
         var result = recording[index];

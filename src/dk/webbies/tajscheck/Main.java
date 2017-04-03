@@ -109,7 +109,7 @@ public class Main {
         return jsPath.substring(0, lastIndex + 1);
     }
 
-    static String getRequirePath(Benchmark bench) {
+    public static String getRequirePath(Benchmark bench) {
         String jsPath = new File(bench.jsFile).getAbsolutePath();
 
         int lastIndex = jsPath.lastIndexOf('\\');
@@ -176,6 +176,11 @@ public class Main {
         Util.writeFile(coverageFileName, instrumented);
 
         String coverageResult = runBenchmark(coverageFileName, bench);
+
+        assert coverageResult.startsWith("::COVERAGE::");
+        assert coverageResult.endsWith("::/COVERAGE::");
+
+        coverageResult = Util.removeSuffix(Util.removePrefix(coverageResult, "::COVERAGE::"), "::/COVERAGE::");
 
         Map<String, CoverageResult> result = CoverageResult.parse(coverageResult);
         assert result.size() == 1;

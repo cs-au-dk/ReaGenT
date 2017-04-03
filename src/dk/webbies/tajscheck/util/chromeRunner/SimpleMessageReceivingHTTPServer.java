@@ -47,12 +47,20 @@ public class SimpleMessageReceivingHTTPServer {
                 assert message.contains(":") && message.indexOf(":") < 10;
 
                 int sequencer = Integer.parseInt(message.substring(0, message.indexOf(":")));
-                synchronized (messages) {
-                    while (messages.size() <= sequencer) {
-                        messages.add(null);
-                    }
 
-                    messages.set(sequencer, message.substring(message.indexOf(":") + 1, message.length()).trim());
+                String realMessage = message.substring(message.indexOf(":") + 1, message.length()).trim();
+
+                synchronized (messages) {
+                    if (realMessage.startsWith("::COVERAGE::")) {
+                        messages.clear();
+                        messages.add(realMessage);
+                    } else {
+                        while (messages.size() <= sequencer) {
+                            messages.add(null);
+                        }
+
+                        messages.set(sequencer, realMessage);
+                    }
                 }
                 return false;
             }

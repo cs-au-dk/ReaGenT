@@ -38,9 +38,8 @@ if (!isTAJS) {
                 }
             }
 
-            if (runsWithCoverage) {
-                printForReal(JSON.stringify(__coverage__));
-            }
+            dumbCoverage();
+
             if (isBrowser()) {
                 printForReal("close");
             }
