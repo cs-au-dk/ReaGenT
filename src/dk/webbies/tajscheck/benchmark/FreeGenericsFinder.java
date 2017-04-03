@@ -167,7 +167,9 @@ public class FreeGenericsFinder {
             t.getBaseTypes().forEach(base -> base.accept(this, mapped));
             t.getDeclaredProperties().values().forEach(prop -> prop.accept(this, mapped));
             for (Signature signature : Util.concat(t.getDeclaredConstructSignatures(), t.getDeclaredCallSignatures())) {
-                signature.getResolvedReturnType().accept(this, mapped);
+                if (signature.getResolvedReturnType() != null) {
+                    signature.getResolvedReturnType().accept(this, mapped);
+                }
                 signature.getParameters().forEach(par -> par.getType().accept(this, mapped));
             }
 
@@ -339,23 +341,26 @@ public class FreeGenericsFinder {
     }
 
     private Map<Type, Boolean> thisTypeVisibleCache = new HashMap<>();
-    public boolean isThisTypeVisible(Type baseType) {
+    public boolean isThisTypeVisible(Type baseType, Type thisType) {
         if (thisTypeVisibleCache.containsKey(baseType)) {
             return thisTypeVisibleCache.get(baseType);
         }
-        boolean result = isThisTypeVisible(baseType, true, new HashSet<>());
+        boolean result = isThisTypeVisible(baseType, true, thisType, new HashSet<>());
         thisTypeVisibleCache.put(baseType, result);
         return result;
     }
 
-    private boolean isThisTypeVisible(Type baseType, boolean deep, Set<Type> orgSeen) {
+    private boolean isThisTypeVisible(Type baseType, boolean deep, Type thisType, Set<Type> orgSeen) {
+        if (baseType == null) {
+            throw new NullPointerException();
+        }
         if (orgSeen.contains(baseType)) {
             return false;
         }
         Set<Type> seen = Util.concatSet(orgSeen, Collections.singletonList(baseType));
 
         if (baseType instanceof ReferenceType) {
-            if (((ReferenceType) baseType).getTypeArguments().stream().anyMatch(arg -> isThisTypeVisible(arg, deep, seen))) {
+            if (((ReferenceType) baseType).getTypeArguments().stream().anyMatch(arg -> isThisTypeVisible(arg, deep, thisType, seen))) {
                 return true;
             }
             baseType = ((ReferenceType) baseType).getTarget();
@@ -373,10 +378,10 @@ public class FreeGenericsFinder {
             InterfaceType inter = (InterfaceType) baseType;
 
             for (Signature signature : Util.concat(inter.getDeclaredCallSignatures(), inter.getDeclaredConstructSignatures())) {
-                if (signature.getParameters().stream().map(Signature.Parameter::getType).anyMatch(par -> isThisTypeVisible(par, false, seen))) {
+                if (signature.getParameters().stream().map(Signature.Parameter::getType).anyMatch(par -> isThisTypeVisible(par, false, thisType, seen))) {
                     return true;
                 }
-                if (isThisTypeVisible(signature.getResolvedReturnType(), false, seen)) {
+                if (signature.getResolvedReturnType() != null && isThisTypeVisible(signature.getResolvedReturnType(), false, thisType, seen)) {
                     return true;
                 }
             }
@@ -386,7 +391,7 @@ public class FreeGenericsFinder {
                 return false;
             }
             for (Type type : inter.getDeclaredProperties().values()) {
-                if (isThisTypeVisible(type, false, seen)) {
+                if (isThisTypeVisible(type, false, thisType, seen)) {
                     return true;
                 }
             }
@@ -397,20 +402,23 @@ public class FreeGenericsFinder {
         }
 
         if (baseType instanceof ThisType) {
-            return true;
+            Type constraint = TypesUtil.normalize(((ThisType) baseType).getConstraint());
+            return TypesUtil.getAllBaseTypes(thisType).stream().anyMatch(base -> constraint.equals(TypesUtil.normalize(base)));
         }
         if (baseType instanceof UnionType) {
-            return ((UnionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep, seen));
+            return ((UnionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep, thisType, seen));
         }
         if (baseType instanceof IntersectionType) {
-            return ((IntersectionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep, seen));
+            return ((IntersectionType) baseType).getElements().stream().anyMatch(element -> isThisTypeVisible(element, deep, thisType, seen));
         }
         if (baseType instanceof TupleType) {
-            return ((TupleType) baseType).getElementTypes().stream().anyMatch(element -> isThisTypeVisible(element, deep, seen));
+            return ((TupleType) baseType).getElementTypes().stream().anyMatch(element -> isThisTypeVisible(element, deep, thisType, seen));
         }
         if (baseType instanceof IndexedAccessType) {
-            return isThisTypeVisible(((IndexedAccessType) baseType).getIndexType(), deep, seen) || isThisTypeVisible(((IndexedAccessType) baseType).getObjectType(), deep, seen);
+            return isThisTypeVisible(((IndexedAccessType) baseType).getIndexType(), deep, thisType, seen) || isThisTypeVisible(((IndexedAccessType) baseType).getObjectType(), deep, thisType, seen);
         }
         throw new RuntimeException(baseType.getClass().getSimpleName());
     }
+
+    static int counter = 0;
 }

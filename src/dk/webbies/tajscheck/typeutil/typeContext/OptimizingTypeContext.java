@@ -1,8 +1,6 @@
 package dk.webbies.tajscheck.typeutil.typeContext;
 
-import dk.au.cs.casa.typescript.types.InterfaceType;
-import dk.au.cs.casa.typescript.types.Type;
-import dk.au.cs.casa.typescript.types.TypeParameterType;
+import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
@@ -107,6 +105,9 @@ public class OptimizingTypeContext implements TypeContext {
 
     @Override
     public OptimizingTypeContext optimizeTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder) {
+
+        info.freeGenericsFinder.isThisTypeVisible(baseType, this.thisType);
+
         if (info.bench.options.disableSizeOptimization) {
             return this;
         }
@@ -162,10 +163,18 @@ public class OptimizingTypeContext implements TypeContext {
         }
 
         if (clone.thisType != null) {
-            if (!freeGenericsFinder.isThisTypeVisible(baseType) && clone.map.values().stream().noneMatch(freeGenericsFinder::isThisTypeVisible)) {
+            OptimizingTypeContext finalClone = clone;
+            if (!freeGenericsFinder.isThisTypeVisible(baseType, clone.thisType) && clone.map.values().stream().noneMatch(value -> freeGenericsFinder.isThisTypeVisible(value, finalClone.thisType))) {
                 clone = clone.withThisType(null);
+            } else if ((baseType instanceof InterfaceType || baseType instanceof GenericType || baseType instanceof ClassInstanceType) && !info.freeGenericsFinder.isThisTypeVisible(baseType, finalClone.thisType) && clone.map.values().stream().noneMatch(value -> freeGenericsFinder.isThisTypeVisible(value, finalClone.thisType))) {
+                Set<Type> allBaseTypes = TypesUtil.getAllBaseTypes(clone.thisType, new HashSet<>());
+                if (!allBaseTypes.contains(baseType)) {
+                    clone = clone.withThisType(null);
+                }
             }
         }
         return clone;
     }
+
+    static int counter = 0;
 }
