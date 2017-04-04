@@ -143,14 +143,24 @@ public class Main {
     }
 
     public static Map<String, CoverageResult> genCoverage(Benchmark bench) throws IOException {
-        return genCoverage(bench, Main.TEST_FILE_NAME);
+        return genCoverage(bench, Main.TEST_FILE_NAME, true);
+    }
+
+    public static Map<String, CoverageResult> genCoverage(Benchmark bench, boolean writeDriver) throws IOException {
+        return genCoverage(bench, Main.TEST_FILE_NAME, writeDriver);
     }
 
     public static Map<String, CoverageResult> genCoverage(Benchmark bench, String testFileName) throws IOException {
-        try {
-            writeFullDriver(bench.withOptions(options -> options.getBuilder().setCheckDepthReport(options.checkDepthUseValue).build()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        return genCoverage(bench, testFileName, true);
+    }
+
+    public static Map<String, CoverageResult> genCoverage(Benchmark bench, String testFileName, boolean writeDriver) throws IOException {
+        if (writeDriver) {
+            try {
+                writeFullDriver(bench.withOptions(options -> options.getBuilder().setCheckDepthReport(options.checkDepthUseValue).build()));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         int timeout = bench.options.maxTime + Math.min(10 * 1000, bench.options.maxTime);
@@ -172,7 +182,9 @@ public class Main {
             SimpleMessageReceivingHTTPServer server = new SimpleMessageReceivingHTTPServer(new File(""), Collections.emptyMap(), socket);
             new Thread(server::start).start();
 
-            testScript = testScript.replace("ISTANBUL_PORT_FOR_PARTIAL_RESULTS = 0", "ISTANBUL_PORT_FOR_PARTIAL_RESULTS = " + socket.getLocalPort());
+            int port = socket.getLocalPort();
+            String portString = Util.integerOfFixedLength(port, 6);
+            testScript = testScript.replace("ISTANBUL_PORT_FOR_PARTIAL_RESULTS = 0", "ISTANBUL_PORT_FOR_PARTIAL_RESULTS = " + portString);
             Util.writeFile(getFolderPath(bench) + testFileName, testScript);
 
             Util.runNodeScript(prefix + "node_modules/istanbul/lib/cli.js cover " + testFileName, new File(getFolderPath(bench)), timeout);
@@ -182,6 +194,10 @@ public class Main {
             } else {
                 socket.close();
                 List<String> messages = server.awaitMessages();
+
+                if (messages.isEmpty()) {
+                    return new HashMap<>();
+                }
 
                 assert messages.size() == 1;
                 String coverageResult = messages.get(0);

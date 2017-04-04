@@ -151,6 +151,17 @@ public class Util {
         }
     }
 
+    public static String integerOfFixedLength(int n, int length) {
+        StringBuilder result = new StringBuilder(Integer.toString(n));
+
+        while (result.length() < length) {
+            result.insert(0, "0");
+        }
+
+        assert result.length() == length;
+        return result.toString();
+    }
+
     private static class Worker extends Thread {
         private final Process process;
         private Integer exit;
@@ -365,7 +376,7 @@ public class Util {
     }
 
     public static <T> Predicate<T> not(Predicate<T> p) {
-        return o -> !p.test(o);
+        return p.negate();
     }
 
     // I would really like to force ColT and ColS to be the same subtype of Collection. But I don't think Java generics can handle that.
@@ -506,13 +517,18 @@ public class Util {
             bigSet = one;
         }
 
-        smallSet.stream().filter(bigSet::contains).forEach(callback::accept);
+        smallSet.stream().filter(bigSet::contains).forEach(callback);
     }
 
     public static <T> List<T> intersection(Set<T> one, Set<T> two) {
         ArrayList<T> result = new ArrayList<>();
         runOnCommon(one, two, result::add);
         return result;
+    }
+
+    public static <T> List<T> difference(Collection<T> one, Collection<T> two) {
+        List<T> intersection = intersection(one, two);
+        return Stream.concat(one.stream(), two.stream()).filter(not(intersection::contains)).collect(Collectors.toList());
     }
 
     public static <T> List<T> intersection(Collection<T> one, Collection<T> two) {
