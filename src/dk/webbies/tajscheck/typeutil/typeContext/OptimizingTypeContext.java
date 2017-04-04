@@ -44,7 +44,7 @@ public class OptimizingTypeContext implements TypeContext {
     public OptimizingTypeContext append(Map<TypeParameterType, Type> newParameters) {
         Map<TypeParameterType, Type> newMap = new HashMap<>(this.map);
         newMap.putAll(newParameters);
-        return new OptimizingTypeContext(newMap, this.thisType, info);
+        return new OptimizingTypeContext(newMap, this.thisType, info).cannonicalize();
     }
 
     @Override
@@ -126,7 +126,7 @@ public class OptimizingTypeContext implements TypeContext {
         if (info.bench.options.disableSizeOptimization) {
             return this;
         }
-        OptimizingTypeContext clone = this.append(Collections.emptyMap());
+        OptimizingTypeContext clone = new OptimizingTypeContext(new HashMap<>(this.map), this.thisType, this.info);
 
         Set<TypeParameterType> reachable = new HashSet<>();
 
