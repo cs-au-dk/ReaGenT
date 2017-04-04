@@ -109,7 +109,8 @@ public class RunBenchmarks {
         benchmarks.put("Vue.js", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/vue/vue.js", "test/benchmarks/vue/index.d.ts", "Vue", BROWSER, options));
         benchmarks.put("three.js", new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/benchmarks/three/three.js", "test/benchmarks/three/three.d.ts", "THREE", BROWSER,
                 options.getBuilder()
-                .setCheckDepthReport(1)
+                .setCheckDepthReport(2)
+                .setDisableGenerics(true)
                 .build()
         ));
         benchmarks.put("Leaflet", new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/leaflet/leaflet.js", "test/benchmarks/leaflet/leaflet.d.ts", "L", BROWSER, options));
