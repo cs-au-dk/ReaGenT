@@ -424,7 +424,7 @@ function selectTest() {
 
     var index = i++;
 
-    if (index % 1000 === 0) {
+    if ([1,10,50,200].indexOf(index) !== -1 || index % 1000 === 1) {
         dumbCoverage();
     }
 
