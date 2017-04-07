@@ -167,7 +167,7 @@ public class AutomaticExperiments {
 
             Map<String, CoverageResult> out;
             try {
-                out = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5).build())); // <- More timeout
+                out = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5).build())); // <- More timeout, instrumented code is slower.
                 if (out.isEmpty()) {
                     return Arrays.asList(null, null, null);
                 }
@@ -187,60 +187,62 @@ public class AutomaticExperiments {
         });
     };
 
-    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAnd5Coverage = new Pair<>(Arrays.asList("uniquePaths", "coverage(stmt)", "coverage(functions)", "coverage(branches)", "5coverage(stmt)", "5coverage(functions)", "5coverage(branches)"), (bench) -> {
-        String uniquePaths = AutomaticExperiments.uniquePaths.getRight().run(bench).get(0);
-        if (uniquePaths == null) {
-            return Arrays.asList(null, null, null, null, null, null, null);
-        }
+    private static Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAndCoverage(int runs) {
+        return new Pair<>(Arrays.asList("uniquePaths", "coverage(stmt)", "coverage(functions)", "coverage(branches)", runs + "coverage(stmt)", runs + "coverage(functions)", runs + "coverage(branches)"), (bench) -> {
+            String uniquePaths = AutomaticExperiments.uniquePaths.getRight().run(bench).get(0);
+            if (uniquePaths == null) {
+                return Arrays.asList(null, null, null, null, null, null, null);
+            }
 
-        Map<String, CoverageResult> out = new HashMap<>();
+            Map<String, CoverageResult> out = new HashMap<>();
 
-        String driver = Main.generateFullDriver(bench.withOptions(options -> options.getBuilder().setCheckDepthReport(options.checkDepthUseValue).build()));
+            String driver = Main.generateFullDriver(bench.withOptions(options -> options.getBuilder().setCheckDepthReport(options.checkDepthUseValue).build()));
 
-        CoverageResult firstCoverage = null;
-        for (int i = 0; i < 5; i++) {
-            try {
-                Util.writeFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME, driver);
+            CoverageResult firstCoverage = null;
+            for (int i = 0; i < runs; i++) {
+                try {
+                    Util.writeFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME, driver);
 
-                Map<String, CoverageResult> subResult = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5).build()), false); // <- more timeout
-                out = CoverageResult.combine(out, subResult);
-                if (out.get(bench.getJSName()) == null) {
-                    return Arrays.asList(uniquePaths, null, null, null, null, null, null);
-                }
+                    Map<String, CoverageResult> subResult = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5).build()), false); // <- more timeout
+                    out = CoverageResult.combine(out, subResult);
+                    if (out.get(bench.getJSName()) == null) {
+                        return Arrays.asList(uniquePaths, null, null, null, null, null, null);
+                    }
 
-                if (firstCoverage == null) {
-                    firstCoverage = out.get(bench.getJSName());
-                }
-            } catch (Exception e) {
-                System.out.println("Exception: " + e.getClass().getSimpleName());
-                if (firstCoverage != null) {
-                    return Arrays.asList(uniquePaths, Util.toPercentage(firstCoverage.statementCoverage()), Util.toPercentage(firstCoverage.functionCoverage()), Util.toPercentage(firstCoverage.branchCoverage()), null, null, null);
-                } else {
-                    return Arrays.asList(uniquePaths, null, null, null, null, null, null);
+                    if (firstCoverage == null) {
+                        firstCoverage = out.get(bench.getJSName());
+                    }
+                } catch (Exception e) {
+                    System.out.println("Exception: " + e.getClass().getSimpleName());
+                    if (firstCoverage != null) {
+                        return Arrays.asList(uniquePaths, Util.toPercentage(firstCoverage.statementCoverage()), Util.toPercentage(firstCoverage.functionCoverage()), Util.toPercentage(firstCoverage.branchCoverage()), null, null, null);
+                    } else {
+                        return Arrays.asList(uniquePaths, null, null, null, null, null, null);
+                    }
                 }
             }
-        }
 
-        assert out.containsKey(bench.getJSName());
+            assert out.containsKey(bench.getJSName());
 
-        CoverageResult coverage = out.get(bench.getJSName());
-        if (coverage == null) {
-            if (firstCoverage == null) {
+            CoverageResult coverage = out.get(bench.getJSName());
+            if (coverage == null) {
+                if (firstCoverage == null) {
+                    return Arrays.asList(uniquePaths,
+                            null, null, null,
+                            null, null, null
+                    );
+                }
                 return Arrays.asList(uniquePaths,
-                        null, null, null,
+                        Util.toPercentage(firstCoverage.statementCoverage()), Util.toPercentage(firstCoverage.functionCoverage()), Util.toPercentage(firstCoverage.branchCoverage()),
                         null, null, null
                 );
             }
             return Arrays.asList(uniquePaths,
                     Util.toPercentage(firstCoverage.statementCoverage()), Util.toPercentage(firstCoverage.functionCoverage()), Util.toPercentage(firstCoverage.branchCoverage()),
-                    null, null, null
+                    Util.toPercentage(coverage.statementCoverage()), Util.toPercentage(coverage.functionCoverage()), Util.toPercentage(coverage.branchCoverage())
             );
-        }
-        return Arrays.asList(uniquePaths,
-                Util.toPercentage(firstCoverage.statementCoverage()), Util.toPercentage(firstCoverage.functionCoverage()), Util.toPercentage(firstCoverage.branchCoverage()),
-                Util.toPercentage(coverage.statementCoverage()), Util.toPercentage(coverage.functionCoverage()), Util.toPercentage(coverage.branchCoverage())
-        );
-    });
+        });
+    }
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> driverSizes(String suffix, Function<CheckOptions, CheckOptions> transformer) {
         return new Pair<>(Arrays.asList("size" + suffix, "size-no-generics" + suffix), (bench) -> {
@@ -315,14 +317,17 @@ public class AutomaticExperiments {
                     experiment.addMultiExperiment(uniquePathsWithOptions("(5x:writing all properties)", 5, false, options -> options.getBuilder().setWriteAll(true).build()));
                     break;
                 case "RQ5": // Coverage tests.
-                    experiment.addMultiExperiment(uniquePathsAnd5Coverage);
+                    experiment.addMultiExperiment(coverage("-init", options -> options.getBuilder().setMaxIterationsToRun(1).build())); // Runs exactly one test, which can only be the test that initializes the library.
+
+                    experiment.addMultiExperiment(uniquePathsAndCoverage(5));
+
+                    experiment.addMultiExperiment(uniquePathsAndCoverage(10));
+
+                    experiment.addMultiExperiment(uniquePathsAndCoverage(20));
 
                     experiment.addMultiExperiment(uniquePathsTestCoverage(1));
-
                     experiment.addMultiExperiment(uniquePathsTestCoverage(5));
-
                     experiment.addMultiExperiment(uniquePathsTestCoverage(10));
-
                     experiment.addMultiExperiment(uniquePathsTestCoverage(20));
 
                     break;
@@ -351,7 +356,7 @@ public class AutomaticExperiments {
 
 //        experiment.addSingleExperiment(type);
 
-        experiment.addMultiExperiment(coverage);
+        experiment.addMultiExperiment(uniquePaths);
 //        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
 //        experiment.addMultiExperiment(uniquePathsTestCoverage);
 //        experiment.addMultiExperiment(uniquePaths5TestCoverage);
