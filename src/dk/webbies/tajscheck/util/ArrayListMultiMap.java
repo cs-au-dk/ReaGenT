@@ -28,7 +28,7 @@ public class ArrayListMultiMap<K, T> implements MultiMap<K, T> {
         if (map.containsKey(key)) {
             return Collections.unmodifiableCollection(map.get(key));
         } else {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
     }
 
@@ -38,7 +38,7 @@ public class ArrayListMultiMap<K, T> implements MultiMap<K, T> {
         if (result != null) {
             return result;
         } else {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
     }
 
