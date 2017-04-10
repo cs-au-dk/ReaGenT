@@ -408,7 +408,12 @@ public class Util {
     private static void writeFile(String filename, String data, int tries) throws IOException {
         try {
             BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(filename)));
-            IOUtils.write(data, fileOut);
+            try {
+                IOUtils.write(data, fileOut);
+            } catch (OutOfMemoryError e) {
+                System.err.println("Tried to write " + data.length() + "bytes, and failed!");
+                throw e;
+            }
             fileOut.close();
         } catch (IOException e) {
             if (tries > 10) {
