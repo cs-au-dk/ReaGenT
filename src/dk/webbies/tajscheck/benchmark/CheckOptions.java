@@ -16,7 +16,9 @@ public final class CheckOptions {
     public final boolean disableSizeOptimization;
     public final boolean combineAllUnboundGenerics;
     public final boolean disableGenerics;
-    public final boolean constructAllTypes;
+    public final boolean constructClassInstances; // TODO: Test.
+    public final boolean constructClassTypes; // TODO: Test.
+    public final boolean constructAllTypes; // TODO: Test.
     public final int maxTime;
     public final boolean failOnAny;
     public final boolean makeTSInferLike;
@@ -37,7 +39,6 @@ public final class CheckOptions {
         this.disableSizeOptimization = builder.disableSizeOptimization;
         this.combineAllUnboundGenerics = builder.combineAllUnboundGenerics;
         this.disableGenerics = builder.disableGenerics;
-        this.constructAllTypes = builder.constructAllTypes;
         this.failOnAny = builder.failOnAny;
         this.makeTSInferLike = builder.makeTSInferLike;
         this.combineNullAndUndefined = builder.combineNullAndUndefined;
@@ -46,7 +47,11 @@ public final class CheckOptions {
         this.checkDepthReport = builder.checkDepthReport;
         this.firstMatchSignaturePolicy = builder.firstMatchSignaturePolicy;
         this.useAssertTypeFunctions = builder.useAssertTypeFunctions;
+        this.constructClassInstances = builder.constructClassInstances;
+        this.constructClassTypes = builder.constructClassTypes;
+        this.constructAllTypes = builder.constructAllTypes;
         this.builder = builder;
+
     }
 
     public Builder getBuilder() {
@@ -80,7 +85,9 @@ public final class CheckOptions {
         private boolean disableSizeOptimization = false; // Disable optimizations for generics (don't do this)
         private boolean combineAllUnboundGenerics = true; // Instead of having distinct values for each unbound generic, combine them all into 1. (If disabled, there is a small unsoundness if a generic method extends another generic method).
         private boolean disableGenerics = false; // Disable all generics, the TypeContext becomes empty.
-        private boolean constructAllTypes = false; // As in, also construct classes, class-instances, and the module itself we are trying to test (all of them only if there is a method taking it as parameter).
+        private boolean constructClassInstances = false; // Construct random values of class instance types.
+        private boolean constructClassTypes = false; // Construct ramdom values of class types.
+        private boolean constructAllTypes; // No filters on construction
         private boolean failOnAny = true; // If "any" is returned (as in, something that has our "isAnyMarker"), it is a valid warning.
         private boolean makeTSInferLike = false; // Restrict the driver to only check properties, and call constructors (where all arguments are ignored). Kinda equal to the dynamic part of TSInfer.
         private boolean combineNullAndUndefined = false; // null and undefined (last one is also called void) are different types. But errors related to this are anoying, and doesn't matter. Setting this to true makes it not an error.
@@ -89,6 +96,7 @@ public final class CheckOptions {
         private boolean writeAll = false; // Only has effect if above is true. Every single property is potentially written to. Is VERY stupid, will likely overwrite the library before testing it.
         private boolean firstMatchSignaturePolicy = true; // If the first-match-signature policy of TypeScript should be enforced.
         private boolean useAssertTypeFunctions = true; // Wether or not to combine type-cheks into assertType functions, if not they are inlined (slightly bigger, easier to read).
+
 
         private Builder() {}
 
@@ -112,6 +120,11 @@ public final class CheckOptions {
 
         public Builder setUseAssertTypeFunctions(boolean useAssertTypeFunctions) {
             this.useAssertTypeFunctions = useAssertTypeFunctions;
+            return this;
+        }
+
+        public Builder setConstructAllTypes(boolean constructAllTypes) {
+            this.constructAllTypes = constructAllTypes;
             return this;
         }
 
@@ -151,8 +164,13 @@ public final class CheckOptions {
             return this;
         }
 
-        public Builder setConstructAllTypes(boolean constructAllTypes) {
-            this.constructAllTypes = constructAllTypes;
+        public Builder setConstructClassInstances(boolean constructClassInstances) {
+            this.constructClassInstances = constructClassInstances;
+            return this;
+        }
+
+        public Builder setConstructClassTypes(boolean constructClassTypes) {
+            this.constructClassTypes = constructClassTypes;
             return this;
         }
 

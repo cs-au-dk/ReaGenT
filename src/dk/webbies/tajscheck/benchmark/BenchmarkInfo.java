@@ -292,6 +292,12 @@ public class BenchmarkInfo {
         if (bench.options.constructAllTypes) {
             return true;
         }
+        if (!bench.options.constructClassInstances && type instanceof ClassInstanceType) {
+            return false;
+        }
+        if (!bench.options.constructClassTypes && (type instanceof ClassType)) {
+            return false;
+        }
 
         while (type instanceof ReferenceType) {
             type = ((ReferenceType) type).getTarget();
@@ -310,7 +316,7 @@ public class BenchmarkInfo {
         }
 
         if (type instanceof ClassInstanceType || type instanceof ClassType || type instanceof ThisType) {
-            return false;
+            return true;
         }
 
         throw new RuntimeException(type.getClass().getSimpleName());
