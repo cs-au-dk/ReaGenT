@@ -251,7 +251,10 @@ public class CountUniques {
                 if (firstPath(arg.path).equals("[stringIndexer]")) {
                     return recurse(t.getDeclaredStringIndexType(), arg.rest());
                 }
-                throw new RuntimeException();
+                if (firstPath(arg.path).startsWith("[intersection") || firstPath(arg.path).equals("[constraint]")) {
+                    return null;
+                }
+                throw new RuntimeException(firstPath(arg.path));
             }
             if (firstPath(arg.path).startsWith("(")) {
                 for (Signature signature : Util.concat(t.getDeclaredCallSignatures(), t.getDeclaredConstructSignatures())) {
