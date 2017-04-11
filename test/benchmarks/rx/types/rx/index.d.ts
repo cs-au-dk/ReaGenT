@@ -19,3 +19,5 @@
 declare module "rx" {
 	export = Rx;
 }
+
+Rx.Notification

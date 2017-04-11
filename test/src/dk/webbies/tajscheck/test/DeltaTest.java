@@ -19,10 +19,12 @@ import java.util.stream.Collectors;
  */
 public class DeltaTest {
     public static void main(String[] args) throws IOException {
-        Benchmark bench = RunBenchmarks.benchmarks.get("Knockout");
-        bench = bench.withOptions(CheckOptions.errorFindingOptions(bench.options.getBuilder().setMaxIterationsToRun(100 * 1000).build()));
-        String testPath = "window.async.timesLimit.[arg3].[arg1]";
-        String typeof = "object";
+//        Benchmark bench = RunBenchmarks.benchmarks.get("Backbone.js");
+        Benchmark bench = RunBenchmarks.benchmarks.get("RxJS");
+//        Benchmark bench = RunBenchmarks.benchmarks.get("RxJS");
+        bench = bench.withOptions(options -> options.getBuilder().setConstructClassInstances(true).setConstructClassTypes(true).build());
+        String testPath = "window.Rx.Notification.accept";
+        String typeof = "FOO";
 //        String expected = "(undefined or (a non null value and Array and (arrayIndex: (null or ([any] and a non null value and a generic type marker (._isUnboundGeneric))))))";
 
         String driver = Util.readFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME);
@@ -56,7 +58,7 @@ public class DeltaTest {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            return result.errors.stream().anyMatch(str -> str.contains("Could not distinguish which union on path: ko.components.defaultLoader.[union1].getConfig.[arg1].[arg0].viewModel"));
+            return result.typeErrors.stream().anyMatch(te -> te.getPath().equals(typeError.getPath()));
         };
     }
 }

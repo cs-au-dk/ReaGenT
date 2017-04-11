@@ -180,9 +180,8 @@ public class DeltaDebug {
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                boolean result = testSoundness(bench);
-                System.out.println(result);
-                return result;
+                Main.writeFullDriver(bench);
+                return Main.runBenchmark(bench).contains("never fails");
             } catch (NullPointerException e) {
                 return false;
             } catch (RuntimeException e) {

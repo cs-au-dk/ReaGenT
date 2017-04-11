@@ -16,6 +16,11 @@ public interface StatementTransverse<T> extends StatementVisitor<T>  {
     }
 
     @Override
+    public default T visit(CommentStatement commentStatement) {
+        return null;
+    }
+
+    @Override
     public default T visit(Return aReturn) {
         aReturn.getExpression().accept(getExpressionVisitor());
         return null;
@@ -61,6 +66,13 @@ public interface StatementTransverse<T> extends StatementVisitor<T>  {
         forStatement.getCondition().accept(getExpressionVisitor());
         forStatement.getIncrement().accept(getExpressionVisitor());
         forStatement.getBody().accept(this);
+        return null;
+    }
+
+    @Override
+    public default T visit(DoWhileStatement doWhileStatement) {
+        doWhileStatement.getCondition().accept(getExpressionVisitor());
+        doWhileStatement.getBody().accept(this);
         return null;
     }
 

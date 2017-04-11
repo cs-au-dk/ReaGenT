@@ -289,6 +289,13 @@ public class BenchmarkInfo {
     }
 
     public boolean shouldConstructType(Type type) {
+        if (bench.options.constructOnlyPrimitives) {
+            if (type instanceof SimpleType || type instanceof BooleanLiteral || type instanceof StringLiteral || type instanceof NumberLiteral) {
+                return true;
+            } else {
+                return false;
+            }
+        }
         if (bench.options.constructAllTypes) {
             return true;
         }

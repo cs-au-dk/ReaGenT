@@ -1148,6 +1148,11 @@ public class UnitTests {
     }
 
     @Test
+    public void canConstructUnderscoreWithUnconstrainedGenerics() throws Exception {
+        Main.generateFullDriver(RunBenchmarks.benchmarks.get("Underscore.js").withOptions(options -> options.getBuilder().setCombineAllUnboundGenerics(false).build()));
+    }
+
+    @Test
     public void genericClassFeedback() throws Exception {
         RunResult result = run("genericClassFeedback", "foo");
 

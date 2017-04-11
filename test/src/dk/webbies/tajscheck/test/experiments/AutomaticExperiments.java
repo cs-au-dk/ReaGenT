@@ -6,12 +6,20 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
+import dk.webbies.tajscheck.paser.AST.BinaryExpression;
+import dk.webbies.tajscheck.paser.AST.BlockStatement;
+import dk.webbies.tajscheck.paser.AST.NodeTransverse;
+import dk.webbies.tajscheck.paser.AST.Operator;
+import dk.webbies.tajscheck.paser.AstBuilder;
+import dk.webbies.tajscheck.paser.AstToStringVisitor;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -99,6 +107,34 @@ public class AutomaticExperiments {
         return Arrays.asList(Integer.toString(uniques));
     });
 
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> hasInstanceOf = new Pair<>(Arrays.asList("hasInstanceOf", "instanceOfCount"), (Benchmark bench) -> {
+        BlockStatement stmt = AstBuilder.stmtFromString(Util.readFile(bench.jsFile));
+
+        AtomicInteger hasInstanceOf = new AtomicInteger(0);
+
+        List<String> blacklist = Arrays.asList("RegExp", "Element", "Object", "SVGElement", "Promise", "Error", "TypeError", "window.DOMException", "Array", "Date", "HTML", "Function");
+        List<String> whileList = Arrays.asList("Texture", "partialFn", "React", "bound", "MiniSignalBinding", "RC4Random", "Socket", "Application", "able", "Subscriber", "Peer", "MediaConnection", "DataConnection", "Lodash", "Dom7", "core", "Assert", "PDF", "Descriptor", "Mixin", "Hsl", "VNode", "Url", "_", "fn", "class", "Class", "Klass", "Reliable", "L.", "Swiper", "$", "CodeMirror", "Doc", "Pos", "ember", "Lazy", "List", "Ember", "this", "Constructor", "Map", "Set", "Duration", "JQ", "Model", "Color", "color", "Hcl", "Lab", "Cubehelix", "Rgb", "Transition");
+
+        stmt.accept(new NodeTransverse<Void>() {
+            @Override
+            public Void visit(BinaryExpression expression) {
+                if (expression.getOperator() == Operator.INSTANCEOF) {
+                    String right = AstToStringVisitor.toString(expression.getRhs());
+                    if (blacklist.stream().anyMatch(right::contains)) {
+                        return null;
+                    }
+                    if (whileList.stream().anyMatch(right::contains)) {
+                        hasInstanceOf.incrementAndGet();
+                        return null;
+                    }
+                    hasInstanceOf.incrementAndGet();
+                }
+                return null;
+            }
+        });
+
+        return Arrays.asList(hasInstanceOf.get() > 0 ? "1" : "0", Integer.toString(hasInstanceOf.get()));
+    });
 
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePaths = uniquePathsWithOptions("", 1, false, Function.identity());
@@ -168,7 +204,7 @@ public class AutomaticExperiments {
                 Integer.toString(result.getTestsCalled().size()),
                 Integer.toString(result.getTotalTests()),
                 Util.toPercentage((result.getTestsCalled().size() * 1.0) / result.getTotalTests()
-        ));
+                ));
     });
 
     private static Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsTestCoverage(int runs) {
@@ -190,7 +226,9 @@ public class AutomaticExperiments {
                     Util.toPercentage((result.getTestsCalled().size() * 1.0) / result.getTotalTests())
             );
         });
-    };
+    }
+
+    ;
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsConvergence = new Pair<>(Arrays.asList("uniquePaths", "uniquePathsConvergence", "iterationsUntilConvergence"), (bench) -> {
         Main.writeFullDriver(bench);
@@ -241,7 +279,9 @@ public class AutomaticExperiments {
             }
             return Arrays.asList(Util.toPercentage(coverage.statementCoverage()), Util.toPercentage(coverage.functionCoverage()), Util.toPercentage(coverage.branchCoverage()));
         });
-    };
+    }
+
+    ;
 
     private static Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsAndCoverage(int runs) {
         return new Pair<>(Arrays.asList("uniquePaths", "coverage(stmt)", "coverage(functions)", "coverage(branches)", runs + "coverage(stmt)", runs + "coverage(functions)", runs + "coverage(branches)"), (bench) -> {
@@ -313,10 +353,11 @@ public class AutomaticExperiments {
 
             return Arrays.asList(fullSize, Util.toFixed(noGenerics, DECIMALS) + SUFFIX);
         });
-    };
+    }
+
+    ;
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> driverSizes = driverSizes("", Function.identity());
-
 
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> jsFileSize = new Pair<>("jsFileSize", (bench) -> {
@@ -328,11 +369,11 @@ public class AutomaticExperiments {
     });
 
     public static void main(String[] args) throws Exception {
-        args = new String[]{"CLASSES"};
+        args = new String[]{"RQ2"};
         if (args.length > 0) {
             String experimentToRun = args[0];
 
-            Experiment experiment = new Experiment("Underscore.js", "React");
+            Experiment experiment = new Experiment();
 
             System.out.println("Running experiments for " + experimentToRun.toUpperCase());
 
@@ -371,9 +412,13 @@ public class AutomaticExperiments {
                     break;
                 case "CLASSES":
                     // Only the benchmarks that actually potentially construct a random class value.
-                    experiment = new Experiment("Backbone.js", "CreateJS", "Ember.js", "Fabric.js", "Hammer.js", "Leaflet", "P2.js", "PixiJS", "React", "RxJS", "Sortable", "Swiper", "Vue.js", "bluebird", "box2dweb", "lunr.js", "three.js");
+//                    experiment = new Experiment("Backbone.js", "CreateJS", "Ember.js", "Fabric.js", "Hammer.js", "Leaflet", "P2.js", "PixiJS", "React", "RxJS", "Sortable", "Swiper", "Vue.js", "bluebird", "box2dweb", "lunr.js", "three.js");
 
-                    experiment.addMultiExperiment(onlyFoundWhenConstructingClasses);
+                    // Backbone.js Ember.js Leaflet PixiJS React RxJS  Swiper Vue.js
+                    // Leaflet PixiJS React RxJS  Swiper Vue.js
+//                    experiment.addMultiExperiment(onlyFoundWhenConstructingClasses);
+
+                    experiment.addMultiExperiment(hasInstanceOf);
                     break;
                 case "RQ2": // Which configuration works the best.
 
@@ -394,8 +439,11 @@ public class AutomaticExperiments {
                     experiment.addMultiExperiment(uniquePathsWithOptions("(5x:writing all properties)", 5, false, options -> options.getBuilder().setWriteAll(true).build()));
 */
 
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(construct classes )", 1, false, options -> options.getBuilder().setConstructClassInstances(true).setConstructClassTypes(true).build()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:construct classes)", 5, false, options -> options.getBuilder().setConstructClassInstances(true).setConstructClassTypes(true).build()));
+//                    experiment.addMultiExperiment(uniquePathsWithOptions("(construct classes)", 1, false, options -> options.getBuilder().setConstructClassInstances(true).setConstructClassTypes(true).build()));
+//                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:construct classes)", 5, false, options -> options.getBuilder().setConstructClassInstances(true).setConstructClassTypes(true).build()));
+
+                    experiment.addMultiExperiment(uniquePathsWithOptions("(construct only prims)", 1, false, options -> options.getBuilder().setConstructOnlyPrimitives(true).build()));
+                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:construct only prims)", 5, false, options -> options.getBuilder().setConstructOnlyPrimitives(true).build()));
                     break;
                 case "RQ5": // Coverage tests.
                     experiment.addMultiExperiment(coverage("-init", options -> options.getBuilder().setMaxIterationsToRun(1).build())); // Runs exactly one test, which can only be the test that initializes the library.
@@ -437,7 +485,8 @@ public class AutomaticExperiments {
 
         experiment.addSingleExperiment(type);
 
-        experiment.addMultiExperiment(onlyFoundWhenConstructingClasses);
+        experiment.addMultiExperiment(uniquePathsWithOptions("(standard)", 1, false, Function.identity()));
+        experiment.addMultiExperiment(uniquePathsWithOptions("(construct classes)", 1, false, options -> options.getBuilder().setConstructClassInstances(true).setConstructClassTypes(true).build()));
 
 //        experiment.addMultiExperiment(uniquePaths);
 //        experiment.addMultiExperiment(uniquePathsAnd5Coverage);

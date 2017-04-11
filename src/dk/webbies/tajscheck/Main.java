@@ -77,6 +77,8 @@ public class Main {
         Test[] testsArray = tests.toArray(new Test[]{});
         int prevSize = -1;
 
+        Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(new DriverProgramBuilder(Arrays.asList(testsArray), info).buildDriver(null)));
+
         if (!test.getAsBoolean()) {
             throw new RuntimeException("Does not initially satisfy condition!");
         }
@@ -85,9 +87,7 @@ public class Main {
             prevSize = testsArray.length;
             testsArray = MinimizeArray.minimizeArray((testsToTest) -> {
                 try {
-                    Statement program = new DriverProgramBuilder(Arrays.asList(testsToTest), info).buildDriver(null);
-
-                    Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(program));
+                    Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(new DriverProgramBuilder(Arrays.asList(testsToTest), info).buildDriver(null)));
 
                     return test.getAsBoolean();
                 } catch (IOException e) {

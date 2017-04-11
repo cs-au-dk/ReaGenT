@@ -19,6 +19,7 @@ public final class CheckOptions {
     public final boolean constructClassInstances; // TODO: Test.
     public final boolean constructClassTypes; // TODO: Test.
     public final boolean constructAllTypes; // TODO: Test.
+    public final boolean constructOnlyPrimitives; // TODO: Test.
     public final int maxTime;
     public final boolean failOnAny;
     public final boolean makeTSInferLike;
@@ -50,6 +51,7 @@ public final class CheckOptions {
         this.constructClassInstances = builder.constructClassInstances;
         this.constructClassTypes = builder.constructClassTypes;
         this.constructAllTypes = builder.constructAllTypes;
+        this.constructOnlyPrimitives = builder.constructOnlyPrimitives;
         this.builder = builder;
 
     }
@@ -87,7 +89,8 @@ public final class CheckOptions {
         private boolean disableGenerics = false; // Disable all generics, the TypeContext becomes empty.
         private boolean constructClassInstances = false; // Construct random values of class instance types.
         private boolean constructClassTypes = false; // Construct ramdom values of class types.
-        private boolean constructAllTypes; // No filters on construction
+        private boolean constructAllTypes = false; // No filters on construction (overrides construct class type options)
+        private boolean constructOnlyPrimitives = false; // Basically emulate RANDOOP. Overrides all other construct type options.
         private boolean failOnAny = true; // If "any" is returned (as in, something that has our "isAnyMarker"), it is a valid warning.
         private boolean makeTSInferLike = false; // Restrict the driver to only check properties, and call constructors (where all arguments are ignored). Kinda equal to the dynamic part of TSInfer.
         private boolean combineNullAndUndefined = false; // null and undefined (last one is also called void) are different types. But errors related to this are anoying, and doesn't matter. Setting this to true makes it not an error.
@@ -95,7 +98,7 @@ public final class CheckOptions {
         private boolean writePrimitives = false; // We write to properties that have primitive values.
         private boolean writeAll = false; // Only has effect if above is true. Every single property is potentially written to. Is VERY stupid, will likely overwrite the library before testing it.
         private boolean firstMatchSignaturePolicy = true; // If the first-match-signature policy of TypeScript should be enforced.
-        private boolean useAssertTypeFunctions = true; // Wether or not to combine type-cheks into assertType functions, if not they are inlined (slightly bigger, easier to read).
+        private boolean useAssertTypeFunctions = true; // Whether or not to combine type-cheks into assertType functions, if not they are inlined (slightly bigger, easier to read).
 
 
         private Builder() {}
@@ -120,6 +123,11 @@ public final class CheckOptions {
 
         public Builder setUseAssertTypeFunctions(boolean useAssertTypeFunctions) {
             this.useAssertTypeFunctions = useAssertTypeFunctions;
+            return this;
+        }
+
+        public Builder setConstructOnlyPrimitives(boolean constructOnlyPrimitives) {
+            this.constructOnlyPrimitives = constructOnlyPrimitives;
             return this;
         }
 
