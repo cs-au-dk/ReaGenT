@@ -3821,28 +3821,28 @@ declare module _ {
          * @param object Check if this object is a DOM element.
          * @return True if `object` is a DOM element, otherwise false.
          **/
-        isElement(object: any): object is Element;
+        isElement(o: any): o is Element;
 
         /**
          * Returns true if object is an Array.
          * @param object Check if this object is an Array.
          * @return True if `object` is an Array, otherwise false.
          **/
-        isArray(object: any): object is any[];
+        isArray(o: any): o is any[];
 
         /**
          * Returns true if object is an Array.
          * @param object Check if this object is an Array.
          * @return True if `object` is an Array, otherwise false.
          **/
-        isArray<T>(object: any): object is T[];
+        isArray<T>(o: any): o is T[];
 
         /**
          * Returns true if object is a Symbol.
          * @param object Check if this object is a Symbol.
          * @return True if `object` is a Symbol, otherwise false.
          **/
-        isSymbol(object: any): object is symbol;
+        isSymbol(o: any): o is symbol;
 
         /**
          * Returns true if value is an Object. Note that JavaScript arrays and functions are objects,
@@ -3850,42 +3850,42 @@ declare module _ {
          * @param object Check if this object is an Object.
          * @return True of `object` is an Object, otherwise false.
          **/
-        isObject(object: any): boolean;
+        isObject(o: any): boolean;
 
         /**
          * Returns true if object is an Arguments object.
          * @param object Check if this object is an Arguments object.
          * @return True if `object` is an Arguments object, otherwise false.
          **/
-        isArguments(object: any): object is IArguments;
+        isArguments(o: any): o is IArguments;
 
         /**
          * Returns true if object is a Function.
          * @param object Check if this object is a Function.
          * @return True if `object` is a Function, otherwise false.
          **/
-        isFunction(object: any): object is Function;
+        isFunction(o: any): o is Function;
 
         /**
          * Returns true if object inherits from an Error.
          * @param object Check if this object is an Error.
          * @return True if `object` is a Error, otherwise false.
          **/
-        isError(object: any): object is Error;
+        isError(o: any): o is Error;
 
         /**
          * Returns true if object is a String.
          * @param object Check if this object is a String.
          * @return True if `object` is a String, otherwise false.
          **/
-        isString(object: any): object is string;
+        isString(o: any): o is string;
 
         /**
          * Returns true if object is a Number (including NaN).
          * @param object Check if this object is a Number.
          * @return True if `object` is a Number, otherwise false.
          **/
-        isNumber(object: any): object is number;
+        isNumber(o: any): o is number;
 
         /**
          * Returns true if object is a finite Number.
@@ -3899,21 +3899,21 @@ declare module _ {
          * @param object Check if this object is a bool.
          * @return True if `object` is a bool, otherwise false.
          **/
-        isBoolean(object: any): object is boolean;
+        isBoolean(o: any): o is boolean;
 
         /**
          * Returns true if object is a Date.
          * @param object Check if this object is a Date.
          * @return True if `object` is a Date, otherwise false.
          **/
-        isDate(object: any): object is Date;
+        isDate(o: any): o is Date;
 
         /**
          * Returns true if object is a RegExp.
          * @param object Check if this object is a RegExp.
          * @return True if `object` is a RegExp, otherwise false.
          **/
-        isRegExp(object: any): object is RegExp;
+        isRegExp(o: any): o is RegExp;
 
         /**
          * Returns true if object is NaN.
