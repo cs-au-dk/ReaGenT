@@ -88,24 +88,7 @@ public class TypeCreator {
 
 
     public Collection<Integer> getValueIndex(Type type, TypeContext context) {
-        TypeWithContext key = new TypeWithContext(type, context);
-
-        List<Integer> values = new ArrayList<>(valueLocations.get(key));
-        while (key.getType() instanceof ReferenceType) {
-            ReferenceType ref = (ReferenceType) key.getType();
-            Type target = ref.getTarget();
-            TypeContext typeContext = new TypesUtil(info).generateParameterMap(ref, key.getTypeContext()).optimizeTypeParameters(target, info.freeGenericsFinder);
-            key = new TypeWithContext(target, typeContext);
-            values.addAll(valueLocations.get(key));
-        }
-
-        TypeContext optimized = context.optimizeTypeParameters(type, info.freeGenericsFinder);
-
-        if (!optimized.equals(context)) {
-            values.addAll(getValueIndex(type, optimized));
-        }
-
-        return values.stream().distinct().collect(Collectors.toList());
+        return valueLocations.get(new TypeWithContext(type, context));
     }
 
     private int valueCounter = 0;
@@ -1339,7 +1322,16 @@ public class TypeCreator {
         for (TypeWithContext key : getTypeQueue) {
             int value = typeIndexes.get(key);
 
-            Collection<Integer> values = getValueIndex(key.getType(), key.getTypeContext());
+            List<Integer> values = new ArrayList<>(valueLocations.get(key));
+            while (key.getType() instanceof ReferenceType) {
+                ReferenceType ref = (ReferenceType) key.getType();
+                Type target = ref.getTarget();
+                TypeContext typeContext = new TypesUtil(info).generateParameterMap(ref, key.getTypeContext()).optimizeTypeParameters(target, info.freeGenericsFinder);
+                key = new TypeWithContext(target, typeContext);
+                values.addAll(valueLocations.get(key));
+            }
+
+            values = values.stream().distinct().collect(Collectors.toList());
 
             Statement returnTypeStatement;
 
