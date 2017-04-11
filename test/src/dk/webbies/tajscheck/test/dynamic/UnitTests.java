@@ -190,6 +190,10 @@ public class UnitTests {
         }
     }
 
+    private RunResult run(String name) throws Exception {
+        return parseDriverResult(runDriver(name, "foo"));
+    }
+
     private RunResult run(String name, String seed) throws Exception {
         return parseDriverResult(runDriver(name, seed));
     }
@@ -1322,9 +1326,16 @@ public class UnitTests {
                 .got(STRING, "false");
     }
 
-    @Test // TODO: Get this to work like it should.
+    @Test
     public void infiniteGenerics() throws Exception {
-        Main.writeFullDriver(benchFromFolder("infiniteGenerics", CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthReport(5).build()));
+        RunResult result = run("infiniteGenerics", "foo");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.test(obj)")
+                .expected("never")
+                .got(STRING, "was any, good!");
     }
 
     @Test
@@ -1335,8 +1346,8 @@ public class UnitTests {
     }
 
     /*
-                 * Examples used in the paper are below this:
-                 */
+     * Examples used in the paper are below this:
+     */
 
     @Test
     public void genericsSplit() throws Exception {
