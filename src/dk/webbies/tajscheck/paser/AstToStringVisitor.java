@@ -1,12 +1,12 @@
 package dk.webbies.tajscheck.paser;
 
-import dk.brics.tajs.util.Collections;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
