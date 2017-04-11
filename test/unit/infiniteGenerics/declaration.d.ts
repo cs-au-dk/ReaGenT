@@ -4,5 +4,5 @@ export module module {
         bar: Foo<T[]>;
         value: T
     }
-    var foo: Foo<boolean>;
+    function test(x: Foo<true>): never;
 }
