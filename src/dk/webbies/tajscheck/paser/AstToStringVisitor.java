@@ -409,7 +409,7 @@ public class AstToStringVisitor implements ExpressionVisitor<Void>, StatementVis
     }
 
     private void writeParenthesizedExpression(Expression exp) {
-        if (exp instanceof BinaryExpression || exp instanceof UnaryExpression || exp instanceof ConditionalExpression || exp instanceof FunctionExpression || exp instanceof NumberLiteral || exp instanceof NewExpression || exp instanceof CallExpression) {
+        if (exp instanceof MethodCallExpression || exp instanceof BinaryExpression || exp instanceof UnaryExpression || exp instanceof ConditionalExpression || exp instanceof FunctionExpression || exp instanceof NumberLiteral || exp instanceof NewExpression || exp instanceof CallExpression) {
             write("(");
             exp.accept(this);
             write(")");
