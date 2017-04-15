@@ -662,10 +662,14 @@ public class TypeChecker {
             String markerField = info.typeParameterIndexer.getMarkerField(parameter);
 
             checks.add(expectNotNull());
-            checks.add(new SimpleTypeCheck(
-                    Check.field(markerField, Check.equalTo(bool(true))),
-                    "a generic type marker (." + markerField + ")"
-            ));
+
+            if (parameter.getConstraint() == null || !(parameter.getConstraint() instanceof InterfaceType) || ((InterfaceType) parameter.getConstraint()).getDeclaredStringIndexType() == null) {
+                checks.add(new SimpleTypeCheck(
+                        Check.field(markerField, Check.equalTo(bool(true))),
+                        "a generic type marker (." + markerField + ")"
+                ));
+            }
+
 
             return checks;
         }

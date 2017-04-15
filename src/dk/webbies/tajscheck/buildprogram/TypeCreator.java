@@ -523,6 +523,10 @@ public class TypeCreator {
                 return Return(constructType(lookup.getType(), lookup.getTypeContext()));
             }
             String markerField = info.typeParameterIndexer.getMarkerField(type);
+            if (type.getConstraint() != null && type.getConstraint() instanceof InterfaceType && ((InterfaceType)type.getConstraint()).getDeclaredStringIndexType() != null) {
+                markerField = null;
+            }
+
             return block(
                     variable("result", type.getConstraint() != null ? constructType(type.getConstraint(), typeContext) : object()),
                     ifThen(
@@ -539,7 +543,7 @@ public class TypeCreator {
                                     )
                             ))
                     ),
-                    statement(
+                    markerField == null ? block() : statement(
                             binary(member(identifier("result"), markerField), Operator.EQUAL, bool(true))
                     ),
                     Return(identifier("result"))
