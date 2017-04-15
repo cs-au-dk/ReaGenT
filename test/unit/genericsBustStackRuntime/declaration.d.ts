@@ -3,8 +3,8 @@ declare module module {
 }
 
 interface Foo<T> {
-    bar: Foo<T & string>;
+    bar: Foo<T & {foo: string}>;
     baz: T;
 }
 
-type test = Foo<void> & string;
+type test = Foo<void> & {foo: string};

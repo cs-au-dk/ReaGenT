@@ -688,6 +688,16 @@ public class UnitTests {
     }
 
     @Test
+    public void complexSanityCheck19() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck19"), NODE);
+    }
+
+    @Test // TODO:
+    public void complexSanityCheck20() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck20").withOptions(options -> options.getBuilder().setDisableGenerics(true).build()), NODE);
+    }
+
+    @Test
     public void nodeList() throws Exception {
         sanityCheck(benchFromFolder("nodeList", CheckOptions.builder().setMaxIterationsToRun(10000).setCheckDepthReport(1).setCheckDepthUseValue(1).build()), BROWSER);
     }
