@@ -82,3 +82,8 @@ src/TypeScriptEnvironmentReader.js.map
 **/minimizedDriver*.js
 **/tmp.html
 **/tmp.js.html
+artifact/
+test/unit/*/coverage.js
+*.pptx
+*.xlsx
+*.txt
