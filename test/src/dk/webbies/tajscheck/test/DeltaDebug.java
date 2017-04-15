@@ -41,14 +41,18 @@ public class DeltaDebug {
         String newFile = removeCommentsAndWhitespace(file);
         write(filePath, newFile);
 
-        if (newFile.length() == file.length()) {
-            System.out.println("There were no comments or whitespace");
-        } else if (test.getAsBoolean()) {
-            System.out.println("Successfully remove whitespace and stuff");
-            progress = true;
-            file = newFile;
-        } else {
-            System.out.println("Removing whitespace failed");
+        for (int i = 0; i < 3; i++) {
+            if (newFile.length() == file.length()) {
+                System.out.println("There were no comments or whitespace");
+                break;
+            } else if (test.getAsBoolean()) {
+                System.out.println("Successfully remove whitespace and stuff");
+                progress = true;
+                file = newFile;
+                break;
+            } else {
+                System.out.println("Removing whitespace failed");
+            }
         }
 
         progress |= testBracket(filePath, test, file, '{', '}');
@@ -174,14 +178,14 @@ public class DeltaDebug {
 
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
-        Benchmark bench = RunBenchmarks.benchmarks.get("P2.js");
-
+        Benchmark bench = RunBenchmarks.benchmarks.get("Lodash").withOptions(options -> options.getBuilder().setMaxIterationsToRun(10 * 1000).build());
+//        Benchmark bench = RunBenchmarks.benchmarks.get("Redux");
+//
         String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                Main.writeFullDriver(bench);
-                return Main.runBenchmark(bench).contains("never fails");
+                return testSoundness(bench);
             } catch (NullPointerException e) {
                 return false;
             } catch (RuntimeException e) {
@@ -239,20 +243,17 @@ public class DeltaDebug {
 
 
     private static boolean testSoundness(Benchmark bench) throws Exception {
-        Benchmark.RUN_METHOD node = bench.run_method;
-        bench = bench.withRunMethod(BOOTSTRAP).withOptions(bench.options.getBuilder().setConstructAllTypes(true).build());
+        bench = bench.withRunMethod(BOOTSTRAP).withOptions(options -> options.getBuilder().setMaxIterationsToRun(100 * 1000).setConstructAllTypes(true).setCheckDepthReport(0).build());
 
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");
-
-        String output = Main.runBenchmark(bench.withRunMethod(node));
+        String output = Main.runBenchmark(bench);
         System.out.println(output);
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 
         for (OutputParser.TypeError typeError : result.typeErrors) {
             System.out.println(typeError);
         }
-
 
         return result.typeErrors.size() > 0;
     }
