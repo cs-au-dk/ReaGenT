@@ -266,6 +266,11 @@ function extend(result) {
     if (Object.keys(typesOfs).length == 1 && !typesOfs.object && !typesOfs.function) {
         return arguments[1]; // <- Just returning the first of them, since they are kinda equal.
     }
+    if (Object.keys(typesOfs).length > 1) {
+        if (!(Object.keys(typesOfs).length == 2 && typesOfs.object && typesOfs.function)) {
+            throw new RuntimeError("IntersectionType of primitives, will not do this.");
+        }
+    }
 
     for (var i = 1; i < arguments.length; i++) {
         var obj = arguments[i];
