@@ -446,7 +446,7 @@ public class AutomaticExperiments {
                     experiment.addMultiExperiment(uniquePathsWithOptions("(5x:construct only prims)", 5, false, options -> options.getBuilder().setConstructOnlyPrimitives(true).build()));
                     break;
                 case "RQ5": // Coverage tests.
-                    experiment.addMultiExperiment(coverage("-init", options -> options.getBuilder().setMaxIterationsToRun(1).build())); // Runs exactly one test, which can only be the test that initializes the library.
+                    experiment.addMultiExperiment(coverage("-init", options -> options.getBuilder().setMaxIterationsToRun(1).build())); // Runs exactly one test, which can only be the test that initializes the library. // TODO: Try the new "only initialize" option.
 
                     experiment.addMultiExperiment(uniquePathsAndCoverage(5));
 

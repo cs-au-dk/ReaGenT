@@ -17,7 +17,7 @@ public class Benchmark {
     public final String module;
     public final Set<String> pathsToTest;
     public final RUN_METHOD run_method;
-    public final boolean useTAJS;
+    public final boolean useTAJS; // TODO: Move to options (and split options into sub-options?)
     public final CheckOptions options;
     private final List<Benchmark> dependencies;
 
