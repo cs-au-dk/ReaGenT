@@ -1,5 +1,7 @@
-if (!isTAJS) {
-    if (isBrowser()) {
+if (isTAJS) {
+    testStuff();
+} else {
+    if (isBrowser) {
         setTimeout(function () {
             testStuff();
             setTimeout(function () {
@@ -40,7 +42,7 @@ if (!isTAJS) {
 
             dumbCoverage();
 
-            if (isBrowser()) {
+            if (isBrowser) {
                 printForReal("close");
             }
 
