@@ -28,6 +28,7 @@ public final class CheckOptions {
     public final boolean writeAll;
     public final boolean firstMatchSignaturePolicy;
     public final boolean useAssertTypeFunctions;
+    public final boolean onlyInitialize;
 
 
     private CheckOptions(Builder builder) {
@@ -52,6 +53,7 @@ public final class CheckOptions {
         this.constructClassTypes = builder.constructClassTypes;
         this.constructAllTypes = builder.constructAllTypes;
         this.constructOnlyPrimitives = builder.constructOnlyPrimitives;
+        this.onlyInitialize = builder.onlyInitialize;
         this.builder = builder;
 
     }
@@ -99,6 +101,7 @@ public final class CheckOptions {
         private boolean writeAll = false; // Only has effect if above is true. Every single property is potentially written to. Is VERY stupid, will likely overwrite the library before testing it.
         private boolean firstMatchSignaturePolicy = true; // If the first-match-signature policy of TypeScript should be enforced.
         private boolean useAssertTypeFunctions = true; // Whether or not to combine type-cheks into assertType functions, if not they are inlined (slightly bigger, easier to read).
+        private boolean onlyInitialize = false; // If true, all tests except the initializing test is removed.
 
 
         private Builder() {}
@@ -123,6 +126,11 @@ public final class CheckOptions {
 
         public Builder setUseAssertTypeFunctions(boolean useAssertTypeFunctions) {
             this.useAssertTypeFunctions = useAssertTypeFunctions;
+            return this;
+        }
+
+        public Builder setOnlyInitialize(boolean onlyInitialize) {
+            this.onlyInitialize = onlyInitialize;
             return this;
         }
 

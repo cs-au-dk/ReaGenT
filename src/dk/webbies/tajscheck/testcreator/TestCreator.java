@@ -28,6 +28,9 @@ public class TestCreator {
     }
 
     public List<Test> createTests(@SuppressWarnings("SameParameterValue") boolean concatDuplicates) {
+        if (info.bench.options.onlyInitialize) {
+            return new ArrayList<>();
+        }
         String module = info.bench.module;
 
         PriorityQueue<TestQueueElement> queue = new PriorityQueue<>();
