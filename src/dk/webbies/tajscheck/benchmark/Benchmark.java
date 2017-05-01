@@ -60,14 +60,7 @@ public class Benchmark {
     }
 
     public Benchmark useTAJS() {
-        return new Benchmark(
-                name, this.environment,
-                this.jsFile,
-                this.dTSFile,
-                this.module,
-                this.run_method,
-                this.pathsToTest,
-                options, dependencies);
+        return this.withOptions(options -> options.getBuilder().setUseTAJS(true).build());
     }
 
     public Benchmark addDependencies(Benchmark... benchmarks) {

@@ -57,11 +57,15 @@ public class DriverProgramBuilder {
         program.add(variable("maxTime", number(info.options.maxTime)));
         program.add(variable("maxIterations", number(info.options.maxIterationsToRun)));
 
-        program.add(variable("isTAJS", bool(info.bench.options.useTAJS))); // TODO: Refactor out, such that a different prelude/dumb is used.
+        program.add(variable("isTAJS", bool(info.bench.options.useTAJS)));
 
         program.add(variable("failOnAny", bool(info.options.failOnAny)));
 
-        program.add(AstBuilder.programFromFile(this.getClass().getResource("prelude.js")));
+        if (info.bench.options.useTAJS) {
+            program.add(AstBuilder.programFromFile(this.getClass().getResource("prelude_tajs.js")));
+        } else {
+            program.add(AstBuilder.programFromFile(this.getClass().getResource("prelude.js")));
+        }
 
         program.add(block(typeCreator.getValueVariableDeclarationList()));
 
@@ -129,7 +133,11 @@ public class DriverProgramBuilder {
                 )
         ))));
 
-        program.add(AstBuilder.programFromFile(this.getClass().getResource("dumb.js")));
+        if (info.bench.options.useTAJS) {
+            program.add(AstBuilder.programFromFile(this.getClass().getResource("dumb_tajs.js")));
+        } else {
+            program.add(AstBuilder.programFromFile(this.getClass().getResource("dumb.js")));
+        }
 
         if (info.bench.run_method == Benchmark.RUN_METHOD.BROWSER) {
             List<Statement> scripts = new ArrayList<>();
