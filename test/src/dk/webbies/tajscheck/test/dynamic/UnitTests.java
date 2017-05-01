@@ -9,9 +9,12 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import dk.webbies.tajscheck.test.DeltaDebug;
+import dk.webbies.tajscheck.util.Util;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -32,6 +35,7 @@ import static org.hamcrest.Matchers.*;
  * Created by erik1 on 23-11-2016.
  */
 public class UnitTests {
+    // TODO: Default to 10000 iterations
     private SpecReader parseDeclaration(String folderName) {
         Benchmark bench = benchFromFolder(folderName);
 
@@ -1431,5 +1435,27 @@ public class UnitTests {
         RunResult result = parseDriverResult(runDriver(benchFromFolder("unsoundSiblings", options, "Box2D"), "foo", true));
 
         assertThat(result.typeErrors.size(), is(greaterThanOrEqualTo(1)));
+    }
+
+    @Test
+    @Ignore // TODO: Fails because Symbol. After this, construct an example where something beneath a symbol prop access fails.
+    public void generators() throws Exception {
+        String folderName = "generators";
+        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.RUN_METHOD.NODE, CheckOptions.builder().setMaxIterationsToRun(1000).build());
+
+        RunResult result = run(bench, "foo");
+
+        assertThat(result.typeErrors.size(), is(0));
+    }
+
+    @Test
+    @Ignore // Fails because async iterators aren't included as a library. I don't need to fix this.
+    public void asyncGenerator() throws Exception {
+        try {
+            Util.isDeltaDebugging = true; // Testing with this on, since it forces the TypeScript compiler to return with no errors.
+            Main.writeFullDriver(benchFromFolder("asyncGenerator")); // Just testing the parsing.
+        } finally {
+            Util.isDeltaDebugging = false;
+        }
     }
 }
