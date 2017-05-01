@@ -335,7 +335,17 @@ public class DriverProgramBuilder {
     private class TestBuilderVisitor implements TestVisitor<List<Statement>> {
         Expression getTypeExpression(Type type, TypeContext typeContext) {
             if (info.bench.useTAJS) {
-                return call(identifier("TAJS_except"), typeCreator.getType(type, typeContext), identifier(VARIABLE_NO_VALUE));
+                return call(function(block(
+                        variable("result", typeCreator.getType(type, typeContext)),
+                        ifThenElse(
+                                binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
+                                Return(identifier("result")),
+                                block(
+                                        comment("never actually reached, is only here because TAJS"),
+                                        throwStatement(newCall(identifier(RUNTIME_ERROR_NAME)))
+                                )
+                        )
+                )));
             } else {
                 return typeCreator.getType(type, typeContext);
             }
@@ -435,7 +445,11 @@ public class DriverProgramBuilder {
                                                     breakStatement()
                                             )
                                     );
-                                }).collect(Collectors.toList())
+                                }).collect(Collectors.toList()),
+                                block(
+                                        throwStatement(newCall(identifier("Error"), string("unreachable!")))
+                                )
+
                         )
                 );
 
