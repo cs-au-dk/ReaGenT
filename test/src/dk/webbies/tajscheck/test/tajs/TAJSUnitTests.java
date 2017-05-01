@@ -151,7 +151,7 @@ public class TAJSUnitTests {
                 .toPass();
 
         expect(result)
-                .forPath("require(\"./implementation.js\")")
+                .forPath("module")
                 .toPass();
 
     }
@@ -205,7 +205,6 @@ public class TAJSUnitTests {
                 .forPath("Foo")
                 .expected("overload (a: string) to be called")
                 .toFail();
-
     }
 
 }
