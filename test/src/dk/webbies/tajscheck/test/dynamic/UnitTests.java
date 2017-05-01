@@ -1435,7 +1435,7 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore // TODO: Fails because Symbol. After this, construct an example where something beneath a symbol prop access fails.
+    @Ignore // Fails because Symbol. After this, construct an example where something beneath a symbol prop access fails.
     public void generators() throws Exception {
         String folderName = "generators";
         Benchmark bench = new Benchmark("unit-generators", ParseDeclaration.Environment.ES6DOM, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.RUN_METHOD.NODE, options().setMaxIterationsToRun(1000).build());
