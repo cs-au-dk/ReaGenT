@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.test.tajs;
 
+import dk.brics.tajs.analysis.TAJSFunctionsEvaluator;
 import dk.brics.tajs.analysis.nativeobjects.JSGlobal;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.lattice.Context;
@@ -29,7 +30,7 @@ import static org.junit.Assert.assertThat;
  * Created by erik1 on 19-12-2016.
  */
 public class TAJSUtil {
-    private static MultiMap<String, AssertionResult> runTAJS(String file, int secondsTimeout) throws TimeoutException {
+    public static MultiMap<String, AssertionResult> runTAJS(String file, int secondsTimeout, Benchmark.RUN_METHOD run_method) throws TimeoutException {
         dk.brics.tajs.Main.reset();
 
         Options.get().enableTest();
@@ -38,11 +39,18 @@ public class TAJSUtil {
         Options.get().enableEs6MiscPolyfill();
         Options.get().enableConsoleModel();
         Options.get().enableUnevalizer();
+        if (run_method == Benchmark.RUN_METHOD.BROWSER || run_method == Benchmark.RUN_METHOD.BOOTSTRAP) {
+            Options.get().enableIncludeDom();
+        } else if (run_method == Benchmark.RUN_METHOD.NODE) {
+            // nothing.
+        } else {
+            throw new RuntimeException("Definitely cannot do this!");
+        }
 
         IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(new Monitoring(), new OrdinaryExitReachableChecker());
 
-//        Misc.init();
-//        Misc.captureSystemOutput();
+        Misc.init();
+        Misc.captureSystemOutput();
 
 
 
@@ -63,7 +71,7 @@ public class TAJSUtil {
 
 
 
-        Map<Pair<AbstractNode, Context>, Set<Pair<String, Value>>> recordings = ExperimentalAnalysisVariables.get().get(JSGlobal.TAJSRecordKey.instance);
+        Map<Pair<AbstractNode, Context>, Set<Pair<String, Value>>> recordings = ExperimentalAnalysisVariables.get().get(TAJSFunctionsEvaluator.TAJSRecordKey.instance);
 
         if (recordings != null) {
             return createResult(recordings.values());
@@ -125,7 +133,7 @@ public class TAJSUtil {
 
         String filePath = Main.getFolderPath(bench) + Main.TEST_FILE_NAME;
 
-        MultiMap<String, AssertionResult> result = runTAJS(filePath, secondsTimeout);
+        MultiMap<String, AssertionResult> result = runTAJS(filePath, secondsTimeout, bench.run_method);
 
         System.out.println(prettyResult(result));
 
