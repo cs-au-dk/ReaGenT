@@ -98,6 +98,6 @@ public class CheckToExpression implements CheckVisitorWithArgument<Expression, E
     }
 
     public static Expression generate(Check check, Expression exp) {
-        return check.accept(new CheckToExpression(), exp); // TODO: Do cannocalization here?
+        return check.accept(new CheckToExpression(), exp);
     }
 }
