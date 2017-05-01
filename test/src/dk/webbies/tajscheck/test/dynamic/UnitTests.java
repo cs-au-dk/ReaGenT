@@ -9,7 +9,6 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
-import dk.webbies.tajscheck.test.DeltaDebug;
 import dk.webbies.tajscheck.util.Util;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.CoreMatchers;
@@ -56,7 +55,7 @@ public class UnitTests {
     }
 
     private static Benchmark benchFromFolder(String folderName, CheckOptions options, String moduleName) {
-        return new Benchmark(ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", moduleName, Benchmark.RUN_METHOD.NODE, options);
+        return new Benchmark("unit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", moduleName, Benchmark.RUN_METHOD.NODE, options);
     }
 
     private String runDriver(String folderName, String seed) throws Exception {
@@ -588,7 +587,7 @@ public class UnitTests {
 
     @Test
     public void myFixedMomentHasNoError() throws Exception {
-        Benchmark benchmark = new Benchmark(ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", "moment", NODE, CheckOptions.builder().setMaxIterationsToRun(10000).setSplitUnions(false).build()).withOptions(CheckOptions::errorFindingOptions);
+        Benchmark benchmark = new Benchmark("fixedMoment", ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", "moment", NODE, CheckOptions.builder().setMaxIterationsToRun(10000).setSplitUnions(false).build()).withOptions(CheckOptions::errorFindingOptions);
 
         RunResult result = run(benchmark, null);
 
@@ -1441,7 +1440,7 @@ public class UnitTests {
     @Ignore // TODO: Fails because Symbol. After this, construct an example where something beneath a symbol prop access fails.
     public void generators() throws Exception {
         String folderName = "generators";
-        Benchmark bench = new Benchmark(ParseDeclaration.Environment.ES6DOM, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.RUN_METHOD.NODE, CheckOptions.builder().setMaxIterationsToRun(1000).build());
+        Benchmark bench = new Benchmark("unit-generators", ParseDeclaration.Environment.ES6DOM, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.RUN_METHOD.NODE, CheckOptions.builder().setMaxIterationsToRun(1000).build());
 
         RunResult result = run(bench, "foo");
 
