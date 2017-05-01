@@ -2,6 +2,7 @@ package dk.webbies.tajscheck.test;
 
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
+import dk.webbies.tajscheck.test.tajs.TAJSTests;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -15,7 +16,7 @@ import org.junit.runners.Suite;
         RunBenchmarks.class,
         TestParsing.class,
         TestVarious.class,
-//        TAJSTests.class // Comment in if TAJS is relevant again.
+        TAJSTests.class
 })
 public class TestSuite {
 }
