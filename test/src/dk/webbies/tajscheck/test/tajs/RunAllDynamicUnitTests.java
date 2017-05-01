@@ -27,8 +27,8 @@ public class RunAllDynamicUnitTests {
     @Parameterized.Parameter
     public String folderName;
 
-    // unit-tests that for some reason cannot run (like, there is no implementation.js, because it isn't used).
-    private static final Set<String> blackList = new HashSet<>(Arrays.asList("genericIndexedAccess", "mappedTypes", "complexSanityCheck", "complexSanityCheck2", "complexSanityCheck3", "complexThisTypes2", "thisTypes2", "unnecessaryBigDriver"));
+    // unit-tests that for some reason should not run.
+    private static final Set<String> blackList = new HashSet<>(Arrays.asList("unsoundSiblings", "mappedTypes", "basicMemomizeExample", "genericIndexedAccess", "exponentialComplexity"));
 
     @SuppressWarnings("ConstantConditions")
     @Parameterized.Parameters(name = "{0}")
@@ -37,7 +37,10 @@ public class RunAllDynamicUnitTests {
     }
 
     @Test
-    public void runSmallDriver() throws Exception {
+    public void analyzeUnitTestDriver() throws Exception {
+        if (!new File(UnitTests.benchFromFolder(folderName).jsFile).exists()) {
+            return;
+        }
         MultiMap<String, AssertionResult> result = TAJSUnitTests.run("../unit/" + folderName);
 
         System.out.println(TAJSUtil.prettyResult(result));
@@ -47,7 +50,7 @@ public class RunAllDynamicUnitTests {
     public void sanityCheckAnalysis() throws Exception {
         // Trying to bootstrap the library with itself, here it is very spurious if any warning is emitted.
 
-        Benchmark bench = UnitTests.benchFromFolder(folderName).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).useTAJS();
+        Benchmark bench = UnitTests.benchFromFolder(folderName).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.getBuilder().setUseAssertTypeFunctions(false).setCheckDepthReport(options.checkDepthUseValue).build()).useTAJS();
 
         MultiMap<String, AssertionResult> result = TAJSUtil.run(bench);
 
