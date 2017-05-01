@@ -117,11 +117,25 @@ function createFailDescription(path, expected, actual, iteration, sequence, desc
 var printedWarnings = [];
 var printedErrors = [];
 
-var print = console.log.bind(console);
+if (isTAJS) {
+    var print = function () {};
+} else {
+    var print = console.log.bind(console);
+}
 
-var isBrowser = new Function("try {return this===window;}catch(e){ return false;}");
 
-if (isBrowser()) {
+var isBrowser = (function () {
+    if (isTAJS) {
+        return false;
+    }
+    try {
+        return this===window;
+    }catch(e){
+        return false;
+    }
+})();
+
+if (isBrowser) {
     var orgPrint = print;
     print = function (message) {
         orgPrint(message);
@@ -136,6 +150,9 @@ if (isBrowser()) {
 }
 
 var runsWithCoverage = (function () {
+    if (isTAJS) {
+        return false;
+    }
     try {
         // Runing coverage inside a browser.
         if (__coverage__) {
@@ -172,7 +189,7 @@ function post(host, port, path, value) {
 }
 function dumbCoverage() {
     if (runsWithCoverage) {
-        if (isBrowser()) {
+        if (isBrowser) {
             printForReal(("::COVERAGE::" + JSON.stringify(__coverage__)) + "::/COVERAGE::");
         } else {
             var istanbulKey = Object.keys(global).filter(function (key) {
@@ -195,10 +212,13 @@ function assert(cond, path, expected, actual, iteration, descrip) {
     if (!failOnAny && typeof actual === "object" && actual && actual._any) {
         return true;
     }
+    if (path === "mockFunctionForFirstMatchPolicy") {
+        return cond;
+    }
     if (isTAJS) {
         TAJS_record(path + " | " + expected, cond);
         TAJS_record(path + " | " + expected + " | value", actual);
-    } else if (!cond && path !== "mockFunctionForFirstMatchPolicy") {
+    } else if (!cond) {
         var failDescription = createFailDescription(
             path, expected, actual, iteration, testOrderRecording.slice(), descrip
         );
