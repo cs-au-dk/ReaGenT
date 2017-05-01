@@ -257,6 +257,8 @@ public class TypeChecker {
                         assert t.getTypeArguments().size() == 1;
                         return checkArrayThinghy(t.getTypeArguments().get(0), "NodeList", arg.withDepth(0)); // NodeLists not checked.
                     case "ArrayLike":
+                    case "IterableIterator":
+                    case "Iterator":
                         break; // Check manually.
                     default:
                         throw new RuntimeException(info.typeNames.get(t));

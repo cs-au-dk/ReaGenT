@@ -1257,6 +1257,7 @@ public class TypeCreator {
             case "ArrayLike":
             case "IterableIterator":
             case "IteratorResult":
+            case "Iterator":
                 throw new ProduceManuallyException();
             default:
                 throw new RuntimeException("Unknown: " + name);

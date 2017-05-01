@@ -221,6 +221,10 @@ public class TypesUtil {
         if (nativeType instanceof TupleType) {
             return ((TupleType) nativeType).getElementTypes().size() == ((TupleType) type).getElementTypes().size();
         }
+        if (nativeType instanceof IntersectionType) {
+            // TODO: See when this is called.
+            return ((IntersectionType) nativeType).getElements().size() == ((IntersectionType) type).getElements().size();
+        }
         throw new RuntimeException(type.getClass().getSimpleName());
     }
 
