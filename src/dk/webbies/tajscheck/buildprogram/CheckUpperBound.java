@@ -32,6 +32,7 @@ import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
 import dk.webbies.tajscheck.util.Pair;
+import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -85,6 +86,8 @@ public class CheckUpperBound {
     // All the lower-bound tests are created else-where.
 
     private final class CheckUpperBoundTypeVisitor implements TypeVisitorWithArgument<List<TypeCheck>, Arg> {
+
+        private Set<TypeWithContext> seen = new HashSet<>();
 
         @Override
         public List<TypeCheck> visit(AnonymousType t, Arg arg) {
@@ -154,6 +157,12 @@ public class CheckUpperBound {
 
         @Override
         public List<TypeCheck> visit(TypeParameterType t, Arg arg) {
+            TypeWithContext key = new TypeWithContext(t, arg.context);
+            if (seen.contains(key)) {
+                return Collections.emptyList();
+            }
+            seen.add(key);
+
             if (arg.context.containsKey(t)) {
                 TypeWithContext lookup = arg.context.get(t);
                 return lookup.getType().accept(this, new Arg(lookup.getTypeContext()));
@@ -179,7 +188,7 @@ public class CheckUpperBound {
 
         @Override
         public List<TypeCheck> visit(IntersectionType t, Arg arg) {
-            throw new RuntimeException();
+            return t.getElements().stream().map(type -> type.accept(this, arg)).reduce(new ArrayList<>(), Util::reduceList);
         }
 
         @Override
