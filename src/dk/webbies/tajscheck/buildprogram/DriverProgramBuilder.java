@@ -57,7 +57,7 @@ public class DriverProgramBuilder {
         program.add(variable("maxTime", number(info.options.maxTime)));
         program.add(variable("maxIterations", number(info.options.maxIterationsToRun)));
 
-        program.add(variable("isTAJS", bool(info.bench.useTAJS)));
+        program.add(variable("isTAJS", bool(info.bench.options.useTAJS))); // TODO: Refactor out, such that a different prelude/dumb is used.
 
         program.add(variable("failOnAny", bool(info.options.failOnAny)));
 
@@ -317,7 +317,7 @@ public class DriverProgramBuilder {
 
         return Util.concat(
                 testCode,
-                info.bench.useTAJS && product != null ? new CheckUpperBound(info).checkType(product, test.getTypeContext(), identifier("result"), test.getPath(), test.getTestType()) : Collections.emptyList(),
+                info.bench.options.useTAJS && product != null ? new CheckUpperBound(info).checkType(product, test.getTypeContext(), identifier("result"), test.getPath(), test.getTestType()) : Collections.emptyList(),
                 Collections.singletonList(saveResultStatement)
         );
     }
@@ -334,7 +334,7 @@ public class DriverProgramBuilder {
      */
     private class TestBuilderVisitor implements TestVisitor<List<Statement>> {
         Expression getTypeExpression(Type type, TypeContext typeContext) {
-            if (info.bench.useTAJS) {
+            if (info.bench.options.useTAJS) {
                 return call(function(block(
                         variable("result", typeCreator.getType(type, typeContext)),
                         ifThenElse(

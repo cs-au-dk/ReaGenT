@@ -18,15 +18,14 @@ public class Benchmark {
     public final String module;
     public final Set<String> pathsToTest;
     public final RUN_METHOD run_method;
-    public final boolean useTAJS; // TODO: Move to options (and split options into sub-options?)
     public final CheckOptions options;
     private final List<Benchmark> dependencies;
 
     public Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, RUN_METHOD load_method, CheckOptions options) {
-        this(name, environment, jsFile, dTSFile, module, load_method, null, false, options, new ArrayList<>());
+        this(name, environment, jsFile, dTSFile, module, load_method, null, options, new ArrayList<>());
     }
 
-    private Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, RUN_METHOD load_method, Set<String> pathsToTest, boolean withTAJS, CheckOptions options, List<Benchmark> dependencies) {
+    private Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, RUN_METHOD load_method, Set<String> pathsToTest, CheckOptions options, List<Benchmark> dependencies) {
         this.name = name;
         this.environment = environment;
         this.jsFile = jsFile;
@@ -34,7 +33,6 @@ public class Benchmark {
         this.module = module;
         this.pathsToTest = pathsToTest;
         this.run_method = load_method;
-        this.useTAJS = withTAJS;
         this.options = options;
         this.dependencies = dependencies;
     }
@@ -47,7 +45,6 @@ public class Benchmark {
                 this.module,
                 run_method,
                 Collections.unmodifiableSet(pathsToTest.stream().map(TestCreator::simplifyPath).collect(Collectors.toSet())),
-                this.useTAJS,
                 options, dependencies);
     }
 
@@ -59,7 +56,6 @@ public class Benchmark {
                 this.module,
                 method,
                 this.pathsToTest,
-                this.useTAJS,
                 options, dependencies);
     }
 
@@ -71,7 +67,6 @@ public class Benchmark {
                 this.module,
                 this.run_method,
                 this.pathsToTest,
-                true,
                 options, dependencies);
     }
 
@@ -103,7 +98,6 @@ public class Benchmark {
                 this.module,
                 this.run_method,
                 this.pathsToTest,
-                this.useTAJS,
                 options,
                 this.dependencies
         );
@@ -117,7 +111,6 @@ public class Benchmark {
                 this.module,
                 this.run_method,
                 this.pathsToTest,
-                this.useTAJS,
                 transformer.apply(this.options),
                 this.dependencies
         );

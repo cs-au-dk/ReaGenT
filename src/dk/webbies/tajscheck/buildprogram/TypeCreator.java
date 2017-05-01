@@ -418,7 +418,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(SimpleType simple, TypeContext typeContext) {
-            if (info.bench.useTAJS) {
+            if (info.bench.options.useTAJS) {
                 switch (simple.getKind()) {
                     case String:
                         return Return(call(identifier("TAJS_make"), string("AnyStr")));
@@ -814,7 +814,7 @@ public class TypeCreator {
                                         }).collect(Collectors.toList())),
                                         Return(bool(true))
                                 )))),
-                                info.bench.useTAJS ? statement(
+                                info.bench.options.useTAJS ? statement(
                                         call(
                                                 identifier("assert"),
                                                 identifier("signatureCorrect" + signatureIndex),

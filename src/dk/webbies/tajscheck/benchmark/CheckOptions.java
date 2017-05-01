@@ -29,6 +29,7 @@ public final class CheckOptions {
     public final boolean firstMatchSignaturePolicy;
     public final boolean useAssertTypeFunctions;
     public final boolean onlyInitialize;
+    public final boolean useTAJS;
 
 
     private CheckOptions(Builder builder) {
@@ -54,6 +55,7 @@ public final class CheckOptions {
         this.constructAllTypes = builder.constructAllTypes;
         this.constructOnlyPrimitives = builder.constructOnlyPrimitives;
         this.onlyInitialize = builder.onlyInitialize;
+        this.useTAJS = builder.useTAJS;
         this.builder = builder;
 
     }
@@ -103,6 +105,7 @@ public final class CheckOptions {
         private boolean useAssertTypeFunctions = true; // Whether or not to combine type-cheks into assertType functions, if not they are inlined (slightly bigger, easier to read).
         private boolean onlyInitialize = false; // If true, all tests except the initializing test is removed.
 
+        private boolean useTAJS = false; // If true, run abstractly instead of concretely.
 
         private Builder() {}
 
@@ -112,6 +115,11 @@ public final class CheckOptions {
 
         public CheckOptions build() {
             return new CheckOptions(this);
+        }
+
+        public Builder setUseTAJS(boolean useTAJS) {
+            this.useTAJS = useTAJS;
+            return this;
         }
 
         public Builder setCombineNullAndUndefined(boolean combineNullAndUndefined) {
