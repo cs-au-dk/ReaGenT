@@ -9,13 +9,11 @@ export module module {
     var baz: CustomBoolean;
 }*/
 
+var res = new Boolean(true);
+res.quz = true;
 
 module.exports = {
     foo: new Boolean(true),
     bar: true,
-    baz: (function () {
-        var res = new Boolean(true);
-        res.quz = true;
-        return res;
-    })();
+    baz: res
 };
