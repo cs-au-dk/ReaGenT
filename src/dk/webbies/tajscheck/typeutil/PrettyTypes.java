@@ -66,8 +66,12 @@ public class PrettyTypes {
                     return "undefined";
                 case Void:
                     return "void";
+                case Never:
+                    return "never";
+                case Symbol:
+                    return "symbol";
                 default:
-                    throw new RuntimeException("what?");
+                    throw new RuntimeException("what? " + ((SimpleType) type).getKind().name());
             }
         } else if (type instanceof NumberLiteral) {
             return Util.toPrettyNumber(((NumberLiteral) type).getValue());
