@@ -18,31 +18,6 @@ function loadLibrary(path) {
     return module.exports;
 }
 
-function createFailDescription(path, expected, actual, iteration, sequence, descrip) {
-    var failDescription = path + ": (iteration: " + iteration + ")\n";
-    failDescription += "    Here I expected: " + expected + ", but instead I got: \n";
-    failDescription += "        descrip: " + descrip + "\n";
-    failDescription += "        typeof: " + typeof actual + "\n";
-    try {
-        var string = JSON.stringify(actual + "");
-        failDescription += "        toString: " + string.substring(1, string.length - 1) + "\n";
-    } catch (e) {
-        failDescription += "        toString: [ERROR] \n";
-    }
-    try {
-        var json = JSON.stringify(actual);
-        if (json.length < 200) {
-            failDescription += "        JSON: " + json + "\n";
-        } else {
-            failDescription += "        JSON: LONG!\n";
-        }
-    } catch (e) {
-    }
-    // failDescription += "        sequence: " + failure.sequence.toString() + "\n";
-    failDescription += "\n";
-    return failDescription;
-}
-
 var printedWarnings = [];
 var printedErrors = [];
 
@@ -112,7 +87,7 @@ function selectTest() {
 function extend(result) {
     var changedBase = false;
 
-    if (arguments.length == 1) {
+    if (arguments.length === 1) {
         throw new RuntimeError("IntersectionType: nothing to intersect")
     }
 
@@ -123,18 +98,18 @@ function extend(result) {
         var prevValue = typesOfs[type];
         typesOfs[type] = prevValue ? prevValue + 1 : 1;
     }
-    if (Object.keys(typesOfs).length == 1 && !typesOfs.object && !typesOfs.function) {
+    if (Object.keys(typesOfs).length === 1 && !typesOfs.object && !typesOfs.function) {
         return arguments[1]; // <- Just returning the first of them, since they are kinda equal.
     }
     if (Object.keys(typesOfs).length > 1) {
-        if (!(Object.keys(typesOfs).length == 2 && typesOfs.object && typesOfs.function)) {
+        if (!(Object.keys(typesOfs).length === 2 && typesOfs.object && typesOfs.function)) {
             throw new RuntimeError("IntersectionType of primitives, will not do this.");
         }
     }
 
     for (var i = 1; i < arguments.length; i++) {
         var obj = arguments[i];
-        if (obj.__proto__.constructor != Object) {
+        if (obj.__proto__.constructor !== Object) {
             if (changedBase) {
                 throw new RuntimeError("Cannot construct this IntersectionType")
             }
