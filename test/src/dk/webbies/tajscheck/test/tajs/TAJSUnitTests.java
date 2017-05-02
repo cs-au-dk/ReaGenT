@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.test.tajs;
 
 import dk.brics.tajs.lattice.Value;
+import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
@@ -58,7 +59,7 @@ public class TAJSUnitTests {
     }
 
     private static Benchmark benchFromFolder(String folderName) {
-        CheckOptions options = CheckOptions.defaultOptions();
+        CheckOptions options = CheckOptions.builder().setCheckDepthReport(0).setCheckDepthUseValue(0).build();
         return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", "module", Benchmark.RUN_METHOD.NODE, options).useTAJS();
     }
 
@@ -104,7 +105,7 @@ public class TAJSUnitTests {
             return this;
         }
 
-        TAJSResultTester toPass() {
+        TAJSResultTester toMaybePass() {
             for (Collection<AssertionResult> values : results.asMap().values()) {
                 for (AssertionResult value : values) {
                     assertTrue(value.result.isSometimesTrue());
@@ -114,10 +115,30 @@ public class TAJSUnitTests {
             return this;
         }
 
-        TAJSResultTester toFail() {
+        TAJSResultTester toMaybeFail() {
             for (Collection<AssertionResult> values : results.asMap().values()) {
                 for (AssertionResult value : values) {
                     assertTrue(value.result.isSometimesFalse());
+                }
+            }
+
+            return this;
+        }
+
+        TAJSResultTester toPass() {
+            for (Collection<AssertionResult> values : results.asMap().values()) {
+                for (AssertionResult value : values) {
+                    assertTrue(value.result == AssertionResult.BooleanResult.DEFINITELY_TRUE);
+                }
+            }
+
+            return this;
+        }
+
+        TAJSResultTester toFail() {
+            for (Collection<AssertionResult> values : results.asMap().values()) {
+                for (AssertionResult value : values) {
+                    assertTrue(value.result == AssertionResult.BooleanResult.DEFINITELY_FALSE);
                 }
             }
 
@@ -128,6 +149,25 @@ public class TAJSUnitTests {
     private TAJSResultTester expect(MultiMap<String, AssertionResult> result) {
         return new TAJSResultTester(result);
     }
+
+    @Test
+    public void driverDoesNotHaveAssertTypeFunctions() throws Exception {
+        String driver = Main.writeFullDriver(benchFromFolder("everythingIsRight")).getRight();
+
+        assertThat(driver, not(containsString("assertType_0")));
+    }
+
+    // TODO: A test with an infinite object structure (try to comment out my fix for that).
+
+    // TODO: A test where an object is expected, but a primitive OR object is encountered
+
+    // TODO: Have some test where an object has a property that is a number (two, one should fail and one should pass).
+
+    // TODO: Have some union that fails.
+
+    // TODO: Construct an example with union-types, where the static analysis with the old assertType functions is unable to prove correctness. But with the new, it is able to prove it.
+
+    // TODO: An example where a property is accessed using a getter.
 
 
     @Test
@@ -154,6 +194,41 @@ public class TAJSUnitTests {
                 .forPath("module")
                 .toPass();
 
+    }
+
+    @Test
+    public void prototypeChains() throws Exception {
+        MultiMap<String, AssertionResult> result = run("prototypeChains");
+
+        assertThat(result.size(), is(4));
+
+        expect(result)
+                .forPath("module.foo.bar")
+                .toPass()
+                .expected("boolean")
+                .got((value) -> value.isMaybeTrue() && !value.isMaybeFalse());
+
+        expect(result)
+                .forPath("module.foo")
+                .toPass();
+
+        expect(result)
+                .forPath("module.foo.foo")
+                .toPass();
+
+        expect(result)
+                .forPath("module")
+                .toPass();
+
+    }
+
+    @Test
+    public void functionAndObject() throws Exception {
+        MultiMap<String, AssertionResult> result = run("functionAndObject");
+
+        expect(result)
+                .forPath("module.foo.foo")
+                .toPass();
     }
 
     /**

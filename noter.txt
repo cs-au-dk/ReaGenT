@@ -1,6 +1,5 @@
 TODO:
-TODO: - Få ts-spec-reader til at exporterer ambient types.
-TODO: - Remove the dependency to explicitly declare the module name.
+TODO: - Få kigget på resterende kald til assert når vi kører under TAJS.
 TODO: - Få testet TypeScript 2.3 features.
 TODO: - Support Symbol (see IterableIterator)
 

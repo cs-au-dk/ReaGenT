@@ -1,6 +1,11 @@
 
 module.exports = {
     foo: function () {
-        return Math.random() * 123; // <- Not a string.
+        // Never returns a string.
+        if (Math.random() > 0.5) {
+            return Math.random(); // number
+        } else {
+            return Math.random() > 0.5; // bool
+        }
     }
 };

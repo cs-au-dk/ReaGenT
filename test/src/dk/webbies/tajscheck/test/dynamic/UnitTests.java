@@ -597,7 +597,7 @@ public class UnitTests {
 
     @Test
     public void testIfDriverIsTooBig() throws Exception {
-        String driver = Main.generateFullDriver(benchFromFolder("unnecessaryBigDriver"));
+        String driver = Main.generateFullDriver(benchFromFolder("unnecessaryBigDriver")).getRight();
 
         System.out.println(driver);
 
@@ -766,7 +766,7 @@ public class UnitTests {
     @Test
     public void thisTypes2() throws Exception {
         // This is just a test that it is able to generate an application, without crashing.
-        String program = Main.generateFullDriver(benchFromFolder("thisTypes2"));
+        String program = Main.generateFullDriver(benchFromFolder("thisTypes2")).getRight();
 
         assertThat(program, is(not(equalTo(""))));
     }
@@ -973,7 +973,7 @@ public class UnitTests {
 
     @Test
     public void genericsAreOptimized2() throws Exception {
-        String driver = Main.generateFullDriver(benchFromFolder("genericsAreOptimized2"));
+        String driver = Main.generateFullDriver(benchFromFolder("genericsAreOptimized2")).getRight();
 
         assertThat(driver, not(containsString("module.CatmullRomCurve3.<>.getPoint().setFromSpherical().multiplyVector3Array(any)")));
         assertThat(driver, not(containsString("module.CatmullRomCurve3.<>.getPoint().setFromSpherical().multiplyVector3Array()")));
@@ -993,7 +993,7 @@ public class UnitTests {
     @Test
     public void genericsAreNotTooOptimized() throws Exception {
         Benchmark bench = benchFromFolder("genericsAreNotTooOptimized", options().setCombineAllUnboundGenerics(true).build());
-        String driver = Main.generateFullDriver(bench);
+        String driver = Main.generateFullDriver(bench).getRight();
         Main.writeFullDriver(bench);
 
         assertThat(driver, not(containsString(TypeParameterIndexer.IS_UNSTRAINED_GENERIC_MARKER)));
@@ -1008,7 +1008,7 @@ public class UnitTests {
 
     @Test
     public void typeofParsing() throws Exception {
-        String driver = Main.generateFullDriver(benchFromFolder("typeofParsing"));
+        String driver = Main.generateFullDriver(benchFromFolder("typeofParsing")).getRight();
 
         assertThat(driver, not(containsString("module.getNewLibraryCopy.prototype")));
 
@@ -1024,7 +1024,7 @@ public class UnitTests {
 
     @Test
     public void interfacesAndObjectsParsing() throws Exception {
-        String driver = Main.generateFullDriver(benchFromFolder("interfacesAndObjectsParsing"));
+        String driver = Main.generateFullDriver(benchFromFolder("interfacesAndObjectsParsing")).getRight();
 
         Main.writeFullDriver(benchFromFolder("interfacesAndObjectsParsing"));
 
@@ -1302,7 +1302,7 @@ public class UnitTests {
     public void notDuplicatedAssertTypeFunctions() throws Exception {
         Main.writeFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", options().setUseAssertTypeFunctions(true).build()));
 
-        String driver = Main.generateFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", options().setUseAssertTypeFunctions(true).build()));
+        String driver = Main.generateFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", options().setUseAssertTypeFunctions(true).build())).getRight();
 
         int matches = StringUtils.countMatches(driver,
                 "(assert, exp, path, testType) {\n" +

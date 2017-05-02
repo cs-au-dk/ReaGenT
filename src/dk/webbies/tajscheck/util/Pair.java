@@ -43,4 +43,8 @@ public class Pair<A, B> {
                 ", 2nd=" + right +
                 '}';
     }
+
+    public static <S, T> dk.brics.tajs.util.Pair<S, T> toTAJS(dk.webbies.tajscheck.util.Pair<S, T> pair) {
+        return dk.brics.tajs.util.Pair.make(pair.left, pair.right);
+    }
 }

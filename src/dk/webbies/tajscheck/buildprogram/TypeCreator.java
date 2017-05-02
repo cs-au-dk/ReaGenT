@@ -1001,24 +1001,24 @@ public class TypeCreator {
             case "Object":
                 return Return(constructType(SpecReader.makeEmptySyntheticInterfaceType(), typeContext));
             case "Number":
-                return Return(newCall(identifier("Number"), constructType(new SimpleType(SimpleTypeKind.Number), typeContext)));
+                return Return(newCall(identifier("Number"), constructType(SimpleType.get(SimpleTypeKind.Number), typeContext)));
             case "Boolean":
-                return Return(newCall(identifier("Boolean"), constructType(new SimpleType(SimpleTypeKind.Boolean), typeContext)));
+                return Return(newCall(identifier("Boolean"), constructType(SimpleType.get(SimpleTypeKind.Boolean), typeContext)));
             case "Function":
                 InterfaceType interfaceWithSimpleFunction = SpecReader.makeEmptySyntheticInterfaceType();
                 Signature callSignature = new Signature();
                 callSignature.setParameters(new ArrayList<>());
                 callSignature.setMinArgumentCount(0);
                 callSignature.setHasRestParameter(true);
-                callSignature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
+                callSignature.setResolvedReturnType(SimpleType.get(SimpleTypeKind.Any));
                 interfaceWithSimpleFunction.getDeclaredCallSignatures().add(callSignature);
                 info.typeNames.put(interfaceWithSimpleFunction, "Function");
                 return Return(constructType(interfaceWithSimpleFunction, typeContext));
             case "RegExp":
-                Expression constructString = constructType(new SimpleType(SimpleTypeKind.String), TypeContext.create(info));
+                Expression constructString = constructType(SimpleType.get(SimpleTypeKind.String), TypeContext.create(info));
                 return Return(newCall(identifier("RegExp"), constructString));
             case "String":
-                return Return(newCall(identifier("String"), constructType(new SimpleType(SimpleTypeKind.String), typeContext)));
+                return Return(newCall(identifier("String"), constructType(SimpleType.get(SimpleTypeKind.String), typeContext)));
             case "HTMLCanvasElement":
                 return AstBuilder.stmtFromString("return document.createElement('canvas')");
             case "HTMLVideoElement":

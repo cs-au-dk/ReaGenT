@@ -7,6 +7,7 @@ import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -123,11 +124,30 @@ public class BenchmarkInfo {
                 ((ClassType) ((ClassInstanceType) type).getClassType()).instance = (ClassInstanceType) type;
             }
 
-            // Collapsing nested unions
+
             if (type instanceof UnionType) {
+                // Collapsing nested unions
                 UnionType union = (UnionType) type;
                 HashSet<UnionType> es = new HashSet<>(Collections.singletonList(union));
                 union.setElements(collectAllUnionElements(union.getElements(), es));
+
+                // boolean are often represented as true | false. Collapse that to just "boolean". (Because otherwise the static analysis just says "maybe", if asked if a bool is "true | false", even though it is definitely one of the two.)
+                boolean hasTrue = false;
+                boolean hasFalse = false;
+                for (Type element : union.getElements()) {
+                    if (element instanceof BooleanLiteral && ((BooleanLiteral)element).getValue()) {
+                        hasTrue = true;
+                    }
+                    if (element instanceof BooleanLiteral && !((BooleanLiteral)element).getValue()) {
+                        hasFalse = true;
+                    }
+                }
+                if (hasTrue && hasFalse) {
+                    ArrayList<Type> elements = new ArrayList<>(union.getElements().stream().filter(Util.not(BooleanLiteral.class::isInstance)).collect(Collectors.toList()));
+                    elements.add(SimpleType.get(SimpleTypeKind.Boolean));
+                    union.setElements(elements);
+                }
+
             }
 
             // An intersection of functions can be represented in a better way (to allow detecting overloads).
@@ -257,7 +277,7 @@ public class BenchmarkInfo {
         // A function that returns a value is assignable to a function type that returns void
         for (Signature signature : signatures) {
             if (signature.getResolvedReturnType() instanceof SimpleType && ((SimpleType) signature.getResolvedReturnType()).getKind() == SimpleTypeKind.Undefined) {
-                signature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Void));
+                signature.setResolvedReturnType(SimpleType.get(SimpleTypeKind.Void));
             }
         }
     }
@@ -329,7 +349,7 @@ public class BenchmarkInfo {
         throw new RuntimeException(type.getClass().getSimpleName());
     }
 
-    public <T> T getAttribute(Class clazz, String key, T defaultValue) {
+    public <T> T getAttribute(Class clazz, String key, Supplier<T> defaultValueSupplier) {
         if (!attributes.containsKey(clazz)) {
             attributes.put(clazz, new HashMap<>());
         }
@@ -337,6 +357,7 @@ public class BenchmarkInfo {
             //noinspection unchecked
             return (T) attributes.get(clazz).get(key);
         } else {
+            T defaultValue = defaultValueSupplier.get();
             attributes.get(clazz).put(key, defaultValue);
             return defaultValue;
         }

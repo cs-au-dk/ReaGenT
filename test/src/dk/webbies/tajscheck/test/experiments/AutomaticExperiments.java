@@ -292,7 +292,7 @@ public class AutomaticExperiments {
 
             Map<String, CoverageResult> out = new HashMap<>();
 
-            String driver = Main.generateFullDriver(bench.withOptions(options -> options.getBuilder().setCheckDepthReport(options.checkDepthUseValue).build()));
+            String driver = Main.generateFullDriver(bench.withOptions(options -> options.getBuilder().setCheckDepthReport(options.checkDepthUseValue).build())).getRight();
 
             CoverageResult firstCoverage = null;
             for (int i = 0; i < runs; i++) {
@@ -347,9 +347,9 @@ public class AutomaticExperiments {
             String SUFFIX = "mb";
             int DECIMALS = 1;
 
-            String fullSize = Util.toFixed(Main.generateFullDriver(bench).length() / DIVIDE_BY, DECIMALS) + SUFFIX;
+            String fullSize = Util.toFixed(Main.generateFullDriver(bench).getRight().length() / DIVIDE_BY, DECIMALS) + SUFFIX;
 
-            double noGenerics = Main.generateFullDriver(bench.withOptions(bench.options.getBuilder().setDisableGenerics(true).build())).length() / DIVIDE_BY;
+            double noGenerics = Main.generateFullDriver(bench.withOptions(bench.options.getBuilder().setDisableGenerics(true).build())).getRight().length() / DIVIDE_BY;
 
             return Arrays.asList(fullSize, Util.toFixed(noGenerics, DECIMALS) + SUFFIX);
         });

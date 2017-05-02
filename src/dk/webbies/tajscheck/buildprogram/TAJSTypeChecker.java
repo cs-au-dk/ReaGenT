@@ -1,0 +1,445 @@
+package dk.webbies.tajscheck.buildprogram;
+
+import dk.au.cs.casa.typescript.types.*;
+import dk.brics.tajs.analysis.PropVarOperations;
+import dk.brics.tajs.analysis.Unsoundness;
+import dk.brics.tajs.lattice.*;
+import dk.brics.tajs.options.Options;
+import dk.brics.tajs.solver.GenericSolver;
+import dk.brics.tajs.util.Pair;
+import dk.webbies.tajscheck.TypeWithContext;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.paser.AST.Expression;
+import dk.webbies.tajscheck.paser.AST.Operator;
+import dk.webbies.tajscheck.paser.AST.Statement;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
+import dk.webbies.tajscheck.util.Util;
+
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static dk.webbies.tajscheck.paser.AstBuilder.*;
+
+/**
+ * Created by erik1 on 02-05-2017.
+ */
+public class TAJSTypeChecker {
+    private final BenchmarkInfo info;
+    private final Map<Integer, Function<Pair<Value, State>, Bool>> callbacks = new HashMap<>();
+    private final PropVarOperations pv;
+    private TAJSTypeChecker(BenchmarkInfo info) {
+        this.info = info;
+        pv = new PropVarOperations(new Unsoundness(Options.get().getUnsoundness(), (n, s, m) -> {}));
+    }
+
+    public static TAJSTypeChecker get(BenchmarkInfo info) {
+        return info.getAttribute(TAJSTypeChecker.class, "instance", () -> new TAJSTypeChecker(info));
+    }
+
+    Expression callback(Function<Pair<Value, State>, Bool> func, Expression exp) {
+        int index = callbacks.size();
+        callbacks.put(index, func);
+        return call(identifier("TAJS_custom"), number(index), exp);
+    }
+
+    // Creates a statement that returns false if the type-check fails. (And we log that it failed!)
+    Statement assertResultingType(TypeWithContext type, Expression exp, String path, String testType) {
+        Function<Pair<Value, State>, Bool> func = (pair) -> checkType(type, pair.getFirst(), pair.getSecond());
+
+        String expected = TypeChecker.createIntersection(type.getType().accept(new TypeChecker.CreateTypeCheckVisitor(info), new TypeChecker.Arg(type.getTypeContext(), 0))).getExpected();
+
+        // assert(cond, path, expected, actual, iteration, descrip);
+        return block(
+                ifThen(
+                        unary(Operator.NOT, call(identifier("assert"), callback(func, exp), string(path), string(expected), exp, identifier("i"), string(testType))),
+                        Return(bool(false))
+                )
+        );
+    }
+
+
+
+
+    // Creates an expression that returns whether the type-check passed or not.
+    Expression checkResultingType(TypeWithContext type, Expression exp, String path) {
+        return callback((pair) -> checkType(type, pair.getFirst(), pair.getSecond()), exp);
+    }
+
+    private Map<Pair<TypeWithContext, Pair<Value, State>>, Bool> typeCheckingCache = new HashMap<>();
+
+    private Bool checkType(TypeWithContext type, Value value, State state) {
+        Pair<TypeWithContext, Pair<Value, State>> key = Pair.make(type, Pair.make(value, state));
+        if (typeCheckingCache.containsKey(key)) {
+            return typeCheckingCache.get(key);
+        }
+        typeCheckingCache.put(key, Value.makeBool(true)); // We assume that this is true, while we go through children (induction hypothesis).
+
+        Bool result = type.getType().accept(new TypeCheckerVisitor(), new Arg(type.getTypeContext(), state, value));
+
+        typeCheckingCache.put(key, result);
+        return result;
+    }
+
+    public BiFunction<GenericSolver.SolverInterface, List<Value>, Value> getCustomFunction() {
+        return (s, args) -> {
+            assert args.size() == 2;
+            //noinspection ConstantConditions
+            int index = args.get(0).getNum().intValue();
+            Value value = args.get(1);
+            pv.setSolverInterface(s);
+            return Value.makeBool(callbacks.get(index).apply(Pair.make(value, (State)s.getState())));
+        };
+    }
+    
+    private static final class Arg {
+        private final TypeContext context;
+        private final State state;
+        private final Value value;
+
+        private Arg(TypeContext context, State state, Value value) {
+            this.context = context;
+            this.state = state;
+            this.value = value;
+        }
+
+        Arg withValue(Value value) {
+            return new Arg(this.context, this.state, UnknownValueResolver.getRealValue(value, this.state));
+        }
+    }
+
+    private final class TypeCheckerVisitor implements TypeVisitorWithArgument<Bool, Arg> {
+
+        @Override
+        public Bool visit(AnonymousType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(ClassType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(GenericType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(InterfaceType t, Arg arg) {
+            Value value = arg.value;
+
+            List<Bool> results = new ArrayList<>();
+
+            if (value.isMaybeOtherThanObject()) {
+                results.add(FALSE());
+            }
+            if (value.isMaybeObject()) {
+                results.add(TRUE());
+                assert !value.getObjectLabels().isEmpty();
+            }
+
+            t.getBaseTypes().forEach(base -> results.add(recurse(base, arg)));
+
+            assert t.getDeclaredStringIndexType() == null;
+            assert t.getDeclaredNumberIndexType() == null;
+
+            if (!t.getDeclaredCallSignatures().isEmpty() || !t.getDeclaredConstructSignatures().isEmpty()) {
+                for (ObjectLabel label : value.getObjectLabels()) {
+                    if (label.getKind() != ObjectLabel.Kind.FUNCTION) {
+                        results.add(FALSE());
+                    } else {
+                        results.add(TRUE());
+                    }
+                }
+            }
+
+            for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
+                Value propValue = pv.readPropertyValue(value.getObjectLabels(), entry.getKey());
+                results.add(recurse(entry.getValue(), arg.withValue(propValue)));
+            }
+
+
+            return worstCase(results);
+        }
+
+        private Bool recurse(Type type, Arg arg) {
+            if (arg.value.isMaybeAbsent() && !arg.value.isMaybePresent()) {
+                return TRUE();
+            }
+            return checkType(new TypeWithContext(type, arg.context), arg.value, arg.state);
+        }
+
+        private Bool join(List<Bool> results) {
+            if (true) {
+                throw new RuntimeException(); // I should not use this.
+            }
+            if (results.isEmpty()) {
+                return TRUE();
+            }
+            boolean any = false;
+            boolean tru = false;
+            boolean fal = false;
+            for (Bool result : results) {
+                if (result.isMaybeAnyBool()) {
+                    any = true;
+                    break;
+                } else if (result.isMaybeTrue()) {
+                    tru = true;
+                } else if (result.isMaybeFalse()) {
+                    fal = true;
+                }
+            }
+            if (any || (fal && tru)) {
+                return Value.makeAnyBool();
+            }
+            if (tru) {
+                return TRUE();
+            }
+            if (fal) {
+                return FALSE();
+            }
+
+            throw new RuntimeException();
+        }
+
+        private Bool boolFromFail(boolean failed, boolean succeeded) {
+            if (failed && succeeded) {
+                return Value.makeAnyBool();
+            }
+            if (succeeded) {
+                return TRUE();
+            }
+            if (failed) {
+                return FALSE();
+            }
+            throw new RuntimeException();
+        }
+
+        private Value FALSE() {
+            return Value.makeBool(false);
+        }
+
+        private Value MAYBE() {
+            return Value.makeAnyBool();
+        }
+
+        private Value TRUE() {
+            return Value.makeBool(true);
+        }
+
+        @Override
+        public Bool visit(ReferenceType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(SimpleType t, Arg arg) {
+            boolean failed = false;
+            boolean succeeded = false;
+            Value value = arg.value;
+
+            switch (t.getKind()) {
+                case Boolean:
+                    if (value.isMaybeAnyBool() || value.isMaybeTrue() || value.isMaybeFalse()) {
+                        succeeded = true;
+                    }
+                    if (value.isMaybeOtherThanBool()) {
+                        failed = true;
+                    }
+                    break;
+                case String:
+                    if (!value.isNotStr()) {
+                        succeeded = true;
+                    }
+                    if (value.isMaybeOtherThanStr()) {
+                        failed = true;
+                    }
+                    break;
+                case Number:
+                    if (!value.isNotNum()) {
+                        succeeded = true;
+                    }
+                    if (value.isMaybeOtherThanNum()) {
+                        failed = true;
+                    }
+                    break;
+
+                default:
+                    throw new RuntimeException(t.getKind().toString());
+            }
+
+            return boolFromFail(failed, succeeded);
+        }
+
+        @Override
+        public Bool visit(TupleType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(UnionType t, Arg arg) {
+            Collection<Value> split = split(arg.value);
+
+            // There are multiple possible values. Each of these values MUST (worstCase) match at least one (bestCase) of the unionTypes.
+            return worstCase(split.stream().map(value -> bestCase(t.getElements().stream().map(type -> recurse(type, arg.withValue(value))).collect(Collectors.toList()))).collect(Collectors.toList()));
+        }
+
+        @SuppressWarnings("Duplicates")
+        private Bool worstCase(List<Bool> cases) {
+            boolean isTrue = false;
+            boolean isMaybe = false;
+            boolean isFalse = false;
+            for (Bool bool : cases) {
+                if (bool.isMaybeFalse()) {
+                    isFalse = true;
+                }
+                if (bool.isMaybeTrue()) {
+                    isTrue = true;
+                }
+                if (bool.isMaybeAnyBool()) {
+                    isMaybe = true;
+                }
+            }
+            if (isFalse) {
+                return FALSE();
+            }
+            if (isMaybe) {
+                return MAYBE();
+            }
+            return TRUE();
+        }
+
+        @SuppressWarnings("Duplicates")
+        private Bool bestCase(List<Bool> cases) {
+            boolean isTrue = false;
+            boolean isMaybe = false;
+            boolean isFalse = false;
+            for (Bool bool : cases) {
+                if (bool.isMaybeFalse()) {
+                    isFalse = true;
+                }
+                if (bool.isMaybeTrue()) {
+                    isTrue = true;
+                }
+                if (bool.isMaybeAnyBool()) {
+                    isMaybe = true;
+                }
+            }
+            if (isTrue) {
+                return TRUE();
+            }
+            if (isMaybe) {
+                return MAYBE();
+            }
+            return FALSE();
+        }
+
+        @Override
+        public Bool visit(UnresolvedType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(TypeParameterType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(StringLiteral t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(BooleanLiteral t, Arg arg) {
+            boolean failed = false;
+            boolean succeeded = false;
+            Value value = arg.value;
+            if (value.isMaybeOtherThanBool()) {
+                failed = true;
+            }
+
+            if (t.getValue()) {
+                if (value.isMaybeFalse()) {
+                    failed = true;
+                }
+                if (value.isMaybeTrue()) {
+                    succeeded = true;
+                }
+            } else {
+                if (value.isMaybeFalse()) {
+                    succeeded = true;
+                }
+                if (value.isMaybeTrue()) {
+                    failed = true;
+                }
+            }
+
+            return boolFromFail(failed, succeeded);
+        }
+
+        @Override
+        public Bool visit(NumberLiteral t, Arg arg) {
+            boolean failed = false;
+            boolean succeeded = false;
+            Value value = arg.value;
+            if (value.isMaybeOtherThanNum()) {
+                failed = true;
+            }
+            if (value.isMaybeNum(t.getValue())) {
+                succeeded = true;
+            }
+            return boolFromFail(failed, succeeded);
+        }
+
+        @Override
+        public Bool visit(IntersectionType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(ClassInstanceType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(ThisType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(IndexType t, Arg arg) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Bool visit(IndexedAccessType t, Arg arg) {
+            throw new RuntimeException();
+        }
+    }
+
+    private Collection<Value> split(Value value) {
+        ArrayList<Value> result = new ArrayList<>();
+        if (!value.isNotNum()) { // if number
+            result.add(value.restrictToNum());
+            value = value.restrictToNotNum();
+        }
+        if (!value.isNotStr()) { // if string
+            result.add(value.restrictToStr());
+            value = value.restrictToNotStr();
+        }
+        if (!value.isNotBool()) { // if bool
+            result.add(value.restrictToBool());
+            value = value.restrictToNotBool();
+        }
+        for (ObjectLabel label : value.getObjectLabels()) {
+            result.add(Value.makeObject(label));
+        }
+        value = value.restrictToNotObject();
+
+        assert !value.isMaybePresent(); // Making sure we got everything.
+
+        return result;
+    }
+}

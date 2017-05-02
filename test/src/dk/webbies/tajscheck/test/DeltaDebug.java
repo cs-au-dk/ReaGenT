@@ -219,19 +219,6 @@ public class DeltaDebug {
         return result.typeErrors.stream().map(OutputParser.TypeError::getPath).filter(str -> str.contains(path)).count() >= 1;
     }
 
-    private static boolean testBiggerWithNoGenerics(Benchmark bench) throws IOException {
-        String driverWithGenerics = Main.generateFullDriver(bench);
-        int sizeWithGenerics = driverWithGenerics.length();
-        String driverWithNoGenerics = Main.generateFullDriver(bench.withOptions(bench.options.getBuilder().setDisableGenerics(true).build()));
-        int sizeWithNoGenerics = driverWithNoGenerics.length();
-        boolean noGenericsSmaller = sizeWithNoGenerics > sizeWithGenerics;
-        if (noGenericsSmaller) {
-            Util.writeFile("test/nogenerics.js", driverWithNoGenerics);
-            Util.writeFile("test/withgenerics.js", driverWithGenerics);
-        }
-        return noGenericsSmaller;
-    }
-
     private static boolean testParsing(Benchmark bench) throws Exception {
         try {
             TestParsing.testFile(bench.jsFile);

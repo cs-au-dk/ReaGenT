@@ -45,6 +45,8 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
 public class CheckUpperBound {
     private BenchmarkInfo info;
 
+    // TODO: Use my custom assertionCalls.
+
     CheckUpperBound(BenchmarkInfo info) {
         this.info = info;
     }
