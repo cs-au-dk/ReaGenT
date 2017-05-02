@@ -178,18 +178,20 @@ public class DeltaDebug {
 
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
-        Benchmark bench = RunBenchmarks.benchmarks.get("Lodash").withOptions(options -> options.getBuilder().setMaxIterationsToRun(10 * 1000).build());
+        Util.alwaysRecreate = true;
+        Benchmark bench = RunBenchmarks.benchmarks.get("Sugar").withOptions(options -> options.getBuilder().setMaxIterationsToRun(1).build());
 //        Benchmark bench = RunBenchmarks.benchmarks.get("Redux");
 //
         String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                return testSoundness(bench);
+                Main.generateFullDriver(bench);
+                return false;
             } catch (NullPointerException e) {
                 return false;
             } catch (RuntimeException e) {
-                return false;
+                return e.getMessage().contains("'forEach' of undefined");
             } catch (Error | Exception e) {
                 e.printStackTrace();
                 return false;

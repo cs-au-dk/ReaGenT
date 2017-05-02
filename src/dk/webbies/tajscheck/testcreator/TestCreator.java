@@ -31,7 +31,6 @@ public class TestCreator {
         if (info.bench.options.onlyInitialize) {
             return new ArrayList<>();
         }
-        String module = info.bench.module;
 
         PriorityQueue<TestQueueElement> queue = new PriorityQueue<>();
 
@@ -42,9 +41,11 @@ public class TestCreator {
         Set<TypeWithContext> seenTopLevel = new HashSet<>();
 
         List<Test> topLevelFunctionTests = new ArrayList<>();
-        topLevelFunctionTests.addAll(addTopLevelFunctionTests(info.typeToTest, module, TypeContext.create(info), visitor, negativeTypesSeen, info.nativeTypes, 0, seenTopLevel));
+        for (Map.Entry<String, Type> userDefinedType : info.userDefinedTypes.entrySet()) {
+            topLevelFunctionTests.addAll(addTopLevelFunctionTests(userDefinedType.getValue(), userDefinedType.getKey(), TypeContext.create(info), visitor, negativeTypesSeen, info.nativeTypes, 0, seenTopLevel));
 
-        queue.add(new TestQueueElement(info.typeToTest, new Arg(module, TypeContext.create(info), 0)));
+            queue.add(new TestQueueElement(userDefinedType.getValue(), new Arg(userDefinedType.getKey(), TypeContext.create(info), 0)));
+        }
 
         Trie pathsToTestTrie = info.bench.pathsToTest != null ? Trie.create(info.bench.pathsToTest) : null;
 

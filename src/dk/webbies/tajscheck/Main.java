@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck;
 
+import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.buildprogram.DriverProgramBuilder;
@@ -61,7 +62,11 @@ public class Main {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
 
         List<Test> tests = new TestCreator(info).createTests();
-        tests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, info, bench.module));
+
+        for (Map.Entry<String, Type> userDefinedType : info.userDefinedTypes.entrySet()) {
+            tests.add(new LoadModuleTest(Main.getRequirePath(bench), userDefinedType.getValue(), info, userDefinedType.getKey()));
+        }
+
 
         Statement program = new DriverProgramBuilder(tests, info).buildDriver(recording);
 
@@ -72,7 +77,9 @@ public class Main {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
 
         List<Test> tests = new TestCreator(info).createTests();
-        tests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, info, bench.module));
+        for (Map.Entry<String, Type> userDefinedType : info.userDefinedTypes.entrySet()) {
+            tests.add(new LoadModuleTest(Main.getRequirePath(bench), userDefinedType.getValue(), info, userDefinedType.getKey()));
+        }
 
         Test[] testsArray = tests.toArray(new Test[]{});
         int prevSize = -1;

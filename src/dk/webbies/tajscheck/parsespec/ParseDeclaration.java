@@ -67,10 +67,15 @@ public class ParseDeclaration {
     public static Map<Type, String> getTypeNamesMap(SpecReader spec) {
         Map<Type, String> typeNames = new HashMap<>();
         markNamedTypes(spec.getNamedTypes(), typeNames);
-        List<SpecReader.NamedType> error = spec.getNamedTypes().stream().filter(named -> named.qName.size() == 1 && named.qName.get(0).equals("Error")).collect(Collectors.toList());
 
         PriorityQueue<Arg> queue = new PriorityQueue<>(Comparator.comparingInt(Arg::getDepth));
         queue.add(new Arg("window", 0, spec.getGlobal()));
+
+        for (SpecReader.NamedType ambient : spec.getAmbientTypes()) {
+            assert ambient.qName.size() == 1;
+            queue.add(new Arg("\"" + ambient.qName.get(0) + "\"", 1, ambient.type));
+        }
+
 
         Set<Type> seen = new HashSet<>();
 

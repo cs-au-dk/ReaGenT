@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
  */
 public class BenchmarkInfo {
     public final Benchmark bench;
-    public final Type typeToTest;
     public final Set<Type> nativeTypes;
     public final FreeGenericsFinder freeGenericsFinder;
     public final Map<Type, String> typeNames;
@@ -22,12 +21,12 @@ public class BenchmarkInfo {
     public final CheckOptions options;
     private SpecReader spec;
     private final Set<Type> globalProperties;
+    public final Map<String, Type> userDefinedTypes;
 
     private final Map<Class<?>, Map<String, Object>> attributes = new HashMap<>();
 
-    private BenchmarkInfo(Benchmark bench, Type typeToTest, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TypeParameterIndexer typeParameterIndexer, Set<Type> globalProperties, SpecReader spec) {
+    private BenchmarkInfo(Benchmark bench, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TypeParameterIndexer typeParameterIndexer, Set<Type> globalProperties, SpecReader spec, Map<String, Type> userDefinedTypes) {
         this.bench = bench;
-        this.typeToTest = typeToTest;
         this.nativeTypes = nativeTypes;
         this.freeGenericsFinder = freeGenericsFinder;
         this.typeNames = typeNames;
@@ -35,6 +34,7 @@ public class BenchmarkInfo {
         this.globalProperties = globalProperties;
         this.options = bench.options;
         this.spec = spec;
+        this.userDefinedTypes = userDefinedTypes;
     }
 
     public SpecReader getSpec() {
@@ -50,9 +50,9 @@ public class BenchmarkInfo {
 
         Map<Type, String> typeNames = ParseDeclaration.getTypeNamesMap(spec);
 
-        Type typeToTest = getTypeToTest(bench, spec, typeNames);
+        applyTypeFixes(bench, spec, typeNames, nativeTypes);
 
-        FreeGenericsFinder freeGenericsFinder = new FreeGenericsFinder(typeToTest);
+        FreeGenericsFinder freeGenericsFinder = new FreeGenericsFinder(spec.getGlobal());
 
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer(bench.options);
 
@@ -64,31 +64,66 @@ public class BenchmarkInfo {
             }
         }).collect(Collectors.toSet());
 
-        return new BenchmarkInfo(bench, typeToTest, nativeTypes, freeGenericsFinder, typeNames, typeParameterIndexer, globalProperties, spec);
+        Map<String, Type> userDefinedTypes = getUserDefinedTypes(bench, spec, emptySpec);
+
+        return new BenchmarkInfo(bench, nativeTypes, freeGenericsFinder, typeNames, typeParameterIndexer, globalProperties, spec, userDefinedTypes);
     }
 
-    private static Type getTypeToTest(Benchmark bench, SpecReader spec, Map<Type, String> typeNames) {
-        Type result = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().get(bench.module);
-
-        if (result == null) {
-            throw new RuntimeException("Module: " + bench.module + " not found in benchmark");
+    private static Map<String, Type> getUserDefinedTypes(Benchmark bench, SpecReader spec, SpecReader emptySpec) {
+        Map<String, Type> userDefinedTypes = new HashMap<>();
+        for (Map.Entry<String, Type> entry : ((InterfaceType) spec.getGlobal()).getDeclaredProperties().entrySet()) {
+            if (((InterfaceType)emptySpec.getGlobal()).getDeclaredProperties().containsKey(entry.getKey())) {
+                continue;
+            }
+            if (entry.getValue() instanceof SimpleType && ((SimpleType) entry.getValue()).getKind() == SimpleTypeKind.Any) {
+                continue;
+            }
+            userDefinedTypes.put(entry.getKey(), entry.getValue());
         }
 
-        // Various fixes, to transform the types into something more consistent (+ workarounds).
-        applyTypeFixes(bench, typeNames, result);
+        if (bench.run_method == Benchmark.RUN_METHOD.NODE && !spec.getAmbientTypes().isEmpty()) {
+            userDefinedTypes.clear();
 
-
-        // Fixing if the top-level export is a class, sometimes we can an interface with a prototype property instead of the actual class.
-        if (result instanceof InterfaceType) {
-            InterfaceType inter = (InterfaceType) result;
-            if (inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size() > 0) {
-                if (inter.getDeclaredProperties().keySet().contains("prototype") && inter.getDeclaredProperties().get("prototype") instanceof ClassType) {
-                    return inter.getDeclaredProperties().get("prototype");
-                }
+            for (SpecReader.NamedType ambient : spec.getAmbientTypes()) {
+                assert ambient.qName.size() == 1;
+                userDefinedTypes.put("\"" + ambient.qName.get(0) + "\"", ambient.type);
             }
         }
 
-        return result;
+        if (bench.run_method == Benchmark.RUN_METHOD.NODE) {
+            assert userDefinedTypes.size() == 1;
+        }
+        return userDefinedTypes;
+    }
+
+    private static void applyTypeFixes(Benchmark bench, SpecReader spec, Map<Type, String> typeNames, Set<Type> nativeTypes) {
+        // Various fixes, to transform the types into something more consistent (+ workarounds).
+        for (Type type : ((InterfaceType) spec.getGlobal()).getDeclaredProperties().values()) {
+            if (nativeTypes.contains(type)) {
+                continue;
+            }
+            applyTypeFixes(bench, typeNames, type);
+        }
+        for (SpecReader.NamedType type : spec.getAmbientTypes()) {
+            applyTypeFixes(bench, typeNames, type.type);
+        }
+
+
+        // Fixing if the top-level export is a class, sometimes we can an interface with a prototype property instead of the actual class.
+        for (Map.Entry<String, Type> entry : new HashMap<>(((InterfaceType) spec.getGlobal()).getDeclaredProperties()).entrySet()) {
+            if (nativeTypes.contains(entry.getValue())) {
+                continue;
+            }
+            if (entry.getValue() instanceof InterfaceType) {
+                InterfaceType inter = (InterfaceType) entry.getValue();
+                if (inter.getDeclaredCallSignatures().size() + inter.getDeclaredConstructSignatures().size() > 0) {
+                    Type result = inter.getDeclaredProperties().get("prototype");
+                    if (inter.getDeclaredProperties().keySet().contains("prototype") && result instanceof ClassType) {
+                        ((InterfaceType) spec.getGlobal()).getDeclaredProperties().put(entry.getKey(), result);
+                    }
+                }
+            }
+        }
     }
 
     private static void applyTypeFixes(Benchmark bench, Map<Type, String> typeNames, Type result) {
@@ -139,22 +174,8 @@ public class BenchmarkInfo {
                         return false;
                     }
                     InterfaceType inter = (InterfaceType) t;
-                    if (!inter.getDeclaredProperties().isEmpty()) {
-                        return false;
-                    }
-                    if (inter.getDeclaredNumberIndexType() != null) {
-                        return false;
-                    }
-                    if (inter.getDeclaredStringIndexType() != null) {
-                        return false;
-                    }
-                    if (!inter.getDeclaredConstructSignatures().isEmpty()) {
-                        return false;
-                    }
-                    if (inter.getDeclaredCallSignatures().isEmpty()) {
-                        return false;
-                    }
-                    return true;
+                    return inter.getDeclaredProperties().isEmpty() && inter.getDeclaredNumberIndexType() == null && inter.getDeclaredStringIndexType() == null && inter.getDeclaredConstructSignatures().isEmpty() && !inter.getDeclaredCallSignatures().isEmpty();
+
                 })) {
                     InterfaceType combinedInter = SpecReader.makeEmptySyntheticInterfaceType();
 
@@ -280,12 +301,11 @@ public class BenchmarkInfo {
     public BenchmarkInfo withBench(Benchmark bench) {
         return new BenchmarkInfo(
                 bench,
-                this.typeToTest,
                 this.nativeTypes,
                 this.freeGenericsFinder,
                 this.typeNames,
                 this.typeParameterIndexer,
-                globalProperties, spec);
+                globalProperties, spec, userDefinedTypes);
     }
 
     public boolean shouldConstructType(Type type) {

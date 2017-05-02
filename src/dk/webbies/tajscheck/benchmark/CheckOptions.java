@@ -10,7 +10,6 @@ public final class CheckOptions {
     public final int checkDepthUseValue;
     public final int checkDepthReport;
     public final int checkDepthForUnions;
-    public final boolean checkHeap;
     public final boolean splitUnions;
     public final int maxIterationsToRun;
     public final boolean disableSizeOptimization;
@@ -35,7 +34,6 @@ public final class CheckOptions {
     private CheckOptions(Builder builder) {
         this.checkDepthUseValue = builder.checkDepthUseValue;
         this.checkDepthForUnions = builder.checkDepthForUnions;
-        this.checkHeap = builder.checkHeap;
         this.splitUnions = builder.splitUnions;
         this.maxIterationsToRun = builder.maxIterationsToRun;
         this.maxTime = builder.maxTime;
@@ -84,7 +82,6 @@ public final class CheckOptions {
         private int checkDepthUseValue = 0; // How deeply should objects be checked, when seeing if the value should be used.
         private int checkDepthReport = 2; // How deeply should objects be checked when seeing if an error should be reported. (The above will also report warnings).
         private int checkDepthForUnions = 1; // How deep should the checking be, when determining which
-        private boolean checkHeap = false; // Test the loaded module, including all its properties, recursively (no function calls).
         private boolean splitUnions = true; // Split function-signatures, such that no function-signature has a union-type as parameter, they are instead distinct signatures (explodes size of some larger benchmarks, but can be useful for more precise warnings).
         private int maxIterationsToRun = -1; // The maximum number of iteration to run in the loop, before returning
         private int maxTime = 10 * 1000; // The maximum time to run (the driver tries to exist gracefully, but 10 seconds after the timeout, it is forcefully shutdown).
@@ -205,11 +202,6 @@ public final class CheckOptions {
 
         public Builder setCheckDepthForUnions(int checkDepthForUnions) {
             this.checkDepthForUnions = checkDepthForUnions;
-            return this;
-        }
-
-        public Builder setCheckHeap(boolean checkHeap) {
-            this.checkHeap = checkHeap;
             return this;
         }
 

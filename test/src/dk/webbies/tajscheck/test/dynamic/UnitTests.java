@@ -42,19 +42,19 @@ public class UnitTests {
     }
 
     public static Benchmark benchFromFolder(String folderName) {
-        return benchFromFolder(folderName, "module");
-    }
-
-    public static Benchmark benchFromFolder(String folderName, String moduleName) {
-        return benchFromFolder(folderName, options().build(), moduleName);
+        return benchFromFolder(folderName, options().build());
     }
 
     private static Benchmark benchFromFolder(String folderName, CheckOptions options) {
-        return benchFromFolder(folderName, options, "module");
+        return benchFromFolder(folderName, options, Benchmark.RUN_METHOD.NODE);
     }
 
-    private static Benchmark benchFromFolder(String folderName, CheckOptions options, String moduleName) {
-        return new Benchmark("unit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", moduleName, Benchmark.RUN_METHOD.NODE, options);
+    private static Benchmark benchFromFolder(String folderName, Benchmark.RUN_METHOD run_method) {
+        return benchFromFolder(folderName, options().build(), run_method);
+    }
+
+    private static Benchmark benchFromFolder(String folderName, CheckOptions options, Benchmark.RUN_METHOD run_method) {
+        return new Benchmark("unit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", run_method, options);
     }
 
     private String runDriver(String folderName, String seed) throws Exception {
@@ -170,8 +170,14 @@ public class UnitTests {
         }
 
         ParseResultTester expected(Matcher<String> type) {
+            boolean matched = false;
             for (TypeError result : results) {
-                assertThat(result.expected, is(type));
+                matched |= type.matches(result.expected);
+            }
+            this.results = this.results.stream().filter(res -> type.matches(res.expected)).collect(Collectors.toList());
+
+            if (!matched) {
+                assertThat("Expected to find something of " + type.toString(), false);
             }
 
             return this;
@@ -193,19 +199,27 @@ public class UnitTests {
     }
 
     private RunResult run(String name) throws Exception {
-        return parseDriverResult(runDriver(name, "foo"));
+        return run(benchFromFolder(name));
     }
 
     private RunResult run(String name, String seed) throws Exception {
-        return parseDriverResult(runDriver(name, seed));
+        return run(benchFromFolder(name), seed);
+    }
+
+    private RunResult run(String name, CheckOptions options) throws Exception {
+        return run(benchFromFolder(name, options));
+    }
+
+    private RunResult run(Benchmark benchmark) throws Exception {
+        return run(benchmark, "foo");
+    }
+
+    private RunResult run(String name, CheckOptions options, String seed) throws Exception {
+        return run(benchFromFolder(name, options), seed);
     }
 
     private RunResult run(Benchmark benchmark, String seed) throws Exception {
         return parseDriverResult(runDriver(benchmark, seed));
-    }
-
-    private RunResult run(String name, CheckOptions options, String seed) throws Exception {
-        return parseDriverResult(runDriver(name, options, seed));
     }
 
     @Test
@@ -250,7 +264,7 @@ public class UnitTests {
 
     @Test
     public void complexUnion() throws Exception {
-        RunResult result = run("complexUnion", "foo");
+        RunResult result = run("complexUnion");
 
         expect(result)
                 .forPath("module.foo().[union2]()")
@@ -261,7 +275,7 @@ public class UnitTests {
 
     @Test
     public void optionalParameters() throws Exception {
-        RunResult result = run("optionalParameters", "foo");
+        RunResult result = run("optionalParameters");
 
         expect(result)
                 .forPath("module.foo(boolean, undefined, undefined)", "module.foo(boolean, string, undefined)")
@@ -271,7 +285,7 @@ public class UnitTests {
 
     @Test
     public void simpleOverloads() throws Exception {
-        RunResult result = run("simpleOverloads", "foo");
+        RunResult result = run("simpleOverloads");
 
         assertThat(result.typeErrors.size(), is(0));
     }
@@ -378,7 +392,7 @@ public class UnitTests {
 
     @Test
     public void arrayType() throws Exception {
-        RunResult result = run(benchFromFolder("arrayType", options().setCheckDepthUseValue(2).build()), "foo");
+        RunResult result = run(benchFromFolder("arrayType", options().setCheckDepthUseValue(2).build()));
 
         expect(result)
                 .forPath("module.foo()")
@@ -396,7 +410,7 @@ public class UnitTests {
 
     @Test
     public void numberIndexer() throws Exception {
-        RunResult result = run("numberIndexer", "foo");
+        RunResult result = run("numberIndexer");
 
         assertThat(result.typeErrors.size(), is(2));
 
@@ -418,7 +432,7 @@ public class UnitTests {
                 .setCheckDepthReport(1)
                 .build();
 
-        RunResult result = run("numberIndexer", options, "foo");
+        RunResult result = run("numberIndexer", options);
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -430,7 +444,7 @@ public class UnitTests {
 
     @Test
     public void stringIndexer() throws Exception {
-        RunResult result = run("stringIndexer", options().setCheckDepthReport(0).build(), "foo");
+        RunResult result = run("stringIndexer", options().setCheckDepthReport(0).build());
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -462,12 +476,12 @@ public class UnitTests {
 
     @Test
     public void simpleClass() throws Exception {
-        run("simpleClass", "foo"); // Just pass the sanity check.
+        run("simpleClass"); // Just pass the sanity check.
     }
 
     @Test
     public void keyOf() throws Exception {
-        RunResult result = run("keyOf", "foo");
+        RunResult result = run("keyOf");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -479,7 +493,7 @@ public class UnitTests {
 
     @Test
     public void indexedAccess() throws Exception {
-        RunResult result = run("indexedAccess", "foo");
+        RunResult result = run("indexedAccess");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -503,7 +517,7 @@ public class UnitTests {
 
     @Test
     public void differentSizeOverloads() throws Exception {
-        RunResult result = run("differentSizeOverloads", "foo");
+        RunResult result = run("differentSizeOverloads");
 
         assertThat(result.typeErrors.size(), is(0));
         assertThat(result.errors.size(), is(0));
@@ -511,7 +525,7 @@ public class UnitTests {
 
     @Test
     public void complexOverloads() throws Exception {
-        RunResult result = run("complexOverloads", "foo");
+        RunResult result = run("complexOverloads");
 
         assertThat(result.typeErrors.size(), is(0));
         assertThat(result.errors.size(), is(0));
@@ -519,7 +533,7 @@ public class UnitTests {
 
     @Test
     public void overloadsWithOptionalParameters() throws Exception {
-        RunResult result = run("overloadsWithOptionalParameters", "foo");
+        RunResult result = run("overloadsWithOptionalParameters");
 
         assertThat(result.typeErrors.size(), is(0));
         assertThat(result.errors.size(), is(0));
@@ -531,7 +545,7 @@ public class UnitTests {
                 .setCheckDepthForUnions(2)
                 .build();
 
-        RunResult result = run("deepUnion", options, "foo");
+        RunResult result = run("deepUnion", options);
 
         expect(result)
                 .forPath("module.foo()")
@@ -541,7 +555,7 @@ public class UnitTests {
 
     @Test
     public void typeInArray() throws Exception {
-        RunResult result = run("typeInArray", "foo");
+        RunResult result = run("typeInArray");
 
         expect(result)
                 .forPath("module.foo().<>.[numberIndexer].bar.baz")
@@ -551,7 +565,7 @@ public class UnitTests {
 
     @Test
     public void genRestArgs() throws Exception {
-        RunResult result = run("genRestArgs", "foo");
+        RunResult result = run("genRestArgs");
 
         expect(result)
                 .forPath("Foo.[restArgs]")
@@ -561,7 +575,7 @@ public class UnitTests {
 
     @Test
     public void genRestArgsWithOverloads() throws Exception {
-        RunResult result = run("genRestArgsWithOverloads", "foo");
+        RunResult result = run("genRestArgsWithOverloads");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -573,7 +587,7 @@ public class UnitTests {
 
     @Test
     public void testRestArgs() throws Exception {
-        RunResult result = run("testRestArgs", "foo");
+        RunResult result = run("testRestArgs");
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -581,14 +595,14 @@ public class UnitTests {
 
     @Test
     public void propertyWithUnderscore() throws Exception {
-        RunResult result = run("propertyWithUnderscore", "foo");
+        RunResult result = run("propertyWithUnderscore");
 
         assertThat(result.typeErrors.size(), is(0));
     }
 
     @Test
     public void myFixedMomentHasNoError() throws Exception {
-        Benchmark benchmark = new Benchmark("fixedMoment", ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", "moment", NODE, options().setSplitUnions(false).build()).withOptions(CheckOptions::errorFindingOptions);
+        Benchmark benchmark = new Benchmark("fixedMoment", ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", NODE, options().setSplitUnions(false).build()).withOptions(CheckOptions::errorFindingOptions);
 
         RunResult result = run(benchmark, null);
 
@@ -607,7 +621,7 @@ public class UnitTests {
 
     @Test
     public void genericClass3() throws Exception {
-        RunResult result = run("genericClass3", "foo");
+        RunResult result = run("genericClass3");
 
         expect(result)
                 .forPath("module.createNumberContainer().<>.value")
@@ -617,7 +631,7 @@ public class UnitTests {
 
     @Test
     public void genericClass4() throws Exception {
-        RunResult result = run("genericClass4", "foo");
+        RunResult result = run("genericClass4");
 
         assertThat(result.errors.size(), is(0));
 
@@ -742,7 +756,7 @@ public class UnitTests {
 
     @Test
     public void classesAndNamespaces() throws Exception {
-        RunResult result = run("classesAndNamespaces", "foo");
+        RunResult result = run("classesAndNamespaces");
 
         assertThat(result.typeErrors.size(), is(0));
         assertThat(result.errors.size(), is(0));
@@ -773,14 +787,14 @@ public class UnitTests {
 
     @Test
     public void complexThisTypes() throws Exception {
-        RunResult result = run("complexThisTypes", "foo");
+        RunResult result = run("complexThisTypes");
 
         assertThat(result.typeErrors.size(), is(greaterThan(0)));
     }
 
     @Test
     public void thisTypesInInterfaces() throws Exception {
-        RunResult result = run("thisTypesInInterfaces", options().setCheckDepthReport(0).setCheckDepthUseValue(0).build(), "foo");
+        RunResult result = run("thisTypesInInterfaces", options().setCheckDepthReport(0).setCheckDepthUseValue(0).build());
 
         expect(result)
                 .forPath("module.baz().bar")
@@ -827,7 +841,7 @@ public class UnitTests {
 
     @Test
     public void thisTypesInInterfaces2() throws Exception {
-        RunResult result = run("thisTypesInInterfaces2", "foo");
+        RunResult result = run("thisTypesInInterfaces2");
 
         assertThat(result.typeErrors.size(), is(greaterThan(0)));
     }
@@ -839,35 +853,35 @@ public class UnitTests {
 
     @Test
     public void thisTypesAreOptimized() throws Exception {
-        RunResult result = run("thisTypesAreOptimized", options().setCheckDepthUseValue(0).setCheckDepthReport(0).build(), "foo");
+        RunResult result = run("thisTypesAreOptimized", options().setCheckDepthUseValue(0).setCheckDepthReport(0).build());
 
         assertThat(result.typeErrors.size(), is(1));
     }
 
     @Test
     public void extendsArray() throws Exception {
-        RunResult result = run("extendsArray", "foo");
+        RunResult result = run("extendsArray");
 
         assertThat(result.typeErrors.size(), is(0));
     }
 
     @Test
     public void extendsArray2() throws Exception {
-        RunResult result = run("extendsArray2", "foo");
+        RunResult result = run("extendsArray2");
 
         assertThat(result.typeErrors.size(), is(0));
     }
 
     @Test
     public void staticFieldsInheritedInClass() throws Exception {
-        RunResult result = run("staticFieldsInheritedInClass", "foo");
+        RunResult result = run("staticFieldsInheritedInClass");
 
         assertThat(result.typeErrors.size(), is(0)); // It actually contains an error, according to the TypeScript language, it is just an error we choose not to check for.
     }
 
     @Test
     public void intersectionTypes() throws Exception {
-        RunResult result = run("intersectionTypes", "foo");
+        RunResult result = run("intersectionTypes");
 
         expect(result)
                 .forPath("module.foo(intersection)")
@@ -907,14 +921,14 @@ public class UnitTests {
 
     @Test
     public void genericsBustStackRuntime() throws Exception {
-        RunResult result = run("genericsBustStackRuntime", "foo");
+        RunResult result = run("genericsBustStackRuntime");
 
         assertThat(result.typeErrors.size(), is(greaterThan(0)));
     }
 
     @Test
     public void intersectionWithFunction() throws Exception {
-        RunResult result = run(benchFromFolder("intersectionWithFunction", options().setConstructAllTypes(true).build()).withRunMethod(BOOTSTRAP), "foo");
+        RunResult result = run(benchFromFolder("intersectionWithFunction", options().setConstructAllTypes(true).build()).withRunMethod(BOOTSTRAP));
 
         assertThat(result.typeErrors.size(), is(0));
         assertThat(result.errors, everyItem(is(equalTo("RuntimeError: Cannot construct this IntersectionType")))); // <- this happens, it is ok, i cannot at runtime construct a type which is the intersection of two types.
@@ -922,7 +936,7 @@ public class UnitTests {
 
     @Test
     public void extendsArray3() throws Exception {
-        RunResult result = run("extendsArray3", "foo");
+        RunResult result = run("extendsArray3");
 
         assertThat(result.typeErrors.size(), is(equalTo(3)));
 
@@ -934,14 +948,14 @@ public class UnitTests {
 
     @Test
     public void extendsArray4() throws Exception {
-        RunResult result = run("extendsArray4", "foo");
+        RunResult result = run("extendsArray4");
 
         assertThat(result.typeErrors.size(), is(0));
     }
 
     @Test
     public void unboundGenericsAreNotDuplicated() throws Exception {
-        RunResult result = run("unboundGenericsAreNotDuplicated", options().setCheckDepthReport(0).build(), "foo");
+        RunResult result = run("unboundGenericsAreNotDuplicated", options().setCheckDepthReport(0).build());
 
         assertThat(result.typeErrors.size(), is(lessThanOrEqualTo(1)));
 
@@ -954,7 +968,7 @@ public class UnitTests {
 
     @Test
     public void wrongSignaturePropagates() throws Exception {
-        RunResult result = run("wrongSignaturePropagates", "foo");
+        RunResult result = run("wrongSignaturePropagates");
 
         expect(result)
                 .forPath("module.foo.[arg0].[arg0]")
@@ -966,7 +980,7 @@ public class UnitTests {
 
     @Test
     public void thisTypesAreOptimized2() throws Exception {
-        RunResult result = run("thisTypesAreOptimized2", options().setConstructAllTypes(false).build(), "foo");
+        RunResult result = run("thisTypesAreOptimized2", options().setConstructAllTypes(false).build());
 
         assertThat(result.typeErrors.size(), is(1));
     }
@@ -1001,7 +1015,7 @@ public class UnitTests {
 
     @Test
     public void classAndClassInstances() throws Exception {
-        RunResult result = run("classAndClassInstances", "foo");
+        RunResult result = run("classAndClassInstances");
 
         assertThat(result.typeErrors.size(), is(0));
     }
@@ -1016,7 +1030,7 @@ public class UnitTests {
 
     @Test
     public void testClass() throws Exception {
-        RunResult result = run("testClass", "foo");
+        RunResult result = run("testClass");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1034,14 +1048,14 @@ public class UnitTests {
 
     @Test
     public void undefinedOnObject() throws Exception {
-        RunResult result = run("undefinedOnObject", "foo");
+        RunResult result = run("undefinedOnObject");
 
         assertThat(result.typeErrors.size(), is(0));
     }
 
     @Test
     public void namespacesAndClassWithNestedClass() throws Exception {
-        RunResult result = run("namespacesAndClassWithNestedClass", "foo");
+        RunResult result = run("namespacesAndClassWithNestedClass");
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -1049,7 +1063,7 @@ public class UnitTests {
 
     @Test
     public void complexGenerics2() throws Exception {
-        RunResult result = run("complexGenerics2", "foo");
+        RunResult result = run("complexGenerics2");
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -1057,7 +1071,7 @@ public class UnitTests {
 
     @Test
     public void canFindErrorsEvenWhenTimeout() throws Exception {
-        RunResult result = run(benchFromFolder("canFindErrorsEvenWhenTimeout", options().setMaxTime(5 * 1000).build()), "foo");
+        RunResult result = run(benchFromFolder("canFindErrorsEvenWhenTimeout", options().setMaxTime(5 * 1000).build()));
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1065,7 +1079,7 @@ public class UnitTests {
 
     @Test
     public void canFindErrorsEvenWhenTimeoutChrome() throws Exception {
-        RunResult result = run(benchFromFolder("canFindErrorsEvenWhenTimeoutChrome", options().setMaxTime(5 * 1000).build()).withRunMethod(BROWSER), "foo");
+        RunResult result = run(benchFromFolder("canFindErrorsEvenWhenTimeoutChrome", options().setMaxTime(5 * 1000).build()).withRunMethod(BROWSER));
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1075,7 +1089,7 @@ public class UnitTests {
     public void findSimpleErrorChrome() throws Exception {
         long startTime = System.currentTimeMillis();
 
-        RunResult result = run(benchFromFolder("findSimpleErrorChrome", options().setMaxTime(60 * 1000).build()).withRunMethod(BROWSER), "foo");
+        RunResult result = run(benchFromFolder("findSimpleErrorChrome", options().setMaxTime(60 * 1000).build()).withRunMethod(BROWSER));
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1090,7 +1104,7 @@ public class UnitTests {
     public void findSimpleErrorChromeWithErrors() throws Exception {
         long startTime = System.currentTimeMillis();
 
-        RunResult result = run(benchFromFolder("findSimpleErrorChromeWithErrors", options().setMaxTime(60 * 1000).build()).withRunMethod(BROWSER), "foo");
+        RunResult result = run(benchFromFolder("findSimpleErrorChromeWithErrors", options().setMaxTime(60 * 1000).build()).withRunMethod(BROWSER));
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1103,9 +1117,9 @@ public class UnitTests {
 
     @Test
     public void classProperties() throws Exception {
-        RunResult result = run("classProperties", options().setConstructAllTypes(true).build(), "foo");
+        RunResult result = run("classProperties", options().setConstructAllTypes(true).setCheckDepthReport(0).build());
 
-        assertThat(result.typeErrors.size(), is(2)); // The tests are in the .js file.
+        assertThat(result.typeErrors.size(), is(3)); // The tests are in the .js file.
 
         expect(result)
                 .forPath("module.isCalled(class)")
@@ -1113,28 +1127,33 @@ public class UnitTests {
                 .got(JSON, "false");
 
         expect(result)
-                .forPath("Class")
+                .forPath("module.Class")
                 .expected("A valid overload")
                 .got(JSON, "[true]");
+
+        expect(result)
+                .forPath("module.Class")
+                .expected("a constructor")
+                .got(STRING, "undefined");
     }
 
     @Test
     public void booleans() throws Exception {
-        RunResult result = run("booleans", "foo");
+        RunResult result = run("booleans");
 
         assertThat(result.typeErrors.size(), is(0));
     }
 
     @Test
     public void tupleSizes() throws Exception {
-        RunResult result = run("tupleSizes", "foo");
+        RunResult result = run("tupleSizes");
 
         assertThat(result.typeErrors.size(), is(0));
     }
 
     @Test
     public void complexThisTypes3() throws Exception {
-        RunResult result = run("complexThisTypes3", options().setCheckDepthUseValue(2).build(), "foo");
+        RunResult result = run("complexThisTypes3", options().setCheckDepthUseValue(2).build());
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -1142,7 +1161,7 @@ public class UnitTests {
 
     @Test
     public void staticFields() throws Exception {
-        RunResult result = run("staticFields", "foo");
+        RunResult result = run("staticFields");
 
         assertThat(result.typeErrors.size(), is(2));
 
@@ -1156,7 +1175,7 @@ public class UnitTests {
 
     @Test
     public void voidReturnCanBeAnything() throws Exception {
-        RunResult result = run("voidReturnCanBeAnything", "foo");
+        RunResult result = run("voidReturnCanBeAnything");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1172,7 +1191,7 @@ public class UnitTests {
 
     @Test
     public void genericClassFeedback() throws Exception {
-        RunResult result = run("genericClassFeedback", "foo");
+        RunResult result = run("genericClassFeedback");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1184,7 +1203,7 @@ public class UnitTests {
 
     @Test
     public void genericClassFeedbackWithConstraint() throws Exception {
-        RunResult result = run("genericClassFeedbackWithConstraint", "foo");
+        RunResult result = run("genericClassFeedbackWithConstraint");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1196,18 +1215,18 @@ public class UnitTests {
 
     @Test
     public void genericInterfaceFeedback() throws Exception {
-        RunResult result = run("genericInterfaceFeedback", "foo");
+        RunResult result = run("genericInterfaceFeedback");
 
         assertThat(result.typeErrors.size(), is(1));
     }
 
     @Test
     public void canWritePrimitives() throws Exception {
-        RunResult resultNoWrite = run("canWritePrimitives", options().setWritePrimitives(false).build(), "foo");
+        RunResult resultNoWrite = run("canWritePrimitives", options().setWritePrimitives(false).build());
 
         assertThat(resultNoWrite.typeErrors.size(), is(0));
 
-        RunResult resultWithWrite = run("canWritePrimitives", options().setWritePrimitives(true).build(), "foo");
+        RunResult resultWithWrite = run("canWritePrimitives", options().setWritePrimitives(true).build());
 
         assertThat(resultWithWrite.typeErrors.size(), is(1));
 
@@ -1219,7 +1238,7 @@ public class UnitTests {
 
     @Test
     public void canWriteComplex() throws Exception {
-        RunResult resultNoWrite = run("canWriteComplex", "foo");
+        RunResult resultNoWrite = run("canWriteComplex");
 
         assertThat(resultNoWrite.typeErrors.size(), is(0));
 
@@ -1238,7 +1257,7 @@ public class UnitTests {
 
     @Test
     public void noIterations() throws Exception {
-        RunResult result = run("noIterations", options().setMaxIterationsToRun(0).build(), "foo");
+        RunResult result = run("noIterations", options().setMaxIterationsToRun(0).build());
 
         assertThat(result.typeErrors.size(), is(0));
     }
@@ -1247,7 +1266,7 @@ public class UnitTests {
     public void browserCoverage() throws Exception {
         Benchmark bench = benchFromFolder("browserCoverage").withRunMethod(BROWSER);
 
-        RunResult result = run(bench, "foo");
+        RunResult result = run(bench);
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -1261,7 +1280,7 @@ public class UnitTests {
     public void browserCoverageTimeout() throws Exception {
         Benchmark bench = benchFromFolder("browserCoverageTimeout", options().setMaxTime(10 * 1000).setMaxIterationsToRun(-1).build()).withRunMethod(BROWSER);
 
-        RunResult result = run(bench, "foo");
+        RunResult result = run(bench);
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -1276,7 +1295,7 @@ public class UnitTests {
     public void nodeCoverage() throws Exception {
         Benchmark bench = benchFromFolder("nodeCoverage").withOptions(options -> options.getBuilder().setMaxIterationsToRun(1).build());
 
-        RunResult result = run(bench, "foo");
+        RunResult result = run(bench);
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -1317,7 +1336,7 @@ public class UnitTests {
 
     @Test
     public void combinedShallowDeepChecking() throws Exception {
-        RunResult result = run("combinedShallowDeepChecking", "foo");
+        RunResult result = run("combinedShallowDeepChecking");
 
         expect(result)
                 .forPath("module.K")
@@ -1339,7 +1358,7 @@ public class UnitTests {
 
     @Test
     public void infiniteGenerics() throws Exception {
-        RunResult result = run("infiniteGenerics", "foo");
+        RunResult result = run("infiniteGenerics");
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1351,7 +1370,7 @@ public class UnitTests {
 
     @Test
     public void firstMatchPolicy() throws Exception {
-        RunResult result = run("firstMatchPolicy", "foo");
+        RunResult result = run("firstMatchPolicy");
 
         assertThat(result.typeErrors.size(), is(0));
     }
@@ -1363,11 +1382,11 @@ public class UnitTests {
     @Test
     public void genericsSplit() throws Exception {
         // Combine generics, find the error.
-        RunResult result = run("genericsSplit", options().setCombineAllUnboundGenerics(true).build(), "foo");
+        RunResult result = run("genericsSplit", options().setCombineAllUnboundGenerics(true).build());
         assertThat(result.typeErrors.size(), is(1));
 
         // Not combining, error remain unfound
-        result = run("genericsSplit", options().setCombineAllUnboundGenerics(false).build(), "foo");
+        result = run("genericsSplit", options().setCombineAllUnboundGenerics(false).build());
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -1375,7 +1394,7 @@ public class UnitTests {
 
     @Test
     public void firstOrderFunctions() throws Exception {
-        RunResult result = run("firstOrderFunctions", "foo");
+        RunResult result = run("firstOrderFunctions");
 
         expect(result)
                 .forPath("module.time.[arg1].[arg0]")
@@ -1386,7 +1405,7 @@ public class UnitTests {
 
     @Test
     public void basicExample() throws Exception {
-        RunResult result = run("basicExample", options().setCheckDepthReport(0).build(), "foo");
+        RunResult result = run("basicExample", options().setCheckDepthReport(0).build());
 
         assertThat(result.typeErrors.size(), is(1));
 
@@ -1402,7 +1421,7 @@ public class UnitTests {
 
     @Test
     public void higherOrderFunctions() throws Exception {
-        RunResult result = run("higherOrderFunctions", "foo");
+        RunResult result = run("higherOrderFunctions");
 
         expect(result)
                 .forPath("module.twice.[arg1].[arg0]")
@@ -1413,7 +1432,7 @@ public class UnitTests {
 
     @Test
     public void genericExtendMethod() throws Exception {
-        RunResult result = run("genericExtendMethod", options().setCombineAllUnboundGenerics(false).build(), "foo");
+        RunResult result = run("genericExtendMethod", options().setCombineAllUnboundGenerics(false).build());
 
         assertThat(result.typeErrors.size(), is(0));
 
@@ -1421,7 +1440,7 @@ public class UnitTests {
 
     @Test
     public void basicMemomizeExample() throws Exception {
-        RunResult result = run(benchFromFolder("basicMemomizeExample", "async"), "foo");
+        RunResult result = run(benchFromFolder("basicMemomizeExample"));
 
         assertThat(result.typeErrors.size(), is(0));
     }
@@ -1429,7 +1448,7 @@ public class UnitTests {
     @Test
     public void unsoundSiblings() throws Exception {
         CheckOptions options = options().setCheckDepthUseValue(2).build();
-        RunResult result = parseDriverResult(runDriver(benchFromFolder("unsoundSiblings", options, "Box2D"), "foo", true));
+        RunResult result = parseDriverResult(runDriver(benchFromFolder("unsoundSiblings", options), "foo", true));
 
         assertThat(result.typeErrors.size(), is(greaterThanOrEqualTo(1)));
     }
@@ -1438,9 +1457,9 @@ public class UnitTests {
     @Ignore // Fails because Symbol. After this, construct an example where something beneath a symbol prop access fails.
     public void generators() throws Exception {
         String folderName = "generators";
-        Benchmark bench = new Benchmark("unit-generators", ParseDeclaration.Environment.ES6DOM, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", "module", Benchmark.RUN_METHOD.NODE, options().setMaxIterationsToRun(1000).build());
+        Benchmark bench = new Benchmark("unit-generators", ParseDeclaration.Environment.ES6DOM, "test/unit/" + folderName + "/implementation.js", "test/unit/" + folderName + "/declaration.d.ts", Benchmark.RUN_METHOD.NODE, options().setMaxIterationsToRun(1000).build());
 
-        RunResult result = run(bench, "foo");
+        RunResult result = run(bench);
 
         assertThat(result.typeErrors.size(), is(0));
     }
@@ -1454,5 +1473,47 @@ public class UnitTests {
         } finally {
             Util.isDeltaDebugging = false;
         }
+    }
+
+    @Test
+    public void ambient() throws Exception {
+        RunResult result = run("ambient");
+
+        expect(result)
+                .forPath("\"foo\".add(1, 2)")
+                .expected("3.0")
+                .got(STRING, "4");
+    }
+
+    @Test
+    public void browserMultipleProperties() throws Exception {
+        RunResult result = run(benchFromFolder("browserMultipleProperties", BROWSER));
+
+        assertThat(result.typeErrors.size(), is(2));
+
+        expect(result)
+                .forPath("foo()")
+                .expected("true")
+                .got(STRING, "false");
+
+        expect(result)
+                .forPath("bar()")
+                .expected("true")
+                .got(STRING, "false");
+
+    }
+
+    @Test
+    public void ambient2() throws Exception {
+        RunResult result = run("ambient2");
+
+        assertThat(result.typeErrors.size(), is(greaterThan(0)));
+    }
+
+    @Test
+    public void ambient3() throws Exception {
+        RunResult result = run("ambient2");
+
+        assertThat(result.typeErrors.size(), is(greaterThanOrEqualTo(2)));
     }
 }

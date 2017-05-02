@@ -419,6 +419,7 @@ public class TypeChecker {
                     case "CSSRuleList":
                     case "Selection":
                     case "Performance":
+                    case "SVGImageElement":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "StyleMedia":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(expFromString("window.styleMedia.__proto__.constructor")), name));
@@ -469,6 +470,9 @@ public class TypeChecker {
                     case "SpeechSynthesis":
                     case "SpeechSynthesisVoice":
                     case "MSCredentials":
+                    case "EventListenerOptions":
+                    case "ImageBitmap":
+                    case "ImageBitmapOptions":
                         arg = arg.withDepth(1);
                         break; // Testing manually.
                     default:

@@ -15,22 +15,20 @@ public class Benchmark {
     public final ParseDeclaration.Environment environment;
     public final String jsFile;
     public final String dTSFile;
-    public final String module;
     public final Set<String> pathsToTest;
     public final RUN_METHOD run_method;
     public final CheckOptions options;
     private final List<Benchmark> dependencies;
 
-    public Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, RUN_METHOD load_method, CheckOptions options) {
-        this(name, environment, jsFile, dTSFile, module, load_method, null, options, new ArrayList<>());
+    public Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, CheckOptions options) {
+        this(name, environment, jsFile, dTSFile, load_method, null, options, new ArrayList<>());
     }
 
-    private Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, String module, RUN_METHOD load_method, Set<String> pathsToTest, CheckOptions options, List<Benchmark> dependencies) {
+    private Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, Set<String> pathsToTest, CheckOptions options, List<Benchmark> dependencies) {
         this.name = name;
         this.environment = environment;
         this.jsFile = jsFile;
         this.dTSFile = dTSFile;
-        this.module = module;
         this.pathsToTest = pathsToTest;
         this.run_method = load_method;
         this.options = options;
@@ -42,7 +40,6 @@ public class Benchmark {
                 name, this.environment,
                 this.jsFile,
                 this.dTSFile,
-                this.module,
                 run_method,
                 Collections.unmodifiableSet(pathsToTest.stream().map(TestCreator::simplifyPath).collect(Collectors.toSet())),
                 options, dependencies);
@@ -53,7 +50,6 @@ public class Benchmark {
                 name, this.environment,
                 this.jsFile,
                 this.dTSFile,
-                this.module,
                 method,
                 this.pathsToTest,
                 options, dependencies);
@@ -88,7 +84,6 @@ public class Benchmark {
                 name, this.environment,
                 this.jsFile,
                 this.dTSFile,
-                this.module,
                 this.run_method,
                 this.pathsToTest,
                 options,
@@ -101,7 +96,6 @@ public class Benchmark {
                 name, this.environment,
                 this.jsFile,
                 this.dTSFile,
-                this.module,
                 this.run_method,
                 this.pathsToTest,
                 transformer.apply(this.options),

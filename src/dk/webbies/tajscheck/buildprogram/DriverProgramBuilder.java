@@ -89,11 +89,6 @@ public class DriverProgramBuilder {
                     .forEach(program::add);
         }
 
-        if (info.options.checkHeap) {
-            program.add(createCheckHeapFunction());
-        }
-
-
         for (int i = 0; i < tests.size(); i++) {
             Test test = tests.get(i);
             List<ArrayLiteral> args = test
@@ -113,7 +108,6 @@ public class DriverProgramBuilder {
                 statement(call(identifier("print"), string("total number of tests: " + tests.size()))),
                 whileLoop(bool(true),
                     block(
-                            info.options.checkHeap ? statement(call(identifier("checkHeap"))) : comment("checkHeap()"),
                             variable("testNumberToRun", call(identifier("selectTest"))),
                             ifThen(
                                     binary(identifier("testNumberToRun"), Operator.LESS_THAN, number(0)),
@@ -165,28 +159,6 @@ public class DriverProgramBuilder {
 
 
     }
-
-    private ExpressionStatement createCheckHeapFunction() {
-        return statement(function("checkHeap", block(
-                // If module not loaded, return.
-                variable("module", null),
-                ifThen(
-                        binary(
-                                binary(
-                                        identifier("module"),
-                                        Operator.EQUAL,
-                                        typeCreator.getType(info.typeToTest, TypeContext.create(info))
-                                ),
-                                Operator.EQUAL_EQUAL_EQUAL,
-                                identifier(VARIABLE_NO_VALUE)
-                        ),
-                        Return()
-                ),
-                typeChecker.assertResultingType(new TypeWithContext(info.typeToTest, TypeContext.create(info)), identifier("module"), "require(" + info.bench.module + ")", Integer.MAX_VALUE, "heapcheck")
-
-        )));
-    }
-
 
     private List<Pair<Expression, Statement>> buildTestCases() {
         List<Pair<Expression, Statement>> result = new ArrayList<>();
@@ -383,7 +355,7 @@ public class DriverProgramBuilder {
                     );
                 case BROWSER:
                     return Collections.singletonList(
-                            variable("result", identifier(info.bench.module))
+                            variable("result", identifier(test.getPath()))
                     );
                 case BOOTSTRAP:
                     return Collections.singletonList(

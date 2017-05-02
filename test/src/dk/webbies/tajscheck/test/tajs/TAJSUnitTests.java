@@ -59,7 +59,7 @@ public class TAJSUnitTests {
 
     private static Benchmark benchFromFolder(String folderName) {
         CheckOptions options = CheckOptions.defaultOptions();
-        return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", "module", Benchmark.RUN_METHOD.NODE, options).useTAJS();
+        return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", Benchmark.RUN_METHOD.NODE, options).useTAJS();
     }
 
     private class TAJSResultTester {
