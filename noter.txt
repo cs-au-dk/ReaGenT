@@ -1,12 +1,8 @@
 TODO:
-TODO: - Få testet TypeScript 2.3 features.
 TODO: - Få ts-spec-reader til at exporterer ambient types.
-TODO: - Support Symbol (see IterableIterator)
 TODO: - Remove the dependency to explicitly declare the module name.
-TODO: - Try to look at the exceptions that happen during runtime. See if they can be used for anything.
-
-TODO: For TAJSCheck conversion:
-- Remove all fixing of non-determinism. (Have two separate prelude.js/dumb.js, instead of having "if tajs...").
+TODO: - Få testet TypeScript 2.3 features.
+TODO: - Support Symbol (see IterableIterator)
 
 Tracifier benchs:
 http://bench.casadev.cs.au.dk/master/
