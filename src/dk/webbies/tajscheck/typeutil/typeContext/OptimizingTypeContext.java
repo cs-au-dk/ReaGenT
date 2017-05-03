@@ -96,7 +96,8 @@ public class OptimizingTypeContext implements TypeContext {
 
         return new TypeWithContext(type, context);
     }
-    private static final SimpleType any = SimpleType.get(SimpleTypeKind.Any);
+
+    private static final SimpleType any = new SimpleType(SimpleTypeKind.Any);
 
 
     @Override

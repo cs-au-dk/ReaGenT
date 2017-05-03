@@ -99,15 +99,17 @@ public class BenchmarkInfo {
 
     private static void applyTypeFixes(Benchmark bench, SpecReader spec, Map<Type, String> typeNames, Set<Type> nativeTypes) {
         // Various fixes, to transform the types into something more consistent (+ workarounds).
+        List<Type> typesToFix = new ArrayList<>();
         for (Type type : ((InterfaceType) spec.getGlobal()).getDeclaredProperties().values()) {
             if (nativeTypes.contains(type)) {
                 continue;
             }
-            applyTypeFixes(bench, typeNames, type);
+            typesToFix.add(type);
         }
         for (SpecReader.NamedType type : spec.getAmbientTypes()) {
-            applyTypeFixes(bench, typeNames, type.type);
+            typesToFix.add(type.type);
         }
+        applyTypeFixes(bench, typeNames, typesToFix);
 
 
         // Fixing if the top-level export is a class, sometimes we can an interface with a prototype property instead of the actual class.
@@ -127,8 +129,8 @@ public class BenchmarkInfo {
         }
     }
 
-    private static void applyTypeFixes(Benchmark bench, Map<Type, String> typeNames, Type result) {
-        List<Type> allTypes = new ArrayList<>(TypesUtil.collectAllTypes(result));
+    private static void applyTypeFixes(Benchmark bench, Map<Type, String> typeNames, List<Type> typesToFix) {
+        List<Type> allTypes = new ArrayList<>(TypesUtil.collectAllTypes(typesToFix));
         for (Type type : allTypes) {
             // splitting unions
             if (bench.options.splitUnions) {
@@ -187,7 +189,7 @@ public class BenchmarkInfo {
                 }
                 if (hasTrue && hasFalse) {
                     ArrayList<Type> elements = new ArrayList<>(union.getElements().stream().filter(Util.not(BooleanLiteral.class::isInstance)).collect(Collectors.toList()));
-                    elements.add(SimpleType.get(SimpleTypeKind.Boolean));
+                    elements.add(new SimpleType(SimpleTypeKind.Boolean));
                     union.setElements(elements);
                 }
 
@@ -306,7 +308,7 @@ public class BenchmarkInfo {
         // A function that returns a value is assignable to a function type that returns void
         for (Signature signature : signatures) {
             if (signature.getResolvedReturnType() instanceof SimpleType && ((SimpleType) signature.getResolvedReturnType()).getKind() == SimpleTypeKind.Undefined) {
-                signature.setResolvedReturnType(SimpleType.get(SimpleTypeKind.Void));
+                signature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Void));
             }
         }
     }

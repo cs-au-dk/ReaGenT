@@ -86,7 +86,7 @@ public class TypesUtil {
             neverSignature.setMinArgumentCount(1);
             Signature.Parameter parameter = new Signature.Parameter();
             parameter.setName("x");
-            parameter.setType(SimpleType.get(SimpleTypeKind.Never));
+            parameter.setType(new SimpleType(SimpleTypeKind.Never));
             neverSignature.setParameters(Collections.singletonList(parameter));
             clonedSignatures.add(neverSignature);
         }
@@ -104,7 +104,7 @@ public class TypesUtil {
         signature.setTarget(null);
         signature.setTypeParameters(new ArrayList<>());
         signature.setUnionSignatures(new ArrayList<>());
-        signature.setResolvedReturnType(SimpleType.get(SimpleTypeKind.Any));
+        signature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
         return signature;
     }
 

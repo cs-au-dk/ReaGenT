@@ -21,6 +21,9 @@ public abstract class Test {
     }
 
     protected Test(Collection<Type> typeToTest, Collection<Type> dependsOn, Collection<Type> produces, String path, TypeContext typeContext) {
+        if (path.equals("module.foo()")) {
+            System.out.println();
+        }
         this.typeToTest = typeToTest;
         this.dependsOn = dependsOn;
         this.produces = produces;
