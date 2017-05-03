@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck;
 
+import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.buildprogram.DriverProgramBuilder;
@@ -73,9 +74,6 @@ public class RunSmall {
             System.out.println("Creating small driver for: " + path + "  " + (i + 1) + "/" + paths.size());
 
             List<Test> specificTests = new TestCreator(info.withBench(bench)).createTests();
-            assert false; // TODO:
-//            specificTests.add(new LoadModuleTest(Main.getRequirePath(bench), info.typeToTest, info, bench.module));
-
 
             Statement program = new DriverProgramBuilder(specificTests, info).buildDriver(null);
 

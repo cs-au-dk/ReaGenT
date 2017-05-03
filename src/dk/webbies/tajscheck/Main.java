@@ -66,11 +66,6 @@ public class Main {
 
         List<Test> tests = new TestCreator(info).createTests();
 
-        for (Map.Entry<String, Type> userDefinedType : info.userDefinedTypes.entrySet()) {
-            tests.add(new LoadModuleTest(Main.getRequirePath(bench), userDefinedType.getValue(), info, userDefinedType.getKey()));
-        }
-
-
         Statement program = new DriverProgramBuilder(tests, info).buildDriver(recording);
 
         return new Pair<>(info, AstToStringVisitor.toString(program));
@@ -80,9 +75,6 @@ public class Main {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
 
         List<Test> tests = new TestCreator(info).createTests();
-        for (Map.Entry<String, Type> userDefinedType : info.userDefinedTypes.entrySet()) {
-            tests.add(new LoadModuleTest(Main.getRequirePath(bench), userDefinedType.getValue(), info, userDefinedType.getKey()));
-        }
 
         Test[] testsArray = tests.toArray(new Test[]{});
         int prevSize = -1;

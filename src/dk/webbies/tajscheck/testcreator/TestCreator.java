@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.testcreator;
 
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -28,8 +29,13 @@ public class TestCreator {
     }
 
     public List<Test> createTests(@SuppressWarnings("SameParameterValue") boolean concatDuplicates) {
+        List<Test> loadTests = new ArrayList<>();
+        for (Map.Entry<String, Type> userDefinedType : info.userDefinedTypes.entrySet()) {
+            loadTests.add(new LoadModuleTest(Main.getRequirePath(info.bench), userDefinedType.getValue(), info, userDefinedType.getKey()));
+        }
+
         if (info.bench.options.onlyInitialize) {
-            return new ArrayList<>();
+            return loadTests;
         }
 
         PriorityQueue<TestQueueElement> queue = new PriorityQueue<>();
@@ -77,7 +83,7 @@ public class TestCreator {
         }
 
 
-        List<Test> tests = Util.concat(visitor.getTests(), topLevelFunctionTests);
+        List<Test> tests = Util.concat(loadTests, visitor.getTests(), topLevelFunctionTests);
 
         if (info.bench.pathsToTest != null) {
             tests = tests.stream().filter(test -> isRelevantPath(test.getPath(), pathsToTestTrie)).collect(Collectors.toList());
