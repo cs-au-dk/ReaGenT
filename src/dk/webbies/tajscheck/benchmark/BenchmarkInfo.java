@@ -91,6 +91,11 @@ public class BenchmarkInfo {
             }
         }
 
+        if (bench.exportName != null) {
+            assert userDefinedTypes.containsKey(bench.exportName);
+            userDefinedTypes.keySet().retainAll(Collections.singletonList(bench.exportName));
+        }
+
         if (bench.run_method == Benchmark.RUN_METHOD.NODE) {
             assert userDefinedTypes.size() == 1;
         }

@@ -78,7 +78,7 @@ public class RunBenchmarks {
 
         register(new Benchmark("Hammer.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", BROWSER, options));
 
-        register(new Benchmark("Jasmine", ParseDeclaration.Environment.ES5Core, "test/benchmarks/jasmine/jasmine.js", "test/benchmarks/jasmine/jasmine.d.ts", NODE, options));
+        register(new Benchmark("Jasmine", ParseDeclaration.Environment.ES5Core, "test/benchmarks/jasmine/jasmine.js", "test/benchmarks/jasmine/jasmine.d.ts", BROWSER, options));
 
         register(new Benchmark("Knockout", ParseDeclaration.Environment.ES5Core, "test/benchmarks/knockout/knockout.js", "test/benchmarks/knockout/knockout.d.ts", BROWSER, options));
 
@@ -134,7 +134,7 @@ public class RunBenchmarks {
 
         register(new Benchmark("Zepto.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/zepto/zepto.js", "test/benchmarks/zepto/zepto.d.ts", BROWSER, options));
 
-        register(new Benchmark("Redux", ParseDeclaration.Environment.ES5Core, "test/benchmarks/redux/redux.js", "test/benchmarks/redux/reduxModule.d.ts", NODE, options));
+        register(new Benchmark("Redux", ParseDeclaration.Environment.ES5Core, "test/benchmarks/redux/redux.js", "test/benchmarks/redux/reduxModule.d.ts", NODE, options, "redux"));
 
         register(new Benchmark("Ionic", ParseDeclaration.Environment.ES5Core, "test/benchmarks/ionic/ionic.js", "test/benchmarks/ionic/ionic.d.ts", BROWSER, options)
             .addDependencies(jQuery)
@@ -163,7 +163,7 @@ public class RunBenchmarks {
 
         register(new Benchmark("Modernizr", ParseDeclaration.Environment.ES5Core, "test/benchmarks/modernizr/modernizr.js", "test/benchmarks/modernizr/modernizr.d.ts", BROWSER, options));
 
-        register(new Benchmark("RxJS", ParseDeclaration.Environment.ES5Core, "test/benchmarks/rx/Rx.js", "test/benchmarks/rx/types/rx/index.d.ts", NODE, options.getBuilder().setDisableGenerics(true).build()));
+        register(new Benchmark("RxJS", ParseDeclaration.Environment.ES5Core, "test/benchmarks/rx/Rx.js", "test/benchmarks/rx/types/rx/index.d.ts", NODE, options.getBuilder().setDisableGenerics(true).build(), "\"rx\""));
 
         register(new Benchmark("PDF.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/pdf/pdf.js", "test/benchmarks/pdf/pdf.d.ts", BROWSER, options));
 

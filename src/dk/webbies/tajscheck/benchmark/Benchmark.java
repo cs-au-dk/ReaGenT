@@ -18,13 +18,18 @@ public class Benchmark {
     public final Set<String> pathsToTest;
     public final RUN_METHOD run_method;
     public final CheckOptions options;
+    public final String exportName;
     private final List<Benchmark> dependencies;
 
-    public Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, CheckOptions options) {
-        this(name, environment, jsFile, dTSFile, load_method, null, options, new ArrayList<>());
+    public Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, CheckOptions options, String exportName) {
+        this(name, environment, jsFile, dTSFile, load_method, null, options, new ArrayList<>(), exportName);
     }
 
-    private Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, Set<String> pathsToTest, CheckOptions options, List<Benchmark> dependencies) {
+    public Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, CheckOptions options) {
+        this(name, environment, jsFile, dTSFile, load_method, options, null);
+    }
+
+    private Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, Set<String> pathsToTest, CheckOptions options, List<Benchmark> dependencies, String exportName) {
         this.name = name;
         this.environment = environment;
         this.jsFile = jsFile;
@@ -33,26 +38,33 @@ public class Benchmark {
         this.run_method = load_method;
         this.options = options;
         this.dependencies = dependencies;
+        this.exportName = exportName;
     }
 
     public Benchmark withPathsToTest(Collection<String> pathsToTest) {
         return new Benchmark(
-                name, this.environment,
+                this.name,
+                this.environment,
                 this.jsFile,
                 this.dTSFile,
-                run_method,
+                this.run_method,
                 Collections.unmodifiableSet(pathsToTest.stream().map(TestCreator::simplifyPath).collect(Collectors.toSet())),
-                options, dependencies);
+                this.options,
+                this.dependencies,
+                this.exportName);
     }
 
     public Benchmark withRunMethod(RUN_METHOD method) {
         return new Benchmark(
-                name, this.environment,
+                this.name,
+                this.environment,
                 this.jsFile,
                 this.dTSFile,
                 method,
                 this.pathsToTest,
-                options, dependencies);
+                this.options,
+                this.dependencies,
+                this.exportName);
     }
 
     public Benchmark useTAJS() {
@@ -81,25 +93,29 @@ public class Benchmark {
 
     public Benchmark withOptions(CheckOptions options) {
         return new Benchmark(
-                name, this.environment,
+                this.name,
+                this.environment,
                 this.jsFile,
                 this.dTSFile,
                 this.run_method,
                 this.pathsToTest,
                 options,
-                this.dependencies
+                this.dependencies,
+                this.exportName
         );
     }
 
     public Benchmark withOptions(Function<CheckOptions, CheckOptions> transformer) {
         return new Benchmark(
-                name, this.environment,
+                this.name,
+                this.environment,
                 this.jsFile,
                 this.dTSFile,
                 this.run_method,
                 this.pathsToTest,
                 transformer.apply(this.options),
-                this.dependencies
+                this.dependencies,
+                this.exportName
         );
     }
 
