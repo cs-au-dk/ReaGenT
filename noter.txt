@@ -6,6 +6,16 @@ TODO: - Support Symbol (see IterableIterator)
 Tracifier benchs:
 http://bench.casadev.cs.au.dk/master/
 
+if you want to play with tracifier or experiment with drivers you can download the tracified library by browsing to the library of your interest http://bench.casadev.cs.au.dk/master/ (column TAJS(on tracified) and clicking download.
+The file program.generated.html is a minimal html file that import the tracified library.
+
+You also need our special TAJS, which you can find here http://casadev.cs.au.dk/JSRACES/TAJS-meta
+You have to ensure to also checkout the submodules (jalangilogger and tajs itself).
+To run TAJS on the generated program simply issue the following command
+
+./tajs_meta -line-analysis2 -no-soundness tajs <<program.generated location>>
+
+
 Future work:
     - Symbolic execution could be used to get the under-approximation to be less of an under-approximation (speculation: It can help a lot to get methods, that otherwise crash, to return normally).
 
