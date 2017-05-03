@@ -10,5 +10,5 @@ export = foo;
 
 
 module.exports = {
-    str: "456"; // <- is wrong
+    str: "456" // <- is wrong
 };
