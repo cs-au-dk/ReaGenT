@@ -118,6 +118,14 @@ public class BenchmarkInfo {
                 ((ClassType) type).setInstanceProperties(fixUnderscoreNames(((ClassType) type).getInstanceProperties()));
             }
 
+            if (type instanceof GenericType) {
+                InterfaceType inter = ((GenericType) type).toInterface();
+                typeNames.put(inter, typeNames.get(type));
+                // TODO: Check if the freeGenericsFinder has the genericType, if it has, add the interface.
+
+                // TODO: Consider doing the same thing for converting class-types to interfaces (In TypesUtil), get a cache going to make the process simpler.
+            }
+
 
             // Setting the instance of a class to an existing instance instead of creating a new.
             if (type instanceof ClassInstanceType) {
