@@ -36,6 +36,7 @@ public class RunBenchmarks {
     public static final Map<String, Benchmark> benchmarks = new HashMap<>();
 
     private static void register(Benchmark benchmark) {
+        assert !benchmarks.containsKey(benchmark.name);
         benchmarks.put(benchmark.name, benchmark);
     }
 

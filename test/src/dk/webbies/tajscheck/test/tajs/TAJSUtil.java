@@ -1,11 +1,11 @@
 package dk.webbies.tajscheck.test.tajs;
 
 import dk.brics.tajs.analysis.TAJSFunctionsEvaluator;
-import dk.brics.tajs.analysis.nativeobjects.JSGlobal;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.lattice.Context;
 import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.monitoring.*;
+import dk.brics.tajs.options.OptionValues;
 import dk.brics.tajs.options.Options;
 import dk.brics.tajs.test.Misc;
 import dk.brics.tajs.util.AnalysisLimitationException;
@@ -13,6 +13,8 @@ import dk.brics.tajs.util.ExperimentalAnalysisVariables;
 import dk.brics.tajs.util.Pair;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.buildprogram.TAJSTypeChecker;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 
@@ -22,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
+import static dk.webbies.tajscheck.util.Pair.toTAJS;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -30,17 +33,19 @@ import static org.junit.Assert.assertThat;
  * Created by erik1 on 19-12-2016.
  */
 public class TAJSUtil {
-    public static MultiMap<String, AssertionResult> runTAJS(String file, int secondsTimeout, Benchmark.RUN_METHOD run_method) throws TimeoutException {
+    public static MultiMap<String, AssertionResult> runTAJS(String file, int secondsTimeout, Benchmark.RUN_METHOD run_method, BenchmarkInfo info) throws TimeoutException {
         dk.brics.tajs.Main.reset();
 
-        Options.get().enableTest();
-        Options.get().enableDeterminacy();
-        Options.get().enablePolyfillES6Collections();
-        Options.get().enableEs6MiscPolyfill();
-        Options.get().enableConsoleModel();
-        Options.get().enableUnevalizer();
+        OptionValues options = Options.get();
+        options.enableTest();
+        options.enableDeterminacy();
+        options.enablePolyfillES6Collections();
+        options.enableEs6MiscPolyfill();
+        options.enableConsoleModel();
+        options.enableUnevalizer();
+        options.setCustomFunction(TAJSTypeChecker.get(info).getCustomFunction());
         if (run_method == Benchmark.RUN_METHOD.BROWSER || run_method == Benchmark.RUN_METHOD.BOOTSTRAP) {
-            Options.get().enableIncludeDom();
+            options.enableIncludeDom();
         } else if (run_method == Benchmark.RUN_METHOD.NODE) {
             // nothing.
         } else {
@@ -70,6 +75,8 @@ public class TAJSUtil {
         }
 
 
+
+        // Assertion results comes from two sources: Calls to assert, and direct calls to our assertType functions.
 
         Map<Pair<AbstractNode, Context>, Set<Pair<String, Value>>> recordings = ExperimentalAnalysisVariables.get().get(TAJSFunctionsEvaluator.TAJSRecordKey.instance);
 
@@ -129,11 +136,11 @@ public class TAJSUtil {
     }
 
     public static MultiMap<String, AssertionResult> run(Benchmark bench, int secondsTimeout) throws Exception {
-        Main.writeFullDriver(bench);
+        Pair<BenchmarkInfo, String> driver = toTAJS(Main.writeFullDriver(bench));
 
         String filePath = Main.getFolderPath(bench) + Main.TEST_FILE_NAME;
 
-        MultiMap<String, AssertionResult> result = runTAJS(filePath, secondsTimeout, bench.run_method);
+        MultiMap<String, AssertionResult> result = runTAJS(filePath, secondsTimeout, bench.run_method, driver.getFirst());
 
         System.out.println(prettyResult(result));
 

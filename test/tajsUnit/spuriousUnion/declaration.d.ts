@@ -1,4 +1,4 @@
 
 export module module {
-    function foo(): string | number; // <- Actually never returns a string.
+    function foo(): string | boolean | number; // <- Actually never returns a string.
 }

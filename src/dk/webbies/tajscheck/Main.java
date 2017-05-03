@@ -34,18 +34,21 @@ public class Main {
     public static final String TEST_FILE_NAME = "test.js";
     public static final String COVERAGE_FILE_NAME = "coverage.js";
 
-    public static void writeFullDriver(Benchmark bench) throws Exception {
-        writeFullDriver(bench, null);
+    public static Pair<BenchmarkInfo, String> writeFullDriver(Benchmark bench) throws Exception {
+        return writeFullDriver(bench, null);
     }
 
-    public static void writeFullDriver(Benchmark bench, ExecutionRecording recording) throws Exception {
-        String programString = generateFullDriver(bench, recording);
+    public static Pair<BenchmarkInfo, String> writeFullDriver(Benchmark bench, ExecutionRecording recording) throws Exception {
+        Pair<BenchmarkInfo, String> result = generateFullDriver(bench, recording);
+        String programString = result.getRight();
 
         Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, programString);
+
+        return result;
     }
 
     public static String createRecordedProgram(Benchmark bench, ExecutionRecording recording) throws Exception {
-        String programString = generateFullDriver(bench, recording);
+        String programString = generateFullDriver(bench, recording).getRight();
 
         Util.writeFile(getFolderPath(bench) + "recorded.js", programString);
 
@@ -54,11 +57,11 @@ public class Main {
         return programString;
     }
 
-    public static String generateFullDriver(Benchmark bench) throws IOException {
+    public static Pair<BenchmarkInfo, String> generateFullDriver(Benchmark bench) throws IOException {
         return generateFullDriver(bench, null);
     }
 
-    public static String generateFullDriver(Benchmark bench, ExecutionRecording recording) throws IOException {
+    public static Pair<BenchmarkInfo, String> generateFullDriver(Benchmark bench, ExecutionRecording recording) throws IOException {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
 
         List<Test> tests = new TestCreator(info).createTests();
@@ -70,7 +73,7 @@ public class Main {
 
         Statement program = new DriverProgramBuilder(tests, info).buildDriver(recording);
 
-        return AstToStringVisitor.toString(program);
+        return new Pair<>(info, AstToStringVisitor.toString(program));
     }
 
     public static String generateSmallestDriver(Benchmark bench, BooleanSupplier test) throws IOException {

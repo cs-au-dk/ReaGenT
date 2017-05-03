@@ -35,6 +35,10 @@ public class TypeChecker {
     public Expression checkResultingType(TypeWithContext type, Expression exp, String path, int depth) {
         path = sanitizePath(path);
 
+        if (info.options.useTAJS) {
+            return TAJSTypeChecker.get(info).checkResultingType(type, exp, path);
+        }
+
         return call(function(
                 block(
                         statement(function("assert", block(
@@ -63,6 +67,10 @@ public class TypeChecker {
 
     public Statement assertResultingType(TypeWithContext type, Expression exp, String path, int depth, String testType) {
         path = sanitizePath(path);
+
+        if (info.options.useTAJS) {
+            return TAJSTypeChecker.get(info).assertResultingType(type, exp, path, testType);
+        }
 
         List<TypeCheck> typeChecks = type.getType().accept(new CreateTypeCheckVisitor(info), new Arg(type.getTypeContext(), depth));
         if (info.bench.options.useAssertTypeFunctions) {
@@ -126,7 +134,6 @@ public class TypeChecker {
                 }
             }
             result.add(Return(bool(true)));
-
 
             String name = "assertType_" + typeCheckingFunctionList.size();
             FunctionExpression function = function(name, block(result), "assert", "exp", "path", "testType");

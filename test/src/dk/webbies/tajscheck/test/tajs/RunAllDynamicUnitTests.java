@@ -28,12 +28,28 @@ public class RunAllDynamicUnitTests {
     public String folderName;
 
     // unit-tests that for some reason should not run.
-    private static final Set<String> blackList = new HashSet<>(Arrays.asList("unsoundSiblings", "mappedTypes", "basicMemomizeExample", "genericIndexedAccess", "exponentialComplexity"));
+    private static final Set<String> blackList = new HashSet<>(Arrays.asList(
+            // has symbols
+            "complexOverloads",
+            "symbol",
+
+            "unsoundSiblings",
+            "mappedTypes",
+            "basicMemomizeExample",
+            "genericIndexedAccess",
+            "exponentialComplexity"
+    ));
 
     @SuppressWarnings("ConstantConditions")
     @Parameterized.Parameters(name = "{0}")
     public static List<String> getSmallDriverPaths() {
-        return Arrays.stream(new File("test/unit/").listFiles()).filter(File::isDirectory).map(File::getName).filter(Util.not(blackList::contains)).collect(Collectors.toList());
+        return Arrays.stream(new File("test/unit/").listFiles())
+                .filter(File::isDirectory)
+                .map(File::getName)
+                .filter(Util.not(blackList::contains))
+                .filter(folderName ->
+                    new File(UnitTests.benchFromFolder(folderName).dTSFile).exists()
+        ).collect(Collectors.toList());
     }
 
     @Test

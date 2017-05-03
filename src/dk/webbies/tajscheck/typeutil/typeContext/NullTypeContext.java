@@ -15,7 +15,7 @@ import java.util.Map;
  * Created by erik1 on 12-01-2017.
  */
 public class NullTypeContext implements TypeContext {
-    private static final Type any = new SimpleType(SimpleTypeKind.Any);
+    private static final Type any = SimpleType.get(SimpleTypeKind.Any);
     private final Benchmark benchmark;
 
     public NullTypeContext(Benchmark benchmark) {

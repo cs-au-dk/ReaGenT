@@ -57,8 +57,6 @@ public class DriverProgramBuilder {
         program.add(variable("maxTime", number(info.options.maxTime)));
         program.add(variable("maxIterations", number(info.options.maxIterationsToRun)));
 
-        program.add(variable("isTAJS", bool(info.bench.options.useTAJS)));
-
         program.add(variable("failOnAny", bool(info.options.failOnAny)));
 
         if (info.bench.options.useTAJS) {

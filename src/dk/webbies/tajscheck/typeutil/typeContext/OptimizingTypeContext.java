@@ -42,7 +42,7 @@ public class OptimizingTypeContext implements TypeContext {
         this.overwritten = overwritten;
         this.thisType = thisType;
         this.info = info;
-        this.cache = info.getAttribute(OptimizingTypeContext.class, "cache", new HashMap<>());
+        this.cache = info.getAttribute(OptimizingTypeContext.class, "cache", HashMap::new);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class OptimizingTypeContext implements TypeContext {
 
         return new TypeWithContext(type, context);
     }
-    private static final SimpleType any = new SimpleType(SimpleTypeKind.Any);
+    private static final SimpleType any = SimpleType.get(SimpleTypeKind.Any);
 
 
     @Override
