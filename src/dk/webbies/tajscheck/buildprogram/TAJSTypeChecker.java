@@ -157,12 +157,14 @@ public class TAJSTypeChecker {
             Value value = arg.value;
 
             List<Bool> results = new ArrayList<>();
+            boolean failed = false;
+            boolean succeeded = false;
 
             if (value.isMaybeOtherThanObject()) {
-                results.add(FALSE());
+                failed = true;
             }
             if (value.isMaybeObject()) {
-                results.add(TRUE());
+                succeeded = true;
                 assert !value.getObjectLabels().isEmpty();
             }
 
@@ -178,13 +180,16 @@ public class TAJSTypeChecker {
             }
 
             if (!t.getDeclaredCallSignatures().isEmpty() || !t.getDeclaredConstructSignatures().isEmpty()) {
+                boolean functionFailed = false;
+                boolean functionSucceeded = false;
                 for (ObjectLabel label : value.getObjectLabels()) {
                     if (label.getKind() != ObjectLabel.Kind.FUNCTION) {
-                        results.add(FALSE());
+                        functionFailed = true;
                     } else {
-                        results.add(TRUE());
+                        functionSucceeded = true;
                     }
                 }
+                results.add(boolFromFail(functionFailed, functionSucceeded));
             }
 
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
@@ -193,44 +198,11 @@ public class TAJSTypeChecker {
             }
 
 
-            return worstCase(results);
+            return worstCase(Util.concat(results, Collections.singletonList(boolFromFail(failed, succeeded))));
         }
 
         private Bool recurse(Type type, Arg arg) {
             return checkType(new TypeWithContext(type, arg.context), arg.value, arg.state);
-        }
-
-        private Bool join(List<Bool> results) {
-            if (true) {
-                throw new RuntimeException(); // I should not use this.
-            }
-            if (results.isEmpty()) {
-                return TRUE();
-            }
-            boolean any = false;
-            boolean tru = false;
-            boolean fal = false;
-            for (Bool result : results) {
-                if (result.isMaybeAnyBool()) {
-                    any = true;
-                    break;
-                } else if (result.isMaybeTrue()) {
-                    tru = true;
-                } else if (result.isMaybeFalse()) {
-                    fal = true;
-                }
-            }
-            if (any || (fal && tru)) {
-                return Value.makeAnyBool();
-            }
-            if (tru) {
-                return TRUE();
-            }
-            if (fal) {
-                return FALSE();
-            }
-
-            throw new RuntimeException();
         }
 
         private Bool boolFromFail(boolean failed, boolean succeeded) {
@@ -368,10 +340,10 @@ public class TAJSTypeChecker {
             boolean isMaybe = false;
             boolean isFalse = false;
             for (Bool bool : cases) {
-                if (bool.isMaybeFalse()) {
+                if (bool.isMaybeFalseButNotTrue()) {
                     isFalse = true;
                 }
-                if (bool.isMaybeTrue()) {
+                if (bool.isMaybeTrueButNotFalse()) {
                     isTrue = true;
                 }
                 if (bool.isMaybeAnyBool()) {

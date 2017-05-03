@@ -144,6 +144,16 @@ public class TAJSUnitTests {
 
             return this;
         }
+
+        TAJSResultTester toNotFail() {
+            for (Collection<AssertionResult> values : results.asMap().values()) {
+                for (AssertionResult value : values) {
+                    assertTrue(value.result != AssertionResult.BooleanResult.DEFINITELY_FALSE);
+                }
+            }
+
+            return this;
+        }
     }
 
     private TAJSResultTester expect(MultiMap<String, AssertionResult> result) {
@@ -167,6 +177,15 @@ public class TAJSUnitTests {
 
     // TODO: An example where a property is accessed using a getter.
 
+
+    @Test
+    public void primitiveOrObject() throws Exception {
+        MultiMap<String, AssertionResult> result = run("primitiveOrObject");
+
+        expect(result)
+                .forPath("module.foo()")
+                .toNotFail();
+    }
 
     @Test
     public void everythingIsRight() throws Exception {
