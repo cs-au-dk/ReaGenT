@@ -63,6 +63,7 @@ public class TAJSUnitTests {
         return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", Benchmark.RUN_METHOD.NODE, options).useTAJS();
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     private class TAJSResultTester {
         private MultiMap<String, AssertionResult> results;
 
@@ -127,9 +128,7 @@ public class TAJSUnitTests {
 
         TAJSResultTester toPass() {
             for (Collection<AssertionResult> values : results.asMap().values()) {
-                for (AssertionResult value : values) {
-                    assertTrue(value.result == AssertionResult.BooleanResult.DEFINITELY_TRUE);
-                }
+                assertTrue(values.stream().anyMatch(value -> value.result == AssertionResult.BooleanResult.DEFINITELY_TRUE));
             }
 
             return this;
@@ -137,9 +136,7 @@ public class TAJSUnitTests {
 
         TAJSResultTester toFail() {
             for (Collection<AssertionResult> values : results.asMap().values()) {
-                for (AssertionResult value : values) {
-                    assertTrue(value.result == AssertionResult.BooleanResult.DEFINITELY_FALSE);
-                }
+                assertTrue(values.stream().anyMatch(value -> value.result == AssertionResult.BooleanResult.DEFINITELY_FALSE));
             }
 
             return this;
@@ -147,9 +144,7 @@ public class TAJSUnitTests {
 
         TAJSResultTester toNotFail() {
             for (Collection<AssertionResult> values : results.asMap().values()) {
-                for (AssertionResult value : values) {
-                    assertTrue(value.result != AssertionResult.BooleanResult.DEFINITELY_FALSE);
-                }
+                assertTrue(values.stream().allMatch(value -> value.result != AssertionResult.BooleanResult.DEFINITELY_FALSE));
             }
 
             return this;
@@ -167,8 +162,6 @@ public class TAJSUnitTests {
         assertThat(driver, not(containsString("assertType_0")));
     }
 
-    // TODO: A test where an object is expected, but a primitive OR object is encountered
-
     // TODO: Have some test where an object has a property that is a number (two, one should fail and one should pass).
 
     // TODO: Have some union that fails.
@@ -185,6 +178,19 @@ public class TAJSUnitTests {
         expect(result)
                 .forPath("module.foo()")
                 .toNotFail();
+    }
+
+    @Test
+    public void objectWithNumberProps() throws Exception {
+        MultiMap<String, AssertionResult> result = run("objectWithNumberProps");
+
+        expect(result)
+                .forPath("module.foo()")
+                .toFail();
+
+        expect(result)
+                .forPath("module.bar()")
+                .toPass();
     }
 
     @Test
