@@ -157,8 +157,6 @@ public class TAJSUnitTests {
         assertThat(driver, not(containsString("assertType_0")));
     }
 
-    // TODO: A test with an infinite object structure (try to comment out my fix for that).
-
     // TODO: A test where an object is expected, but a primitive OR object is encountered
 
     // TODO: Have some test where an object has a property that is a number (two, one should fail and one should pass).
@@ -197,29 +195,12 @@ public class TAJSUnitTests {
     }
 
     @Test
-    public void prototypeChains() throws Exception {
-        MultiMap<String, AssertionResult> result = run("prototypeChains");
-
-        assertThat(result.size(), is(4));
+    public void recursiveObject() throws Exception {
+        MultiMap<String, AssertionResult> result = run("recursiveObject");
 
         expect(result)
-                .forPath("module.foo.bar")
-                .toPass()
-                .expected("boolean")
-                .got((value) -> value.isMaybeTrue() && !value.isMaybeFalse());
-
-        expect(result)
-                .forPath("module.foo")
+                .forPath("module.foo.rec")
                 .toPass();
-
-        expect(result)
-                .forPath("module.foo.foo")
-                .toPass();
-
-        expect(result)
-                .forPath("module")
-                .toPass();
-
     }
 
     @Test

@@ -12,6 +12,7 @@ import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.paser.AST.Expression;
 import dk.webbies.tajscheck.paser.AST.Operator;
 import dk.webbies.tajscheck.paser.AST.Statement;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Util;
 
@@ -76,7 +77,12 @@ public class TAJSTypeChecker {
         }
         typeCheckingCache.put(key, Value.makeBool(true)); // We assume that this is true, while we go through children (induction hypothesis).
 
-        Bool result = type.getType().accept(new TypeCheckerVisitor(), new Arg(type.getTypeContext(), state, value));
+        Bool result;
+        if (!value.isMaybePresent()) {
+            result = FALSE();
+        } else {
+            result = type.getType().accept(new TypeCheckerVisitor(), new Arg(type.getTypeContext(), state, value));
+        }
 
         typeCheckingCache.put(key, result);
         return result;
@@ -107,6 +113,22 @@ public class TAJSTypeChecker {
         Arg withValue(Value value) {
             return new Arg(this.context, this.state, UnknownValueResolver.getRealValue(value, this.state));
         }
+
+        Arg withContext(TypeContext typeContext) {
+            return new Arg(typeContext, this.state, this.value);
+        }
+    }
+
+    private Value FALSE() {
+        return Value.makeBool(false);
+    }
+
+    private Value MAYBE() {
+        return Value.makeAnyBool();
+    }
+
+    private Value TRUE() {
+        return Value.makeBool(true);
     }
 
     private final class TypeCheckerVisitor implements TypeVisitorWithArgument<Bool, Arg> {
@@ -118,16 +140,20 @@ public class TAJSTypeChecker {
 
         @Override
         public Bool visit(ClassType t, Arg arg) {
-            throw new RuntimeException();
+            return recurse(TypesUtil.classToInterface(t, info.freeGenericsFinder), arg);
         }
 
         @Override
         public Bool visit(GenericType t, Arg arg) {
-            throw new RuntimeException();
+            return recurse(t.toInterface(), arg);
         }
 
         @Override
         public Bool visit(InterfaceType t, Arg arg) {
+            if (info.freeGenericsFinder.hasThisTypes(t)) {
+                arg = arg.withContext(arg.context.withThisType(t));
+            }
+
             Value value = arg.value;
 
             List<Bool> results = new ArrayList<>();
@@ -140,10 +166,16 @@ public class TAJSTypeChecker {
                 assert !value.getObjectLabels().isEmpty();
             }
 
-            t.getBaseTypes().forEach(base -> results.add(recurse(base, arg)));
+            for (Type base : t.getBaseTypes()) {
+                results.add(recurse(base, arg));
+            }
 
-            assert t.getDeclaredStringIndexType() == null;
-            assert t.getDeclaredNumberIndexType() == null;
+            if (t.getDeclaredStringIndexType() != null) {
+                results.add(recurse(t.getDeclaredStringIndexType(), arg.withValue(pv.readPropertyValue(value.getObjectLabels(), Value.makeAnyStr()))));
+            }
+            if (t.getDeclaredNumberIndexType() != null) {
+                results.add(recurse(t.getDeclaredNumberIndexType(), arg.withValue(pv.readPropertyValue(value.getObjectLabels(), Value.makeAnyStrUInt()))));
+            }
 
             if (!t.getDeclaredCallSignatures().isEmpty() || !t.getDeclaredConstructSignatures().isEmpty()) {
                 for (ObjectLabel label : value.getObjectLabels()) {
@@ -165,9 +197,6 @@ public class TAJSTypeChecker {
         }
 
         private Bool recurse(Type type, Arg arg) {
-            if (arg.value.isMaybeAbsent() && !arg.value.isMaybePresent()) {
-                return TRUE();
-            }
             return checkType(new TypeWithContext(type, arg.context), arg.value, arg.state);
         }
 
@@ -217,21 +246,9 @@ public class TAJSTypeChecker {
             throw new RuntimeException();
         }
 
-        private Value FALSE() {
-            return Value.makeBool(false);
-        }
-
-        private Value MAYBE() {
-            return Value.makeAnyBool();
-        }
-
-        private Value TRUE() {
-            return Value.makeBool(true);
-        }
-
         @Override
         public Bool visit(ReferenceType t, Arg arg) {
-            throw new RuntimeException();
+            return recurse(t.getTarget(), arg.withContext(new TypesUtil(info).generateParameterMap(t, arg.context)));
         }
 
         @Override
@@ -265,7 +282,44 @@ public class TAJSTypeChecker {
                         failed = true;
                     }
                     break;
-
+                case Any:
+                    return TRUE();
+                case Undefined:
+                    if (value.isMaybeUndef()) {
+                        succeeded = true;
+                    }
+                    if (value.isMaybeOtherThanUndef()) {
+                        failed = true;
+                    }
+                    break;
+                case Never:
+                    if (value.isMaybeAbsent()) {
+                        succeeded = true;
+                    }
+                    if (value.isMaybePresent()) {
+                        failed = true;
+                    }
+                    break;
+                case Null:
+                    if (value.isMaybeNull()) {
+                        succeeded = true;
+                    }
+                    if (value.isMaybeOtherThanNull()) {
+                        failed = true;
+                    }
+                    break;
+                case Object:
+                    if (value.isMaybeObject()) {
+                        succeeded = true;
+                    }
+                    if (value.isMaybeOtherThanObject()) {
+                        failed = true;
+                    }
+                    break;
+                case Void: // Void has been pre-transformed to only be direct returns of functions. And in that position it is equivalent to Any.
+                    return TRUE();
+                case Symbol:
+                    throw new RuntimeException("Symbols are not yet supported by TAJS");
                 default:
                     throw new RuntimeException(t.getKind().toString());
             }
@@ -275,7 +329,29 @@ public class TAJSTypeChecker {
 
         @Override
         public Bool visit(TupleType t, Arg arg) {
-            throw new RuntimeException();
+            Value value = arg.value;
+            if (!value.isMaybeObject()) {
+                return FALSE();
+            }
+
+            List<Bool> results = new ArrayList<>();
+
+            for (ObjectLabel label : value.getObjectLabels()) {
+                if (label.getKind() == ObjectLabel.Kind.ARRAY) {
+                    results.add(TRUE());
+                } else {
+                    results.add(FALSE());
+                }
+            }
+
+            // I could check on the length of the array. I don't, I just check on each of the properties.
+
+            for (int index = 0; index < t.getElementTypes().size(); index++) {
+                Type elementType = t.getElementTypes().get(index);
+                results.add(recurse(elementType, arg.withValue(pv.readPropertyValue(value.getObjectLabels(), Integer.toString(index)))));
+            }
+
+            return worstCase(results);
         }
 
         @Override
@@ -343,12 +419,36 @@ public class TAJSTypeChecker {
 
         @Override
         public Bool visit(TypeParameterType t, Arg arg) {
-            throw new RuntimeException();
+            if (arg.context.containsKey(t)) {
+                TypeWithContext lookup = arg.context.get(t);
+                return recurse(lookup.getType(), arg.withContext(lookup.getTypeContext()));
+            }
+            String markerField = info.typeParameterIndexer.getMarkerField(t);
+            return recurse(new BooleanLiteral(true), arg.withValue(pv.readPropertyValue(arg.value.getAllObjectLabels(), markerField)));
         }
 
         @Override
         public Bool visit(StringLiteral t, Arg arg) {
-            throw new RuntimeException();
+            boolean failed = false;
+            boolean succeeded = false;
+
+            Value value = arg.value;
+
+            if (arg.value.isMaybeOtherThanStr()) {
+                failed = true;
+            }
+
+            if (arg.value.isMaybeStr(t.getText())) {
+                succeeded = true;
+            } else if (arg.value.getStr() != null) {
+                failed = true;
+            } else if (!value.isNotStr()) {
+                failed = true;
+                succeeded = true;
+            }
+
+            value.isMaybeOtherThanStr();
+            return boolFromFail(failed, succeeded);
         }
 
         @Override
@@ -389,23 +489,31 @@ public class TAJSTypeChecker {
             }
             if (value.isMaybeNum(t.getValue())) {
                 succeeded = true;
+            } else if (value.getNum() != null) {
+                failed = true;
+            } else if (!value.isNotNum()) {
+                failed = true;
+                succeeded = true;
             }
             return boolFromFail(failed, succeeded);
         }
 
         @Override
         public Bool visit(IntersectionType t, Arg arg) {
-            throw new RuntimeException();
+            return worstCase(t.getElements().stream().map(type -> recurse(type, arg)).collect(Collectors.toList()));
         }
 
         @Override
         public Bool visit(ClassInstanceType t, Arg arg) {
-            throw new RuntimeException();
+            return recurse(((ClassType)t.getClassType()).getInstanceType(), arg);
         }
 
         @Override
         public Bool visit(ThisType t, Arg arg) {
-            throw new RuntimeException();
+            if (arg.context.getThisType() == null) {
+                throw new RuntimeException();
+            }
+            return recurse(arg.context.getThisType(), arg);
         }
 
         @Override
@@ -433,10 +541,21 @@ public class TAJSTypeChecker {
             result.add(value.restrictToBool());
             value = value.restrictToNotBool();
         }
+        if (value.isMaybeUndef()) { // if undefined
+            result.add(value.restrictToUndef());
+            value = value.restrictToNotUndef();
+        }
+        if (value.isMaybeNull()) { // if null
+            result.add(value.restrictToNull());
+            value = value.restrictToNotNull();
+        }
         for (ObjectLabel label : value.getObjectLabels()) {
             result.add(Value.makeObject(label));
         }
         value = value.restrictToNotObject();
+        if (value.isMaybePresent()) {
+            value.isMaybePresent();
+        }
 
         assert !value.isMaybePresent(); // Making sure we got everything.
 

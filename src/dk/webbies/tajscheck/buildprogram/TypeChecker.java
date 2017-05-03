@@ -135,10 +135,6 @@ public class TypeChecker {
             }
             result.add(Return(bool(true)));
 
-            if (true) {
-                throw new RuntimeException();
-            }
-
             String name = "assertType_" + typeCheckingFunctionList.size();
             FunctionExpression function = function(name, block(result), "assert", "exp", "path", "testType");
 
@@ -480,6 +476,7 @@ public class TypeChecker {
                     case "SpeechSynthesis":
                     case "SpeechSynthesisVoice":
                     case "MSCredentials":
+                    case "EventListenerOptions":
                         arg = arg.withDepth(1);
                         break; // Testing manually.
                     default:

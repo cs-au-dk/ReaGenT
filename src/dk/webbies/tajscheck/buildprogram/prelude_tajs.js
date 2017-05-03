@@ -1,5 +1,6 @@
 
 var require_cache = {};
+var random = Math.random;
 
 function loadLibrary(path) {
     if (require_cache[path]) {

@@ -10,7 +10,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,27 +27,101 @@ public class AnalyzeBenchmarks {
     @Parameterized.Parameter
     public Benchmark benchmark = null;
 
+    // Benchmarks that seem analyzeable.
+    private static final Set<String> whitelist = new HashSet<>(Arrays.asList(
+            "D3.js",
+            "q",
+            "async",
+            "Redux",
+            "Redux",
+            "Redux",
+            "Leaflet",
+            "Ace",
+            "reveal.js",
+            "intro.js",
+            "PleaseJS",
+            "highlight.js",
+            "RxJS",
+            "Zepto.js",
+            "pathjs",
+            "Moment.js",
+            "CodeMirror",
+            "PhotoSwipe",
+            "Jasmine",
+            "Swiper",
+            "box2dweb",
+            "Sortable",
+            "accounting.js",
+            "CreateJS",
+            "lunr.js",
+            "jQuery",
+            "Knockout"
+    ));
+
+    // Benchmarks that does not invoke any DOM functions, and are on the whitelist // TODO: Fill.
+    private static final Set<String> simpleBenchmarks = new HashSet<>(Arrays.asList(
+            "q",
+            "async"
+    ));
+
+    // Benchmarks that for various reasons are unanalyzeable.
+    private static final Set<String> blacklist = new HashSet<>(Arrays.asList(
+            // because it has getters/setters, which TAJS does not support
+            "PDF.js",
+            "Vue.js",
+            "three.js",
+            "Ember.js",
+            "Polymer", // <- because webcomponents has getter.
+
+            "RequireJS", // weird error, replicated in TestMicro
+            "QUnit", // weird error with arrays.
+            "React", // No transfer function for Object.freeze.
+            "Modernizr", // Run a WebGL function that is unsupported. (and sometimes it timeouts)
+            "Hammer.js", // Object.assign crashes TAJS
+            "Medium Editor", // "crashes" TAJS when calling Node.contains().
+            "MathJax" // "Unevalable eval: window"
+            ));
+
+    // Benchmarks where just the initialization reaches a timeout
+    private static final Set<String> timeouts = new HashSet<>(Arrays.asList(
+            "AngularJS",
+            "Chart.js",
+            "PeerJS",
+            "PixiJS",
+            "Foundation",
+            "Materialize",
+            "P2.js",
+            "bluebird",
+            "Fabric.js",
+            "Ionic",
+            "Handlebars",
+            "Video.js",
+            "Sugar",
+            "Backbone.js",
+            "axios",
+            "Lodash",
+            "Underscore.js"
+    ));
+
+    static {
+        if (!Util.concat(whitelist, blacklist, timeouts, simpleBenchmarks).stream().allMatch(RunBenchmarks.benchmarks.keySet()::contains)) {
+            System.err.println("AnalyzeBenchmarks: A benchmark was misspelled");
+        }
+        if (!simpleBenchmarks.stream().allMatch(whitelist::contains)) {
+            System.err.println("AnalyzeBenchmarks: A benchmark in SimpleBenchmarks wasn't in the whiteList");
+        }
+    }
+
+    // TODO: I need way better type-errors when running statically.
 
     @Parameterized.Parameters(name = "{0}")
     public static List<Benchmark> getBenchmarks() {
-        // pdf.js excluded because it has getters.
-        return RunBenchmarks.getBenchmarks().stream().filter(bench -> Stream.of(
-                // because it has getters/setters, which TAJS does not support
-                "pdf.d.ts",
-                "vue/index.d.ts",
-                "three.d.ts",
-                "ember.d.ts",
-                "polymer.d.ts", // <- because webcomponents has getter.
-
-                "underscore.d.ts", // hits an AnalysisLimitation / timeout.
-                "requirejs.d.ts", // weird error, replicated in TestMicro
-                "qunit.d.ts", // weird error with arrays.
-                "react.d.ts", // No transfer function for Object.freeze.
-                "modernizr.d.ts", // Run a WebGL function that is unsupported.
-                "hammer.d.ts", // Object.assign crashes TAJS
-                "medium-editor.d.ts", // "crashes" TAJS when calling Node.contains().
-                "mathjax.d.ts" // runs into heavy problem doing init
-        ).noneMatch(bench.dTSFile::contains)).collect(Collectors.toList());
+        return RunBenchmarks.getBenchmarks().stream()
+                .filter(bench -> !blacklist.contains(bench.name))
+                .filter(bench -> !timeouts.contains(bench.name))
+//                .filter(bench -> !whitelist.contains(bench.name))
+                .map(Benchmark::useTAJS)
+                .collect(Collectors.toList());
     }
 
     // TODO: re-introduce the "small drivers", and analyze those. Use a parametarized test case.
@@ -62,6 +138,7 @@ public class AnalyzeBenchmarks {
         System.out.println(Util.toFixed(size, 2) + "kb driver");
 
         if (size > 2000) {
+            System.out.println("Skipping because driver is BIG");
             return; // Currently ignoring when the driver is too big.
         }
 
@@ -74,21 +151,6 @@ public class AnalyzeBenchmarks {
         }
     }
 
-    // Analyzeable without DOM enabled:
-    /* TODO: See which of the benchmarks use DOM.
-    rx
-    box2dweb
-    photoswipe
-    accounting
-    highlight
-    please
-    intro
-    lunr
-    jasmine
-    knockout
-    q
-    async (takes slightly more than 10 seconds)
-     */
     @Test
     public void initialize() throws Exception {
         try {
