@@ -1505,15 +1505,15 @@ public class UnitTests {
 
     @Test
     public void ambient2() throws Exception {
-        RunResult result = run("ambient2");
+        RunResult result = run("ambient2", options().setCheckDepthReport(0).build());
 
-        assertThat(result.typeErrors.size(), is(greaterThan(0)));
+        assertThat(result.typeErrors.size(), is(equalTo(1)));
     }
 
     @Test
     public void ambient3() throws Exception {
-        RunResult result = run("ambient2");
+        RunResult result = run("ambient3", options().setCheckDepthReport(0).build());
 
-        assertThat(result.typeErrors.size(), is(greaterThanOrEqualTo(2)));
+        assertThat(result.typeErrors.size(), is(equalTo(2)));
     }
 }
