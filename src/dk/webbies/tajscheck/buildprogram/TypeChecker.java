@@ -427,6 +427,7 @@ public class TypeChecker {
                     case "Selection":
                     case "Performance":
                     case "SVGImageElement":
+                    case "URLSearchParams":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "StyleMedia":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(expFromString("window.styleMedia.__proto__.constructor")), name));
@@ -552,6 +553,9 @@ public class TypeChecker {
             if ("Array".equals(info.typeNames.get(t.getTarget()))) {
                 Type indexType = t.getTypeArguments().get(0);
                 return checkArrayThinghy(indexType, "Array", arg);
+            } else if ("ArrayLike".equals(info.typeNames.get(t.getTarget()))) {
+                Type indexType = t.getTypeArguments().get(0);
+                return checkArrayThinghy(indexType, null, arg);
             }
 
             if (info.nativeTypes.contains(t) && !(info.typeNames.get(t) != null && info.typeNames.get(t).startsWith("window."))) {
@@ -564,10 +568,11 @@ public class TypeChecker {
         }
 
         private List<TypeCheck> checkArrayThinghy(Type indexType, String instance, Arg arg) {
-            List<TypeCheck> result = new ArrayList<>(Arrays.asList(
-                    expectNotNull(),
-                    new SimpleTypeCheck(Check.instanceOf(identifier(instance)), instance)
-            ));
+            List<TypeCheck> result = new ArrayList<>();
+            result.add(expectNotNull());
+            if (instance != null) {
+                result.add(new SimpleTypeCheck(Check.instanceOf(identifier(instance)), instance));
+            }
 
             if (arg.depthRemaining > 0 && !info.bench.options.disableGenerics) {
                 arg = arg.decreaseDepth();
@@ -805,6 +810,8 @@ public class TypeChecker {
                 return "undefined";
             case Symbol:
                 return "symbol";
+            case Object:
+                return "object";
             default:
                 throw new RuntimeException(type.getKind().toString());
         }
