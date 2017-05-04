@@ -715,6 +715,12 @@ public class UnitTests {
         sanityCheck(benchFromFolder("complexSanityCheck20").withOptions(options -> options.getBuilder().setDisableGenerics(true).build()), NODE);
     }
 
+    @Test // TODO:
+    public void complexSanityCheck21() throws Exception {
+        // Jeg har en mistanke om at det skyldes min "kombiner generics med samme constraint" i BenchmarkInfo.
+        sanityCheck(benchFromFolder("complexSanityCheck21"), NODE);
+    }
+
     @Test
     public void nodeList() throws Exception {
         sanityCheck(benchFromFolder("nodeList", options().setCheckDepthReport(1).setCheckDepthUseValue(1).build()), BROWSER);
