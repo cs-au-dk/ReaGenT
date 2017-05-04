@@ -182,14 +182,18 @@ public class TAJSTypeChecker {
             if (!t.getDeclaredCallSignatures().isEmpty() || !t.getDeclaredConstructSignatures().isEmpty()) {
                 boolean functionFailed = false;
                 boolean functionSucceeded = false;
-                for (ObjectLabel label : value.getObjectLabels()) {
-                    if (label.getKind() != ObjectLabel.Kind.FUNCTION) {
-                        functionFailed = true;
-                    } else {
-                        functionSucceeded = true;
+                if (value.isMaybeObject()) {
+                    for (ObjectLabel label : value.getObjectLabels()) {
+                        if (label.getKind() != ObjectLabel.Kind.FUNCTION) {
+                            functionFailed = true;
+                        } else {
+                            functionSucceeded = true;
+                        }
                     }
+                    results.add(boolFromFail(functionFailed, functionSucceeded));
+                } else {
+                    results.add(FALSE());
                 }
-                results.add(boolFromFail(functionFailed, functionSucceeded));
             }
 
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
@@ -291,7 +295,17 @@ public class TAJSTypeChecker {
                 case Void: // Void has been pre-transformed to only be direct returns of functions. And in that position it is equivalent to Any.
                     return TRUE();
                 case Symbol:
-                    throw new RuntimeException("Symbols are not yet supported by TAJS");
+                    if (value.isMaybeOtherThanObject()) {
+                        failed = true;
+                    }
+                    for (ObjectLabel label : value.getObjectLabels()) {
+                        if (label.getKind() == ObjectLabel.Kind.SYMBOL) {
+                            succeeded = true;
+                        } else {
+                            failed = true;
+                        }
+                    }
+                    break;
                 default:
                     throw new RuntimeException(t.getKind().toString());
             }
