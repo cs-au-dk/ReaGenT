@@ -33,6 +33,8 @@ public class RunAllDynamicUnitTests {
             "complexOverloads",
             "symbol",
 
+            "browserMultipleProperties", // incompatible with the NODE assumption used here.
+
             "unsoundSiblings",
             "mappedTypes",
             "basicMemomizeExample",
