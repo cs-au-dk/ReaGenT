@@ -488,6 +488,8 @@ public class TypeCreator {
                     return Return(newCall(identifier("Symbol")));
                 case Never:
                     return throwStatement(newCall(identifier("Error")));
+                case Object:
+                    return Return(object());
                 default:
                     throw new RuntimeException("Cannot yet produce a simple: " + simple.getKind());
             }
@@ -1203,6 +1205,8 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return caches");
             case "Request":
                 return AstBuilder.stmtFromString("return new Request(1);");
+            case "URLSearchParams":
+                return AstBuilder.stmtFromString("return new URLSearchParams();");
             case "Int8Array":
             case "Uint8Array":
             case "Uint32Array":
