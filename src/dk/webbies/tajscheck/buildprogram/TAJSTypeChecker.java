@@ -73,7 +73,7 @@ public class TAJSTypeChecker {
     private Bool checkType(TypeWithContext type, Value value, State state) {
         Pair<TypeWithContext, Pair<Value, State>> key = Pair.make(type, Pair.make(value, state));
         if (typeCheckingCache.containsKey(key)) {
-            return typeCheckingCache.get(key);
+            return typeCheckingCache.get(key); // TODO: Test the number of cache-hits.
         }
         typeCheckingCache.put(key, Value.makeBool(true)); // We assume that this is true, while we go through children (induction hypothesis).
 
@@ -344,8 +344,33 @@ public class TAJSTypeChecker {
         public Bool visit(UnionType t, Arg arg) {
             Collection<Value> split = split(arg.value);
 
-            // There are multiple possible values. Each of these values MUST (worstCase) match at least one (bestCase) of the unionTypes.
-            return worstCase(split.stream().map(value -> bestCase(t.getElements().stream().map(type -> recurse(type, arg.withValue(value))).collect(Collectors.toList()))).collect(Collectors.toList()));
+            Bool result = join(split.stream().map(value -> bestCase(t.getElements().stream().map(type -> recurse(type, arg.withValue(value))).collect(Collectors.toList()))).collect(Collectors.toList()));
+            return result;
+        }
+
+        @SuppressWarnings("Duplicates")
+        private Bool join(List<Bool> cases) {
+            boolean isTrue = false;
+            boolean isMaybe = false;
+            boolean isFalse = false;
+            for (Bool bool : cases) {
+                if (bool.isMaybeFalseButNotTrue()) {
+                    isFalse = true;
+                }
+                if (bool.isMaybeTrueButNotFalse()) {
+                    isTrue = true;
+                }
+                if (bool.isMaybeAnyBool()) {
+                    isMaybe = true;
+                }
+            }
+            if (isMaybe || (isTrue && isFalse)) {
+                return MAYBE();
+            }
+            if (isTrue) {
+                return TRUE();
+            }
+            return FALSE();
         }
 
         @SuppressWarnings("Duplicates")

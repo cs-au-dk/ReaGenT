@@ -149,6 +149,14 @@ public class TAJSUnitTests {
 
             return this;
         }
+
+        TAJSResultTester toNotPass() {
+            for (Collection<AssertionResult> values : results.asMap().values()) {
+                assertTrue(values.stream().allMatch(value -> value.result != AssertionResult.BooleanResult.DEFINITELY_TRUE));
+            }
+
+            return this;
+        }
     }
 
     private TAJSResultTester expect(MultiMap<String, AssertionResult> result) {
@@ -162,14 +170,35 @@ public class TAJSUnitTests {
         assertThat(driver, not(containsString("assertType_0")));
     }
 
-    // TODO: Have some test where an object has a property that is a number (two, one should fail and one should pass).
+    @Test
+    public void unionMightFail() throws Exception {
+        MultiMap<String, AssertionResult> result = run("unionMightFail");
 
-    // TODO: Have some union that fails.
+        expect(result)
+                .forPath("module.foo()")
+                .toNotFail()
+                .toNotPass();
+    }
 
-    // TODO: Construct an example with union-types, where the static analysis with the old assertType functions is unable to prove correctness. But with the new, it is able to prove it.
+    @Test
+    public void getter() throws Exception {
+        MultiMap<String, AssertionResult> result = run("getter");
 
-    // TODO: An example where a property is accessed using a getter.
+        expect(result)
+                .forPath("module.foo()")
+                .toPass();
+    }
 
+    @Test
+    @Ignore // TODO: Change the way a union-test is performed. Make it more TAJS-friendly.
+    // TODO: Make a second step of this test, where the assertType functions of the dynamic analysis is used.
+    public void simpleUnion() throws Exception {
+        MultiMap<String, AssertionResult> result = run("simpleUnion");
+
+        expect(result)
+                .forPath("module.foo()")
+                .toPass();
+    }
 
     @Test
     public void primitiveOrObject() throws Exception {

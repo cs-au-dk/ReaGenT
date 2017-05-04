@@ -1,4 +1,5 @@
 TODO:
+TODO: - Få line-analysis2 til at virke.
 TODO: - Få kigget på resterende kald til assert når vi kører under TAJS.
 TODO: - Få testet TypeScript 2.3 features.
 TODO: - Support Symbol (see IterableIterator)
