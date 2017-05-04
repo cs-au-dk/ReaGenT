@@ -36,7 +36,6 @@ public class AnalyzeBenchmarks {
             "Redux",
             "Redux",
             "Leaflet",
-            "Ace",
             "reveal.js",
             "intro.js",
             "PleaseJS",
@@ -55,7 +54,17 @@ public class AnalyzeBenchmarks {
             "CreateJS",
             "lunr.js",
             "jQuery",
-            "Knockout"
+            "Knockout",
+
+            // Below timed out before the tracifier branch
+            "Chart.js",
+            "PeerJS",
+            "PixiJS",
+            "Handlebars",
+            "axios",
+
+            // Crashed before the tracifier branch
+            "Medium Editor"
     ));
 
     // Benchmarks that does not invoke any DOM functions, and are on the whitelist // TODO: Fill.
@@ -73,33 +82,28 @@ public class AnalyzeBenchmarks {
             "Ember.js",
             "Polymer", // <- because webcomponents has getter.
 
+            "Ace", // Calls unmodelled Object.freeze
             "RequireJS", // weird error, replicated in TestMicro
             "QUnit", // weird error with arrays.
             "React", // No transfer function for Object.freeze.
             "Modernizr", // Run a WebGL function that is unsupported. (and sometimes it timeouts)
             "Hammer.js", // Object.assign crashes TAJS
-            "Medium Editor", // "crashes" TAJS when calling Node.contains().
             "MathJax" // "Unevalable eval: window"
             ));
 
     // Benchmarks where just the initialization reaches a timeout
     private static final Set<String> timeouts = new HashSet<>(Arrays.asList(
             "AngularJS",
-            "Chart.js",
-            "PeerJS",
-            "PixiJS",
             "Foundation",
             "Materialize",
             "P2.js",
             "bluebird",
             "Fabric.js",
             "Ionic",
-            "Handlebars",
             "Video.js",
-            "Sugar",
             "Backbone.js",
-            "axios",
             "Lodash",
+            "Sugar", // sometimes within the timeout, but far from always, so it ends up here. 
             "Underscore.js"
     ));
 
