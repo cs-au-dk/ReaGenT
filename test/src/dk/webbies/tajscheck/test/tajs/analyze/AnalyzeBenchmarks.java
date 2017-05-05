@@ -1,8 +1,9 @@
-package dk.webbies.tajscheck.test.tajs;
+package dk.webbies.tajscheck.test.tajs.analyze;
 
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
+import dk.webbies.tajscheck.test.tajs.TAJSUtil;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -28,12 +29,10 @@ public class AnalyzeBenchmarks {
     public Benchmark benchmark = null;
 
     // Benchmarks that seem analyzeable.
-    private static final Set<String> whitelist = new HashSet<>(Arrays.asList(
+    static final Set<String> whitelist = new HashSet<>(Arrays.asList(
             "D3.js",
             "q",
             "async",
-            "Redux",
-            "Redux",
             "Redux",
             "Leaflet",
             "reveal.js",
@@ -67,14 +66,20 @@ public class AnalyzeBenchmarks {
             "Medium Editor"
     ));
 
-    // Benchmarks that does not invoke any DOM functions, and are on the whitelist // TODO: Fill.
-    private static final Set<String> simpleBenchmarks = new HashSet<>(Arrays.asList(
+    // Benchmarks that does not invoke any DOM functions, and are on the whitelist
+    static final Set<String> simpleBenchmarks = new HashSet<>(Arrays.asList(
             "q",
-            "async"
+            "async",
+            "Redux",
+            "PleaseJS",
+//            "Moment.js",
+//            "box2dweb",
+            "accounting.js",
+            "lunr.js"
     ));
 
     // Benchmarks that for various reasons are unanalyzeable.
-    private static final Set<String> blacklist = new HashSet<>(Arrays.asList(
+    static final Set<String> blacklist = new HashSet<>(Arrays.asList(
             // because it has getters/setters, which TAJS does not support
             "PDF.js",
             "Vue.js",
@@ -92,7 +97,7 @@ public class AnalyzeBenchmarks {
             ));
 
     // Benchmarks where just the initialization reaches a timeout
-    private static final Set<String> timeouts = new HashSet<>(Arrays.asList(
+    static final Set<String> timeouts = new HashSet<>(Arrays.asList(
             "AngularJS",
             "Foundation",
             "Materialize",
@@ -107,6 +112,7 @@ public class AnalyzeBenchmarks {
             "Underscore.js"
     ));
 
+    // Sanity checks on the above lists.
     static {
         if (!Util.concat(whitelist, blacklist, timeouts, simpleBenchmarks).stream().allMatch(RunBenchmarks.benchmarks.keySet()::contains)) {
             System.err.println("AnalyzeBenchmarks: A benchmark was misspelled");
@@ -114,6 +120,7 @@ public class AnalyzeBenchmarks {
         if (!simpleBenchmarks.stream().allMatch(whitelist::contains)) {
             System.err.println("AnalyzeBenchmarks: A benchmark in SimpleBenchmarks wasn't in the whiteList");
         }
+        RunBenchmarks.benchmarks.keySet().stream().filter(Util.not(whitelist::contains)).filter(Util.not(blacklist::contains)).filter(Util.not(timeouts::contains)).forEach(forgotten -> System.err.println("AnalyzeBenchmarks: " + forgotten + " was forgotten!"));
     }
 
     // TODO: I need way better type-errors when running statically.
@@ -121,9 +128,10 @@ public class AnalyzeBenchmarks {
     @Parameterized.Parameters(name = "{0}")
     public static List<Benchmark> getBenchmarks() {
         return RunBenchmarks.getBenchmarks().stream()
-                .filter(bench -> !blacklist.contains(bench.name))
-                .filter(bench -> !timeouts.contains(bench.name))
-//                .filter(bench -> !whitelist.contains(bench.name))
+//                .filter(bench -> blacklist.contains(bench.name))
+//                .filter(bench -> timeouts.contains(bench.name))
+//                .filter(bench -> whitelist.contains(bench.name))
+                .filter(bench -> simpleBenchmarks.contains(bench.name))
                 .map(Benchmark::useTAJS)
                 .collect(Collectors.toList());
     }

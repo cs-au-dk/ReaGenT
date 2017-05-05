@@ -61,7 +61,7 @@ public class RunAllDynamicUnitTests {
         }
         MultiMap<String, AssertionResult> result = TAJSUnitTests.run("../unit/" + folderName);
 
-        System.out.println(TAJSUtil.prettyResult(result));
+        System.out.println(TAJSUtil.prettyResult(result, (r) -> true));
     }
 
     @Test

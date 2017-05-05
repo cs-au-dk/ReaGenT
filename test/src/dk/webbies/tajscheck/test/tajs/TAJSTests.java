@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.test.tajs;
 
+import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 

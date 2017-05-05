@@ -4,6 +4,7 @@ import dk.brics.tajs.analysis.TAJSFunctionsEvaluator;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.lattice.Context;
 import dk.brics.tajs.lattice.Value;
+import dk.brics.tajs.meta.monitors.MonitorFactory;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
 import dk.brics.tajs.options.Options;
@@ -18,11 +19,9 @@ import dk.webbies.tajscheck.buildprogram.TAJSTypeChecker;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 
 import static dk.webbies.tajscheck.util.Pair.toTAJS;
 import static org.hamcrest.CoreMatchers.anyOf;
@@ -52,7 +51,16 @@ public class TAJSUtil {
             throw new RuntimeException("Definitely cannot do this!");
         }
 
-        IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(new Monitoring(), new OrdinaryExitReachableChecker());
+
+        List<IAnalysisMonitoring> monitors = new ArrayList<>(Arrays.asList(new Monitoring(), new OrdinaryExitReachableChecker()));
+
+        if (true) { // TODO: Opion: LineAnalysis.
+            monitors.add(MonitorFactory.createLineAnalysis2Monitor());
+            options.enableAbortGracefullyOnAnalysisLimitations();
+        }
+
+
+        IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(monitors);
 
         Misc.init();
         Misc.captureSystemOutput();
@@ -142,24 +150,21 @@ public class TAJSUtil {
 
         MultiMap<String, AssertionResult> result = runTAJS(filePath, secondsTimeout, bench.run_method, driver.getFirst());
 
-        System.out.println(prettyResult(result));
+        System.out.println(prettyResult(result, assertionResult -> assertionResult.result.isSometimesFalse()));
 
         return result;
     }
 
-    public static String prettyResult(MultiMap<String, AssertionResult> result) {
+    public static String prettyResult(MultiMap<String, AssertionResult> result, Predicate<AssertionResult> predicate) {
         StringBuilder builder = new StringBuilder();
         for (Map.Entry<String, Collection<AssertionResult>> entry : result.asMap().entrySet()) {
             for (AssertionResult tajsResult : entry.getValue()) {
-                if (tajsResult.result.isSometimesFalse()) {
+                if (predicate.test(tajsResult)) {
                     builder
-                            .append("Found assertion error on path ").append(entry.getKey()).append("\n")
+                            .append("Path ").append(entry.getKey()).append("\n")
                             .append("    The assertion is: ").append(tajsResult.result.pretty).append("\n")
                             .append("    Expected: ").append(tajsResult.expected).append("\n")
                             .append("    But got: ").append(tajsResult.actual.toString()).append("\n");
-                    if (tajsResult.result == AssertionResult.BooleanResult.SOMETIMES_TRUE_SOMETIMES_FALSE) {
-                        System.out.println("    Although the assertion definitely succeeds for in other contexts.\n");
-                    }
                     builder.append("\n");
                 }
             }

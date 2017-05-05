@@ -29,9 +29,45 @@ public class RunSmall {
     public static <T> List<T> runSmallDrivers(Benchmark orgBench, Function<String, T> runner, int runsLimit, int collectionSizeLimit) throws IOException {
         assert runsLimit > 0;
 
+        List<List<String>> paths = getPathsToTest(orgBench, runsLimit, collectionSizeLimit);
+
+        return runSmallDrivers(orgBench, runner, paths);
+    }
+
+    public static <T> List<T> runSmallDrivers(Benchmark orgBench, Function<String, T> runner, List<List<String>> paths) throws IOException {
         BenchmarkInfo info = BenchmarkInfo.create(orgBench);
 
-        List<String> allPaths = new TestCreator(info).createTests(false).stream().map(Test::getPath).map(TestCreator::simplifyPath).collect(Collectors.toList());
+        List<T> result = new ArrayList<>();
+
+        for (int i = 0; i < paths.size(); i++) {
+            List<String> path = paths.get(i);
+
+            Benchmark bench = orgBench.withPathsToTest(path);
+
+            System.out.println("Creating small driver for: " + path + "  " + (i + 1) + "/" + paths.size());
+
+            List<Test> specificTests = new TestCreator(info.withBench(bench)).createTests();
+
+            Statement program = new DriverProgramBuilder(specificTests, info).buildDriver(null);
+
+            String filePath = Main.getFolderPath(bench) + Main.TEST_FILE_NAME;
+
+            Util.writeFile(filePath, AstToStringVisitor.toString(program));
+
+            try {
+                result.add(runner.apply(filePath));
+            } catch (Throwable e) {
+                System.out.println("Got exception: " + e + ", while running small driver...");
+            }
+        }
+
+        return result;
+    }
+
+    public static List<List<String>> getPathsToTest(Benchmark orgBench, int runsLimit, int collectionSizeLimit) {
+        BenchmarkInfo firstInfo = BenchmarkInfo.create(orgBench);
+
+        List<String> allPaths = new TestCreator(firstInfo).createTests(false).stream().map(Test::getPath).map(TestCreator::simplifyPath).collect(Collectors.toList());
 
         allPaths = allPaths.stream().filter(path -> !path.contains("[arg")).collect(Collectors.toList());
 
@@ -63,32 +99,7 @@ public class RunSmall {
             boolean created = dir.mkdir();
             assert created;
         }
-
-        List<T> result = new ArrayList<>();
-
-        for (int i = 0; i < paths.size(); i++) {
-            List<String> path = paths.get(i);
-
-            Benchmark bench = orgBench.withPathsToTest(path);
-
-            System.out.println("Creating small driver for: " + path + "  " + (i + 1) + "/" + paths.size());
-
-            List<Test> specificTests = new TestCreator(info.withBench(bench)).createTests();
-
-            Statement program = new DriverProgramBuilder(specificTests, info).buildDriver(null);
-
-            String filePath = Main.getFolderPath(bench) + Main.TEST_FILE_NAME;
-
-            Util.writeFile(filePath, AstToStringVisitor.toString(program));
-
-            try {
-                result.add(runner.apply(filePath));
-            } catch (Throwable e) {
-                System.out.println("Got exception: " + e + ", while running small driver...");
-            }
-        }
-
-        return result;
+        return paths;
     }
 
     public static Function<String, CoverageResult> runCoverage(Benchmark bench) {

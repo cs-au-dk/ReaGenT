@@ -77,6 +77,10 @@ public final class CheckOptions {
         return new Builder();
     }
 
+    public boolean makeSeparateReportAssertions() {
+        return this.checkDepthReport == this.checkDepthUseValue && !useTAJS;
+    }
+
     @SuppressWarnings("SameParameterValue")
     public static final class Builder {
         private int checkDepthUseValue = 0; // How deeply should objects be checked, when seeing if the value should be used.

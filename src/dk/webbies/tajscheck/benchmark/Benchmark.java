@@ -68,7 +68,7 @@ public class Benchmark {
     }
 
     public Benchmark useTAJS() {
-        return this.withOptions(options -> options.getBuilder().setUseTAJS(true).build());
+        return this.withOptions(options -> options.getBuilder().setUseTAJS(true).setCheckDepthReport(0).build());
     }
 
     public Benchmark addDependencies(Benchmark... benchmarks) {

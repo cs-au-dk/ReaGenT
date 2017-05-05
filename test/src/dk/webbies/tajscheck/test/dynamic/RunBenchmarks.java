@@ -194,9 +194,8 @@ public class RunBenchmarks {
     }
 
     @Test
-    @Ignore
     public void runSmallDrivers() throws Exception {
-        OutputParser.RunResult result = OutputParser.combine(RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark), 100, Integer.MAX_VALUE));
+        OutputParser.RunResult result = OutputParser.combine(RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark), 3, Integer.MAX_VALUE));
 
         for (OutputParser.TypeError typeError : result.typeErrors) {
             System.out.println(typeError);

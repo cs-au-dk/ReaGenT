@@ -738,7 +738,7 @@ public class TypeCreator {
 
             Util.zip(args.stream(), parameters.stream(), (argName, par) ->
                     block(
-                            options.checkDepthReport == options.checkDepthUseValue ? block() : expressionStatement(call(function(
+                            info.options.makeSeparateReportAssertions() ? block() : expressionStatement(call(function(
                                     block(
                                             comment("There warnings are just reported, not used to see if the value should be used (that comes below). "),
                                             typeChecker.assertResultingType(new TypeWithContext(par.getType(), typeContext), identifier(argName), path + ".[" + argName + "]", info.options.checkDepthReport, "argument")
