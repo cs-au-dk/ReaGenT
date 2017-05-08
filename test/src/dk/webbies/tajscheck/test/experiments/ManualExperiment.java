@@ -72,6 +72,9 @@ public class ManualExperiment {
             Main.writeFullDriver(benchmark);
             return OutputParser.parseDriverResult(Main.runBenchmark(benchmark));
         } else {
+            if (true) {
+                throw new RuntimeException(); // TODO: The below is currently deterministic.
+            }
             List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark), 1, 10);
             return OutputParser.combine(results);
         }

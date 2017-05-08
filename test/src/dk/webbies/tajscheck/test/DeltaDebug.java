@@ -5,7 +5,10 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
+import dk.webbies.tajscheck.test.tajs.AssertionResult;
+import dk.webbies.tajscheck.test.tajs.TAJSUtil;
 import dk.webbies.tajscheck.util.MinimizeArray;
+import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
@@ -178,20 +181,20 @@ public class DeltaDebug {
 
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
-        Util.alwaysRecreate = true;
-        Benchmark bench = RunBenchmarks.benchmarks.get("Sugar").withOptions(options -> options.getBuilder().setMaxIterationsToRun(1).build());
+        Util.alwaysRecreate = false;
+        Benchmark bench = RunBenchmarks.benchmarks.get("q").withOptions(options -> options.getBuilder().setOnlyInitialize(true).build()).useTAJS();
 //        Benchmark bench = RunBenchmarks.benchmarks.get("Redux");
 //
-        String file = bench.dTSFile;
+        String file = bench.jsFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                Main.generateFullDriver(bench);
-                return false;
+                MultiMap<String, AssertionResult> result = TAJSUtil.run(bench.useTAJS().withOptions(options -> options.getBuilder().setOnlyInitialize(true).build()), 60);
+                return result.isEmpty();
             } catch (NullPointerException e) {
                 return false;
             } catch (RuntimeException e) {
-                return e.getMessage().contains("'forEach' of undefined");
+                return false;
             } catch (Error | Exception e) {
                 e.printStackTrace();
                 return false;

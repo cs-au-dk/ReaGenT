@@ -29,6 +29,7 @@ public final class CheckOptions {
     public final boolean useAssertTypeFunctions;
     public final boolean onlyInitialize;
     public final boolean useTAJS;
+    public final boolean useTracified;
 
 
     private CheckOptions(Builder builder) {
@@ -54,6 +55,7 @@ public final class CheckOptions {
         this.constructOnlyPrimitives = builder.constructOnlyPrimitives;
         this.onlyInitialize = builder.onlyInitialize;
         this.useTAJS = builder.useTAJS;
+        this.useTracified = builder.useTracified;
         this.builder = builder;
 
     }
@@ -107,6 +109,7 @@ public final class CheckOptions {
         private boolean onlyInitialize = false; // If true, all tests except the initializing test is removed.
 
         private boolean useTAJS = false; // If true, run abstractly instead of concretely.
+        private boolean useTracified = false;
 
         private Builder() {}
 
@@ -120,6 +123,11 @@ public final class CheckOptions {
 
         public Builder setUseTAJS(boolean useTAJS) {
             this.useTAJS = useTAJS;
+            return this;
+        }
+
+        public Builder setUseTracified(boolean useTracified) {
+            this.useTracified = useTracified;
             return this;
         }
 

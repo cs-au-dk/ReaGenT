@@ -73,7 +73,7 @@ public class RunSmall {
 
         Trie trie = Trie.create(allPaths);
         List<String> prefixFixedPaths = allPaths.stream().filter(Util.not(trie::containsChildren)).distinct().collect(Collectors.toList());
-        Collections.shuffle(prefixFixedPaths);
+        Collections.shuffle(prefixFixedPaths, new Random(1337));
 
         collectionSizeLimit = Math.max(1, Math.min(collectionSizeLimit, prefixFixedPaths.size() / runsLimit));
 

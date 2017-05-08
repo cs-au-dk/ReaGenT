@@ -45,8 +45,8 @@ public class RunBenchmarks {
                 .setSplitUnions(false) // Because some of these benchmarks use an insane amount of overloads, so this can cause the size of the generated program to explode (about a factor 400x for moment).
                 .build();
 
-        register(new Benchmark("Moment.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", NODE, options));
-        register(new Benchmark("async", ParseDeclaration.Environment.ES5Core, "test/benchmarks/async/async.js", "test/benchmarks/async/async.d.ts", NODE, options));
+        register(new Benchmark("Moment.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", BROWSER, options));
+        register(new Benchmark("async", ParseDeclaration.Environment.ES5Core, "test/benchmarks/async/async.js", "test/benchmarks/async/async.d.ts", BROWSER, options));
         register(new Benchmark("pathjs", ParseDeclaration.Environment.ES5Core, "test/benchmarks/pathjs/pathjs.js", "test/benchmarks/pathjs/pathjs.d.ts", BROWSER, options));
         register(new Benchmark("accounting.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/accounting/accounting.js", "test/benchmarks/accounting/accounting.d.ts", NODE, options));
         register(new Benchmark("lunr.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/lunr/lunr.js", "test/benchmarks/lunr/lunr.d.ts", NODE, options));

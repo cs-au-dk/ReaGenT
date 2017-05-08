@@ -2,7 +2,9 @@ package dk.webbies.tajscheck.benchmark;
 
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.testcreator.TestCreator;
+import dk.webbies.tajscheck.util.Util;
 
+import java.io.File;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -32,13 +34,18 @@ public class Benchmark {
     private Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, Set<String> pathsToTest, CheckOptions options, List<Benchmark> dependencies, String exportName) {
         this.name = name;
         this.environment = environment;
-        this.jsFile = jsFile;
         this.dTSFile = dTSFile;
         this.pathsToTest = pathsToTest;
         this.run_method = load_method;
         this.options = options;
         this.dependencies = dependencies;
         this.exportName = exportName;
+        if (options.useTracified && !jsFile.contains("tracified")) {
+            this.jsFile = Util.removeSuffix(jsFile, ".js") + "-tracified.js";
+            assert new File(this.jsFile).exists();
+        } else {
+            this.jsFile = jsFile;
+        }
     }
 
     public Benchmark withPathsToTest(Collection<String> pathsToTest) {

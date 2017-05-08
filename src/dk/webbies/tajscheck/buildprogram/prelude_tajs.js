@@ -16,6 +16,7 @@ function loadLibrary(path) {
         "exports": exports
     };
     utilFunction(exports, module, nestedRequire);
+    require_cache[path] = module.exports;
     return module.exports;
 }
 

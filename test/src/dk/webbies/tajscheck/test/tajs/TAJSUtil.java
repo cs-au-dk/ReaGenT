@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 
 import static dk.webbies.tajscheck.util.Pair.toTAJS;
 import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.describedAs;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -51,13 +52,18 @@ public class TAJSUtil {
             throw new RuntimeException("Definitely cannot do this!");
         }
 
+        if (info.bench.options.useTracified) {
+            options.setTracifierContextSensitivity(true);
+            options.setTracifierMessagePriorities(true);
+        }
+
 
         List<IAnalysisMonitoring> monitors = new ArrayList<>(Arrays.asList(new Monitoring(), new OrdinaryExitReachableChecker()));
 
-        if (true) { // TODO: Opion: LineAnalysis.
+        /*if (true) { // TODO: Opion: LineAnalysis.
             monitors.add(MonitorFactory.createLineAnalysis2Monitor());
             options.enableAbortGracefullyOnAnalysisLimitations();
-        }
+        }*/
 
 
         IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(monitors);

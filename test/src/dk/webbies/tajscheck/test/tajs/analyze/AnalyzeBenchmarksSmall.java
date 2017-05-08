@@ -2,6 +2,7 @@ package dk.webbies.tajscheck.test.tajs.analyze;
 
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.test.Matchers;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.tajs.AssertionResult;
 import dk.webbies.tajscheck.test.tajs.TAJSUtil;
@@ -15,6 +16,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 
 /**
  * Created by erik1 on 19-12-2016.
@@ -36,7 +41,7 @@ public class AnalyzeBenchmarksSmall {
         for (String benchmarkName : benchmarks) {
             Benchmark benchmark = RunBenchmarks.benchmarks.get(benchmarkName).useTAJS();
 
-            List<List<String>> paths = RunSmall.getPathsToTest(benchmark, Integer.MAX_VALUE, 1);
+            List<List<String>> paths = RunSmall.getPathsToTest(benchmark, 10, 1);
 
             for (List<String> path : paths) {
                 assert path.size() == 1;
@@ -59,8 +64,12 @@ public class AnalyzeBenchmarksSmall {
     public void run() throws Exception {
         Benchmark bench = this.bench.withPathsToTest(Collections.singletonList(path));
 
-        MultiMap<String, AssertionResult> result = TAJSUtil.run(bench);
+        MultiMap<String, AssertionResult> result = TAJSUtil.run(bench, 2 * 60);
 
         System.out.println(TAJSUtil.prettyResult(result, (r) -> true));
+
+        assertThat(result.asMap(), is(not(Matchers.emptyMap())));
     }
+
+
 }

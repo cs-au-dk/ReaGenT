@@ -2,9 +2,13 @@ package dk.webbies.tajscheck.test.tajs.analyze;
 
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.test.Matchers;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
+import dk.webbies.tajscheck.test.tajs.AssertionResult;
 import dk.webbies.tajscheck.test.tajs.TAJSUtil;
+import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
+import junit.framework.TestCase;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,11 +22,16 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static dk.webbies.tajscheck.test.Matchers.emptyMap;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+
 /**
  * Created by erik1 on 19-12-2016.
  */
 @RunWith(Parameterized.class)
-public class AnalyzeBenchmarks {
+public class AnalyzeBenchmarks extends TestCase {
 
     @SuppressWarnings("WeakerAccess")
     @Parameterized.Parameter
@@ -66,9 +75,9 @@ public class AnalyzeBenchmarks {
             "Medium Editor"
     ));
 
+
     // Benchmarks that does not invoke any DOM functions, and are on the whitelist
     static final Set<String> simpleBenchmarks = new HashSet<>(Arrays.asList(
-            "q",
             "async",
             "Redux",
             "PleaseJS",
@@ -94,7 +103,7 @@ public class AnalyzeBenchmarks {
             "Modernizr", // Run a WebGL function that is unsupported. (and sometimes it timeouts)
             "Hammer.js", // Object.assign crashes TAJS
             "MathJax" // "Unevalable eval: window"
-            ));
+    ));
 
     // Benchmarks where just the initialization reaches a timeout
     static final Set<String> timeouts = new HashSet<>(Arrays.asList(
@@ -130,8 +139,8 @@ public class AnalyzeBenchmarks {
         return RunBenchmarks.getBenchmarks().stream()
 //                .filter(bench -> blacklist.contains(bench.name))
 //                .filter(bench -> timeouts.contains(bench.name))
-//                .filter(bench -> whitelist.contains(bench.name))
-                .filter(bench -> simpleBenchmarks.contains(bench.name))
+                .filter(bench -> whitelist.contains(bench.name))
+//                .filter(bench -> simpleBenchmarks.contains(bench.name))
                 .map(Benchmark::useTAJS)
                 .collect(Collectors.toList());
     }
@@ -166,7 +175,11 @@ public class AnalyzeBenchmarks {
     @Test
     public void initialize() throws Exception {
         try {
-            TAJSUtil.run(benchmark.useTAJS().withOptions(options -> options.getBuilder().setOnlyInitialize(true).build()), 60);
+            MultiMap<String, AssertionResult> result = TAJSUtil.run(benchmark.useTAJS().withOptions(options -> options.getBuilder().setOnlyInitialize(true).build()), 60);
+
+            System.out.println(TAJSUtil.prettyResult(result, (r) -> true));
+
+            assertThat(result.asMap(), is(not(emptyMap())));
         } catch (TimeoutException e) {
             System.out.println("Timeout");
             System.out.println(e.toString());
