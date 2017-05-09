@@ -3,6 +3,8 @@ tests/**/test.js
 tests/*/out.txt
 cache/*
 paper/*
+tstajs paper/*
+tstest paper/*
 test/**/test.js
 test/**/small_driver*
 ts-spec-reader/node_modules/*
