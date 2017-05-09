@@ -86,7 +86,7 @@ public class BenchmarkInfo {
             userDefinedTypes.clear();
         }
 
-        if (bench.exportName != null || (bench.run_method == Benchmark.RUN_METHOD.NODE && !spec.getAmbientTypes().isEmpty())) {
+        if (bench.exportName != null || (bench.run_method != Benchmark.RUN_METHOD.BROWSER && !spec.getAmbientTypes().isEmpty())) {
             for (SpecReader.NamedType ambient : spec.getAmbientTypes()) {
                 assert ambient.qName.size() == 1;
                 userDefinedTypes.put("\"" + ambient.qName.get(0) + "\"", ambient.type);
