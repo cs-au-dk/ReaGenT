@@ -182,14 +182,14 @@ public class DeltaDebug {
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
         Util.alwaysRecreate = false;
-        Benchmark bench = RunBenchmarks.benchmarks.get("q").withOptions(options -> options.getBuilder().setOnlyInitialize(true).build()).useTAJS();
+        Benchmark bench = RunBenchmarks.benchmarks.get("q").withOptions(options -> options.setOnlyInitialize(true)).useTAJS();
 //        Benchmark bench = RunBenchmarks.benchmarks.get("Redux");
 //
         String file = bench.jsFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                MultiMap<String, AssertionResult> result = TAJSUtil.run(bench.useTAJS().withOptions(options -> options.getBuilder().setOnlyInitialize(true).build()), 60);
+                MultiMap<String, AssertionResult> result = TAJSUtil.run(bench.useTAJS().withOptions(options -> options.setOnlyInitialize(true)), 60);
                 return result.isEmpty();
             } catch (NullPointerException e) {
                 return false;
@@ -235,7 +235,7 @@ public class DeltaDebug {
 
 
     private static boolean testSoundness(Benchmark bench) throws Exception {
-        bench = bench.withRunMethod(BOOTSTRAP).withOptions(options -> options.getBuilder().setMaxIterationsToRun(100 * 1000).setConstructAllTypes(true).setCheckDepthReport(0).build());
+        bench = bench.withRunMethod(BOOTSTRAP).withOptions(options -> options.setMaxIterationsToRun(100 * 1000).setConstructAllTypes(true).setCheckDepthReport(0));
 
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");

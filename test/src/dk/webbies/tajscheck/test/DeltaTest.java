@@ -22,7 +22,7 @@ public class DeltaTest {
 //        Benchmark bench = RunBenchmarks.benchmarks.get("Backbone.js");
         Benchmark bench = RunBenchmarks.benchmarks.get("RxJS");
 //        Benchmark bench = RunBenchmarks.benchmarks.get("RxJS");
-        bench = bench.withOptions(options -> options.getBuilder().setConstructClassInstances(true).setConstructClassTypes(true).build());
+        bench = bench.withOptions(options -> options.setConstructClassInstances(true).setConstructClassTypes(true));
         String testPath = "window.Rx.Notification.accept";
         String typeof = "FOO";
 //        String expected = "(undefined or (a non null value and Array and (arrayIndex: (null or ([any] and a non null value and a generic type marker (._isUnboundGeneric))))))";

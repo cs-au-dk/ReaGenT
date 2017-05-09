@@ -51,7 +51,7 @@ public class AnalyzeTracified {
     @Test
     public void initializeTracified() throws Exception {
         AnalyzeBenchmarks test = new AnalyzeBenchmarks();
-        test.benchmark = this.benchmark.withOptions(options -> options.getBuilder().setUseTracified(true).build());
+        test.benchmark = this.benchmark.withOptions(options -> options.setUseTracified(true));
         test.initialize();
     }
 }

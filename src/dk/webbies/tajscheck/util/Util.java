@@ -625,7 +625,7 @@ public class Util {
                 field.setAccessible(true);
                 field.set(to, field.get(from));
             } catch (IllegalAccessException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
     }

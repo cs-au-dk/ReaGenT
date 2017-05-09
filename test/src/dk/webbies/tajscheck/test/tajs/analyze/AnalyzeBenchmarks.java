@@ -175,7 +175,7 @@ public class AnalyzeBenchmarks extends TestCase {
     @Test
     public void initialize() throws Exception {
         try {
-            MultiMap<String, AssertionResult> result = TAJSUtil.run(benchmark.useTAJS().withOptions(options -> options.getBuilder().setOnlyInitialize(true).build()), 60);
+            MultiMap<String, AssertionResult> result = TAJSUtil.run(benchmark.useTAJS().withOptions(options -> options.setOnlyInitialize(true)), 60);
 
             System.out.println(TAJSUtil.prettyResult(result, (r) -> true));
 

@@ -18,7 +18,7 @@ import java.util.*;
  */
 public class CountUniques {
     public static int uniqueWarnings(Collection<String> paths, Benchmark benchmark) {
-        BenchmarkInfo info = BenchmarkInfo.create(benchmark.withOptions(options -> options.getBuilder().setDisableGenerics(false).build()));
+        BenchmarkInfo info = BenchmarkInfo.create(benchmark.withOptions(options -> options.setDisableGenerics(false)));
 
         Set<Pair<Type, String>> seenWarnings = Collections.synchronizedSet(new HashSet<>());
 

@@ -17,6 +17,7 @@ import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,7 +32,7 @@ public class AutomaticExperiments {
     private static int SMALL_DRIVER_RUNS_LIMIT = 100;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(bench.options.checkDepthUseValue).setMaxIterationsToRun(1000).build());
+        bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(bench.options.checkDepthUseValue).setMaxIterationsToRun(1000));
         List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
         List<String> paths = OutputParser.combine(results).typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toList());
@@ -44,7 +45,7 @@ public class AutomaticExperiments {
     private static final Pair<String, Experiment.ExperimentSingleRunner> type = new Pair<>("type", (bench) -> bench.run_method.toString());
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> smallCoverage = new Pair<>(Arrays.asList("small-coverage(stmt)", "small-coverage(func)", "small-coverage(branches)"), (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(bench.options.checkDepthUseValue).setMaxIterationsToRun(1000).build());
+        bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(bench.options.checkDepthUseValue).setMaxIterationsToRun(1000));
         List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
         CoverageResult result = CoverageResult.combine(results);
@@ -56,7 +57,7 @@ public class AutomaticExperiments {
     });
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> onlyFoundWhenConstructingClasses = new Pair<>(Arrays.asList("onlyClasses"), (Benchmark bench) -> {
-        bench = bench.withOptions(options -> options.getBuilder().setConstructClassInstances(true).setConstructClassTypes(true).build());
+        bench = bench.withOptions(options -> options.setConstructClassInstances(true).setConstructClassTypes(true));
 
         Main.generateFullDriver(bench);
 
@@ -68,7 +69,7 @@ public class AutomaticExperiments {
             }
         }
 
-        bench = bench.withOptions(options -> options.getBuilder().setConstructClassInstances(false).setConstructClassTypes(false).build());
+        bench = bench.withOptions(options -> options.setConstructClassInstances(false).setConstructClassTypes(false));
         Main.generateFullDriver(bench);
 
         for (Map.Entry<String, Collection<OutputParser.TypeError>> entry : new HashMap<>(mismatchCount.asMap()).entrySet()) {
@@ -139,7 +140,7 @@ public class AutomaticExperiments {
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePaths = uniquePathsWithOptions("", 1, false, Function.identity());
 
-    private static Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsWithOptions(String suffix, int repetitions, boolean reportTime, Function<CheckOptions, CheckOptions> func) {
+    private static Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsWithOptions(String suffix, int repetitions, boolean reportTime, Function<CheckOptions.Builder, CheckOptions.Builder> func) {
         List<String> names;
         if (reportTime) {
             names = Arrays.asList("uniquePaths" + suffix, "time" + suffix);
@@ -175,7 +176,7 @@ public class AutomaticExperiments {
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> soundnessTest = new Pair<>("sound", (bench) -> {
         Benchmark.RUN_METHOD runMethod = bench.run_method;
-        bench = bench.withOptions(bench.options.getBuilder().setConstructAllTypes(true).setFailOnAny(false).build());
+        bench = bench.withOptions(bench.options.getBuilder().setConstructAllTypes(true).setFailOnAny(false));
 
         // Performing a soundness check of the benchmark.
         Main.writeFullDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP));
@@ -185,7 +186,7 @@ public class AutomaticExperiments {
     });
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsUnlimitedIterations = new Pair<>(Arrays.asList("uniquePaths(unlimited)", "time(unlimited)", "testsCalled(unlimited)", "totalTests(unlimited)", "testCoverage(unlimited)"), (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(-1).build());
+        bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(-1));
         long start = System.currentTimeMillis();
         Main.writeFullDriver(bench);
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
@@ -255,13 +256,13 @@ public class AutomaticExperiments {
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> coverage = coverage("", Function.identity());
 
-    private static Pair<List<String>, Experiment.ExperimentMultiRunner> coverage(String suffix, Function<CheckOptions, CheckOptions> transformer) {
+    private static Pair<List<String>, Experiment.ExperimentMultiRunner> coverage(String suffix, Function<CheckOptions.Builder, CheckOptions.Builder> transformer) {
         return new Pair<>(Arrays.asList("coverage(stmt)" + suffix, "coverage(functions)" + suffix, "coverage(branches)" + suffix), (bench) -> {
             bench = bench.withOptions(transformer);
 
             Map<String, CoverageResult> out;
             try {
-                out = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5).build())); // <- More timeout, instrumented code is slower.
+                out = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5))); // <- More timeout, instrumented code is slower.
                 if (out.isEmpty()) {
                     return Arrays.asList(null, null, null);
                 }
@@ -292,14 +293,14 @@ public class AutomaticExperiments {
 
             Map<String, CoverageResult> out = new HashMap<>();
 
-            String driver = Main.generateFullDriver(bench.withOptions(options -> options.getBuilder().setCheckDepthReport(options.checkDepthUseValue).build())).getRight();
+            String driver = Main.generateFullDriver(bench.withOptions(options -> options.setCheckDepthReport(options.checkDepthUseValue))).getRight();
 
             CoverageResult firstCoverage = null;
             for (int i = 0; i < runs; i++) {
                 try {
                     Util.writeFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME, driver);
 
-                    Map<String, CoverageResult> subResult = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5).build()), false); // <- more timeout
+                    Map<String, CoverageResult> subResult = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5)), false); // <- more timeout
                     out = CoverageResult.combine(out, subResult);
                     if (out.get(bench.getJSName()) == null) {
                         return Arrays.asList(uniquePaths, null, null, null, null, null, null);
@@ -340,7 +341,7 @@ public class AutomaticExperiments {
         });
     }
 
-    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> driverSizes(String suffix, Function<CheckOptions, CheckOptions> transformer) {
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> driverSizes(String suffix, Function<CheckOptions.Builder, CheckOptions.Builder> transformer) {
         return new Pair<>(Arrays.asList("size" + suffix, "size-no-generics" + suffix), (bench) -> {
             bench = bench.withOptions(transformer);
             double DIVIDE_BY = 1000 * 1000;
@@ -349,13 +350,11 @@ public class AutomaticExperiments {
 
             String fullSize = Util.toFixed(Main.generateFullDriver(bench).getRight().length() / DIVIDE_BY, DECIMALS) + SUFFIX;
 
-            double noGenerics = Main.generateFullDriver(bench.withOptions(bench.options.getBuilder().setDisableGenerics(true).build())).getRight().length() / DIVIDE_BY;
+            double noGenerics = Main.generateFullDriver(bench.withOptions(bench.options.getBuilder().setDisableGenerics(true))).getRight().length() / DIVIDE_BY;
 
             return Arrays.asList(fullSize, Util.toFixed(noGenerics, DECIMALS) + SUFFIX);
         });
     }
-
-    ;
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> driverSizes = driverSizes("", Function.identity());
 
@@ -368,114 +367,20 @@ public class AutomaticExperiments {
         return Util.toFixed(Util.readFile(bench.jsFile).length() / DIVIDE_BY, DECIMALS) + SUFFIX;
     });
 
-    public static void main(String[] args) throws Exception {
-        args = new String[]{"RQ2"};
-        if (args.length > 0) {
-            String experimentToRun = args[0];
-
-            Experiment experiment = new Experiment();
-
-            System.out.println("Running experiments for " + experimentToRun.toUpperCase());
-
-            switch (experimentToRun.toUpperCase()) {
-                case "RQ1": // How much does it find, and how long does it take.
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(10s)", 1, false, options -> options.getBuilder().setMaxIterationsToRun(-1).setMaxTime(10 * 1000).build()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:10s)", 5, false, options -> options.getBuilder().setMaxIterationsToRun(-1).setMaxTime(10 * 1000).build()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(10x:10s)", 10, false, options -> options.getBuilder().setMaxIterationsToRun(-1).setMaxTime(10 * 1000).build()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(20x:10s)", 20, false, options -> options.getBuilder().setMaxIterationsToRun(-1).setMaxTime(10 * 1000).build()));
-
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(1min)", 1, false, options -> options.getBuilder().setMaxIterationsToRun(-1).setMaxTime(60 * 1000).build()));
-
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:1min)", 5, false, options -> options.getBuilder().setMaxIterationsToRun(-1).setMaxTime(60 * 1000).build()));
-
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(10x:1min)", 10, false, options -> options.getBuilder().setMaxIterationsToRun(-1).setMaxTime(60 * 1000).build()));
-
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(5min)", 1, false, options -> options.getBuilder().setMaxIterationsToRun(-1).setMaxTime(5 * 60 * 1000).build()));
-
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:5min)", 5, false, options -> options.getBuilder().setMaxIterationsToRun(-1).setMaxTime(5 * 60 * 1000).build()));
-
-                    break;
-                case "VARIANCE": // Running multiple times, to get some idea of the variance.
-
-                    experiment.addMultiExperiment(uniquePathsWithOptions("1", 1, false, Function.identity()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("1", 1, false, Function.identity()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("1", 1, false, Function.identity()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("1", 1, false, Function.identity()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("1", 1, false, Function.identity()));
-
-                    experiment.addMultiExperiment(uniquePathsWithOptions("5", 5, false, Function.identity()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("5", 5, false, Function.identity()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("5", 5, false, Function.identity()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("5", 5, false, Function.identity()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("5", 5, false, Function.identity()));
-
-                    break;
-                case "CLASSES":
-                    // Only the benchmarks that actually potentially construct a random class value.
-//                    experiment = new Experiment("Backbone.js", "CreateJS", "Ember.js", "Fabric.js", "Hammer.js", "Leaflet", "P2.js", "PixiJS", "React", "RxJS", "Sortable", "Swiper", "Vue.js", "bluebird", "box2dweb", "lunr.js", "three.js");
-
-                    // Backbone.js Ember.js Leaflet PixiJS React RxJS  Swiper Vue.js
-                    // Leaflet PixiJS React RxJS  Swiper Vue.js
-//                    experiment.addMultiExperiment(onlyFoundWhenConstructingClasses);
-
-                    experiment.addMultiExperiment(hasInstanceOf);
-                    break;
-                case "RQ2": // Which configuration works the best.
-
-//                    experiment.addMultiExperiment(uniquePathsWithOptions("(standard config)", 1, false, Function.identity()));
-//                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:standard config)", 5, false, Function.identity()));
-
-/*
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(not combining type parameters)", 1, false, options -> options.getBuilder().setCombineAllUnboundGenerics(false).build()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:not combining type parameters)", 5, false, options -> options.getBuilder().setCombineAllUnboundGenerics(false).build()));
-
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(no feedback with partially incorrect values)", 1, false, options -> options.getBuilder().setCheckDepthUseValue(options.checkDepthReport).build()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(5xno feedback with partially incorrect values)", 5, false, options -> options.getBuilder().setCheckDepthUseValue(options.checkDepthReport).build()));
-
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(writing primitive properties)", 1, false, options -> options.getBuilder().setWritePrimitives(true).build()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:writing primitive properties)", 5, false, options -> options.getBuilder().setWritePrimitives(true).build()));
-
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(writing all properties)", 1, false, options -> options.getBuilder().setWriteAll(true).build()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:writing all properties)", 5, false, options -> options.getBuilder().setWriteAll(true).build()));
-*/
-
-//                    experiment.addMultiExperiment(uniquePathsWithOptions("(construct classes)", 1, false, options -> options.getBuilder().setConstructClassInstances(true).setConstructClassTypes(true).build()));
-//                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:construct classes)", 5, false, options -> options.getBuilder().setConstructClassInstances(true).setConstructClassTypes(true).build()));
-
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(construct only prims)", 1, false, options -> options.getBuilder().setConstructOnlyPrimitives(true).build()));
-                    experiment.addMultiExperiment(uniquePathsWithOptions("(5x:construct only prims)", 5, false, options -> options.getBuilder().setConstructOnlyPrimitives(true).build()));
-                    break;
-                case "RQ5": // Coverage tests.
-                    experiment.addMultiExperiment(coverage("-init", options -> options.getBuilder().setMaxIterationsToRun(1).setOnlyInitialize(true).build())); // Runs exactly one test, which can only be the test that initializes the library.
-
-                    experiment.addMultiExperiment(uniquePathsAndCoverage(5));
-
-                    experiment.addMultiExperiment(uniquePathsAndCoverage(10));
-
-                    experiment.addMultiExperiment(uniquePathsAndCoverage(20));
-
-                    experiment.addMultiExperiment(uniquePathsTestCoverage(1));
-                    experiment.addMultiExperiment(uniquePathsTestCoverage(5));
-                    experiment.addMultiExperiment(uniquePathsTestCoverage(10));
-                    experiment.addMultiExperiment(uniquePathsTestCoverage(20));
-
-                    break;
-                default:
-                    throw new RuntimeException("Unknown experiment: " + experimentToRun);
-            }
-
-            String result = experiment.calculate(THREADS).toCSV();
-            System.out.println("\n\n\nResult: \n");
-            System.out.println(result);
-
-            Util.writeFile("experiment.csv", result);
-
-            System.out.println("\nThe results have also been written to the file experiment.csv");
-            System.exit(0);
-            return;
+    private static final Pair<String, Experiment.ExperimentSingleRunner> usesUnsoundness = new Pair<>("usesUnsoundness", (bench) -> {
+        bench = bench.withOptions(options -> options.setDisableGenerics(false));
+        if (bench.options.disableGenerics) {
+            return "-";
         }
+        try {
+            Main.generateFullDriver(bench);
+            return "false";
+        } catch (IllegalArgumentException e) {
+            return "true"; // TODO: Doesn't throw this exception currently.
+        }
+    });
 
-
+    public static void main(String[] args) throws Exception {
 /*        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream()
                 .filter(bench -> bench.getValue().run_method == Benchmark.RUN_METHOD.NODE)
                         .filter(bench -> Stream.of("" )
@@ -484,14 +389,6 @@ public class AutomaticExperiments {
         Experiment experiment = new Experiment();
 
         experiment.addSingleExperiment(type);
-
-        experiment.addMultiExperiment(uniquePathsWithOptions("(standard)", 1, false, Function.identity()));
-        experiment.addMultiExperiment(uniquePathsWithOptions("(construct classes)", 1, false, options -> options.getBuilder().setConstructClassInstances(true).setConstructClassTypes(true).build()));
-
-//        experiment.addMultiExperiment(uniquePaths);
-//        experiment.addMultiExperiment(uniquePathsAnd5Coverage);
-//        experiment.addMultiExperiment(uniquePathsTestCoverage);
-//        experiment.addMultiExperiment(uniquePaths5TestCoverage);
 
         String result = experiment.calculate(THREADS).toCSV();
         System.out.println("\n\n\nResult: \n");

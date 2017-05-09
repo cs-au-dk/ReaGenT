@@ -101,7 +101,7 @@ public class UnitTests {
     }
 
     private static void sanityCheck(Benchmark bench, Benchmark.RUN_METHOD runMethod) throws Exception {
-        bench = bench.withRunMethod(BOOTSTRAP).withOptions(options -> options.getBuilder().setConstructAllTypes(true).setFailOnAny(false).build());
+        bench = bench.withRunMethod(BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true).setFailOnAny(false));
 
         // Performing a soundness check of the benchmark.
         Main.writeFullDriver(bench);
@@ -712,7 +712,7 @@ public class UnitTests {
 
     @Test
     public void complexSanityCheck20() throws Exception {
-        sanityCheck(benchFromFolder("complexSanityCheck20").withOptions(options -> options.getBuilder().setDisableGenerics(true).build()), NODE);
+        sanityCheck(benchFromFolder("complexSanityCheck20").withOptions(options -> options.setDisableGenerics(true)), NODE);
     }
 
     @Test // TODO:
@@ -1192,7 +1192,7 @@ public class UnitTests {
 
     @Test
     public void canConstructUnderscoreWithUnconstrainedGenerics() throws Exception {
-        Main.generateFullDriver(RunBenchmarks.benchmarks.get("Underscore.js").withOptions(options -> options.getBuilder().setCombineAllUnboundGenerics(false).build()));
+        Main.generateFullDriver(RunBenchmarks.benchmarks.get("Underscore.js").withOptions(options -> options.setCombineAllUnboundGenerics(false)));
     }
 
     @Test
@@ -1299,7 +1299,7 @@ public class UnitTests {
 
     @Test
     public void nodeCoverage() throws Exception {
-        Benchmark bench = benchFromFolder("nodeCoverage").withOptions(options -> options.getBuilder().setMaxIterationsToRun(1).build());
+        Benchmark bench = benchFromFolder("nodeCoverage").withOptions(options -> options.setMaxIterationsToRun(1));
 
         RunResult result = run(bench);
 
@@ -1314,7 +1314,7 @@ public class UnitTests {
 
     @Test
     public void nodeCoverageTimeout() throws Exception {
-        Benchmark bench = benchFromFolder("nodeCoverageTimeout").withOptions(options -> options.getBuilder().setMaxIterationsToRun(-1).build());
+        Benchmark bench = benchFromFolder("nodeCoverageTimeout").withOptions(options -> options.setMaxIterationsToRun(-1));
 
         Map<String, CoverageResult> coverage = Main.genCoverage(bench);
 

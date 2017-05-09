@@ -68,7 +68,7 @@ public class RunAllDynamicUnitTests {
     public void sanityCheckAnalysis() throws Exception {
         // Trying to bootstrap the library with itself, here it is very spurious if any warning is emitted.
 
-        Benchmark bench = UnitTests.benchFromFolder(folderName).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.getBuilder().setUseAssertTypeFunctions(false).setCheckDepthReport(options.checkDepthUseValue).build()).useTAJS();
+        Benchmark bench = UnitTests.benchFromFolder(folderName).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setUseAssertTypeFunctions(false).setCheckDepthReport(options.checkDepthUseValue)).useTAJS();
 
         MultiMap<String, AssertionResult> result = TAJSUtil.run(bench);
 

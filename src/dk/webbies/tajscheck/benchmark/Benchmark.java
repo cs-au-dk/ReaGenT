@@ -75,7 +75,7 @@ public class Benchmark {
     }
 
     public Benchmark useTAJS() {
-        return this.withOptions(options -> options.getBuilder().setUseTAJS(true).setCheckDepthReport(0).build());
+        return this.withOptions(options -> options.setUseTAJS(true).setCheckDepthReport(0));
     }
 
     public Benchmark addDependencies(Benchmark... benchmarks) {
@@ -112,7 +112,11 @@ public class Benchmark {
         );
     }
 
-    public Benchmark withOptions(Function<CheckOptions, CheckOptions> transformer) {
+    public Benchmark withOptions(CheckOptions.Builder options) {
+        return withOptions(options.build());
+    }
+
+    public Benchmark withOptions(Function<CheckOptions.Builder, CheckOptions.Builder> transformer) {
         return new Benchmark(
                 this.name,
                 this.environment,
@@ -120,7 +124,7 @@ public class Benchmark {
                 this.dTSFile,
                 this.run_method,
                 this.pathsToTest,
-                transformer.apply(this.options),
+                transformer.apply(this.options.getBuilder()).build(),
                 this.dependencies,
                 this.exportName
         );

@@ -68,11 +68,14 @@ public final class CheckOptions {
         return new Builder().build();
     }
 
-    public static CheckOptions errorFindingOptions(CheckOptions options) {
-        return options.getBuilder()
+    public static CheckOptions.Builder errorFindingOptions(CheckOptions.Builder options) {
+        return options
                 .setMaxTime(30 * 1000)
-                .setCombineNullAndUndefined(true)
-                .build();
+                .setCombineNullAndUndefined(true);
+    }
+
+    public static CheckOptions.Builder errorFindingOptions(CheckOptions options) {
+        return errorFindingOptions(options.getBuilder());
     }
 
     public static Builder builder() {
@@ -85,31 +88,31 @@ public final class CheckOptions {
 
     @SuppressWarnings("SameParameterValue")
     public static final class Builder {
-        private int checkDepthUseValue = 0; // How deeply should objects be checked, when seeing if the value should be used.
-        private int checkDepthReport = 2; // How deeply should objects be checked when seeing if an error should be reported. (The above will also report warnings).
-        private int checkDepthForUnions = 1; // How deep should the checking be, when determining which
-        private boolean splitUnions = true; // Split function-signatures, such that no function-signature has a union-type as parameter, they are instead distinct signatures (explodes size of some larger benchmarks, but can be useful for more precise warnings).
-        private int maxIterationsToRun = -1; // The maximum number of iteration to run in the loop, before returning
-        private int maxTime = 10 * 1000; // The maximum time to run (the driver tries to exist gracefully, but 10 seconds after the timeout, it is forcefully shutdown).
-        private boolean disableSizeOptimization = false; // Disable optimizations for generics (don't do this)
-        private boolean combineAllUnboundGenerics = true; // Instead of having distinct values for each unbound generic, combine them all into 1. (If disabled, there is a small unsoundness if a generic method extends another generic method).
-        private boolean disableGenerics = false; // Disable all generics, the TypeContext becomes empty.
-        private boolean constructClassInstances = false; // Construct random values of class instance types.
-        private boolean constructClassTypes = false; // Construct ramdom values of class types.
-        private boolean constructAllTypes = false; // No filters on construction (overrides construct class type options)
-        private boolean constructOnlyPrimitives = false; // Basically emulate RANDOOP. Overrides all other construct type options.
-        private boolean failOnAny = true; // If "any" is returned (as in, something that has our "isAnyMarker"), it is a valid warning.
-        private boolean makeTSInferLike = false; // Restrict the driver to only check properties, and call constructors (where all arguments are ignored). Kinda equal to the dynamic part of TSInfer.
-        private boolean combineNullAndUndefined = false; // null and undefined (last one is also called void) are different types. But errors related to this are anoying, and doesn't matter. Setting this to true makes it not an error.
+        public int checkDepthUseValue = 0; // How deeply should objects be checked, when seeing if the value should be used.
+        public int checkDepthReport = 2; // How deeply should objects be checked when seeing if an error should be reported. (The above will also report warnings).
+        public int checkDepthForUnions = 1; // How deep should the checking be, when determining which
+        public boolean splitUnions = true; // Split function-signatures, such that no function-signature has a union-type as parameter, they are instead distinct signatures (explodes size of some larger benchmarks, but can be useful for more precise warnings).
+        public int maxIterationsToRun = -1; // The maximum number of iteration to run in the loop, before returning
+        public int maxTime = 10 * 1000; // The maximum time to run (the driver tries to exist gracefully, but 10 seconds after the timeout, it is forcefully shutdown).
+        public boolean disableSizeOptimization = false; // Disable optimizations for generics (don't do this)
+        public boolean combineAllUnboundGenerics = true; // Instead of having distinct values for each unbound generic, combine them all into 1. (If disabled, there is a small unsoundness if a generic method extends another generic method).
+        public boolean disableGenerics = false; // Disable all generics, the TypeContext becomes empty.
+        public boolean constructClassInstances = false; // Construct random values of class instance types.
+        public boolean constructClassTypes = false; // Construct ramdom values of class types.
+        public boolean constructAllTypes = false; // No filters on construction (overrides construct class type options)
+        public boolean constructOnlyPrimitives = false; // Basically emulate RANDOOP. Overrides all other construct type options.
+        public boolean failOnAny = true; // If "any" is returned (as in, something that has our "isAnyMarker"), it is a valid warning.
+        public boolean makeTSInferLike = false; // Restrict the driver to only check properties, and call constructors (where all arguments are ignored). Kinda equal to the dynamic part of TSInfer.
+        public boolean combineNullAndUndefined = false; // null and undefined (last one is also called void) are different types. But errors related to this are anoying, and doesn't matter. Setting this to true makes it not an error.
 
-        private boolean writePrimitives = false; // We write to properties that have primitive values.
-        private boolean writeAll = false; // Only has effect if above is true. Every single property is potentially written to. Is VERY stupid, will likely overwrite the library before testing it.
-        private boolean firstMatchSignaturePolicy = true; // If the first-match-signature policy of TypeScript should be enforced.
-        private boolean useAssertTypeFunctions = true; // Whether or not to combine type-cheks into assertType functions, if not they are inlined (slightly bigger, easier to read).
-        private boolean onlyInitialize = false; // If true, all tests except the initializing test is removed.
+        public boolean writePrimitives = false; // We write to properties that have primitive values.
+        public boolean writeAll = false; // Only has effect if above is true. Every single property is potentially written to. Is VERY stupid, will likely overwrite the library before testing it.
+        public boolean firstMatchSignaturePolicy = true; // If the first-match-signature policy of TypeScript should be enforced.
+        public boolean useAssertTypeFunctions = true; // Whether or not to combine type-cheks into assertType functions, if not they are inlined (slightly bigger, easier to read).
+        public boolean onlyInitialize = false; // If true, all tests except the initializing test is removed.
 
-        private boolean useTAJS = false; // If true, run abstractly instead of concretely.
-        private boolean useTracified = false;
+        public boolean useTAJS = false; // If true, run abstractly instead of concretely.
+        public boolean useTracified = false;
 
         private Builder() {}
 
