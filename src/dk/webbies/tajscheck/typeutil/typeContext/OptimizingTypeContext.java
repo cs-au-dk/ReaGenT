@@ -19,8 +19,9 @@ public class OptimizingTypeContext implements TypeContext {
     private final HashMap<OptimizingTypeContext, OptimizingTypeContext> cache;
 
     private OptimizingTypeContext cannonicalize() {
-        if (cache.containsKey(this)) {
-            return cache.get(this);
+        OptimizingTypeContext hit = cache.get(this);
+        if (hit != null) {
+            return hit;
         }
         cache.put(this, this);
         return this;
@@ -31,10 +32,10 @@ public class OptimizingTypeContext implements TypeContext {
     }
 
     private OptimizingTypeContext(BenchmarkInfo info) {
-        this(Collections.emptyMap(), Collections.emptySet(), null, info);
+        this(Collections.emptyMap(), Collections.emptySet(), null, info, info.getAttribute(OptimizingTypeContext.class, "cache", HashMap::new));
     }
 
-    private OptimizingTypeContext(Map<TypeParameterType, Type> map, Set<TypeParameterType> overwritten, Type thisType, BenchmarkInfo info) {
+    private OptimizingTypeContext(Map<TypeParameterType, Type> map, Set<TypeParameterType> overwritten, Type thisType, BenchmarkInfo info, HashMap<OptimizingTypeContext, OptimizingTypeContext> cache) {
         if (map == null || overwritten == null) {
             throw new RuntimeException();
         }
@@ -42,7 +43,7 @@ public class OptimizingTypeContext implements TypeContext {
         this.overwritten = overwritten;
         this.thisType = thisType;
         this.info = info;
-        this.cache = info.getAttribute(OptimizingTypeContext.class, "cache", HashMap::new);
+        this.cache = cache;
     }
 
     @Override
@@ -59,20 +60,20 @@ public class OptimizingTypeContext implements TypeContext {
             }
         }
         overwritten = overwritten == null ? this.overwritten : overwritten;
-        return new OptimizingTypeContext(newMap, overwritten, this.thisType, info).cannonicalize();
+        return new OptimizingTypeContext(newMap, overwritten, this.thisType, info, cache).cannonicalize();
     }
 
     @Override
     public OptimizingTypeContext withThisType(Type thisType) {
         if (thisType == null || this.thisType == null) {
-            return new OptimizingTypeContext(this.map, this.overwritten, thisType, info);
+            return new OptimizingTypeContext(this.map, this.overwritten, thisType, info, cache);
         }
         Set<Type> baseTypes = TypesUtil.getAllBaseTypes(this.thisType, new HashSet<>());
 
         if (baseTypes.contains(thisType)) {
             return this;
         } else {
-            return new OptimizingTypeContext(this.map, this.overwritten, thisType, info).cannonicalize();
+            return new OptimizingTypeContext(this.map, this.overwritten, thisType, info, cache).cannonicalize();
         }
     }
 
@@ -94,10 +95,10 @@ public class OptimizingTypeContext implements TypeContext {
             context = context.append(appendMap);
         }
 
-        return new TypeWithContext(type, context);
+        return new TypeWithContext(type, context.optimizeTypeParameters(type, info.freeGenericsFinder));
     }
 
-    private static final SimpleType any = new SimpleType(SimpleTypeKind.Any);
+    public static final SimpleType any = new SimpleType(SimpleTypeKind.Any);
 
 
     @Override
@@ -152,7 +153,7 @@ public class OptimizingTypeContext implements TypeContext {
         if (info.bench.options.disableSizeOptimization) {
             return this;
         }
-        OptimizingTypeContext clone = new OptimizingTypeContext(new HashMap<>(this.map), this.overwritten, this.thisType, this.info);
+        OptimizingTypeContext clone = new OptimizingTypeContext(new HashMap<>(this.map), this.overwritten, this.thisType, this.info, this.cache);
 
         Set<TypeParameterType> reachable = new HashSet<>();
 
@@ -216,6 +217,4 @@ public class OptimizingTypeContext implements TypeContext {
         }
         return clone;
     }
-
-    static int counter = 0;
 }
