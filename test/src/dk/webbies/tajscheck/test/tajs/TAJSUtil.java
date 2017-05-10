@@ -60,12 +60,6 @@ public class TAJSUtil {
 
         List<IAnalysisMonitoring> monitors = new ArrayList<>(Arrays.asList(new Monitoring(), new OrdinaryExitReachableChecker()));
 
-        /*if (true) { // TODO: Opion: LineAnalysis.
-            monitors.add(MonitorFactory.createLineAnalysis2Monitor());
-            options.enableAbortGracefullyOnAnalysisLimitations();
-        }*/
-
-
         IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(monitors);
 
         Misc.init();

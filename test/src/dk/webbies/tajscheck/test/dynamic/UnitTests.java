@@ -1181,7 +1181,7 @@ public class UnitTests {
 
 
     @Test
-    public void voidReturnCanBeAnything() throws Exception { // TODO: This fails!
+    public void voidReturnCanBeAnything() throws Exception {
         RunResult result = run("voidReturnCanBeAnything");
 
         assertThat(result.typeErrors.size(), is(1));

@@ -5,6 +5,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.Util;
+import sun.net.www.content.text.Generic;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -51,9 +52,9 @@ public class BenchmarkInfo {
 
         Map<Type, String> typeNames = ParseDeclaration.getTypeNamesMap(spec);
 
-        applyTypeFixes(bench, spec, typeNames, nativeTypes);
-
         FreeGenericsFinder freeGenericsFinder = new FreeGenericsFinder(spec.getGlobal());
+
+        applyTypeFixes(bench, spec, typeNames, nativeTypes, freeGenericsFinder);
 
         TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer(bench.options);
 
@@ -106,7 +107,7 @@ public class BenchmarkInfo {
         return userDefinedTypes;
     }
 
-    private static void applyTypeFixes(Benchmark bench, SpecReader spec, Map<Type, String> typeNames, Set<Type> nativeTypes) {
+    private static void applyTypeFixes(Benchmark bench, SpecReader spec, Map<Type, String> typeNames, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder) {
         // Various fixes, to transform the types into something more consistent (+ workarounds).
         List<Type> typesToFix = new ArrayList<>();
         for (Type type : ((InterfaceType) spec.getGlobal()).getDeclaredProperties().values()) {
@@ -118,7 +119,7 @@ public class BenchmarkInfo {
         for (SpecReader.NamedType type : spec.getAmbientTypes()) {
             typesToFix.add(type.type);
         }
-        applyTypeFixes(bench, typeNames, typesToFix);
+        applyTypeFixes(bench, typeNames, typesToFix, freeGenericsFinder);
 
 
         // Fixing if the top-level export is a class, sometimes we can an interface with a prototype property instead of the actual class.
@@ -138,7 +139,7 @@ public class BenchmarkInfo {
         }
     }
 
-    private static void applyTypeFixes(Benchmark bench, Map<Type, String> typeNames, List<Type> typesToFix) {
+    private static void applyTypeFixes(Benchmark bench, Map<Type, String> typeNames, List<Type> typesToFix, FreeGenericsFinder freeGenericsFinder) {
         List<Type> allTypes = new ArrayList<>(TypesUtil.collectAllTypes(typesToFix));
         for (Type type : allTypes) {
             // splitting unions
@@ -167,9 +168,10 @@ public class BenchmarkInfo {
             if (type instanceof GenericType) {
                 InterfaceType inter = ((GenericType) type).toInterface();
                 typeNames.put(inter, typeNames.get(type));
-                // TODO: Check if the freeGenericsFinder has the genericType, if it has, add the interface.
 
-                // TODO: Consider doing the same thing for converting class-types to interfaces (In TypesUtil), get a cache going to make the process simpler.
+                if (freeGenericsFinder.hasThisTypes(type)) {
+                    freeGenericsFinder.addHasThisTypes(((GenericType)type).toInterface());
+                }
             }
 
 
@@ -344,7 +346,9 @@ public class BenchmarkInfo {
                 this.freeGenericsFinder,
                 this.typeNames,
                 this.typeParameterIndexer,
-                globalProperties, spec, userDefinedTypes);
+                this.globalProperties,
+                this.spec,
+                this.userDefinedTypes);
     }
 
     public boolean shouldConstructType(Type type) {

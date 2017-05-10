@@ -433,7 +433,7 @@ public class TypeCreator {
                     case Number:
                         return Return(call(identifier("TAJS_make"), string("AnyNum")));
                     case Undefined:
-                    case Void:
+                    case Void: // TODO: void is actually kinda "any".
                         return Return(
                                 unary(Operator.VOID, number(0))
                         );

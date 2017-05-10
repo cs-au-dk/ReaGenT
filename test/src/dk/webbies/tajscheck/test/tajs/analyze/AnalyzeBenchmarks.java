@@ -132,8 +132,6 @@ public class AnalyzeBenchmarks extends TestCase {
         RunBenchmarks.benchmarks.keySet().stream().filter(Util.not(whitelist::contains)).filter(Util.not(blacklist::contains)).filter(Util.not(timeouts::contains)).forEach(forgotten -> System.err.println("AnalyzeBenchmarks: " + forgotten + " was forgotten!"));
     }
 
-    // TODO: I need way better type-errors when running statically.
-
     @Parameterized.Parameters(name = "{0}")
     public static List<Benchmark> getBenchmarks() {
         return RunBenchmarks.getBenchmarks().stream()
@@ -145,10 +143,7 @@ public class AnalyzeBenchmarks extends TestCase {
                 .collect(Collectors.toList());
     }
 
-    // TODO: re-introduce the "small drivers", and analyze those. Use a parametarized test case.
-
     @Test
-//    @Ignore // Mostly timeouts
     public void analyzeBenchmark() throws Exception {
         // Just testing that it CAN be analyzed.
 

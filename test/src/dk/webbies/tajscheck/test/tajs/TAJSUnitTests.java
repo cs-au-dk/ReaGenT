@@ -190,7 +190,7 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: Change the way a union-test is performed. Make it more TAJS-friendly.
+    @Ignore
     // TODO: Make a second step of this test, where the assertType functions of the dynamic analysis is used.
     public void simpleUnion() throws Exception {
         MultiMap<String, AssertionResult> result = run("simpleUnion");

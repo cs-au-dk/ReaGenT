@@ -82,8 +82,6 @@ function selectTest() {
     return TAJS_make("AnyNum")
 }
 
-// TODO: All of the below should be removed as I refactor stuff.
-
 // Utility functions.
 
 function extend(result) {
