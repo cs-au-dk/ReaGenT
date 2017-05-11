@@ -205,48 +205,29 @@ public class BenchmarkInfo {
                 }
 
             }
-
-            // An intersection of functions can be represented in a better way (to allow detecting overloads).
-            if (type instanceof IntersectionType) {
-                IntersectionType intersection = (IntersectionType) type;
-                assert !intersection.getElements().isEmpty();
-                if (intersection.getElements().stream().allMatch(t -> {
-                    if (!(t instanceof InterfaceType)) {
-                        return false;
-                    }
-                    InterfaceType inter = (InterfaceType) t;
-                    return inter.getDeclaredProperties().isEmpty() && inter.getDeclaredNumberIndexType() == null && inter.getDeclaredStringIndexType() == null && inter.getDeclaredConstructSignatures().isEmpty() && !inter.getDeclaredCallSignatures().isEmpty();
-
-                })) {
-                    InterfaceType combinedInter = SpecReader.makeEmptySyntheticInterfaceType();
-
-                    String name = typeNames.get(type);
-                    typeNames.put(combinedInter, name +".[mergedIntersection]");
-
-                    for (InterfaceType inter : Util.cast(InterfaceType.class, intersection.getElements())) {
-                        combinedInter.getDeclaredCallSignatures().addAll(inter.getDeclaredCallSignatures());
-                    }
-                    intersection.setElements(Collections.singletonList(combinedInter));
-                }
-            }
         }
 
         // It is only Void, if it is a function-return.
+        List<Signature> voidSignatures = new ArrayList<>();
+        for (Type type : allTypes) {
+            if (type instanceof InterfaceType) {
+                InterfaceType inter = (InterfaceType) type;
+                voidSignatures.addAll(inter.getDeclaredCallSignatures());
+                voidSignatures.addAll(inter.getDeclaredConstructSignatures());
+            } else if (type instanceof GenericType) {
+                GenericType inter = (GenericType) type;
+                voidSignatures.addAll(inter.getDeclaredCallSignatures());
+                voidSignatures.addAll(inter.getDeclaredConstructSignatures());
+            }
+        }
+        voidSignatures = voidSignatures.stream().filter(sig -> sig.getResolvedReturnType() instanceof SimpleType && ((SimpleType)sig.getResolvedReturnType()).getKind() == SimpleTypeKind.Void).collect(Collectors.toList());
         for (Type type : allTypes) {
             if (type instanceof SimpleType && ((SimpleType) type).getKind() == SimpleTypeKind.Void) {
                 ((SimpleType) type).setKind(SimpleTypeKind.Undefined);
             }
         }
-        for (Type type : allTypes) {
-            if (type instanceof InterfaceType) {
-                InterfaceType inter = (InterfaceType) type;
-                setUndefinedReturnToVoid(inter.getDeclaredCallSignatures());
-                setUndefinedReturnToVoid(inter.getDeclaredConstructSignatures());
-            } else if (type instanceof GenericType) {
-                GenericType inter = (GenericType) type;
-                setUndefinedReturnToVoid(inter.getDeclaredCallSignatures());
-                setUndefinedReturnToVoid(inter.getDeclaredConstructSignatures());
-            }
+        for (Signature voidSignature : voidSignatures) {
+            voidSignature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Void));
         }
 
 
@@ -313,15 +294,6 @@ public class BenchmarkInfo {
         }
 
         return result.stream().distinct().collect(Collectors.toList());
-    }
-
-    private static void setUndefinedReturnToVoid(List<Signature> signatures) {
-        // A function that returns a value is assignable to a function type that returns void
-        for (Signature signature : signatures) {
-            if (signature.getResolvedReturnType() instanceof SimpleType && ((SimpleType) signature.getResolvedReturnType()).getKind() == SimpleTypeKind.Undefined) {
-                signature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Void));
-            }
-        }
     }
 
     private static Map<String, Type> fixUnderscoreNames(Map<String, Type> declaredProperties) {

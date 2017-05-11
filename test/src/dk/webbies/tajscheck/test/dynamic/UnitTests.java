@@ -1523,4 +1523,16 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size(), is(equalTo(2)));
     }
+
+    @Test
+    public void undefinedReturnCanFail() throws Exception {
+        RunResult result = run("undefinedReturnCanFail");
+
+        assertThat(result.typeErrors.size(), is(1));
+
+        expect(result)
+                .forPath("module.foo()")
+                .expected("undefined")
+                .got(TYPEOF, "string");
+    }
 }
