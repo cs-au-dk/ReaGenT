@@ -159,7 +159,10 @@ public class AnalyzeBenchmarks extends TestCase {
         }
 
         try {
-            TAJSUtil.run(benchmark.useTAJS(), 10 * 60);
+            MultiMap<String, AssertionResult> result = TAJSUtil.run(benchmark.useTAJS(), 10 * 60);
+
+            assertThat(result.asMap(), is(not(emptyMap())));
+
         } catch (TimeoutException e) {
             System.out.println("Timeout");
             System.out.println(e.toString());
