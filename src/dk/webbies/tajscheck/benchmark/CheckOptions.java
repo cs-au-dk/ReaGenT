@@ -10,7 +10,7 @@ public final class CheckOptions {
     public final int checkDepthUseValue;
     public final int checkDepthReport;
     public final int checkDepthForUnions;
-    public final boolean splitUnions;
+    public final boolean splitUnions; // TODO: Is potentially not good after first-match-policy has been introduced.
     public final int maxIterationsToRun;
     public final boolean disableSizeOptimization;
     public final boolean combineAllUnboundGenerics;
