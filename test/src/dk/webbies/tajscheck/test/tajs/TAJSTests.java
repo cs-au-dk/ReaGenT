@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.test.tajs;
 
 import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks;
+import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarksSmall;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -12,7 +13,8 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
         TAJSUnitTests.class,
         RunAllDynamicUnitTests.class,
-        AnalyzeBenchmarks.class
+        AnalyzeBenchmarks.class,
+        AnalyzeBenchmarksSmall.class
 })
 public class TAJSTests {
 }
