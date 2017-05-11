@@ -139,10 +139,6 @@ public class TAJSUtil {
         return actualResult;
     }
 
-    public static MultiMap<String, AssertionResult> run(Benchmark bench) throws Exception {
-        return run(bench, -1);
-    }
-
     public static MultiMap<String, AssertionResult> run(Benchmark bench, int secondsTimeout) throws Exception {
         Pair<BenchmarkInfo, String> driver = toTAJS(Main.writeFullDriver(bench));
 

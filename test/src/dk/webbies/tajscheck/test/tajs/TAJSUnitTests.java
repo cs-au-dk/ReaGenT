@@ -55,7 +55,7 @@ public class TAJSUnitTests {
     static MultiMap<String, AssertionResult> run(String folderName) throws Exception {
         Benchmark bench = benchFromFolder(folderName);
 
-        return TAJSUtil.run(bench);
+        return TAJSUtil.run(bench, 60);
     }
 
     private static Benchmark benchFromFolder(String folderName) {

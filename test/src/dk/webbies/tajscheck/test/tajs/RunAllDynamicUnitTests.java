@@ -70,7 +70,7 @@ public class RunAllDynamicUnitTests {
 
         Benchmark bench = UnitTests.benchFromFolder(folderName).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setUseAssertTypeFunctions(false).setCheckDepthReport(options.checkDepthUseValue)).useTAJS();
 
-        MultiMap<String, AssertionResult> result = TAJSUtil.run(bench);
+        MultiMap<String, AssertionResult> result = TAJSUtil.run(bench, 60);
 
         for (Map.Entry<String, Collection<AssertionResult>> entry : result.asMap().entrySet()) {
             for (AssertionResult tajsResult : entry.getValue()) {
