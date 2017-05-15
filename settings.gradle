@@ -1,0 +1,9 @@
+rootProject.name = "tajscheck"
+include "jalangilogger",
+ //"tajs",
+ "ts-spec-reader",
+ "tajs-meta/tajs"
+ 
+
+// Make TAJS use jalangilogger from the meta folder
+project(':jalangilogger').projectDir = new File('./TAJS-meta/jalangilogger')

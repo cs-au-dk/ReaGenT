@@ -1,0 +1,37 @@
+apply plugin: 'idea'
+apply plugin: 'java'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }    
+}
+
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/'
+        }
+        resources {
+            srcDir 'resources/'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'lib', include: ['*.jar'])
+    compile fileTree(dir: 'lib/selenium', include: ['*.jar'])
+    compile fileTree(dir: 'ts-spec-reader/deserializers/java/libs', include: ['*.jar'])
+    compile project(":ts-spec-reader")
+    compile project(":tajs-meta/tajs")
+    
+}
+
+
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}

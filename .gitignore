@@ -89,3 +89,9 @@ test/unit/*/coverage.js
 *.pptx
 *.xlsx
 *.txt
+
+# Mac OS thumbnails
+.DS_Store
+
+# Gradle 
+.gradle
