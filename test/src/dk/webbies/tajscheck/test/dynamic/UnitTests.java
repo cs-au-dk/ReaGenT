@@ -1281,7 +1281,10 @@ public class UnitTests {
 
         assertThat(coverage, is(not(emptyMap())));
 
-        assertThat(coverage.get("implementation.js").statementCoverage(), is(greaterThan(0.5)));
+        for(String k : coverage.keySet()) {
+            if (k.endsWith("implementation.js"))
+                assertThat(coverage.get(k).statementCoverage(), is(greaterThan(0.5)));
+        }
     }
     @Test
     public void browserCoverageTimeout() throws Exception {
@@ -1295,7 +1298,10 @@ public class UnitTests {
 
         assertThat(coverage, is(not(emptyMap())));
 
-        assertThat(coverage.get("implementation.js").statementCoverage(), is(greaterThan(0.5)));
+        for(String k : coverage.keySet()) {
+            if (k.endsWith("implementation.js"))
+                assertThat(coverage.get(k).statementCoverage(), is(greaterThan(0.5)));
+        }
     }
 
     @Test
@@ -1310,7 +1316,9 @@ public class UnitTests {
 
         assertThat(coverage, is(not(emptyMap())));
 
-        assertThat(coverage.get("test.js").statementCoverage(), is(greaterThan(0.2)));
+        for(String k : coverage.keySet()) {
+            if (k.endsWith("test.js")) assertThat(coverage.get(k).statementCoverage(), is(greaterThan(0.2)));
+        }
     }
 
     @Test
@@ -1321,7 +1329,9 @@ public class UnitTests {
 
         assertThat(coverage, is(not(emptyMap())));
 
-        assertThat(coverage.get("test.js").statementCoverage(), is(greaterThan(0.2)));
+        for(String k : coverage.keySet()) {
+            if (k.endsWith("test.js")) assertThat(coverage.get(k).statementCoverage(), is(greaterThan(0.2)));
+        }
     }
 
     @Test

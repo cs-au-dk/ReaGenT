@@ -60,9 +60,9 @@ public class DriverProgramBuilder {
         program.add(variable("failOnAny", bool(info.options.failOnAny)));
 
         if (info.bench.options.useTAJS) {
-            program.add(AstBuilder.programFromFile(this.getClass().getResource("prelude_tajs.js")));
+            program.add(AstBuilder.programFromFile(DriverProgramBuilder.class.getResource("/prelude_tajs.js")));
         } else {
-            program.add(AstBuilder.programFromFile(this.getClass().getResource("prelude.js")));
+            program.add(AstBuilder.programFromFile(DriverProgramBuilder.class.getResource("/prelude.js")));
         }
 
         program.add(block(typeCreator.getValueVariableDeclarationList()));
@@ -126,9 +126,9 @@ public class DriverProgramBuilder {
         ))));
 
         if (info.bench.options.useTAJS) {
-            program.add(AstBuilder.programFromFile(this.getClass().getResource("dumb_tajs.js")));
+            program.add(AstBuilder.programFromFile(DriverProgramBuilder.class.getResource("/dumb_tajs.js")));
         } else {
-            program.add(AstBuilder.programFromFile(this.getClass().getResource("dumb.js")));
+            program.add(AstBuilder.programFromFile(DriverProgramBuilder.class.getResource("/dumb.js")));
         }
 
         if (info.bench.run_method == Benchmark.RUN_METHOD.BROWSER) {

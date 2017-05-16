@@ -20,6 +20,8 @@ import org.apache.http.HttpException;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -114,12 +116,12 @@ public class Main {
     }
 
     public static String getRequirePath(Benchmark bench) {
-        String jsPath = new File(bench.jsFile).getAbsolutePath();
+        Path jsPath = Paths.get(new File(bench.jsFile).getAbsolutePath());
+        Path relativeJsPath = jsPath.getParent().relativize(jsPath);
+        //int lastIndex = jsPath.lastIndexOf(File.pathSeparator);
+        //String jsFile = jsPath.substring(lastIndex + 1, jsPath.length());
 
-        int lastIndex = jsPath.lastIndexOf('\\');
-        String jsFile = jsPath.substring(lastIndex + 1, jsPath.length());
-
-        return "./" + jsFile;
+        return "./" + relativeJsPath;
     }
 
     public static String runBenchmark(Benchmark bench) throws IOException {
