@@ -22,7 +22,7 @@ sourceSets {
             srcDir 'test/src'
         }
         resources {
-            srcDirs = ['test/benchmarks', 'resources/']
+            srcDirs = ['test/benchmarks', 'resources/', 'unit/', 'tajsUnit/']
         }
     }
 }
