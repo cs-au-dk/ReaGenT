@@ -17,6 +17,14 @@ sourceSets {
             srcDir 'resources/'
         }
     }
+    test {
+        java {
+            srcDir 'test/src'
+        }
+        resources {
+            srcDirs = ['test/benchmarks', 'resources/']
+        }
+    }
 }
 
 dependencies {
@@ -24,8 +32,17 @@ dependencies {
     compile fileTree(dir: 'lib/selenium', include: ['*.jar'])
     compile fileTree(dir: 'ts-spec-reader/deserializers/java/libs', include: ['*.jar'])
     compile project(":ts-spec-reader")
-    compile project(":tajs-meta/tajs")
-    
+    compile project(":tajs")
+    compile project(":components:meta-core")
+    compile project(":components:simple-monitors")
+    testCompile project(":components:simple-monitors")
+    testCompile project(":components:meta-core")
+    testCompile project(path: ':tajs', configuration: 'testOutput')
+}
+
+
+subprojects {
+    apply plugin: 'java'
 }
 
 

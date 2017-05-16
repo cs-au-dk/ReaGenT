@@ -50,7 +50,7 @@ public class SuiteTest {
         protected void runTest() throws Throwable {
             Benchmark bench = this.bench.withPathsToTest(Collections.singletonList(path));
 
-            MultiMap<String, AssertionResult> result = TAJSUtil.run(bench);
+            MultiMap<String, AssertionResult> result = TAJSUtil.run(bench, -1);
 
             System.out.println(TAJSUtil.prettyResult(result, (r) -> true));
         }

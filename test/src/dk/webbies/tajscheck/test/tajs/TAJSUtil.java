@@ -4,7 +4,6 @@ import dk.brics.tajs.analysis.TAJSFunctionsEvaluator;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.lattice.Context;
 import dk.brics.tajs.lattice.Value;
-import dk.brics.tajs.meta.monitors.MonitorFactory;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
 import dk.brics.tajs.options.Options;

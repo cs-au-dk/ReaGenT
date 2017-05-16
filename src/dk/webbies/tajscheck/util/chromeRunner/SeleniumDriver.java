@@ -112,7 +112,7 @@ public class SeleniumDriver {
         Map<String, String> customContents = new HashMap<>();
         customContents.put("test.js", script);
         try {
-            String htmlDriver = IOUtils.toString(SeleniumDriver.class.getResourceAsStream("driver.html"));
+            String htmlDriver = IOUtils.toString(SeleniumDriver.class.getResourceAsStream("/driver.html"));
             customContents.put("/", htmlDriver);
             customContents.put("/index.html", htmlDriver);
         } catch (IOException e) {
