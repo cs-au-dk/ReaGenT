@@ -379,7 +379,11 @@ public class TestCreator {
 
         @Override
         public int compareTo(TestQueueElement o) {
-            return Integer.compare(this.arg.depth, o.arg.depth);
+            int result = Integer.compare(this.arg.depth, o.arg.depth);
+            if (result != 0) {
+                return result;
+            }
+            return this.arg.path.compareTo(o.arg.path);
         }
     }
 
