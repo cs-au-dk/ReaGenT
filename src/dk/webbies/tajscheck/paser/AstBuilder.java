@@ -1,8 +1,10 @@
 package dk.webbies.tajscheck.paser;
 
 import com.google.common.io.Resources;
+import dk.brics.tajs.flowgraph.jsnodes.TypeofNode;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.*;
+import dk.webbies.tajscheck.testcreator.test.check.TypeOfCheck;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.apache.commons.io.Charsets;
@@ -24,8 +26,6 @@ public class AstBuilder {
     public static VariableNode variable(Expression lValue, Expression init) {
         return new VariableNode(null, lValue, init);
     }
-
-
 
     public static VariableNode variable(String id, Expression init) {
         return new VariableNode(null, identifier(id), init);

@@ -30,6 +30,7 @@ public final class CheckOptions {
     public final boolean onlyInitialize;
     public final boolean useTAJS;
     public final boolean useTracified;
+    public final boolean monitorPrivateAccesses;
 
 
     private CheckOptions(Builder builder) {
@@ -56,8 +57,8 @@ public final class CheckOptions {
         this.onlyInitialize = builder.onlyInitialize;
         this.useTAJS = builder.useTAJS;
         this.useTracified = builder.useTracified;
+        this.monitorPrivateAccesses = builder.monitorPrivateAccesses;
         this.builder = builder;
-
     }
 
     public Builder getBuilder() {
@@ -113,6 +114,8 @@ public final class CheckOptions {
 
         public boolean useTAJS = false; // If true, run abstractly instead of concretely.
         public boolean useTracified = false;
+        public boolean monitorPrivateAccesses = false;
+
 
         private Builder() {}
 
@@ -237,6 +240,11 @@ public final class CheckOptions {
 
         public Builder setDisableGenerics(boolean disableGenerics) {
             this.disableGenerics = disableGenerics;
+            return this;
+        }
+
+        public Builder setMonitorPrivateAccesses(boolean monitorPrivateAccesses) {
+            this.monitorPrivateAccesses = monitorPrivateAccesses;
             return this;
         }
     }

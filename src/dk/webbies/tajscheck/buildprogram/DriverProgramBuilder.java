@@ -36,16 +36,17 @@ public class DriverProgramBuilder {
 
     private TypeCreator typeCreator;
 
+
     public DriverProgramBuilder(List<Test> tests, BenchmarkInfo info) {
         this.tests = new ArrayList<>(tests);
         this.info = info;
-
         this.typeChecker = new TypeChecker(info);
-        this.typeCreator = new TypeCreator(tests, info, typeChecker);
     }
 
     public Statement buildDriver(ExecutionRecording recording) throws IOException {
         List<Statement> program = new ArrayList<>();
+        ValueTransformer vt = (info.options.monitorPrivateAccesses ? new ProxyBuilder(program, (InterfaceType) info.getSpec().getGlobal()).transformer() : ValueTransformer.identityTransformer);
+        this.typeCreator = new TypeCreator(tests, info, typeChecker, vt);
 
         // var initialRandomness = Math.random()
         if (recording == null || recording.seed == null) {
