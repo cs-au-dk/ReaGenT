@@ -50,7 +50,7 @@ public class ProxyBuilder {
         program.add(
                 (statement(function(checkPropertyFunction,
                         stmtFromString(String.join("\n",
-                                "    var possible = false;",
+                                "var possible = false;",
                                 "for(var obj in publicApiObjects) {",
                                 "    switch(publicApiObjects[obj]) {",
                                 "        case 'Any':",
