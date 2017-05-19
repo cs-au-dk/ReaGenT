@@ -21,7 +21,7 @@ public class ProxyBuilder {
     private final static String checkPropertyFunction =  "checkProperty";
     private final static String knownObjectPropertiesObject =  "knownObjectProperties";
     private final static String unknownFieldAccessFunction =  "unknownFieldAccess";
-    private final static String accessCountersObject =  "accessCounterObject";
+    private final static String accessCountersObject =  "accessCountersObject";
 
     private final InterfaceType global;
 
@@ -100,7 +100,7 @@ public class ProxyBuilder {
         program.add(
                 (statement(function(unknownFieldAccessFunction,
                         stmtFromString(String.join("\n",
-                                "if(!known) { " + accessCountersObject + ".bad++; error(message()); } else {" + accessCountersObject + ".good++; }"
+                                "if(!known) { " + accessCountersObject + ".bad++; error(message() + ' good: ' + " + accessCountersObject + ".good + ' bad: ' + " + accessCountersObject + ".bad); } else {" + accessCountersObject + ".good++; }"
                         )),
                         "message", "known")
                 )
@@ -271,6 +271,7 @@ public class ProxyBuilder {
     private List<Type> extractFlattendedTypes(Type t) {
         FlattenedTypesExtractor ipe = new FlattenedTypesExtractor();
         t.accept(ipe);
+        //if(ipe.types.isEmpty()) System.out.println("For " + t + " we have: " + ipe.types.stream().collect(Collectors.toList()));
         return ipe.types.stream().collect(Collectors.toList());
     }
 
@@ -281,12 +282,14 @@ public class ProxyBuilder {
         if(!assignedNames.containsKey(t)) {
             String typeName =  (typeNames.containsKey(t) ? typeNames.get(t) : "T")   + "_" + assignedNames.size();
             assignedNames.put(t, typeName); //FIXME use something mnemonic
+            List<Expression> objectProperties = properties.containsKey(t) ? properties.get(t).stream().map(x -> string(x)).collect(Collectors.toList()) : new ArrayList<>();
+
             // lazily update the program with the properties
             program.add(program.indexOf(knownProperyObjectCreation) + 1,
                     statement(binary(
                             arrayAccess(identifier(knownObjectPropertiesObject),string(typeName)),
                             Operator.EQUAL,
-                            array(properties.containsKey(t) ? properties.get(t).stream().map(x -> string(x)).collect(Collectors.toList()) : new ArrayList<>()))
+                            array(objectProperties))
                     ));
         }
         return assignedNames.get(t);
@@ -319,11 +322,17 @@ public class ProxyBuilder {
 
         @Override
         public Void visit(GenericType t) {
+            types.add(global.getDeclaredProperties().get("Object"));
+            types.add(t);
+            t.getBaseTypes().forEach(base -> base.accept(this));
             return null;
         }
 
         @Override
         public Void visit(ReferenceType t) {
+            types.add(global.getDeclaredProperties().get("Object"));
+            types.add(t);
+            t.getTarget().accept(this);
             return null;
         }
 
@@ -406,11 +415,13 @@ public class ProxyBuilder {
 
     private static class DeclaredPropertyExtractor extends RecursiveTypeVisitor<Void> {
         private final Map<Type, List<String>> properties = new HashMap<>();
+        private final Set<Type> visited = new HashSet<>();
 
         Map<Type, List<String>> getProperties() {return properties;}
 
         @Override
         public Void visit(ClassType t) {
+            if(visited.contains(t)) return null; else visited.add(t);
             super.visit(t);
             properties.put(t, new ArrayList<>(t.getInstanceProperties().keySet()));
             t.getBaseTypes().forEach(base -> base.accept(this));
@@ -419,8 +430,27 @@ public class ProxyBuilder {
 
         @Override
         public Void visit(InterfaceType t) {
+            if(visited.contains(t)) return null; else visited.add(t);
             super.visit(t);
             properties.put(t, new ArrayList<>(t.getDeclaredProperties().keySet()));
+            t.getBaseTypes().forEach(base -> base.accept(this));
+            return null;
+        }
+
+        @Override
+        public Void visit(ReferenceType t) {
+            if(visited.contains(t)) return null; else visited.add(t);
+            super.visit(t);
+            t.getTarget().accept(this);
+            return null;
+        }
+
+        @Override
+        public Void visit(GenericType t) {
+            if(visited.contains(t)) return null; else visited.add(t);
+            super.visit(t);
+            properties.put(t, new ArrayList<>(t.getDeclaredProperties().keySet()));
+            t.getTarget().accept(this);
             t.getBaseTypes().forEach(base -> base.accept(this));
             return null;
         }
