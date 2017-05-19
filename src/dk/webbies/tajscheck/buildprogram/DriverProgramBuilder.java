@@ -118,7 +118,9 @@ public class DriverProgramBuilder {
                                             buildTestCases()),
                                     catchBlock(
                                             identifier("e"),
-                                            block()
+                                            block(
+                                                    // statement(call(identifier("error"), expFromString("e.toString()")))
+                                            )
                                     )
                             )
                     )

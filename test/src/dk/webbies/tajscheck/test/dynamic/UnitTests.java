@@ -409,6 +409,28 @@ public class UnitTests {
     }
 
     @Test
+    @Ignore // TODO: Fails.
+    public void valueCantBeTrueAndFalse() throws Exception {
+        RunResult result = run("valueCantBeTrueAndFalse");
+
+        assertThat(result.errors.size(), is(greaterThan(0)));
+    }
+
+    @Test
+    public void canHaveError() throws Exception {
+        RunResult result = run("canHaveError", "foo");
+
+        assertThat(result.errors.size(), is(greaterThan(0)));
+    }
+
+    @Test
+    public void canHaveErrorBrowser() throws Exception {
+        RunResult result = run(benchFromFolder("canHaveErrorBrowser", BROWSER), "foo");
+
+        assertThat(result.errors.size(), is(greaterThan(0)));
+    }
+
+    @Test
     public void numberIndexer() throws Exception {
         RunResult result = run("numberIndexer");
 

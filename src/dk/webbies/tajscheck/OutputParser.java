@@ -82,12 +82,19 @@ public class OutputParser {
         split = testStats.getLeft();
 
 
-        int errorsIndex = split.indexOf("---- ERRORS ----");
         List<String> errors = new ArrayList<>();
-        if (errorsIndex != -1) {
-            errors = split.subList(errorsIndex + 1, split.size());
-            split = split.subList(0, errorsIndex);
+
+        ArrayList<String> splitCopy = new ArrayList<>(split);
+        split.clear();
+        for (String msg : splitCopy) {
+            if (msg.startsWith("error: ")) {
+                errors.add(msg.substring("error: ".length(), msg.length()));
+            } else {
+                split.add(msg);
+            }
         }
+
+
         List<TypeError> typeErrors = new ArrayList<>();
 
         assert split.get(0).startsWith("Initial random: ");
