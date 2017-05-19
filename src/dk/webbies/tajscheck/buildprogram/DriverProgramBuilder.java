@@ -45,7 +45,7 @@ public class DriverProgramBuilder {
 
     public Statement buildDriver(ExecutionRecording recording) throws IOException {
         List<Statement> program = new ArrayList<>();
-        ValueTransformer vt = (info.options.monitorPrivateAccesses ? new ProxyBuilder(program, (InterfaceType) info.getSpec().getGlobal()).transformer() : ValueTransformer.identityTransformer);
+        ValueTransformer vt = (info.options.monitorUnknownPropertyAccesses ? new ProxyBuilder(program, info).transformer() : ValueTransformer.identityTransformer);
         this.typeCreator = new TypeCreator(tests, info, typeChecker, vt);
 
         // var initialRandomness = Math.random()

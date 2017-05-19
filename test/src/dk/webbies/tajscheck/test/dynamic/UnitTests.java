@@ -1548,7 +1548,7 @@ public class UnitTests {
 
     @Test
     public void smokeUnknownFieldsAccess() throws Exception {
-        Benchmark bench = benchFromFolder("unknownFieldAccess", options().setMonitorPrivateAccesses(true).build());
+        Benchmark bench = benchFromFolder("unknownFieldAccess", options().setMonitorUnkownPropertyAccesses(true).build());
         String driver = Main.generateFullDriver(bench).getRight();
         Main.writeFullDriver(bench);
 

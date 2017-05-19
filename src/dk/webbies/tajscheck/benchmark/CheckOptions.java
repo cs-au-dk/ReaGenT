@@ -30,7 +30,7 @@ public final class CheckOptions {
     public final boolean onlyInitialize;
     public final boolean useTAJS;
     public final boolean useTracified;
-    public final boolean monitorPrivateAccesses;
+    public final boolean monitorUnknownPropertyAccesses;
 
 
     private CheckOptions(Builder builder) {
@@ -57,7 +57,7 @@ public final class CheckOptions {
         this.onlyInitialize = builder.onlyInitialize;
         this.useTAJS = builder.useTAJS;
         this.useTracified = builder.useTracified;
-        this.monitorPrivateAccesses = builder.monitorPrivateAccesses;
+        this.monitorUnknownPropertyAccesses = builder.monitorUnknownPropertyAccesses;
         this.builder = builder;
     }
 
@@ -73,6 +73,11 @@ public final class CheckOptions {
         return options
                 .setMaxTime(30 * 1000)
                 .setCombineNullAndUndefined(true);
+    }
+
+    public static CheckOptions.Builder monitorUnkownPropertyAccesses(CheckOptions.Builder options) {
+        return options
+                .setMonitorUnkownPropertyAccesses(true);
     }
 
     public static CheckOptions.Builder errorFindingOptions(CheckOptions options) {
@@ -114,7 +119,7 @@ public final class CheckOptions {
 
         public boolean useTAJS = false; // If true, run abstractly instead of concretely.
         public boolean useTracified = false;
-        public boolean monitorPrivateAccesses = false;
+        public boolean monitorUnknownPropertyAccesses = false;
 
 
         private Builder() {}
@@ -243,8 +248,8 @@ public final class CheckOptions {
             return this;
         }
 
-        public Builder setMonitorPrivateAccesses(boolean monitorPrivateAccesses) {
-            this.monitorPrivateAccesses = monitorPrivateAccesses;
+        public Builder setMonitorUnkownPropertyAccesses(boolean monitorUnknownPropertyAccesses) {
+            this.monitorUnknownPropertyAccesses = monitorUnknownPropertyAccesses;
             return this;
         }
     }

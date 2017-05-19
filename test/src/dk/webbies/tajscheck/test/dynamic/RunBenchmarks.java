@@ -8,7 +8,6 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.test.TestParsing;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -43,7 +42,7 @@ public class RunBenchmarks {
     static {
         CheckOptions options = CheckOptions.builder()
                 .setSplitUnions(false) // Because some of these benchmarks use an insane amount of overloads, so this can cause the size of the generated program to explode (about a factor 400x for moment).
-                .setMonitorPrivateAccesses(true)
+                .setMonitorUnkownPropertyAccesses(true)
                 .build();
 
         register(new Benchmark("Moment.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", BROWSER, options));
@@ -206,7 +205,8 @@ public class RunBenchmarks {
     @Test
     public void runFullDriver() throws Exception {
         // Write the driver
-        Main.writeFullDriver(benchmark.withOptions(CheckOptions::errorFindingOptions));
+        Benchmark b = benchmark.withOptions(CheckOptions::errorFindingOptions).withOptions(CheckOptions::monitorUnkownPropertyAccesses);
+        Main.writeFullDriver(b);
 
         String out = Main.runBenchmark(benchmark);
 //        System.out.println(out);
