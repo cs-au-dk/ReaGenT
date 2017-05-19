@@ -205,7 +205,9 @@ public class RunBenchmarks {
     @Test
     public void runFullDriver() throws Exception {
         // Write the driver
-        Benchmark b = benchmark.withOptions(CheckOptions::errorFindingOptions).withOptions(CheckOptions::monitorUnkownPropertyAccesses);
+        Benchmark b = benchmark
+                .withOptions(CheckOptions::errorFindingOptions)
+                .withOptions(CheckOptions::monitorUnkownPropertyAccesses);
         Main.writeFullDriver(b);
 
         String out = Main.runBenchmark(benchmark);
@@ -221,7 +223,9 @@ public class RunBenchmarks {
             System.out.println();
         }
 
-
+        for (String error: result.errors) {
+            System.out.println(error);
+        }
 
         assert !out.trim().isEmpty();
     }

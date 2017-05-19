@@ -149,7 +149,7 @@ public class ProxyBuilder {
 
     private class ProxyValueTransformer implements ValueTransformer {
 
-        public Expression transform(Expression target, Type proxiedType, TypeContext typeContext) {
+        public Expression transform(Expression target, Type proxiedType) {
             return call(
                     identifier(proxyHandlerFunction),
                     target,

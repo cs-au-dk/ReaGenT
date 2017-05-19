@@ -11,6 +11,7 @@ import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
+import dk.webbies.tajscheck.util.StreamUtils;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ public class DriverProgramBuilder {
     private final List<Test> tests;
     private final BenchmarkInfo info;
     private final TypeChecker typeChecker;
+    private ValueTransformer transformer;
 
     private TypeCreator typeCreator;
 
@@ -45,8 +47,9 @@ public class DriverProgramBuilder {
 
     public Statement buildDriver(ExecutionRecording recording) throws IOException {
         List<Statement> program = new ArrayList<>();
-        ValueTransformer vt = (info.options.monitorUnknownPropertyAccesses ? new ProxyBuilder(program, info).transformer() : ValueTransformer.identityTransformer);
-        this.typeCreator = new TypeCreator(tests, info, typeChecker, vt);
+        this.typeCreator = new TypeCreator(tests, info, typeChecker);
+
+        this.transformer = (info.options.monitorUnknownPropertyAccesses ? new ProxyBuilder(program, info).transformer() : ValueTransformer.identityTransformer);
 
         // var initialRandomness = Math.random()
         if (recording == null || recording.seed == null) {
@@ -373,7 +376,8 @@ public class DriverProgramBuilder {
                 return Collections.singletonList(throwStatement(newCall(identifier("Error"))));
             } else {
                 return callFunction(test, test.getObject(), test.getParameters(), test.isRestArgs(), (base, parameters) ->
-                        methodCall(identifier("base"), test.getPropertyName(), parameters)
+                        methodCall(transformer.transform(identifier("base"), test.getObject()), test.getPropertyName(), StreamUtils.zip(test.getParameters().stream(), parameters.stream(),
+                                (ttype, exp) -> transformer.transform(exp, ttype)).collect(Collectors.toList()))
                 );
             }
         }

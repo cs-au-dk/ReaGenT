@@ -9,7 +9,7 @@ import java.util.List;
 
 interface ValueTransformer {
 
-    ValueTransformer identityTransformer = (x, y, z) -> x;
+    ValueTransformer identityTransformer = (x, y) -> x;
 
-    Expression transform(Expression value, Type type, TypeContext typeContext);
+    Expression transform(Expression value, Type type);
 }

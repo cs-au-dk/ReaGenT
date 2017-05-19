@@ -37,19 +37,17 @@ public class TypeCreator {
     private TypeChecker typeChecker;
     private final BenchmarkInfo info;
     private ArrayList<Statement> functions = new ArrayList<>();
-    private ValueTransformer transformer;
 
     private static final String GET_TYPE_PREFIX = "getType_";
     private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
     private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
-    TypeCreator(List<Test> tests, BenchmarkInfo info, TypeChecker typeChecker, ValueTransformer transformer) {
+    TypeCreator(List<Test> tests, BenchmarkInfo info, TypeChecker typeChecker) {
         this.options = info.options;
         this.typeChecker = typeChecker;
         this.valueLocations = new ArrayListMultiMap<>();
         this.typeIndexes = HashBiMap.create();
         this.info = info;
-        this.transformer = transformer;
 
         for (Test test : tests) {
             List<Integer> testValueLocations = new ArrayList<>();
@@ -1292,7 +1290,7 @@ public class TypeCreator {
             constructTypeQueue.add(new TypeWithContext(type, typeContext));
         }
 
-        return transformer.transform(call(identifier(CONSTRUCT_TYPE_PREFIX + index)), type, typeContext);
+        return call(identifier(CONSTRUCT_TYPE_PREFIX + index));
     }
 
     public Expression constructType(int index) {
