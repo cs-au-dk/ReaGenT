@@ -14,29 +14,6 @@ if (isBrowser) {
 
 function dumbMessages() {
     (function (print) {
-        var shownWarnings = new Set();
-        var shownErrors = new Set();
-        if (printedWarnings.length > 0) {
-            print("---- WARNINGS ----");
-            for (var i = 0; i < printedWarnings.length; i++) {
-                var warning = printedWarnings[i];
-                if (!shownWarnings.has(warning)) {
-                    print(warning);
-                    shownWarnings.add(warning);
-                }
-            }
-        }
-        if (printedErrors.length > 0) {
-            print("---- ERRORS ----");
-            for (var i = 0; i < printedErrors.length; i++) {
-                var error = printedErrors[i];
-                if (!shownErrors.has(error)) {
-                    print(error);
-                    shownErrors.add(error);
-                }
-            }
-        }
-
         dumbCoverage();
 
         if (isBrowser) {

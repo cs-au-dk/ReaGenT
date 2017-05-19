@@ -20,9 +20,6 @@ function loadLibrary(path) {
     return module.exports;
 }
 
-var printedWarnings = [];
-var printedErrors = [];
-
 var print = function () {};
 
 var no_value = {noValueMarker: true};
@@ -45,11 +42,8 @@ TAJS_makeContextSensitive(assert, 0);
 TAJS_makeContextSensitive(assert, 1);
 TAJS_makeContextSensitive(assert, 2);
 
-var warn = function (message) {
-    printedWarnings.push(message);
-};
 var error = function (message) {
-    printedErrors.push(message);
+    // Nothing currently.
 };
 
 for (var key in console) {

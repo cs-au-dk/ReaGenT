@@ -92,9 +92,6 @@ function createFailDescription(path, expected, actual, iteration, sequence, desc
     return failDescription;
 }
 
-var printedWarnings = [];
-var printedErrors = [];
-
 var print = console.log.bind(console);
 
 
@@ -113,11 +110,15 @@ if (isBrowser) {
         sendResultToChecker(message);
     };
 
-    window.onbeforeunload = function() {
+    window.onbeforeunload = function () {
         return "Please don't navigate away.";
-    }
+    };
     window.alert = function () {};
     window.confirm = function () {};
+}
+
+function error(msg) {
+    print("error: " + msg);
 }
 
 var runsWithCoverage = (function () {
@@ -199,13 +200,6 @@ function assert(cond, path, expected, actual, iteration, descrip) {
 }
 
 print("Initial random: " + JSON.stringify(initialRandomness));
-
-var warn = function (message) {
-    printedWarnings.push(message);
-};
-var error = function (message) {
-    printedErrors.push(message);
-};
 
 try {
     process.on('uncaughtException', function (err) {
