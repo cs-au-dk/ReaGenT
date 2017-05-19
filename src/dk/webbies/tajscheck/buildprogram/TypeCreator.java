@@ -37,17 +37,19 @@ public class TypeCreator {
     private TypeChecker typeChecker;
     private final BenchmarkInfo info;
     private ArrayList<Statement> functions = new ArrayList<>();
+    private ValueTransformer transformer;
 
     private static final String GET_TYPE_PREFIX = "getType_";
     private static final String CONSTRUCT_TYPE_PREFIX = "constructType_";
     private List<Statement> valueVariableDeclarationList = new ArrayList<>();
 
-    TypeCreator(List<Test> tests, BenchmarkInfo info, TypeChecker typeChecker) {
+    TypeCreator(List<Test> tests, BenchmarkInfo info, TypeChecker typeChecker, ValueTransformer transformer) {
         this.options = info.options;
         this.typeChecker = typeChecker;
         this.valueLocations = new ArrayListMultiMap<>();
         this.typeIndexes = HashBiMap.create();
         this.info = info;
+        this.transformer = transformer;
 
         for (Test test : tests) {
             List<Integer> testValueLocations = new ArrayList<>();
@@ -573,7 +575,7 @@ public class TypeCreator {
             if (t.getElements().size() == 1) {
                 return Return(constructType(t.getElements().iterator().next(), typeContext));
             }
-            List<CallExpression> constructSubTypes = t.getElements().stream().map(element -> constructType(element, typeContext)).collect(Collectors.toList());
+            List<Expression> constructSubTypes = t.getElements().stream().map(element -> constructType(element, typeContext)).collect(Collectors.toList());
 
             // This can theoretically break stuff (that i save to result again, instead of always putting everything in the existing result), but it most likely won't (the soundness-test should detect if we ever get a type that could break this thing). Also, I didn't manage to find a type that breaks this, but such a type most likely exists.
             Statement populateResult = block(
@@ -1282,7 +1284,7 @@ public class TypeCreator {
         return call(identifier(GET_TYPE_PREFIX + index));
     }
 
-    public CallExpression constructType(Type type, TypeContext typeContext) {
+    public Expression constructType(Type type, TypeContext typeContext) {
         int index = getTypeIndex(type, typeContext);
 
         if (!hasCreateTypeFunction.contains(index)) {
@@ -1290,10 +1292,10 @@ public class TypeCreator {
             constructTypeQueue.add(new TypeWithContext(type, typeContext));
         }
 
-        return call(identifier(CONSTRUCT_TYPE_PREFIX + index));
+        return transformer.transform(call(identifier(CONSTRUCT_TYPE_PREFIX + index)), type, typeContext);
     }
 
-    public CallExpression constructType(int index) {
+    public Expression constructType(int index) {
         TypeWithContext typeWithParameters = typeIndexes.inverse().get(index);
         return constructType(typeWithParameters.getType(), typeWithParameters.getTypeContext());
     }

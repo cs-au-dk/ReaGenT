@@ -1567,4 +1567,16 @@ public class UnitTests {
                 .expected("undefined")
                 .got(TYPEOF, "string");
     }
+
+    @Test
+    public void smokeUnknownFieldsAccess() throws Exception {
+        Benchmark bench = benchFromFolder("unknownFieldAccess", options().setMonitorUnkownPropertyAccesses(true).build());
+        String driver = Main.generateFullDriver(bench).getRight();
+        Main.writeFullDriver(bench);
+
+        String res = Main.runBenchmark(bench);
+        System.out.println(res);
+
+    }
+
 }
