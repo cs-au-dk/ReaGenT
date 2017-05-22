@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -43,23 +44,21 @@ public class SimpleMessageReceivingHTTPServer {
             if (request.getRight().endsWith("close")) {
                 return true;
             } else {
-                String message = request.getRight();
-                assert message.contains(":") && message.indexOf(":") < 10;
+                String messagesString = request.getRight();
 
-                int sequencer = Integer.parseInt(message.substring(0, message.indexOf(":")));
+                String splitter = "$!$!$!TsTestMsgSplit!$!$!$";
 
-                String realMessage = message.substring(message.indexOf(":") + 1, message.length()).trim();
+                String[] split = messagesString.split(Pattern.quote(splitter));
+                for (String message : split) {
+                    assert message.contains(":") && message.indexOf(":") < 10;
 
-                synchronized (messages) {
+                    String realMessage = message.substring(message.indexOf(":") + 1, message.length()).trim();
+
                     if (realMessage.startsWith("::COVERAGE::")) {
                         messages.clear();
                         messages.add(realMessage);
                     } else {
-                        while (messages.size() <= sequencer) {
-                            messages.add(null);
-                        }
-
-                        messages.set(sequencer, realMessage);
+                        messages.add(realMessage);
                     }
                 }
                 return false;
