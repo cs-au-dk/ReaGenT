@@ -1,10 +1,17 @@
 package dk.webbies.tajscheck.buildprogram;
 
-import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tajscheck.*;
+import dk.au.cs.casa.typescript.types.ReferenceType;
+import dk.au.cs.casa.typescript.types.Type;
+import dk.au.cs.casa.typescript.types.UnionType;
+import dk.webbies.tajscheck.ExecutionRecording;
+import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.paser.AST.*;
+import dk.webbies.tajscheck.paser.AST.ArrayLiteral;
+import dk.webbies.tajscheck.paser.AST.Expression;
+import dk.webbies.tajscheck.paser.AST.Operator;
+import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
@@ -15,7 +22,10 @@ import dk.webbies.tajscheck.util.StreamUtils;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -77,13 +87,10 @@ public class DriverProgramBuilder {
 
         program.add(typeCreator.getBlockStatementWithTypeFunctions());
 
-        Expression iterationsToRun;
         if (recording == null || recording.testSequence == null) {
-            iterationsToRun = number(info.options.maxIterationsToRun);
             program.add(variable("runRecording", bool(false)));
         } else {
             program.add(variable("runRecording", bool(true)));
-            iterationsToRun = member(identifier("recording"), "length");
             program.add(variable("recording", array()));
             Arrays.stream(recording.testSequence)
                     .mapToObj(i -> methodCall(identifier("recording"), "push", number(i)))
@@ -108,12 +115,16 @@ public class DriverProgramBuilder {
 
         program.add(statement(function("testStuff", block(
                 statement(call(identifier("print"), string("total number of tests: " + tests.size()))),
-                whileLoop(bool(true),
+                statement(call(identifier("continuation"))),
+                statement(function("continuation",
                     block(
                             variable("testNumberToRun", call(identifier("selectTest"))),
                             ifThen(
                                     binary(identifier("testNumberToRun"), Operator.LESS_THAN, number(0)),
-                                    breakStatement()
+                                    block(
+                                            statement(call(identifier("dumbMessages"))),
+                                            Return()
+                                    )
                             ),
                             statement(methodCall(identifier("testOrderRecording"), "push", identifier("testNumberToRun"))),
                             tryCatch(
@@ -126,9 +137,16 @@ public class DriverProgramBuilder {
                                                     // statement(call(identifier("error"), expFromString("e.toString()")))
                                             )
                                     )
+                            ),
+                            ifThenElse(binary(binary(identifier("i"), Operator.MOD, number(100)), Operator.EQUAL_EQUAL_EQUAL, number(0)),
+                                    statement(call(
+                                            identifier("setTimeout"),
+                                            identifier("continuation")
+                                    )),
+                                    statement(call(identifier("continuation")))
                             )
                     )
-                )
+                ))
         ))));
 
         if (info.bench.options.useTAJS) {
