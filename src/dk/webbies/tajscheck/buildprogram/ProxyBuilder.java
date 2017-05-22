@@ -1,19 +1,17 @@
 package dk.webbies.tajscheck.buildprogram;
 
 import dk.au.cs.casa.typescript.types.*;
-import dk.au.cs.casa.typescript.types.BooleanLiteral;
-import dk.au.cs.casa.typescript.types.NumberLiteral;
-import dk.au.cs.casa.typescript.types.StringLiteral;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.paser.AST.*;
+import dk.webbies.tajscheck.paser.AST.Expression;
+import dk.webbies.tajscheck.paser.AST.ObjectLiteral;
+import dk.webbies.tajscheck.paser.AST.Operator;
+import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.typeutil.RecursiveTypeVisitor;
-import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.paser.AstBuilder.*;
-import static dk.webbies.tajscheck.paser.AstBuilder.Return;
 
 public class ProxyBuilder {
 
@@ -164,43 +162,63 @@ public class ProxyBuilder {
      *   Builds a trap for Object.getPrototypeOf.
      */
     protected ObjectLiteral.Property PgetPrototypeOf(){
-        return new ObjectLiteral.Property("getPrototypeOf", function("", block(),"target"));
+        return new ObjectLiteral.Property("getPrototypeOf", function(block(),"target"));
     }
 
     /*
      *   Builds a trap for Object.setPrototypeOf.
      */
     protected ObjectLiteral.Property PsetPrototypeOf(){
-        return new ObjectLiteral.Property("setPrototypeOf", function("", block(), "target", "prototype"));
+        return new ObjectLiteral.Property("setPrototypeOf", function(block(), "target", "prototype"));
     }
 
     /*
      *   Builds a trap for Object.isExtensible.
      */
     protected ObjectLiteral.Property PisExtensible(){
-        return new ObjectLiteral.Property("isExtensible", function("", block(), "target"));
+        return new ObjectLiteral.Property("isExtensible", function(block(), "target"));
     }
 
     /*
      *   Builds a trap for Object.preventExtensions.
      */
     protected ObjectLiteral.Property PpreventExtensions(){
-        return new ObjectLiteral.Property("preventExtensions", function("", block(), "target"));
+        return new ObjectLiteral.Property("preventExtensions", function(block(), "target"));
     }
 
     /*
      *   Builds a trap for Object.getOwnPropertyDescriptor.
      */
     protected ObjectLiteral.Property PgetOwnPropertyDescriptor(){
-        return new ObjectLiteral.Property("getOwnPropertyDescriptor", function("", block(), "target", "property"));
+        return new ObjectLiteral.Property("getOwnPropertyDescriptor", function(block(), "target", "property"));
+    }
+
+    public static final String monitorUnknownPropAccessErrorPrefix = "monitorUnknown: ";
+    public static List<String> filterErrors(List<String> errors) {
+        List<String> result = new ArrayList<>();
+        for (String error : errors) {
+            if (error.startsWith(monitorUnknownPropAccessErrorPrefix)) {
+                result.add(error.substring(monitorUnknownPropAccessErrorPrefix.length(), error.length()));
+            }
+        }
+        return result;
+    }
+
+    public static int getGoodCount(String error) {
+        String substring = error.substring(error.indexOf("good: ") + 6, error.length()).trim();
+        return Integer.parseInt(substring.substring(0, substring.indexOf(" ")));
+    }
+
+    public static int getBadCount(String error) {
+        return Integer.parseInt(error.substring(error.indexOf("bad: ") + 5, error.length()).trim());
     }
 
     /*
      *   Builds a trap for Object.defineProperty.
      */
     protected ObjectLiteral.Property PdefineProperty(){
-        return new ObjectLiteral.Property("defineProperty", function("", stmtFromString(
-                unknownFieldAccessFunction +"(function(){return 'Checking presence of unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); target.defineProperty(property, descriptor); return true;"
+        return new ObjectLiteral.Property("defineProperty", function(stmtFromString(
+                unknownFieldAccessFunction +"(function(){return '" + monitorUnknownPropAccessErrorPrefix + "Checking presence of unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); target.defineProperty(property, descriptor); return true;"
         ), "target", "property", "descriptor"));
     }
 
@@ -208,9 +226,9 @@ public class ProxyBuilder {
      *   Builds a trap for the in operator.
      */
     protected ObjectLiteral.Property Phas(){
-        return new ObjectLiteral.Property("has", function("",
+        return new ObjectLiteral.Property("has", function(
                 stmtFromString(
-                        unknownFieldAccessFunction +"(function(){return 'Checking presence of unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); return target.hasOwnProperty(property);"
+                        unknownFieldAccessFunction +"(function(){return '" + monitorUnknownPropAccessErrorPrefix + "Checking presence of unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); return target.hasOwnProperty(property);"
                 ),
                 "target", "property"));
     }
@@ -219,9 +237,9 @@ public class ProxyBuilder {
      *   Builds a trap for getting property values.
      */
     protected ObjectLiteral.Property Pget(){
-        return new ObjectLiteral.Property("get", function("",
+        return new ObjectLiteral.Property("get", function(
                 stmtFromString(
-                        unknownFieldAccessFunction +"(function(){return 'Accessing unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); return target[property];"
+                        unknownFieldAccessFunction +"(function(){return '" + monitorUnknownPropAccessErrorPrefix + "Accessing unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); return target[property];"
                 ),
                 "target", "property", "receiver"));
     }
@@ -230,9 +248,9 @@ public class ProxyBuilder {
      *   Builds a trap for setting property values.
      */
     protected ObjectLiteral.Property Pset(){
-        return new ObjectLiteral.Property("set", function("",
+        return new ObjectLiteral.Property("set", function(
                 stmtFromString(
-                        unknownFieldAccessFunction +"(function(){return 'Setting unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); target[property] = value; return true;"
+                        unknownFieldAccessFunction +"(function(){return '" + monitorUnknownPropAccessErrorPrefix + "Setting unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); target[property] = value; return true;"
                 ), "target", "property", "value", "receiver"));
     }
 
@@ -240,9 +258,9 @@ public class ProxyBuilder {
      *   Builds a trap for the delete operator.
      */
     protected ObjectLiteral.Property PdeleteProperty(){
-        return new ObjectLiteral.Property("deleteProperty", function("",
+        return new ObjectLiteral.Property("deleteProperty", function(
                 stmtFromString(
-                        unknownFieldAccessFunction +"(function(){return 'Deleting unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); delete target[property]; return true;"
+                        unknownFieldAccessFunction +"(function(){return '" + monitorUnknownPropAccessErrorPrefix + "Deleting unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); delete target[property]; return true;"
                 ), "target", "property"));
     }
 
@@ -250,7 +268,7 @@ public class ProxyBuilder {
      *   Builds a trap for Object.getOwnPropertyNames and Object.getOwnPropertySymbols.
      */
     protected ObjectLiteral.Property PownKeys(){
-        return new ObjectLiteral.Property("ownKeys", function("",
+        return new ObjectLiteral.Property("ownKeys", function(
                 block(), "target")); //FIXME: Probably we should print a warning if there are types that are not in the public interface
     }
 
@@ -258,14 +276,14 @@ public class ProxyBuilder {
      *   Builds a trap for a function call.
      */
     protected ObjectLiteral.Property Papply(){
-        return new ObjectLiteral.Property("apply", function("", block(), "target", "thisArgs", "argumentsList"));
+        return new ObjectLiteral.Property("apply", function(block(), "target", "thisArgs", "argumentsList"));
     }
 
     /*
      *   Builds a trap for the new operator.
      */
     protected ObjectLiteral.Property Pconstruct(){
-        return new ObjectLiteral.Property("construct", function("", block(), "target", "argumentsList", "newTarget"));
+        return new ObjectLiteral.Property("construct", function(block(), "target", "argumentsList", "newTarget"));
     }
 
     private List<Type> extractFlattendedTypes(Type t) {

@@ -6,6 +6,7 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
+import dk.webbies.tajscheck.buildprogram.ProxyBuilder;
 import dk.webbies.tajscheck.paser.AST.BinaryExpression;
 import dk.webbies.tajscheck.paser.AST.BlockStatement;
 import dk.webbies.tajscheck.paser.AST.NodeTransverse;
@@ -17,9 +18,7 @@ import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
-import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -173,6 +172,31 @@ public class AutomaticExperiments {
             }
         });
     }
+
+    private static Pair<List<String>, Experiment.ExperimentMultiRunner> measureUndeclaredAccess = new Pair<>(Arrays.asList("good", "bad"), (bench) -> {
+        bench = bench.withOptions(options -> options.setMonitorUnkownPropertyAccesses(true)); // TODO:
+        Main.writeFullDriver(bench);
+        List<OutputParser.RunResult> results = new ArrayList<>();
+
+        long startTime = System.currentTimeMillis();
+
+        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+
+        List<String> errors = ProxyBuilder.filterErrors(result.errors);
+
+        if (errors.isEmpty()) {
+            return Arrays.asList("-", "-");
+        }
+
+        String lastError = errors.get(errors.size() - 1);
+
+        int bad = ProxyBuilder.getBadCount(lastError);
+        int good = ProxyBuilder.getGoodCount(lastError);
+
+
+        return Arrays.asList(Integer.toString(good), Integer.toString(bad));
+    });
+
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> soundnessTest = new Pair<>("sound", (bench) -> {
         Benchmark.RUN_METHOD runMethod = bench.run_method;
@@ -381,14 +405,16 @@ public class AutomaticExperiments {
     });
 
     public static void main(String[] args) throws Exception {
-/*        Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream()
-                .filter(bench -> bench.getValue().run_method == Benchmark.RUN_METHOD.NODE)
-                        .filter(bench -> Stream.of("" )
-                        .noneMatch(str -> str.equals(bench.getKey())))
+        /*Experiment experiment = new Experiment(RunBenchmarks.benchmarks.entrySet().stream()
+//                .filter(bench -> bench.getValue().run_method == Benchmark.RUN_METHOD.NODE)
+//                .filter(bench -> Stream.of("")
+//                    .noneMatch(str -> str.equals(bench.getKey())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));*/
         Experiment experiment = new Experiment();
 
         experiment.addSingleExperiment(type);
+
+        experiment.addMultiExperiment(measureUndeclaredAccess);
 
         String result = experiment.calculate(THREADS).toCSV();
         System.out.println("\n\n\nResult: \n");
