@@ -42,7 +42,6 @@ public class RunBenchmarks {
     static {
         CheckOptions options = CheckOptions.builder()
                 .setSplitUnions(false) // Because some of these benchmarks use an insane amount of overloads, so this can cause the size of the generated program to explode (about a factor 400x for moment).
-                .setMonitorUnkownPropertyAccesses(true)
                 .build();
 
         register(new Benchmark("Moment.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", BROWSER, options));
