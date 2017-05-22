@@ -65,7 +65,7 @@
                     var msg = sequencer++ + ':' + json;
                     queue.push(msg);
 
-                    var maxConcurrent = logarithm(totalMessages + 1, 1.01);
+                    var maxConcurrent = logarithm(totalMessages + 1, 1.02);
 
                     if (concurrentCount < maxConcurrent) {
                         actuallySend(queue.join(splitter));
