@@ -6,6 +6,7 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
+import dk.webbies.tajscheck.buildprogram.ProxyBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.test.TestParsing;
 import org.junit.Test;
@@ -13,11 +14,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BOOTSTRAP;
-import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BROWSER;
-import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.NODE;
+import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -225,6 +225,10 @@ public class RunBenchmarks {
         for (String error: result.errors) {
             System.out.println(error);
         }
+
+        List<String> badFields = ProxyBuilder.extractFields(ProxyBuilder.filterErrors(result.errors)).stream().distinct().collect(Collectors.toList());
+
+        System.out.println();
 
         assert !out.trim().isEmpty();
     }

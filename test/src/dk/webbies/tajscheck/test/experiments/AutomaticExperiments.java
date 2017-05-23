@@ -173,20 +173,19 @@ public class AutomaticExperiments {
         });
     }
 
-    private static Pair<List<String>, Experiment.ExperimentMultiRunner> measureUndeclaredAccess = new Pair<>(Arrays.asList("good", "bad"), (bench) -> {
-        bench = bench.withOptions(options -> options.setMonitorUnkownPropertyAccesses(true)); // TODO:
+    private static Pair<List<String>, Experiment.ExperimentMultiRunner> measureUndeclaredAccess = new Pair<>(Arrays.asList("good", "bad", "uniqueBad", "fields"), (bench) -> {
+        bench = bench.withOptions(options -> options.setMonitorUnkownPropertyAccesses(true).setConstructClassInstances(true));
         Main.writeFullDriver(bench);
-        List<OutputParser.RunResult> results = new ArrayList<>();
-
-        long startTime = System.currentTimeMillis();
 
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
 
         List<String> errors = ProxyBuilder.filterErrors(result.errors);
 
         if (errors.isEmpty()) {
-            return Arrays.asList("-", "-");
+            return Arrays.asList("-", "-", "-", "-");
         }
+
+        List<String> fields = ProxyBuilder.extractFields(ProxyBuilder.filterErrors(result.errors)).stream().filter(Util.not(Util::isDouble)).distinct().collect(Collectors.toList());
 
         String lastError = errors.get(errors.size() - 1);
 
@@ -194,7 +193,7 @@ public class AutomaticExperiments {
         int good = ProxyBuilder.getGoodCount(lastError);
 
 
-        return Arrays.asList(Integer.toString(good), Integer.toString(bad));
+        return Arrays.asList(Integer.toString(good), Integer.toString(bad), Integer.toString(fields.size()), String.join(", ", fields));
     });
 
 

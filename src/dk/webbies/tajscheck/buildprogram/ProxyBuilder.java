@@ -6,6 +6,7 @@ import dk.webbies.tajscheck.paser.AST.Expression;
 import dk.webbies.tajscheck.paser.AST.ObjectLiteral;
 import dk.webbies.tajscheck.paser.AST.Operator;
 import dk.webbies.tajscheck.paser.AST.Statement;
+import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.typeutil.RecursiveTypeVisitor;
 
 import java.util.*;
@@ -15,17 +16,17 @@ import static dk.webbies.tajscheck.paser.AstBuilder.*;
 
 public class ProxyBuilder {
 
-    private final static String proxyHandlerFunction =  "proxyHandler";
-    private final static String checkPropertyFunction =  "checkProperty";
-    private final static String knownObjectPropertiesObject =  "knownObjectProperties";
-    private final static String unknownFieldAccessFunction =  "unknownFieldAccess";
-    private final static String accessCountersObject =  "accessCountersObject";
+    private final static String proxyHandlerFunction = "proxyHandler";
+    private final static String checkPropertyFunction = "checkProperty";
+    private final static String knownObjectPropertiesObject = "knownObjectProperties";
+    private final static String unknownFieldAccessFunction = "unknownFieldAccess";
+    private final static String accessCountersObject = "accessCountersObject";
 
     private final InterfaceType global;
 
     private final List<Statement> program;
 
-    private final Map<Type, List<String>> properties;
+    private final Map<Type, Collection<String>> properties;
 
     private final Map<Type, String> typeNames;
 
@@ -84,7 +85,7 @@ public class ProxyBuilder {
                                 "            if(Object.prototype.hasOwnProperty(property)) possible = true;",
                                 "            break;",
                                 "        default:",
-                                "            if("+knownObjectPropertiesObject+"[publicApiObjects[obj]].indexOf(property) >= 0) {",
+                                "            if(" + knownObjectPropertiesObject + "[publicApiObjects[obj]].indexOf(property) >= 0) {",
                                 "                possible = true;",
                                 "            }",
                                 "    }",
@@ -144,6 +145,24 @@ public class ProxyBuilder {
         return new ProxyValueTransformer();
     }
 
+    private static final String NOT_AVAILABLE_ON = ", not available on";
+
+
+    public static List<String> extractFields(List<String> errors) {
+        return errors.stream().map(error -> {
+            if (error.startsWith(ACCESSING_UNKNOWN_PROPERTY)) {
+                return error.substring(ACCESSING_UNKNOWN_PROPERTY.length(), error.indexOf(NOT_AVAILABLE_ON));
+            } else if (error.startsWith(SETTING_UNKNOWN_PROPERTY)) {
+                return error.substring(SETTING_UNKNOWN_PROPERTY.length(), error.indexOf(NOT_AVAILABLE_ON));
+            } else if (error.startsWith(CHECKING_PRESENCE_OF_UNKNOWN_PROPERTY)) {
+                return error.substring(CHECKING_PRESENCE_OF_UNKNOWN_PROPERTY.length(), error.indexOf(NOT_AVAILABLE_ON));
+            } else if (error.startsWith(DELETING_UNKOWN_PROPERTY)) {
+                return error.substring(DELETING_UNKOWN_PROPERTY.length(), error.indexOf(NOT_AVAILABLE_ON));
+            }
+            throw new RuntimeException();
+        }).collect(Collectors.toList());
+    }
+
 
     private class ProxyValueTransformer implements ValueTransformer {
 
@@ -161,39 +180,40 @@ public class ProxyBuilder {
     /*
      *   Builds a trap for Object.getPrototypeOf.
      */
-    protected ObjectLiteral.Property PgetPrototypeOf(){
-        return new ObjectLiteral.Property("getPrototypeOf", function(block(),"target"));
+    protected ObjectLiteral.Property PgetPrototypeOf() {
+        return new ObjectLiteral.Property("getPrototypeOf", function(block(), "target"));
     }
 
     /*
      *   Builds a trap for Object.setPrototypeOf.
      */
-    protected ObjectLiteral.Property PsetPrototypeOf(){
+    protected ObjectLiteral.Property PsetPrototypeOf() {
         return new ObjectLiteral.Property("setPrototypeOf", function(block(), "target", "prototype"));
     }
 
     /*
      *   Builds a trap for Object.isExtensible.
      */
-    protected ObjectLiteral.Property PisExtensible(){
+    protected ObjectLiteral.Property PisExtensible() {
         return new ObjectLiteral.Property("isExtensible", function(block(), "target"));
     }
 
     /*
      *   Builds a trap for Object.preventExtensions.
      */
-    protected ObjectLiteral.Property PpreventExtensions(){
+    protected ObjectLiteral.Property PpreventExtensions() {
         return new ObjectLiteral.Property("preventExtensions", function(block(), "target"));
     }
 
     /*
      *   Builds a trap for Object.getOwnPropertyDescriptor.
      */
-    protected ObjectLiteral.Property PgetOwnPropertyDescriptor(){
+    protected ObjectLiteral.Property PgetOwnPropertyDescriptor() {
         return new ObjectLiteral.Property("getOwnPropertyDescriptor", function(block(), "target", "property"));
     }
 
     public static final String monitorUnknownPropAccessErrorPrefix = "monitorUnknown: ";
+
     public static List<String> filterErrors(List<String> errors) {
         List<String> result = new ArrayList<>();
         for (String error : errors) {
@@ -213,61 +233,69 @@ public class ProxyBuilder {
         return Integer.parseInt(error.substring(error.indexOf("bad: ") + 5, error.length()).trim());
     }
 
+    private static final String CHECKING_PRESENCE_OF_UNKNOWN_PROPERTY = "Checking presence of unknown property: ";
+
     /*
      *   Builds a trap for Object.defineProperty.
      */
-    protected ObjectLiteral.Property PdefineProperty(){
+    protected ObjectLiteral.Property PdefineProperty() {
         return new ObjectLiteral.Property("defineProperty", function(stmtFromString(
-                unknownFieldAccessFunction +"(function(){return '" + monitorUnknownPropAccessErrorPrefix + "Checking presence of unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); target.defineProperty(property, descriptor); return true;"
+                unknownFieldAccessFunction + "(function(){return '" + monitorUnknownPropAccessErrorPrefix + CHECKING_PRESENCE_OF_UNKNOWN_PROPERTY + "' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); target.defineProperty(property, descriptor); return true;"
         ), "target", "property", "descriptor"));
     }
 
     /*
      *   Builds a trap for the in operator.
      */
-    protected ObjectLiteral.Property Phas(){
+    protected ObjectLiteral.Property Phas() {
         return new ObjectLiteral.Property("has", function(
                 stmtFromString(
-                        unknownFieldAccessFunction +"(function(){return '" + monitorUnknownPropAccessErrorPrefix + "Checking presence of unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); return target.hasOwnProperty(property);"
+                        unknownFieldAccessFunction + "(function(){return '" + monitorUnknownPropAccessErrorPrefix + CHECKING_PRESENCE_OF_UNKNOWN_PROPERTY + "' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); return target.hasOwnProperty(property);"
                 ),
                 "target", "property"));
     }
 
+    private static final String ACCESSING_UNKNOWN_PROPERTY = "Accessing unknown property: ";
+
     /*
      *   Builds a trap for getting property values.
      */
-    protected ObjectLiteral.Property Pget(){
+    protected ObjectLiteral.Property Pget() {
         return new ObjectLiteral.Property("get", function(
                 stmtFromString(
-                        unknownFieldAccessFunction +"(function(){return '" + monitorUnknownPropAccessErrorPrefix + "Accessing unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); return target[property];"
+                        unknownFieldAccessFunction + "(function(){return '" + monitorUnknownPropAccessErrorPrefix + ACCESSING_UNKNOWN_PROPERTY + "' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); return target[property];"
                 ),
                 "target", "property", "receiver"));
     }
 
+    private static final String SETTING_UNKNOWN_PROPERTY = "Setting unknown property: ";
+
     /*
      *   Builds a trap for setting property values.
      */
-    protected ObjectLiteral.Property Pset(){
+    protected ObjectLiteral.Property Pset() {
         return new ObjectLiteral.Property("set", function(
                 stmtFromString(
-                        unknownFieldAccessFunction +"(function(){return '" + monitorUnknownPropAccessErrorPrefix + "Setting unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); target[property] = value; return true;"
+                        unknownFieldAccessFunction + "(function(){return '" + monitorUnknownPropAccessErrorPrefix + SETTING_UNKNOWN_PROPERTY + "' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); target[property] = value; return true;"
                 ), "target", "property", "value", "receiver"));
     }
+
+    private static final String DELETING_UNKOWN_PROPERTY = "Deleting unknown property: ";
 
     /*
      *   Builds a trap for the delete operator.
      */
-    protected ObjectLiteral.Property PdeleteProperty(){
+    protected ObjectLiteral.Property PdeleteProperty() {
         return new ObjectLiteral.Property("deleteProperty", function(
                 stmtFromString(
-                        unknownFieldAccessFunction +"(function(){return '" + monitorUnknownPropAccessErrorPrefix + "Deleting unknown property: ' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); delete target[property]; return true;"
+                        unknownFieldAccessFunction + "(function(){return '" + monitorUnknownPropAccessErrorPrefix + DELETING_UNKOWN_PROPERTY + "' + property + ', not available on ' + publicApiObjects.join(',')}, checkProperty(property, publicApiObjects)); delete target[property]; return true;"
                 ), "target", "property"));
     }
 
     /*
      *   Builds a trap for Object.getOwnPropertyNames and Object.getOwnPropertySymbols.
      */
-    protected ObjectLiteral.Property PownKeys(){
+    protected ObjectLiteral.Property PownKeys() {
         return new ObjectLiteral.Property("ownKeys", function(
                 block(), "target")); //FIXME: Probably we should print a warning if there are types that are not in the public interface
     }
@@ -275,14 +303,14 @@ public class ProxyBuilder {
     /*
      *   Builds a trap for a function call.
      */
-    protected ObjectLiteral.Property Papply(){
+    protected ObjectLiteral.Property Papply() {
         return new ObjectLiteral.Property("apply", function(block(), "target", "thisArgs", "argumentsList"));
     }
 
     /*
      *   Builds a trap for the new operator.
      */
-    protected ObjectLiteral.Property Pconstruct(){
+    protected ObjectLiteral.Property Pconstruct() {
         return new ObjectLiteral.Property("construct", function(block(), "target", "argumentsList", "newTarget"));
     }
 
@@ -294,18 +322,18 @@ public class ProxyBuilder {
     }
 
     private String findNiceTypeName(Type t) {
-        if(t instanceof SimpleType) return ((SimpleType) t).getKind().name();
-        if(t.equals(global.getDeclaredProperties().get("Object"))) return "Object";
+        if (t instanceof SimpleType) return ((SimpleType) t).getKind().name();
+        if (t.equals(global.getDeclaredProperties().get("Object"))) return "Object";
 
-        if(!assignedNames.containsKey(t)) {
-            String typeName =  (typeNames.containsKey(t) ? typeNames.get(t) : "T")   + "_" + assignedNames.size();
+        if (!assignedNames.containsKey(t)) {
+            String typeName = (typeNames.containsKey(t) ? typeNames.get(t) : "T") + "_" + assignedNames.size();
             assignedNames.put(t, typeName); //FIXME use something mnemonic
-            List<Expression> objectProperties = properties.containsKey(t) ? properties.get(t).stream().map(x -> string(x)).collect(Collectors.toList()) : new ArrayList<>();
+            List<Expression> objectProperties = properties.containsKey(t) ? properties.get(t).stream().map(AstBuilder::string).collect(Collectors.toList()) : new ArrayList<>();
 
             // lazily update the program with the properties
             program.add(program.indexOf(knownProperyObjectCreation) + 1,
                     statement(binary(
-                            arrayAccess(identifier(knownObjectPropertiesObject),string(typeName)),
+                            arrayAccess(identifier(knownObjectPropertiesObject), string(typeName)),
                             Operator.EQUAL,
                             array(objectProperties))
                     ));
@@ -356,8 +384,12 @@ public class ProxyBuilder {
 
         @Override
         public Void visit(SimpleType t) {
-            types.add(t);
-            return null;
+            InterfaceType inter = (InterfaceType) global.getDeclaredProperties().get(t.getKind().name());
+            if (inter != null) {
+                return inter.getDeclaredProperties().get("prototype").accept(this);
+            } else {
+                return null;
+            }
         }
 
         @Override
@@ -409,7 +441,7 @@ public class ProxyBuilder {
 
         @Override
         public Void visit(ClassInstanceType t) {
-            return null;
+            return ((ClassType) t.getClassType()).getInstanceType().accept(this);
         }
 
         @Override
@@ -419,57 +451,70 @@ public class ProxyBuilder {
 
         @Override
         public Void visit(IndexType t) {
-            //FIXME: Complete
-            return null;
+            throw new RuntimeException();
         }
 
         @Override
         public Void visit(IndexedAccessType t) {
-            //FIXME: Complete
-            return null;
+            throw new RuntimeException();
         }
     }
 
 
     private static class DeclaredPropertyExtractor extends RecursiveTypeVisitor<Void> {
-        private final Map<Type, List<String>> properties = new HashMap<>();
+        private final Map<Type, Collection<String>> properties = new HashMap<>();
         private final Set<Type> visited = new HashSet<>();
 
-        Map<Type, List<String>> getProperties() {return properties;}
+        Map<Type, Collection<String>> getProperties() {
+            return properties;
+        }
 
         @Override
         public Void visit(ClassType t) {
-            if(visited.contains(t)) return null; else visited.add(t);
+            if (visited.contains(t)) return null;
+            else visited.add(t);
             super.visit(t);
-            properties.put(t, new ArrayList<>(t.getInstanceProperties().keySet()));
+            ArrayList<String> props = new ArrayList<>(t.getStaticProperties().keySet());
+            properties.put(t, props);
             t.getBaseTypes().forEach(base -> base.accept(this));
+            t.getBaseTypes().stream().map(properties::get).filter(Objects::nonNull).forEach(props::addAll);
             return null;
         }
 
         @Override
         public Void visit(InterfaceType t) {
-            if(visited.contains(t)) return null; else visited.add(t);
+            if (visited.contains(t)) return null;
+            else visited.add(t);
             super.visit(t);
-            properties.put(t, new ArrayList<>(t.getDeclaredProperties().keySet()));
+            ArrayList<String> props = new ArrayList<>(t.getDeclaredProperties().keySet());
+            properties.put(t, props);
             t.getBaseTypes().forEach(base -> base.accept(this));
+            t.getBaseTypes().stream().map(properties::get).filter(Objects::nonNull).forEach(props::addAll);
             return null;
         }
 
         @Override
         public Void visit(ReferenceType t) {
-            if(visited.contains(t)) return null; else visited.add(t);
+            if (visited.contains(t)) return null;
+            else visited.add(t);
             super.visit(t);
             t.getTarget().accept(this);
+            if (properties.containsKey(t.getTarget())) {
+                properties.put(t, properties.get(t.getTarget()));
+            }
             return null;
         }
 
         @Override
         public Void visit(GenericType t) {
-            if(visited.contains(t)) return null; else visited.add(t);
+            if (visited.contains(t)) return null;
+            else visited.add(t);
             super.visit(t);
-            properties.put(t, new ArrayList<>(t.getDeclaredProperties().keySet()));
+            ArrayList<String> props = new ArrayList<>(t.getDeclaredProperties().keySet());
+            properties.put(t, props);
             t.getTarget().accept(this);
             t.getBaseTypes().forEach(base -> base.accept(this));
+            t.getBaseTypes().stream().map(properties::get).filter(Objects::nonNull).forEach(props::addAll);
             return null;
         }
     }

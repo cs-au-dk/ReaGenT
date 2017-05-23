@@ -550,6 +550,12 @@ public class Util {
         return isInteger.test(str);
     }
 
+    public static Predicate<String> isDouble = Pattern.compile("^[\\\\+\\\\-]?[0-9]*[\\\\.\\\\,]?[0-9]+$").asPredicate();
+
+    public static boolean isDouble(String str) {
+        return isDouble.test(str);
+    }
+
     public static String toFixed(double number, int decimals) {
         return toFixed(number, decimals, ',');
     }

@@ -16,17 +16,16 @@ import org.hamcrest.Matcher;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.OutputParser.*;
-import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BOOTSTRAP;
-import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BROWSER;
-import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.NODE;
+import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.*;
 import static dk.webbies.tajscheck.test.Matchers.emptyMap;
-import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.JSON;
-import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
-import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.TYPEOF;
+import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -251,6 +250,8 @@ public class UnitTests {
 
         assertThat(result.typeErrors.size(), is(0));
     }
+
+    // TODO: Some test that a rest-recording can actually play. (One recording finds an error, another recording doesn't, same declaration file and implementation).
 
     @Test
     public void simpleFunctionArg() throws Exception {
@@ -607,7 +608,7 @@ public class UnitTests {
                 .got(STRING, "string,1,4,7,false");
     }
 
-    @Test
+    @Test // TODO: This fails.
     public void testRestArgs() throws Exception {
         RunResult result = run("testRestArgs");
 
@@ -1579,4 +1580,12 @@ public class UnitTests {
 
     }
 
+    @Test
+    public void monitorUndeclaredAccess1() throws Exception {
+        // Tests that class instances are handled correctly.
+        RunResult result = run("monitorUndeclaredAccess1", options().setMonitorUnkownPropertyAccesses(true).setConstructClassInstances(true).build());
+
+        assertThat(result.errors, not(hasItem(containsString("GetLocalVector"))));
+
+    }
 }
