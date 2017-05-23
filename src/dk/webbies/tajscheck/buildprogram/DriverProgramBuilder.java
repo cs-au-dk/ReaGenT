@@ -394,7 +394,7 @@ public class DriverProgramBuilder {
                 return Collections.singletonList(throwStatement(newCall(identifier("Error"))));
             } else {
                 return callFunction(test, test.getObject(), test.getParameters(), test.isRestArgs(), (base, parameters) ->
-                        methodCall(transformer.transform(identifier("base"), test.getObject()), test.getPropertyName(), StreamUtils.zip(test.getParameters().stream(), parameters.stream(),
+                        methodCall(identifier("base"), test.getPropertyName(), StreamUtils.zip(test.getParameters().stream(), parameters.stream(),
                                 (ttype, exp) -> transformer.transform(exp, ttype)).collect(Collectors.toList()))
                 );
             }
