@@ -2,10 +2,12 @@ package dk.webbies.tajscheck.test.tajs.analyze;
 
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.test.Matchers;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.tajs.AssertionResult;
 import dk.webbies.tajscheck.test.tajs.TAJSUtil;
+import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
 import junit.framework.TestCase;
@@ -166,7 +168,6 @@ public class AnalyzeBenchmarks extends TestCase {
         } catch (TimeoutException e) {
             System.out.println("Timeout");
             System.out.println(e.toString());
-
         }
     }
 

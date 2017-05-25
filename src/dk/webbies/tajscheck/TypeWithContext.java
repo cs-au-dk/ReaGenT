@@ -3,9 +3,6 @@ package dk.webbies.tajscheck;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
-/**
- * Created by erik1 on 11-11-2016.
- */
 public class TypeWithContext {
     private final Type type;
     private final TypeContext typeContext;
@@ -43,5 +40,10 @@ public class TypeWithContext {
         int result = type.hashCode();
         result = 31 * result + typeContext.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "<" + type + ", " + typeContext + ">";
     }
 }

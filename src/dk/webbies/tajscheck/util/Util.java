@@ -635,4 +635,11 @@ public class Util {
             list.add(null);
         }
     }
+
+    public static <T> List<T> singletonList(T t) {
+        List<T> l = new LinkedList<>();
+        l.add(t);
+        return l;
+    }
+
 }

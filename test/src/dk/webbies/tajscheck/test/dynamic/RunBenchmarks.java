@@ -1,17 +1,25 @@
 package dk.webbies.tajscheck.test.dynamic;
 
+import dk.brics.tajs.options.OptionValues;
 import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
+import dk.webbies.tajscheck.buildprogram.DriverProgramBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.test.TestParsing;
+import dk.webbies.tajscheck.testcreator.TestCreator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
 
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -42,7 +50,6 @@ public class RunBenchmarks {
     static {
         CheckOptions options = CheckOptions.builder()
                 .setSplitUnions(false) // Because some of these benchmarks use an insane amount of overloads, so this can cause the size of the generated program to explode (about a factor 400x for moment).
-                .setMonitorUnkownPropertyAccesses(true)
                 .build();
 
         register(new Benchmark("Moment.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", BROWSER, options));

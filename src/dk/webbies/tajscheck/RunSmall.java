@@ -1,13 +1,11 @@
 package dk.webbies.tajscheck;
 
-import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.buildprogram.DriverProgramBuilder;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.paser.AstToStringVisitor;
 import dk.webbies.tajscheck.testcreator.TestCreator;
-import dk.webbies.tajscheck.testcreator.test.LoadModuleTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.util.Util;
 import dk.webbies.tajscheck.util.trie.Trie;
@@ -18,9 +16,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Created by erik1 on 16-01-2017.
- */
 public class RunSmall {
     public static <T> List<T> runSmallDrivers(Benchmark orgBench, Function<String, T> runner) throws IOException {
         return runSmallDrivers(orgBench, runner, Integer.MAX_VALUE, 1);

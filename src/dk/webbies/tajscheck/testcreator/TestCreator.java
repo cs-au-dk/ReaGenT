@@ -14,9 +14,6 @@ import dk.webbies.tajscheck.util.trie.Trie;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Created by erik1 on 01-11-2016.
- */
 public class TestCreator {
     private BenchmarkInfo info;
 

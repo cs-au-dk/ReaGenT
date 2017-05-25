@@ -26,6 +26,8 @@ public class MethodCallTest extends FunctionTest {
         return object;
     }
 
+    public Type getReturnType() {return getProduces().iterator().next();}
+
     public String getPropertyName() {
         return propertyName;
     }
@@ -56,5 +58,10 @@ public class MethodCallTest extends FunctionTest {
 
     public boolean isRestArgs() {
         return restArgs;
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getName()+"(" + object + "." + propertyName + "())";
     }
 }

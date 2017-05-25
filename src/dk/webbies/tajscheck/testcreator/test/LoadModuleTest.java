@@ -7,9 +7,6 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 
 import java.util.Collections;
 
-/**
- * Created by erik1 on 02-11-2016.
- */
 public class LoadModuleTest extends Test {
     private final String module;
     private Type moduleType;
@@ -57,4 +54,7 @@ public class LoadModuleTest extends Test {
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
     }
+
+    @Override
+    public String toString() { return this.getClass().getName()+"(" + module + ":" + moduleType + ")";}
 }

@@ -6,9 +6,6 @@ import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import java.util.Collection;
 import java.util.Collections;
 
-/**
- * Created by erik1 on 01-11-2016.
- */
 public abstract class Test {
     private final Collection<Type> typeToTest;
     private final Collection<Type> dependsOn;

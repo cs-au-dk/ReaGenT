@@ -59,4 +59,8 @@ public class PropertyWriteTest extends Test {
         return visitor.visit(this);
     }
 
+    @Override
+    public String toString() {
+        return this.getClass().getName()+"(" + baseType + "." + key + ")";
+    }
 }

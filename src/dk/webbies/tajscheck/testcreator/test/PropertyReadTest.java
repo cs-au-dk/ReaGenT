@@ -5,9 +5,6 @@ import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
 import java.util.Collections;
 
-/**
- * Created by erik1 on 02-11-2016.
- */
 public class PropertyReadTest extends Test {
     private Type baseType;
     private final String key;
@@ -21,6 +18,8 @@ public class PropertyReadTest extends Test {
     public String getProperty() {
         return key;
     }
+
+    public Type getPropertyType() {return getProduces().iterator().next();}
 
     public Type getBaseType() {
         return baseType;
@@ -50,4 +49,8 @@ public class PropertyReadTest extends Test {
         return visitor.visit(this);
     }
 
+    @Override
+    public String toString() {
+        return this.getClass().getName()+"(" + baseType + "." + key + ")";
+    }
 }
