@@ -4,9 +4,8 @@ import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.TAJSFunctionsEvaluator;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.lattice.Context;
+import dk.brics.tajs.lattice.State;
 import dk.brics.tajs.lattice.Value;
-import dk.brics.tajs.meta.monitors.AnalysisLimiter;
-import dk.brics.tajs.meta.monitors.DeadCodeMonitor;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
 import dk.brics.tajs.options.Options;
@@ -27,7 +26,6 @@ import dk.webbies.tajscheck.util.MultiMap;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
@@ -35,9 +33,9 @@ import java.util.stream.Collectors;
 
 import static dk.brics.tajs.Main.initLogging;
 import static dk.webbies.tajscheck.util.Pair.toTAJS;
+import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 
 public class TAJSUtil {
@@ -244,7 +242,6 @@ public class TAJSUtil {
 
         return result;
     }
-
 
     public static void runAnalysis(List<Test> tests, BenchmarkInfo info, int secondsTimeout) throws Exception {
         runTAJS(info.bench.jsFile, secondsTimeout, info.bench.run_method, info);

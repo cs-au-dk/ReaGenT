@@ -1,6 +1,8 @@
 package dk.webbies.tajscheck.util;
 
 
+import dk.brics.tajs.lattice.State;
+import dk.brics.tajs.lattice.Value;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -640,6 +642,23 @@ public class Util {
         List<T> l = new LinkedList<>();
         l.add(t);
         return l;
+    }
+
+    public static <E> String mkString(List<E> l, String separator) {
+        return l.stream().map(e -> e.toString()).reduce("", (c, a) -> a + separator + c);
+    }
+
+
+    public static String prettyValue(Value v, State s){
+        if(v.isNone()) return "None";
+        String labels = mkString(v.getAllObjectLabels().stream().map(l -> s.getObject(l,false)).collect(Collectors.toList()), ",");
+        Value nonObject = v.restrictToNotObject();
+        if(!nonObject.isNone()) {
+            return nonObject + ", " + labels;
+        }
+        else {
+            return labels;
+        }
     }
 
 }

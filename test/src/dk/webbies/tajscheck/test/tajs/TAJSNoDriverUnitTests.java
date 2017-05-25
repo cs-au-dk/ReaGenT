@@ -1,23 +1,17 @@
 package dk.webbies.tajscheck.test.tajs;
 
-import dk.brics.tajs.lattice.Value;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
-import dk.webbies.tajscheck.tajstester.TypeChecker;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
-import dk.webbies.tajscheck.util.MultiMap;
-import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Collection;
 import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
+import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
@@ -75,12 +69,22 @@ public class TAJSNoDriverUnitTests {
         }
 
         private dk.webbies.tajscheck.test.tajs.TAJSNoDriverUnitTests.TAJSResultTester performed(String path) {
-            MatcherAssert.assertThat("test for " + path + " has been performed", results.testPerformed.stream().anyMatch(test -> test.getPath().equals(path)));
+            MatcherAssert.assertThat("test for " + path + " hasn't been performed", results.testPerformed.stream().anyMatch(test -> test.getPath().equals(path)));
             return this;
         }
 
-        dk.webbies.tajscheck.test.tajs.TAJSNoDriverUnitTests.TAJSResultTester noViolations() {
+        private dk.webbies.tajscheck.test.tajs.TAJSNoDriverUnitTests.TAJSResultTester performedAllTests() {
+            MatcherAssert.assertThat("some tests were not performed: " + mkString(results.testNot, ", "), results.testNot.isEmpty());
+            return this;
+        }
+
+        dk.webbies.tajscheck.test.tajs.TAJSNoDriverUnitTests.TAJSResultTester hasNoViolations() {
             MatcherAssert.assertThat("there are no violations", results.detectedViolations.size() == 0);
+            return this;
+        }
+
+        dk.webbies.tajscheck.test.tajs.TAJSNoDriverUnitTests.TAJSResultTester hasViolations() {
+            MatcherAssert.assertThat("there are violations", results.detectedViolations.size() != 0);
             return this;
         }
     }
@@ -101,7 +105,12 @@ public class TAJSNoDriverUnitTests {
         TAJSUtil.TajsAnalysisResults result = runNoDriver("unionMightFail");
 
         expect(result)
+                .performedAllTests()
                 .performed("module.foo()");
+
+        expect(result)
+                .toPaths("module.foo()")
+                .hasViolations();
     }
 
     @Test
@@ -145,7 +154,7 @@ public class TAJSNoDriverUnitTests {
     public void everythingIsRight() throws Exception {
         TAJSUtil.TajsAnalysisResults result = runNoDriver("everythingIsRight");
 
-        expect(result).noViolations();
+        expect(result).hasNoViolations();
 
         expect(result)
                 .performed("module.foo.bar");

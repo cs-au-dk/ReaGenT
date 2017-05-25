@@ -8,9 +8,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Created by erik1 on 25-11-2016.
- */
 public class UnionTypeTest extends Test {
     private UnionType unionType;
 
@@ -44,6 +41,4 @@ public class UnionTypeTest extends Test {
     public String getTestType() {
         return "union type test";
     }
-
-
 }

@@ -47,16 +47,6 @@ public abstract class Test {
 
     public abstract <T> T accept(TestVisitor<T> visitor);
 
-    @Override
-    public boolean equals(Object o) {
-        throw new RuntimeException(this.getClass().toString());
-    }
-
-    @Override
-    public int hashCode() {
-        throw new RuntimeException(this.getClass().toString());
-    }
-
     public boolean equalsNoPathBase(Test test) {
         if (!typeToTest.equals(test.typeToTest)) return false;
         if (!dependsOn.equals(test.dependsOn)) return false;
