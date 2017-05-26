@@ -32,7 +32,7 @@ import static dk.webbies.tajscheck.util.Util.mkString;
 import static dk.webbies.tajscheck.util.Util.prettyValue;
 import static dk.webbies.tajscheck.util.Util.singletonList;
 
-public class TypeChecker2 {
+public class TajsTypeChecker {
     private final Solver.SolverInterface c;
 
     private final PropVarOperations pv;
@@ -41,7 +41,7 @@ public class TypeChecker2 {
 
     private final CheckChecker cc = new CheckChecker();
 
-    public TypeChecker2(Solver.SolverInterface c, BenchmarkInfo info) {
+    public TajsTypeChecker(Solver.SolverInterface c, BenchmarkInfo info) {
         this.c = c;
         this.pv = c.getAnalysis().getPropVarOperations();
         this.info = info;

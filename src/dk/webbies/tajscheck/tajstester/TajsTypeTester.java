@@ -95,7 +95,7 @@ public class TajsTypeTester implements TypeTestRunner {
         private final PropVarOperations pv;
         private final State s;
         private final TypeValuesHandler typeValuesHandler;
-        private final TypeChecker2 typeChecker;
+        private final TajsTypeChecker typeChecker;
 
         TajsTestVisitor(StateExtras se, Solver.SolverInterface c, State s) {
             this.se = se;
@@ -103,7 +103,7 @@ public class TajsTypeTester implements TypeTestRunner {
             this.pv = c.getAnalysis().getPropVarOperations();
             this.c = c;
             this.typeValuesHandler = new TypeValuesHandler(typeNames, se, c);
-            this.typeChecker = new TypeChecker2(c, info);
+            this.typeChecker = new TajsTypeChecker(c, info);
         }
 
         public boolean attemptAddValue(Value v, TypeWithContext t, Test test) {
