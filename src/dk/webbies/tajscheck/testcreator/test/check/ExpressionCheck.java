@@ -46,4 +46,9 @@ public class ExpressionCheck implements Check {
             return representative;
         }
     }
+
+    @Override
+    public String toString() {
+        return "expression(" + generator +")";
+    }
 }

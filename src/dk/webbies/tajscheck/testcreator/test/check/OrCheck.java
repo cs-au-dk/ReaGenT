@@ -2,6 +2,8 @@ package dk.webbies.tajscheck.testcreator.test.check;
 
 import java.util.List;
 
+import static dk.webbies.tajscheck.util.Util.mkString;
+
 /**
  * Created by erik1 on 14-11-2016.
  */
@@ -34,5 +36,10 @@ public class OrCheck implements Check {
     @Override
     public int hashCode() {
         return checks != null ? checks.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return mkString(checks.stream(), " or ");
     }
 }

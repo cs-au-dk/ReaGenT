@@ -2,9 +2,6 @@ package dk.webbies.tajscheck.testcreator.test.check;
 
 import dk.webbies.tajscheck.paser.AST.Expression;
 
-/**
- * Created by erik1 on 14-11-2016.
- */
 public class InstanceOfCheck implements Check {
     private Expression exp;
 
@@ -34,5 +31,10 @@ public class InstanceOfCheck implements Check {
     @Override
     public int hashCode() {
         return exp != null ? exp.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "instanceof(" + exp +")";
     }
 }

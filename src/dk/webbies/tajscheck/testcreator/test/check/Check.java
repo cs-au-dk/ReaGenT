@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-public interface Check {
+public abstract interface Check {
     <T, A> T accept(CheckVisitorWithArgument<T, A> visitor, A a);
 
     static TypeOfCheck typeOf(String type) {
@@ -81,4 +81,5 @@ public interface Check {
     static ExpressionCheck expression(Function<Expression, Expression> generator) {
         return new ExpressionCheck(generator);
     }
+
 }

@@ -1,8 +1,5 @@
 package dk.webbies.tajscheck.testcreator.test.check;
 
-/**
- * Created by erik1 on 14-11-2016.
- */
 public class TypeOfCheck implements Check {
     private final String type;
 
@@ -32,5 +29,10 @@ public class TypeOfCheck implements Check {
     @Override
     public int hashCode() {
         return type != null ? type.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "typeof(" + type +")";
     }
 }

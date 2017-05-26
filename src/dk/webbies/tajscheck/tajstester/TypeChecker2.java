@@ -5,6 +5,7 @@ import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.js.Operators;
 import dk.brics.tajs.analysis.nativeobjects.concrete.TAJSConcreteSemantics;
+import dk.brics.tajs.analysis.nativeobjects.concrete.TAJSSplitConcreteSemantics;
 import dk.brics.tajs.lattice.ObjectLabel;
 import dk.brics.tajs.lattice.State;
 import dk.brics.tajs.lattice.Value;
@@ -32,9 +33,6 @@ import static dk.webbies.tajscheck.util.Util.prettyValue;
 import static dk.webbies.tajscheck.util.Util.singletonList;
 
 public class TypeChecker2 {
-
-    private final LinkedList<TypeViolation> violations = new LinkedList<TypeViolation>();
-
     private final Solver.SolverInterface c;
 
     private final PropVarOperations pv;
@@ -73,7 +71,8 @@ public class TypeChecker2 {
         return vr;
     }
 
-    Value typeCheckAndFilter(Value v, Type type, TypeContext context, BenchmarkInfo info, int depth, Test test) {
+    Pair<Value,List<TypeViolation>> typeCheckAndFilter(Value v, Type type, TypeContext context, BenchmarkInfo info, int depth, Test test) {
+        List<TypeViolation> violations = new LinkedList<>();
         List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, depth);
         TypeWithContext tc = new TypeWithContext(type, context);
 
@@ -89,9 +88,9 @@ public class TypeChecker2 {
             violations.add(new TypeViolation("Expected " + tc + " but found spurious values: " + prettyValues(filterNot, c.getState()) + " violating " + mkString(filterNotViolations.stream(), ","), test));
         }
         if(filter.isEmpty()) {
-            violations.add(new TypeViolation("Expected " + tc + " but found value: " + prettyValues(filter, c.getState()) + " violating " + mkString(filterNotViolations.stream(), ","), test));
+            violations.add(new TypeViolation("Expected " + tc + " but found value: " + prettyValue(v, c.getState()) + " violating " + mkString(filterNotViolations.stream(), ","), test));
         }
-        return filter.stream().reduce(Value.makeNone(), (a, b) -> a.join(b));
+        return Pair.make(filter.stream().reduce(Value.makeNone(), (a, b) -> a.join(b)), violations);
     }
 
     List<TypeCheck> getTypeViolations(Value v, List<TypeCheck> typeChecks) {
@@ -163,7 +162,14 @@ public class TypeChecker2 {
 
         @Override
         public Boolean visit(EqualityCheck check, Value o) {
-            System.err.println("Skipping equality check" + check + " against " + o);
+
+            try {
+                Value v = TAJSSplitConcreteSemantics.eval(check.getExpression().toString());
+                if(!v.isNone()) return v.equals(o);
+            } catch(Exception e) {
+                System.err.println("Skipping equality check " + check + " against " + o);
+            }
+
             return true;
         }
 

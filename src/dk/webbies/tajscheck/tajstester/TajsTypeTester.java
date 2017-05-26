@@ -108,10 +108,11 @@ public class TajsTypeTester implements TypeTestRunner {
 
         public boolean attemptAddValue(Value v, TypeWithContext t, Test test) {
             v = UnknownValueResolver.getRealValue(v, s);
-            typeChecker.typeCheckAndFilter(v, t.getType(), t.getTypeContext(), info, 2, test);
-            Pair<List<TypeViolation>, Value> tcResult = TajsTypeChecker.typeCheckAndFilter(t, v, s, c, test);
-            List<TypeViolation> violations = tcResult.getFirst();
-            Value filteredValue = tcResult.getSecond();
+            Pair<Value, List<TypeViolation>> tcResult = typeChecker.typeCheckAndFilter(v, t.getType(), t.getTypeContext(), info, 2, test);
+
+            Value filteredValue = tcResult.getFirst();
+            List<TypeViolation> violations = tcResult.getSecond();
+
             if(violations.isEmpty() && !filteredValue.isNone()) {
                 typeValuesHandler.addValueForType(t, filteredValue);
                 if(DEBUG) System.out.println("Value added for type:" + t + " in test " + test);

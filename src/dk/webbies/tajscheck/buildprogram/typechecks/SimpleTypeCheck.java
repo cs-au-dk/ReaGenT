@@ -39,4 +39,9 @@ public class SimpleTypeCheck implements TypeCheck {
         result = 31 * result + (expected != null ? expected.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName()+"(" + check + ", " + expected + ")";
+    }
 }

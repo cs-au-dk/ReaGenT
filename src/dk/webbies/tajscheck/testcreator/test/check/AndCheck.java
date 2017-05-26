@@ -2,9 +2,8 @@ package dk.webbies.tajscheck.testcreator.test.check;
 
 import java.util.List;
 
-/**
- * Created by erik1 on 14-11-2016.
- */
+import static dk.webbies.tajscheck.util.Util.mkString;
+
 public class AndCheck implements Check {
     private final List<Check> checks;
 
@@ -34,5 +33,10 @@ public class AndCheck implements Check {
     @Override
     public int hashCode() {
         return checks != null ? checks.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return mkString(checks.stream(), " and ");
     }
 }

@@ -1,8 +1,5 @@
 package dk.webbies.tajscheck.testcreator.test.check;
 
-/**
- * Created by erik1 on 14-11-2016.
- */
 public class NotCheck implements Check {
     private final Check check;
 
@@ -32,5 +29,10 @@ public class NotCheck implements Check {
     @Override
     public int hashCode() {
         return check != null ? check.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "not(" + check +")";
     }
 }

@@ -1,8 +1,5 @@
 package dk.webbies.tajscheck.testcreator.test.check;
 
-/**
- * Created by erik1 on 06-12-2016.
- */
 public class StringIndexCheck implements Check {
     private Check subCheck;
 
@@ -32,5 +29,10 @@ public class StringIndexCheck implements Check {
     @Override
     public int hashCode() {
         return subCheck != null ? subCheck.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "stringIndex(" + subCheck +")";
     }
 }

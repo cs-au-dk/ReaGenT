@@ -2,9 +2,8 @@ package dk.webbies.tajscheck.testcreator.test.check;
 
 import java.util.List;
 
-/**
- * Created by erik1 on 14-11-2016.
- */
+import static dk.webbies.tajscheck.util.Util.mkString;
+
 public class FieldCheck implements Check {
     private final List<Check> checks;
     private final String field;
@@ -43,5 +42,10 @@ public class FieldCheck implements Check {
         int result = checks != null ? checks.hashCode() : 0;
         result = 31 * result + (field != null ? field.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "field(" + field +", " + mkString(checks.stream(), ", ") +")";
     }
 }

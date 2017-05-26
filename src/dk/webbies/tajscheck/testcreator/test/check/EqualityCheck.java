@@ -35,4 +35,9 @@ public class EqualityCheck implements Check {
     public int hashCode() {
         return expression != null ? expression.hashCode() : 0;
     }
+
+    @Override
+    public String toString() {
+        return "equals(" + expression +")";
+    }
 }
