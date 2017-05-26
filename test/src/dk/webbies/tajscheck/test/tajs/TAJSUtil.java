@@ -4,7 +4,6 @@ import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.TAJSFunctionsEvaluator;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.lattice.Context;
-import dk.brics.tajs.lattice.State;
 import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
@@ -18,7 +17,8 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.buildprogram.TAJSTypeChecker;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
-import dk.webbies.tajscheck.tajstester.TypeChecker;
+import dk.webbies.tajscheck.tajstester.TajsTypeChecker;
+import dk.webbies.tajscheck.tajstester.TypeViolation;
 import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
@@ -29,11 +29,9 @@ import org.kohsuke.args4j.CmdLineParser;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static dk.brics.tajs.Main.initLogging;
 import static dk.webbies.tajscheck.util.Pair.toTAJS;
-import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -112,7 +110,7 @@ public class TAJSUtil {
         IAnalysisMonitoring baseMonitoring = new Monitoring();
         OptionValues additionalOpts = new OptionValues();
         CmdLineParser parser = new CmdLineParser(additionalOpts);
-        TajsTypeTester typeTester = new TajsTypeTester(tests);
+        TajsTypeTester typeTester = new TajsTypeTester(tests, info);
 
         try {
             parser.parseArgument(file);
@@ -162,9 +160,9 @@ public class TAJSUtil {
             throw new TimeoutException(e.toString());
         }
 
-        List<TypeChecker.TypeViolation> violations = typeTester.getAllViolations();
-        MultiMap<String, TypeChecker.TypeViolation> results =  new ArrayListMultiMap<>();
-        for(TypeChecker.TypeViolation vio : violations) {
+        List<TypeViolation> violations = typeTester.getAllViolations();
+        MultiMap<String, TypeViolation> results =  new ArrayListMultiMap<>();
+        for(TypeViolation vio : violations) {
             results.put(vio.test.getPath(), vio);
         }
 
@@ -266,11 +264,11 @@ public class TAJSUtil {
     }
 
     public static class TajsAnalysisResults {
-        MultiMap<String, TypeChecker.TypeViolation> detectedViolations;
+        MultiMap<String, TypeViolation> detectedViolations;
         List<Test> testPerformed;
         List<Test> testNot;
 
-        TajsAnalysisResults(MultiMap<String, TypeChecker.TypeViolation> detectedViolations,
+        TajsAnalysisResults(MultiMap<String, TypeViolation> detectedViolations,
                             List<Test> testPerformed,
                             List<Test> testNot) {
 
@@ -279,7 +277,7 @@ public class TAJSUtil {
             this.testNot = testNot;
         }
 
-        TajsAnalysisResults with(MultiMap<String, TypeChecker.TypeViolation> newViolations) {
+        TajsAnalysisResults with(MultiMap<String, TypeViolation> newViolations) {
             return new TajsAnalysisResults(newViolations, testPerformed, testNot);
         }
     }

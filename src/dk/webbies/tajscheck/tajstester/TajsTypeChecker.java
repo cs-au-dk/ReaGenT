@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.util.Util.prettyValue;
 
-public class TypeChecker implements TypeVisitor<List<TypeChecker.TypeViolation>> {
+public class TajsTypeChecker implements TypeVisitor<List<TypeViolation>> {
 
     private final TypeWithContext tc;
     private final Value v;
@@ -30,21 +30,7 @@ public class TypeChecker implements TypeVisitor<List<TypeChecker.TypeViolation>>
     private final LinkedList<TypeViolation> violations = new LinkedList<TypeViolation>();
     private final Value filteredValue;
 
-    public static class TypeViolation {
-        final public String message;
-        final public Test test;
-        TypeViolation(String message, Test t){
-            this.message = message;
-            this.test = t;
-        }
-
-        @Override
-        public String toString() {
-            return message + " in test " + test;
-        }
-    }
-
-    private TypeChecker(TypeWithContext tc, Value v, State s, Solver.SolverInterface c, Test test) {
+    private TajsTypeChecker(TypeWithContext tc, Value v, State s, Solver.SolverInterface c, Test test) {
         this.tc = tc;
         this.v = v;
         this.s = s;
@@ -62,11 +48,11 @@ public class TypeChecker implements TypeVisitor<List<TypeChecker.TypeViolation>>
     }
 
     public static List<TypeViolation> typeCheck(TypeWithContext tc, Value v, State s, Solver.SolverInterface c, Test test){
-        return tc.getType().accept(new TypeChecker(tc, v, s, c, test));
+        return tc.getType().accept(new TajsTypeChecker(tc, v, s, c, test));
     }
 
     public static Pair<List<TypeViolation>, Value> typeCheckAndFilter(TypeWithContext tc, Value v, State s, Solver.SolverInterface c, Test test){
-        TypeChecker checker = new TypeChecker(tc, v, s, c, test);
+        TajsTypeChecker checker = new TajsTypeChecker(tc, v, s, c, test);
         List<TypeViolation> computedViolations = tc.getType().accept(checker);
         return Pair.make(computedViolations, checker.filteredValue);
     }
@@ -198,7 +184,7 @@ public class TypeChecker implements TypeVisitor<List<TypeChecker.TypeViolation>>
         final boolean negative;
 
         TypeFilter(Value v, TypeContext tc, boolean negative) {
-            this.v =v;
+            this.v = v;
             this.tc = tc;
             this.negative = negative;
         }
@@ -229,10 +215,16 @@ public class TypeChecker implements TypeVisitor<List<TypeChecker.TypeViolation>>
             Set<ObjectLabel> labels = v.getAllObjectLabels();
             for (ObjectLabel l : labels) {
                 boolean notmatching = false;
+
                 for (String property : t.getDeclaredProperties().keySet()) {
                     Value propertyValue = pv.readPropertyValue(Collections.singletonList(l), property);
                     notmatching |= propertyValue.isMaybeAbsent();
                 }
+
+                if(!t.getDeclaredCallSignatures().isEmpty()) {
+                    notmatching |= (l.getKind() != ObjectLabel.Kind.FUNCTION);
+                }
+
                 if (negative == notmatching) {
                     resv = resv.joinObject(l);
                 }
@@ -348,6 +340,5 @@ public class TypeChecker implements TypeVisitor<List<TypeChecker.TypeViolation>>
         }
 
     }
-
 
 }

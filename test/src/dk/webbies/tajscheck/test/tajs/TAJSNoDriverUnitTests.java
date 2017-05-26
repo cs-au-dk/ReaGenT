@@ -74,7 +74,7 @@ public class TAJSNoDriverUnitTests {
         }
 
         private dk.webbies.tajscheck.test.tajs.TAJSNoDriverUnitTests.TAJSResultTester performedAllTests() {
-            MatcherAssert.assertThat("some tests were not performed: " + mkString(results.testNot, ", "), results.testNot.isEmpty());
+            MatcherAssert.assertThat("some tests were not performed: " + mkString(results.testNot.stream(), ", "), results.testNot.isEmpty());
             return this;
         }
 

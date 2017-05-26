@@ -7,9 +7,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-/**
- * Created by erik1 on 14-11-2016.
- */
 public interface Check {
     <T, A> T accept(CheckVisitorWithArgument<T, A> visitor, A a);
 

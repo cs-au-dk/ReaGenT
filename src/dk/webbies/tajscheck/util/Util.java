@@ -644,14 +644,14 @@ public class Util {
         return l;
     }
 
-    public static <E> String mkString(List<E> l, String separator) {
-        return l.stream().map(e -> e.toString()).reduce("", (c, a) -> a + separator + c);
+    public static <E> String mkString(Stream<E> l, String separator) {
+        return l.map(e -> e.toString()).reduce("", (c, a) -> a + separator + c);
     }
 
 
     public static String prettyValue(Value v, State s){
         if(v.isNone()) return "None";
-        String labels = mkString(v.getAllObjectLabels().stream().map(l -> s.getObject(l,false)).collect(Collectors.toList()), ",");
+        String labels = mkString(v.getAllObjectLabels().stream().map(l -> s.getObject(l,false)), ",");
         Value nonObject = v.restrictToNotObject();
         if(!nonObject.isNone()) {
             return nonObject + ", " + labels;

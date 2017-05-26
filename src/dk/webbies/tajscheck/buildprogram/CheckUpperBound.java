@@ -39,9 +39,6 @@ import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.paser.AstBuilder.*;
 
-/**
- * Created by erik1 on 13-12-2016.
- */
 public class CheckUpperBound {
     private BenchmarkInfo info;
 

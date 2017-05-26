@@ -21,9 +21,6 @@ import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.paser.AstBuilder.*;
 
-/**
- * Created by erik1 on 03-11-2016.
- */
 public class TypeChecker {
     private final BenchmarkInfo info;
     private List<Statement> typeCheckingFunctionList = new ArrayList<>();
@@ -165,6 +162,10 @@ public class TypeChecker {
                         Return(bool(false))
                 )
         );
+    }
+
+    public static List<TypeCheck> getTypeChecks(Type type, TypeContext context, BenchmarkInfo info, int depth) {
+        return type.accept(new CreateTypeCheckVisitor(info), new Arg(context, depth));
     }
 
     private final Map<List<TypeCheck>, String> typeCheckFunctionNameCache = new HashMap<>();

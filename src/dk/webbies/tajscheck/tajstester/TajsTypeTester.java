@@ -14,6 +14,7 @@ import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Pair;
 import dk.webbies.tajscheck.TypeWithContext;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.testcreator.test.*;
 
 import java.util.LinkedList;
@@ -32,16 +33,19 @@ public class TajsTypeTester implements TypeTestRunner {
 
     private final List<Test> tests;
 
+    private final BenchmarkInfo info;
+
     private final BiMap<TypeWithContext, String> typeNames = HashBiMap.create();
 
-    final private List<TypeChecker.TypeViolation> allViolations = newList();
+    final private List<TypeViolation> allViolations = newList();
 
     final private List<TestCertificate> allCertificates = newList();
 
     private final List<Test> performed = newList();
 
-    public TajsTypeTester(List<Test> tests) {
+    public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
         this.tests = tests;
+        this.info = info;
     }
 
     public int getTotalTests() {return tests.size();}
@@ -50,7 +54,7 @@ public class TajsTypeTester implements TypeTestRunner {
 
     public List<Test> getPerformedTests() {return performed;}
 
-    public List<TypeChecker.TypeViolation> getAllViolations() {return allViolations;}
+    public List<TypeViolation> getAllViolations() {return allViolations;}
 
     public List<TestCertificate> getAllCertificates() {return allCertificates;}
 
@@ -71,17 +75,17 @@ public class TajsTypeTester implements TypeTestRunner {
             List<Test> notPerformed = new LinkedList<>();
             notPerformed.addAll(tests);
             notPerformed.removeAll(performed);
-            System.out.println("Tests not performed:\n   " + mkString(notPerformed, "\n   "));
-            System.out.println("Test details:\n   " + mkString(allCertificates, "\n   "));
-            System.out.println("Violations:\n   " + mkString(allViolations, "\n   "));
+            System.out.println("Tests not performed:\n   " + mkString(notPerformed.stream(), "\n   "));
+            System.out.println("Test details:\n   " + mkString(allCertificates.stream(), "\n   "));
+            System.out.println("Violations:\n   " + mkString(allViolations.stream(), "\n   "));
         }
     }
 
-    private static class Box<A> {
-        A boxed;
-        Box(A x){
-            this.boxed = x;
-        }
+
+    public Value evaluateCallToSymbolicFunction(ECMAScriptObjects nativeObject, FunctionCalls.CallInfo call, Solver.SolverInterface c) {
+        // Use the type in the context to return the right value
+        System.out.println("Called function " + call.getFunctionValue());
+        return Value.makeNone();
     }
 
     public class TajsTestVisitor implements TestVisitor<Boolean> {
@@ -91,19 +95,22 @@ public class TajsTypeTester implements TypeTestRunner {
         private final PropVarOperations pv;
         private final State s;
         private final TypeValuesHandler typeValuesHandler;
+        private final TypeChecker2 typeChecker;
 
         TajsTestVisitor(StateExtras se, Solver.SolverInterface c, State s) {
             this.se = se;
             this.s = s;
             this.pv = c.getAnalysis().getPropVarOperations();
             this.c = c;
-            this.typeValuesHandler = new TypeValuesHandler(typeNames, se);
+            this.typeValuesHandler = new TypeValuesHandler(typeNames, se, c);
+            this.typeChecker = new TypeChecker2(c, info);
         }
 
         public boolean attemptAddValue(Value v, TypeWithContext t, Test test) {
             v = UnknownValueResolver.getRealValue(v, s);
-            Pair<List<TypeChecker.TypeViolation>, Value> tcResult = TypeChecker.typeCheckAndFilter(t, v, s, c, test);
-            List<TypeChecker.TypeViolation> violations = tcResult.getFirst();
+            typeChecker.typeCheckAndFilter(v, t.getType(), t.getTypeContext(), info, 2, test);
+            Pair<List<TypeViolation>, Value> tcResult = TajsTypeChecker.typeCheckAndFilter(t, v, s, c, test);
+            List<TypeViolation> violations = tcResult.getFirst();
             Value filteredValue = tcResult.getSecond();
             if(violations.isEmpty() && !filteredValue.isNone()) {
                 typeValuesHandler.addValueForType(t, filteredValue);
@@ -125,7 +132,6 @@ public class TajsTypeTester implements TypeTestRunner {
 
         @Override
         public Boolean visit(PropertyReadTest test) {
-
             Value baseValuesValue = attemptGetValue(new TypeWithContext(test.getBaseType(),test.getTypeContext()), test);
             Set<ObjectLabel> splittenObjectLabels = baseValuesValue.getObjectLabels();
             boolean toPerform = !splittenObjectLabels.isEmpty();

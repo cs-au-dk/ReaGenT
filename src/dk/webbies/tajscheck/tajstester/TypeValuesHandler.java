@@ -2,6 +2,12 @@ package dk.webbies.tajscheck.tajstester;
 
 import com.google.common.collect.BiMap;
 import dk.au.cs.casa.typescript.types.*;
+import dk.brics.tajs.analysis.InitialStateBuilder;
+import dk.brics.tajs.analysis.PropVarOperations;
+import dk.brics.tajs.analysis.Solver;
+import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
+import dk.brics.tajs.lattice.ObjectLabel;
+import dk.brics.tajs.lattice.PKey;
 import dk.brics.tajs.lattice.StateExtras;
 import dk.brics.tajs.lattice.Value;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -11,15 +17,23 @@ public class TypeValuesHandler {
 
     private final BiMap<TypeWithContext, String> typeNames;
     private final StateExtras se;
+    private final Solver.SolverInterface c;
+    private final PropVarOperations pv;
 
-
-    TypeValuesHandler(BiMap<TypeWithContext, String> typeNames, StateExtras se) {
+    TypeValuesHandler(BiMap<TypeWithContext, String> typeNames, StateExtras se, Solver.SolverInterface c) {
         this.typeNames = typeNames;
         this.se = se;
+        this.c = c;
+        this.pv = c.getAnalysis().getPropVarOperations();
     }
 
     public Value findValueForType(TypeWithContext t) {
-        return t.getType().accept(new FinderVisitor(t.getTypeContext()));
+        Value saved = t.getType().accept(new TypeFinderVisitor(t.getTypeContext()));
+        if (saved.isNone()) {
+            Value generated = t.getType().accept(new TypeCreatorVisitor(t.getTypeContext()));
+            return generated;
+        }
+        return saved;
     }
 
     public void addValueForType(TypeWithContext t, Value v) {
@@ -31,10 +45,10 @@ public class TypeValuesHandler {
         return typeNames.get(t);
     }
 
-    private class FinderVisitor implements TypeVisitor<Value> {
+    private class TypeFinderVisitor implements TypeVisitor<Value> {
         private final TypeContext context;
 
-        FinderVisitor(TypeContext context) {
+        TypeFinderVisitor(TypeContext context) {
             this.context = context;
         }
 
@@ -57,6 +71,127 @@ public class TypeValuesHandler {
         public Value visit(InterfaceType t) {
             return Value.makeObject(se.getFromMaySet(getName(new TypeWithContext(t, context))));
             //TODO: and base types ?
+        }
+
+        @Override
+        public Value visit(ReferenceType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(SimpleType t) {
+            return Value.makeNone();
+        }
+
+        @Override
+        public Value visit(TupleType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(UnionType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(UnresolvedType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(TypeParameterType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(StringLiteral t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(BooleanLiteral t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(NumberLiteral t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(IntersectionType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(ClassInstanceType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(ThisType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(IndexType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(IndexedAccessType t) {
+            throw new RuntimeException("Implement me");
+        }
+    }
+
+    private class TypeCreatorVisitor implements TypeVisitor<Value> {
+        private final TypeContext context;
+
+        TypeCreatorVisitor(TypeContext context) {
+            this.context = context;
+        }
+
+        @Override
+        public Value visit(AnonymousType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(ClassType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(GenericType t) {
+            throw new RuntimeException("Implement me");
+        }
+
+        @Override
+        public Value visit(InterfaceType t) {
+
+            /*
+            if(!t.getDeclaredCallSignatures().isEmpty()) {
+
+                for(Signature s : t.getDeclaredCallSignatures()) {
+
+                    //FIXME: Introduce a specific heapContext in the funLabel, differentiating every label by its type
+                    ObjectLabel funLabel = ObjectLabel.mk(c.getNode().getBlock().getFirstNode(), ObjectLabel.Kind.FUNCTION);
+
+                    InitialStateBuilder.createPrimitiveFunction(
+                            funLabel,
+                            InitialStateBuilder.FUNCTION_PROTOTYPE,
+                            ECMAScriptObjects.CUSTOM_TYPE_CHECKER,
+                            PKey.StringPKey.mk(""),
+                            s.getMinArgumentCount(),
+                            c
+                    );
+
+
+                }
+            }
+            */
+            return Value.makeNone();
+
         }
 
         @Override
