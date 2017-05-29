@@ -65,6 +65,7 @@ public class TajsTypeTester implements TypeTestRunner {
 
         performed.clear();
         for (Test t : tests) {
+            // TODO: Until fixpoint.
             if(t.accept(visitor)){
                 performed.add(t);
             }
