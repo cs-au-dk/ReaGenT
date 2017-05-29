@@ -62,6 +62,6 @@ public class MethodCallTest extends FunctionTest {
 
     @Override
     public String toString() {
-        return this.getClass().getName()+"(" + object + "." + propertyName + "())";
+        return this.getClass().getSimpleName()+"(" + object + "." + propertyName + "())";
     }
 }

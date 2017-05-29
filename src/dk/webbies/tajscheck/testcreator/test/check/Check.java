@@ -54,10 +54,6 @@ public abstract interface Check {
         return new InstanceOfCheck(exp);
     }
 
-    static ArrayIndexCheck arrayIndexCheck(Check subCheck) {
-        return new ArrayIndexCheck(subCheck);
-    }
-
     static FieldCheck field(String field, Check... subChecks) {
         return field(field, Arrays.asList(subChecks));
     }

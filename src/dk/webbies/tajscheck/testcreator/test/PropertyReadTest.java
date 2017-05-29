@@ -51,6 +51,6 @@ public class PropertyReadTest extends Test {
 
     @Override
     public String toString() {
-        return this.getClass().getName()+"(" + baseType + "." + key + ")";
+        return this.getClass().getSimpleName()+"(" + baseType + "." + key + ")";
     }
 }

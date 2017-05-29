@@ -71,4 +71,9 @@ public abstract class Test {
     }
 
     public abstract String getTestType();
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName()+"(" + getPath() + ")";
+    }
 }

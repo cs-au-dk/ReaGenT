@@ -1,9 +1,9 @@
 package dk.webbies.tajscheck.testcreator.test;
 
 import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
-import dk.webbies.tajscheck.benchmark.Benchmark;
 
 import java.util.Collections;
 
@@ -56,5 +56,5 @@ public class LoadModuleTest extends Test {
     }
 
     @Override
-    public String toString() { return this.getClass().getName()+"(" + module + ":" + moduleType + ")";}
+    public String toString() { return this.getClass().getSimpleName()+"(" + module + ":" + moduleType + ")";}
 }

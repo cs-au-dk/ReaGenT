@@ -18,8 +18,6 @@ public interface CheckVisitorWithArgument<T, A> {
 
     T visit(FieldCheck check, A a);
 
-    T visit(ArrayIndexCheck check, A a);
-
     T visit(NumberIndexCheck check, A a);
 
     T visit(StringIndexCheck check, A a);

@@ -4,16 +4,16 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
-import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
-import dk.webbies.tajscheck.typeutil.TypesUtil;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
@@ -580,7 +580,7 @@ public class TypeChecker {
                 TypeCheck indexCheck = createIntersection(indexType.accept(this, arg));
 
                 result.add(
-                        new SimpleTypeCheck(Check.arrayIndexCheck(indexCheck.getCheck()), "(arrayIndex: " + indexCheck.getExpected() + ")")
+                        new SimpleTypeCheck(Check.numberIndex(indexCheck.getCheck()), "(arrayIndex: " + indexCheck.getExpected() + ")")
                 );
             }
 

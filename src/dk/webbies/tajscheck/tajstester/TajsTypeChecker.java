@@ -3,13 +3,10 @@ package dk.webbies.tajscheck.tajstester;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
-import dk.brics.tajs.analysis.js.Operators;
-import dk.brics.tajs.analysis.nativeobjects.concrete.TAJSConcreteSemantics;
 import dk.brics.tajs.analysis.nativeobjects.concrete.TAJSSplitConcreteSemantics;
 import dk.brics.tajs.lattice.ObjectLabel;
 import dk.brics.tajs.lattice.State;
 import dk.brics.tajs.lattice.Value;
-import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.util.Pair;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -26,11 +23,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static dk.webbies.tajscheck.util.Util.mkString;
-import static dk.webbies.tajscheck.util.Util.prettyValue;
-import static dk.webbies.tajscheck.util.Util.singletonList;
+import static dk.webbies.tajscheck.util.Util.*;
 
 public class TajsTypeChecker {
     private final Solver.SolverInterface c;
@@ -66,7 +60,7 @@ public class TajsTypeChecker {
         vcur = v.restrictToNum();
         if(!vcur.isNone()) vr.add(vcur);
 
-        if(v.isMaybeNull()) vr.add(Value.makeNone());
+        if(v.isMaybeNull()) vr.add(Value.makeNull());
 
         return vr;
     }
@@ -76,8 +70,9 @@ public class TajsTypeChecker {
         List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, depth);
         TypeWithContext tc = new TypeWithContext(type, context);
 
-        List<Pair<Value, List<TypeCheck>>> zip = Util.zip(split(v).stream(),
-                split(v).stream().map(splittenValue -> getTypeViolations(splittenValue, typeChecks)),
+        List<Value> split = split(v);
+        List<Pair<Value, List<TypeCheck>>> zip = Util.zip(split.stream(),
+                split.stream().map(splittenValue -> getTypeViolations(splittenValue, typeChecks)),
                 Pair::make).collect(Collectors.toList());
 
         List<Value> filter = zip.stream().filter(p -> p.getSecond().isEmpty()).map(Pair::getFirst).collect(Collectors.toList());
@@ -93,13 +88,15 @@ public class TajsTypeChecker {
         return Pair.make(filter.stream().reduce(Value.makeNone(), (a, b) -> a.join(b)), violations);
     }
 
-    List<TypeCheck> getTypeViolations(Value v, List<TypeCheck> typeChecks) {
+    private List<TypeCheck> getTypeViolations(Value v, List<TypeCheck> typeChecks) {
         return typeChecks.stream().flatMap(typeCheck -> {
 
             if(typeCheck instanceof FieldTypeCheck) {
                 FieldTypeCheck fieldTypeCheck = (FieldTypeCheck)typeCheck;
                 Value propertyValue = pv.readPropertyValue(v.getAllObjectLabels(), fieldTypeCheck.getField());
-                if(propertyValue.isMaybeAbsent()) return singletonList(typeCheck).stream();
+                if(propertyValue.isMaybeAbsent()) {
+                    propertyValue = Value.join(propertyValue, Value.makeUndef());
+                }
 
                 return split(propertyValue).stream().flatMap(splittenValue -> getTypeViolations(splittenValue, fieldTypeCheck.getFieldChecks()).stream());
             }
@@ -107,8 +104,7 @@ public class TajsTypeChecker {
                 SimpleTypeCheck simpleTypeCheck = (SimpleTypeCheck)typeCheck;
                 if(!simpleTypeCheck.getCheck().accept(cc, v)) {
                     return singletonList(typeCheck).stream();
-                }
-                else {
+                } else {
                     return new LinkedList<TypeCheck>().stream();
                 }
             }
@@ -175,8 +171,8 @@ public class TajsTypeChecker {
 
         @Override
         public Boolean visit(InstanceOfCheck check, Value o) {
-            //TODO: The checks should carry a value!
-            // Operators.instof(o, v2)
+            //TODO: The checks should carry a value! (maybe not, instanceof checks are only used against values defined by the standard library, never for types defined by the library under test).
+//            Operators.instof(o, v2, c);
             System.err.println("Skipping instance of check" + check + " against " + o);
             return true;
         }
@@ -184,13 +180,13 @@ public class TajsTypeChecker {
         @Override
         public Boolean visit(FieldCheck check, Value o) {
             Value propertyValue = pv.readPropertyValue(o.getAllObjectLabels(), check.getField());
-            return !propertyValue.isMaybeAbsent();
-        }
+            if (propertyValue.isMaybeAbsent()) {
+                propertyValue = Value.join(propertyValue, Value.makeUndef());
+            }
 
-        @Override
-        public Boolean visit(ArrayIndexCheck check, Value o) {
-            System.err.println("Skipping check" + check + " against " + o);
-            return true;
+            List<Value> split = split(propertyValue);
+
+            return split.stream().allMatch(value -> check.getChecks().stream().allMatch(subCheck -> subCheck.accept(this, value)));
         }
 
         @Override
@@ -206,7 +202,7 @@ public class TajsTypeChecker {
         }
 
         @Override
-        public Boolean visit(ExpressionCheck check, Value o) {
+        public Boolean visit(ExpressionCheck check, Value o) { // TODO: This is very rarely used, and we should be able to switch-case us out of every case where it is used.
             System.err.println("Skipping check" + check + " against " + o);
             return true;
         }

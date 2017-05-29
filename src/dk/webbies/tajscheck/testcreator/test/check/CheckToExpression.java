@@ -72,13 +72,6 @@ public class CheckToExpression implements CheckVisitorWithArgument<Expression, E
     }
 
     @Override
-    public Expression visit(ArrayIndexCheck check, Expression expression) {
-        return call(identifier("arrayIndexCheck"), expression, function(block(
-                Return(check.getSubCheck().accept(this, identifier("exp")))
-        ), "exp"));
-    }
-
-    @Override
     public Expression visit(NumberIndexCheck check, Expression expression) {
         return call(identifier("numberIndexCheck"), expression, function(block(
                 Return(check.getSubCheck().accept(this, identifier("exp")))

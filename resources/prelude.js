@@ -271,20 +271,6 @@ function extend(result) {
     return result;
 }
 
-function arrayIndexCheck (obj, check) {
-    var keys = getAllKeys(obj).filter(function (e) {
-        return Number(e) + "" === e;
-    });
-
-    for (var i = 0; i < keys.length; i++) {
-        if (!(check(obj[keys[i]]))) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 function numberIndexCheck(obj, check) {
     for (var key in obj) {
         //noinspection JSUnfilteredForInLoop (It is supposed to be that way, only the object-prototype is excluded).
