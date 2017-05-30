@@ -247,11 +247,6 @@ public class FreeGenericsFinder {
         }
 
         @Override
-        public Void visit(UnresolvedType t, Set<TypeParameterType> mapped) {
-            throw new RuntimeException();
-        }
-
-        @Override
         public Void visit(TypeParameterType t, Set<TypeParameterType> mapped) {
             if (seen.contains(t)) {
                 return null;

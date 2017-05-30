@@ -2,12 +2,8 @@ package dk.webbies.tajscheck.tajstester;
 
 import com.google.common.collect.BiMap;
 import dk.au.cs.casa.typescript.types.*;
-import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
-import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
-import dk.brics.tajs.lattice.ObjectLabel;
-import dk.brics.tajs.lattice.PKey;
 import dk.brics.tajs.lattice.StateExtras;
 import dk.brics.tajs.lattice.Value;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -90,11 +86,6 @@ public class TypeValuesHandler {
 
         @Override
         public Value visit(UnionType t) {
-            throw new RuntimeException("Implement me");
-        }
-
-        @Override
-        public Value visit(UnresolvedType t) {
             throw new RuntimeException("Implement me");
         }
 
@@ -233,11 +224,6 @@ public class TypeValuesHandler {
 
         @Override
         public Value visit(UnionType t) {
-            throw new RuntimeException("Implement me");
-        }
-
-        @Override
-        public Value visit(UnresolvedType t) {
             throw new RuntimeException("Implement me");
         }
 

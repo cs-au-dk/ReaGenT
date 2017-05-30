@@ -424,11 +424,6 @@ public class TAJSTypeChecker {
         }
 
         @Override
-        public Bool visit(UnresolvedType t, Arg arg) {
-            throw new RuntimeException();
-        }
-
-        @Override
         public Bool visit(TypeParameterType t, Arg arg) {
             if (arg.context.containsKey(t)) {
                 TypeWithContext lookup = arg.context.get(t);

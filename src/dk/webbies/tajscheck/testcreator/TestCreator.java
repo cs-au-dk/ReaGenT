@@ -2,12 +2,12 @@ package dk.webbies.tajscheck.testcreator;
 
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.Main;
-import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.typeutil.TypesUtil;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.*;
 import dk.webbies.tajscheck.util.trie.Trie;
 
@@ -688,17 +688,6 @@ public class TestCreator {
         }
 
         @Override
-        public Void visit(UnresolvedType t, Arg arg) {
-            TypeWithContext withParameters = new TypeWithContext(t, arg.getTypeContext());
-            if (seen.contains(withParameters) || info.nativeTypes.contains(t)) {
-                return null;
-            }
-            seen.add(withParameters);
-
-            throw new RuntimeException();
-        }
-
-        @Override
         public Void visit(TypeParameterType t, Arg arg) {
             TypeWithContext withParameters = new TypeWithContext(t, arg.getTypeContext());
             if (seen.contains(withParameters) || info.nativeTypes.contains(t)) {
@@ -978,11 +967,6 @@ public class TestCreator {
                 recurse(type, arg.append("[union" + i + "]"));
             }
             return null;
-        }
-
-        @Override
-        public Void visit(UnresolvedType t, Arg arg) {
-            throw new RuntimeException();
         }
 
         @Override

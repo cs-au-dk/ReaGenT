@@ -202,11 +202,6 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
         }
 
         @Override
-        public T visit(UnresolvedType t) {
-            throw new RuntimeException();
-        }
-
-        @Override
         public T visit(TypeParameterType t) {
             if (seen.contains(t)) {
                 return null;

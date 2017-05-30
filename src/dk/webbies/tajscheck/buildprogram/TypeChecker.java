@@ -659,11 +659,6 @@ public class TypeChecker {
         }
 
         @Override
-        public List<TypeCheck> visit(UnresolvedType t, Arg arg) {
-            throw new RuntimeException();
-        }
-
-        @Override
         public List<TypeCheck> visit(TypeParameterType parameter, Arg arg) {
             TypeContext typeContext = arg.typeContext;
 

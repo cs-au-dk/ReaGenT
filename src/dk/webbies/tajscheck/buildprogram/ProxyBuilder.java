@@ -405,11 +405,6 @@ public class ProxyBuilder {
         }
 
         @Override
-        public Void visit(UnresolvedType t) {
-            return null;
-        }
-
-        @Override
         public Void visit(TypeParameterType t) {
             return null;
         }

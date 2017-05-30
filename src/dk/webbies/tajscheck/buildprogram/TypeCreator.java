@@ -7,16 +7,16 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
-import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.testcreator.test.FunctionTest;
-import dk.webbies.tajscheck.typeutil.PrettyTypes;
-import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.typeutil.TypesUtil;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
+import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
+import dk.webbies.tajscheck.typeutil.PrettyTypes;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.*;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -503,11 +503,6 @@ public class TypeCreator {
         @Override
         public Statement visit(UnionType t, TypeContext typeContext) {
             return constructUnion(t.getElements(), typeContext);
-        }
-
-        @Override
-        public Statement visit(UnresolvedType t, TypeContext typeContext) {
-            throw new RuntimeException();
         }
 
         @Override

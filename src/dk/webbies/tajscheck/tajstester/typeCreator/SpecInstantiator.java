@@ -147,11 +147,6 @@ public class SpecInstantiator {
             }
 
             @Override
-            public Type visit(UnresolvedType unresolvedType) {
-                return null;
-            }
-
-            @Override
             public Type visit(TypeParameterType typeParameterType) {
                 return null;
             }
@@ -305,11 +300,6 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel visit(UnionType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
-        }
-
-        @Override
-        public ObjectLabel visit(UnresolvedType t, MiscInfo miscInfo) {
             throw new RuntimeException("Not implemented...");
         }
 
@@ -492,11 +482,6 @@ public class SpecInstantiator {
         }
 
         @Override
-        public Value visit(UnresolvedType t, MiscInfo info) {
-            throw new RuntimeException("Should not be present anymore!!!");
-        }
-
-        @Override
         public Value visit(TypeParameterType t, MiscInfo info) {
             throw new RuntimeException("Not implemented...");
         }
@@ -608,11 +593,6 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(UnionType t) {
-            throw new RuntimeException("Not implemented...");
-        }
-
-        @Override
-        public ObjectLabel.Kind visit(UnresolvedType t) {
             throw new RuntimeException("Not implemented...");
         }
 

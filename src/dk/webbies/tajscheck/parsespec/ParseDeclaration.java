@@ -6,7 +6,6 @@ import dk.webbies.tajscheck.util.Util;
 
 import java.io.File;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by erik1 on 01-11-2016.
@@ -265,11 +264,6 @@ public class ParseDeclaration {
             }
 
             return null;
-        }
-
-        @Override
-        public Void visit(UnresolvedType t, Arg arg) {
-            throw new RuntimeException();
         }
 
         @Override
