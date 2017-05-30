@@ -172,7 +172,7 @@ public class TajsTypeTester implements TypeTestRunner {
             Value propertyValue = pv.readPropertyValue(receiverValue.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName())));
             //TODO: Filter this value ! ::  propertyValue = new TypeValuesFilter(propertyValue, propertyType)
 
-            boolean toPerform = !propertyValue.isNone() && argumentsValues.stream().allMatch(x -> !x.isNone());
+            boolean toPerform = !propertyValue.isNone() && argumentsValues.stream().noneMatch(Value::isNone);
 
             if(toPerform) {
                 List<Value> returnedValues = propertyValue.getAllObjectLabels().stream().map(l -> {
@@ -241,7 +241,7 @@ public class TajsTypeTester implements TypeTestRunner {
                     return returnedValue;
                 }).collect(Collectors.toList());
 
-                returnedValues.stream().forEach(v -> attemptAddValue(v, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test));
+                returnedValues.forEach(v -> attemptAddValue(v, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test));
             }
             return toPerform;
         }
