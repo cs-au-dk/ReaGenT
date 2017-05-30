@@ -5,7 +5,6 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
@@ -337,11 +336,6 @@ public class CountUniques {
             } else {
                 return null;
             }
-        }
-
-        @Override
-        public Type visit(UnresolvedType t, Arg arg) {
-            throw new RuntimeException();
         }
 
         @Override
