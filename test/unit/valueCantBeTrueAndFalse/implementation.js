@@ -1,7 +1,6 @@
 
 module.exports = {
-    foo: {
-        bar: true,
-        foo: 123
+    foo: function () {
+        return "no";
     }
 };

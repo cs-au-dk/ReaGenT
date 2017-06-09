@@ -11,7 +11,7 @@ module.exports = {
     foo: function (str, b1, b2, b3, b4) {
         runs++;
         if (b1 instanceof Array) {
-            return false;
+            return "not array";
         }
 
         if (b3) {
@@ -19,7 +19,7 @@ module.exports = {
         }
 
         if (runs > 20) {
-            return b3WasHit;
+            return b3WasHit || "b3WasNotHit";
         }
 
         return true;

@@ -410,7 +410,6 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore // TODO: Fails.
     public void valueCantBeTrueAndFalse() throws Exception {
         RunResult result = run("valueCantBeTrueAndFalse");
 
@@ -608,7 +607,7 @@ public class UnitTests {
                 .got(STRING, "string,1,4,7,false");
     }
 
-    @Test // TODO: This fails.
+    @Test
     public void testRestArgs() throws Exception {
         RunResult result = run("testRestArgs");
 

@@ -235,6 +235,9 @@ function extend(result) {
     for (var i = 1; i < arguments.length; i++) {
         var type = typeof arguments[i];
         var prevValue = typesOfs[type];
+        if (prevValue && !(type === "function" || type === "object")) {
+            throw new RuntimeError("IntersectionType: Cannot intersect primitives.")
+        }
         typesOfs[type] = prevValue ? prevValue + 1 : 1;
     }
     if (Object.keys(typesOfs).length == 1 && !typesOfs.object && !typesOfs.function) {
