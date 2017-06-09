@@ -623,6 +623,11 @@ public class TypeChecker {
                         Check.equalTo(object()), "never" // equalTo check with a newly constructed object will always fail.
                 ));
             }
+            if (t.getKind() == SimpleTypeKind.Object) {
+                return Collections.singletonList(new SimpleTypeCheck(
+                        Check.or(Check.typeOf("object"), Check.typeOf("function")), "object"
+                ));
+            }
             String typeOf = getTypeOf(t);
             return Collections.singletonList(new SimpleTypeCheck(Check.typeOf(typeOf), typeOf));
         }
@@ -806,8 +811,6 @@ public class TypeChecker {
                 return "undefined";
             case Symbol:
                 return "symbol";
-            case Object:
-                return "object";
             default:
                 throw new RuntimeException(type.getKind().toString());
         }
