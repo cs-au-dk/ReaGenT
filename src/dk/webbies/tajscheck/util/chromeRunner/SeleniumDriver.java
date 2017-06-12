@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.util.chromeRunner;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.http.*;
+import org.apache.http.HttpException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.logging.LogType;
@@ -9,7 +9,8 @@ import org.openqa.selenium.logging.LoggingPreferences;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.ServerSocket;
 import java.net.URL;
@@ -143,6 +144,9 @@ public class SeleniumDriver {
     private static DesiredCapabilities buldCapabilities() {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("window-size=400,400");
+
+        options.addArguments("headless");
+        options.addArguments("disable-gpu");
 
         DesiredCapabilities capabilities = DesiredCapabilities.chrome();
         LoggingPreferences loggingPreferences = new LoggingPreferences();
