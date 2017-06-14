@@ -1,0 +1,144 @@
+image: algobardo/jsraces:v1.6
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+before_script:
+  - echo "Runnning on $CI_RUNNER_DESCRIPTION"
+  - npm config set cache $(pwd)/npm-cache
+  - echo "NPM cache set to $(pwd)/npm-cache"
+  # Configuring TAJS
+  - echo "desktop=false"  >> .tajsconfig
+  - npm install
+  - (cd ts-spec-reader && npm install && node_modules/typescript/bin/tsc --module commonjs src/*.ts)
+  
+stages:
+  - build_tajs
+  - unit_tests
+  - wrapup
+
+.job_template: &cache_defs
+  cache:
+    paths:
+    - ts-spec-reader/node_modules/
+    - node_modules/
+    - gradle-cache/
+    - .gradle/
+    - npm-cache/
+
+
+build_tajs_task:
+  <<: *cache_defs
+  stage: build_tajs
+  artifacts:
+    expire_in: 4 week
+    when: always
+    paths:
+    - build
+  script: 
+    - gradle -g gradle-cache compileTest
+
+######################
+##### UNIT TESTS #####
+######################
+
+test_parsing:
+  <<: *cache_defs
+  stage: unit_tests
+  script:
+  - gradle :test -i --tests "dk.webbies.tajscheck.test.TestParsing"
+  - mv build/reports/tests build/reports/test_parsing
+  artifacts:
+    expire_in: 4 week
+    paths:
+    - builds/TSTAJS/TajsCheck/build/reports
+
+test_various:
+  <<: *cache_defs
+  stage: unit_tests
+  script:
+  - gradle :test -i --tests "dk.webbies.tajscheck.test.TestVarious"
+  - mv build/reports/tests build/reports/test_various
+  artifacts:
+    expire_in: 4 week
+    paths:
+    - builds/TSTAJS/TajsCheck/build/reports
+
+test_dynamic:
+  <<: *cache_defs
+  stage: unit_tests
+  script:
+  - gradle :test -i --tests "dk.webbies.tajscheck.test.dynamic.*"
+  - mv build/reports/tests build/reports/test_dynamic
+  artifacts:
+    expire_in: 4 week
+    paths:
+    - builds/TSTAJS/TajsCheck/build/reports
+  
+test_tajs:unit_no_driver:
+  <<: *cache_defs
+  stage: unit_tests
+  script:
+  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.TAJSNoDriverUnitTests"
+  - mv build/reports/tests build/reports/test_tajs_unit_no_driver
+  artifacts:
+    expire_in: 4 week
+    paths:
+    - builds/TSTAJS/TajsCheck/build/reports
+
+test_tajs:unit:
+  <<: *cache_defs
+  stage: unit_tests
+  script:
+  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.TAJSUnitTests"
+  - mv build/reports/tests build/reports/test_tajs_unit
+  artifacts:
+    expire_in: 4 week
+    paths:
+    - builds/TSTAJS/TajsCheck/build/reports
+
+
+test_tajs:benchmarks:
+  <<: *cache_defs
+  stage: unit_tests
+  script:
+  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks"
+  - mv build/reports/tests build/reports/test_tajs_benchmarks
+  artifacts:
+    expire_in: 4 week
+    paths:
+    - builds/TSTAJS/TajsCheck/build/reports
+
+test_tajs:benchmarks_small:
+  <<: *cache_defs
+  stage: unit_tests
+  script:
+  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarksSmall"
+  - mv build/reports/tests build/reports/test_tajs_benchmarks_small
+  artifacts:
+    expire_in: 4 week
+    paths:
+    - builds/TSTAJS/TajsCheck/build/reports
+
+test_tajs:benchmarks_tracified:
+  <<: *cache_defs
+  stage: unit_tests
+  script:
+  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeTracified"
+  - mv build/reports/tests build/reports/test_tajs_benchmarks_tracified
+  artifacts:
+    expire_in: 4 week
+    paths:
+    - builds/TSTAJS/TajsCheck/build/reports
+
+
+wrapup_task:
+  stage: wrapup
+  script:
+  -  echo "DONE"
+  artifacts:
+    expire_in: 4 week
+    paths:
+    - builds/TSTAJS/TajsCheck/build/reports
+
+

@@ -37,7 +37,7 @@ dependencies {
     compile project(":components:simple-monitors")
     testCompile project(":components:simple-monitors")
     testCompile project(":components:meta-core")
-    testCompile project(path: ':tajs', configuration: 'testOutput')
+    compile project(path: ':tajs', configuration: 'testOutput')
 }
 
 
@@ -79,7 +79,6 @@ subprojects {
 
     }
 }
-
 
 
 allprojects {

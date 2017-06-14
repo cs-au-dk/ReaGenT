@@ -8,7 +8,6 @@ import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
 import dk.brics.tajs.options.Options;
-import dk.brics.tajs.test.Misc;
 import dk.brics.tajs.util.AnalysisLimitationException;
 import dk.brics.tajs.util.ExperimentalAnalysisVariables;
 import dk.brics.tajs.util.Pair;
@@ -74,8 +73,8 @@ public class TAJSUtil {
 
         IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(monitors);
 
-        Misc.init();
-        Misc.captureSystemOutput();
+        MiscTajsUtils.init();
+        MiscTajsUtils.captureSystemOutput();
 
         if (secondsTimeout > 0) {
             AnalysisTimeLimiter analysisLimiter = new AnalysisTimeLimiter(secondsTimeout, true);
@@ -83,13 +82,13 @@ public class TAJSUtil {
             long startTime = System.currentTimeMillis();
 
             try {
-                Misc.run(new String[]{file}, CompositeMonitoring.buildFromList(monitoring, analysisLimiter));
+                MiscTajsUtils.run(new String[]{file}, CompositeMonitoring.buildFromList(monitoring, analysisLimiter));
             } catch (AnalysisLimitationException.AnalysisTimeException e) {
                 throw new TimeoutException(e.toString());
             }
 
         } else {
-            Misc.run(new String[]{file}, monitoring);
+            MiscTajsUtils.run(new String[]{file}, monitoring);
         }
 
 
@@ -155,7 +154,7 @@ public class TAJSUtil {
         Analysis a = dk.brics.tajs.Main.init(new String[0], monitoring, null);
         try {
             dk.brics.tajs.Main.run(a);
-            Misc.captureSystemOutput();
+            MiscTajsUtils.captureSystemOutput();
         } catch (AnalysisLimitationException.AnalysisTimeException e) {
             throw new TimeoutException(e.toString());
         }

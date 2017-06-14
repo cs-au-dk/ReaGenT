@@ -37,7 +37,6 @@ public class SeleniumDriver {
         driver.manage().timeouts().implicitlyWait(pageLoadTimeout, TimeUnit.SECONDS);
         driver.manage().timeouts().setScriptTimeout(pageLoadTimeout, TimeUnit.SECONDS);
 
-
         ServerSocket socket = new ServerSocket(0);
 
         int port = socket.getLocalPort();
@@ -51,6 +50,7 @@ public class SeleniumDriver {
         new Thread(() -> {
             try {
                 Thread.sleep(20 * 1000);
+
             } catch (InterruptedException e) {
                 throw new RuntimeException();
             }
@@ -146,7 +146,10 @@ public class SeleniumDriver {
         options.addArguments("window-size=400,400");
 
         options.addArguments("headless");
+        options.addArguments("no-sandbox");
         options.addArguments("disable-gpu");
+        options.addArguments("no-default-browser-check");
+        options.addArguments("user-data-dir=./chromedir");
 
         DesiredCapabilities capabilities = DesiredCapabilities.chrome();
         LoggingPreferences loggingPreferences = new LoggingPreferences();

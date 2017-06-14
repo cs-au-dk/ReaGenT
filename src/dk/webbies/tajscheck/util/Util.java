@@ -74,7 +74,6 @@ public class Util {
                 throw new RuntimeException("Got an error running a node script: " + error);
             }
         }
-
         return inputGobbler.getResult();
     }
 
@@ -400,6 +399,7 @@ public class Util {
     }
 
     public static String readFile(String path) throws IOException {
+        System.out.println("Reading " + path + "(" + new File(path).getAbsolutePath() + ")");
         return new String(Files.readAllBytes(Paths.get(path)));
     }
 
@@ -408,6 +408,7 @@ public class Util {
     }
 
     private static void writeFile(String filename, String data, int tries) throws IOException {
+        System.out.println("Writing into " + filename + "(" + new File(filename).getAbsolutePath() + ")");
         try {
             BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(filename)));
             try {

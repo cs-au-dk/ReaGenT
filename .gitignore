@@ -14,6 +14,7 @@ build/
 experiment.csv
 junitvmwatcher*.properties
 TEST-*.txt
+chromedir
 
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template
