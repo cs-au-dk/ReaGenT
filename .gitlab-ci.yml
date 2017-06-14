@@ -64,11 +64,22 @@ test_various:
     paths:
     - builds/TSTAJS/TajsCheck/build/reports
 
-test_dynamic:
+test_dynamic_benchmarks:
   <<: *cache_defs
   stage: unit_tests
   script:
-  - gradle :test -i --tests "dk.webbies.tajscheck.test.dynamic.*"
+  - gradle :test -i --tests "dk.webbies.tajscheck.test.dynamic.RunBenchmarks"
+  - mv build/reports/tests build/reports/test_dynamic
+  artifacts:
+    expire_in: 4 week
+    paths:
+    - builds/TSTAJS/TajsCheck/build/reports
+
+test_dynamic_unit:
+  <<: *cache_defs
+  stage: unit_tests
+  script:
+  - gradle :test -i --tests "dk.webbies.tajscheck.test.dynamic.UnitTests"
   - mv build/reports/tests build/reports/test_dynamic
   artifacts:
     expire_in: 4 week
