@@ -75,7 +75,7 @@ public final class CheckOptions {
                 .setCombineNullAndUndefined(true);
     }
 
-    public static CheckOptions.Builder monitorUnkownPropertyAccesses(CheckOptions.Builder options) {
+    public static CheckOptions.Builder monitorUnknownPropertyAccesses(CheckOptions.Builder options) {
         return options
                 .setMonitorUnkownPropertyAccesses(true);
     }
