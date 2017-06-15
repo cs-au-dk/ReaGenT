@@ -50,7 +50,6 @@ public class SeleniumDriver {
         new Thread(() -> {
             try {
                 Thread.sleep(20 * 1000);
-
             } catch (InterruptedException e) {
                 throw new RuntimeException();
             }
@@ -65,9 +64,6 @@ public class SeleniumDriver {
         get("http://127.0.0.1:" + port); // Making a blocking call, that makes sure that my server is up and running.
 
         try {
-            if (!socket.isBound() || socket.isClosed()) {
-                System.out.println();
-            }
             driver.get("http://127.0.0.1:" + port);
             gotPage.set(true);
         } catch (org.openqa.selenium.TimeoutException e) {

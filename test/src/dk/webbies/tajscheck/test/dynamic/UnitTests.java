@@ -79,20 +79,7 @@ public class UnitTests {
 
         Main.writeFullDriver(bench, new ExecutionRecording(null, seed));
 
-        String result = Main.runBenchmark(bench);
-
-        System.out.println("Result of running driver: ");
-        System.out.println(result);
-
-        RunResult parsed = OutputParser.parseDriverResult(result);
-        for (TypeError error : parsed.typeErrors) {
-            System.out.println(error);
-        }
-        for (String error : parsed.errors) {
-            System.out.println(error);
-        }
-
-        return result;
+        return Main.runBenchmark(bench);
     }
 
     private static void sanityCheck(Benchmark bench) throws Exception {
@@ -635,8 +622,6 @@ public class UnitTests {
     public void testIfDriverIsTooBig() throws Exception {
         String driver = Main.generateFullDriver(benchFromFolder("unnecessaryBigDriver")).getRight();
 
-        System.out.println(driver);
-
         assertThat(driver, not(containsString("\"module.b2World.new().RayCastAll().<>.[numberIndexer].GetDensity()\"")));
 
     }
@@ -743,6 +728,8 @@ public class UnitTests {
         // Jeg har en mistanke om at det skyldes min "kombiner generics med samme constraint" i BenchmarkInfo.
         sanityCheck(benchFromFolder("complexSanityCheck21"), NODE);
     }
+
+    // TODO: When calling a signature with optional arguments, make sure the number of arguments is actually correct. (as oposed to calling stuff with undefined)
 
     @Test
     public void nodeList() throws Exception {
