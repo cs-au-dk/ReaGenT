@@ -249,13 +249,13 @@ public class Main {
 
         genCoverageReport(coverageResult, bench);
 
-        CoverageResult testFileCoverage = result.get(testFileName.substring(testFileName.lastIndexOf('/') + 1));
-        if (testFileCoverage == null) {
-            System.out.println("result.keySet() = " + result.keySet());
-            System.out.println("testFileName = " + testFileName);
-            throw new NullPointerException();
+        String testFileLastPart = testFileName.substring(testFileName.lastIndexOf('/') + 1);
+        for (Map.Entry<String, CoverageResult> entry : result.entrySet()) {
+            if (entry.getKey().endsWith(testFileLastPart)) {
+                return entry.getValue().split(splitRules);
+            }
         }
-        return testFileCoverage.split(splitRules);
+        throw new NullPointerException();
     }
 
     private static void genCoverageReport(String coverageResult, Benchmark bench) throws IOException {
