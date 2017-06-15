@@ -118,8 +118,6 @@ public class Main {
     public static String getRequirePath(Benchmark bench) {
         Path jsPath = Paths.get(new File(bench.jsFile).getAbsolutePath());
         Path relativeJsPath = jsPath.getParent().relativize(jsPath);
-        //int lastIndex = jsPath.lastIndexOf(File.pathSeparator);
-        //String jsFile = jsPath.substring(lastIndex + 1, jsPath.length());
 
         return "./" + relativeJsPath;
     }
@@ -251,7 +249,13 @@ public class Main {
 
         genCoverageReport(coverageResult, bench);
 
-        return result.get(testFileName.substring(testFileName.lastIndexOf('/') + 1)).split(splitRules);
+        CoverageResult testFileCoverage = result.get(testFileName.substring(testFileName.lastIndexOf('/') + 1));
+        if (testFileCoverage == null) {
+            System.out.println("result.keySet() = " + result.keySet());
+            System.out.println("testFileName = " + testFileName);
+            throw new NullPointerException();
+        }
+        return testFileCoverage.split(splitRules);
     }
 
     private static void genCoverageReport(String coverageResult, Benchmark bench) throws IOException {
