@@ -51,6 +51,21 @@ public class Util {
         if (timeout > 0) {
             try {
                 waitForProcess(process, timeout);
+
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException ignored) { }
+                    try {
+                        if (process.isAlive()) {
+                            process.destroyForcibly();
+                            process.destroy();
+                        }
+                    } catch (Error ignored) { }
+                    latch.countDown();
+                    latch.countDown();
+                }).start();
+
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -68,13 +83,13 @@ public class Util {
             error = String.join("\n", Arrays.stream(error.split("\n")).filter(str -> !str.contains("Initializers are not allowed in ambient contexts")).collect(Collectors.toList()));
         }
 
-        if (!error.isEmpty()) {
+        if (error != null && !error.isEmpty()) {
             System.err.println("Error running node script: " + error);
             if (isDeltaDebugging && args.contains("ts-spec-reader")) {
                 throw new RuntimeException("Got an error running a node script: " + error);
             }
         }
-        return inputGobbler.getResult();
+        return inputGobbler.getResult() == null ? "" : inputGobbler.getResult();
     }
 
     public static boolean isDeltaDebugging = false;

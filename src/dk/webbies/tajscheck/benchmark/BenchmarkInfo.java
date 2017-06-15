@@ -5,7 +5,6 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.Util;
-import sun.net.www.content.text.Generic;
 
 import java.util.*;
 import java.util.function.Supplier;
