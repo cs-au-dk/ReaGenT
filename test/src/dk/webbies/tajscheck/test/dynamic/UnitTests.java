@@ -98,7 +98,7 @@ public class UnitTests {
             System.out.println(typeError);
         }
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     private static ParseResultTester expect(RunResult result) {
@@ -235,7 +235,7 @@ public class UnitTests {
     public void everyThingGoesRight() throws Exception {
         RunResult result = run("everythingIsRight", "aSeed");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     // TODO: Some test that a rest-recording can actually play. (One recording finds an error, another recording doesn't, same declaration file and implementation).
@@ -266,7 +266,7 @@ public class UnitTests {
         RunResult result = run("optionalParameters");
 
         expect(result)
-                .forPath("module.foo(boolean, undefined, undefined)", "module.foo(boolean, string, undefined)")
+                .forPath("module.foo(boolean)", "module.foo(boolean, string)")
                 .expected("number")
                 .got(TYPEOF, "undefined");
     }
@@ -275,7 +275,7 @@ public class UnitTests {
     public void simpleOverloads() throws Exception {
         RunResult result = run("simpleOverloads");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
@@ -392,7 +392,8 @@ public class UnitTests {
     public void arrayTypeCorrect() throws Exception {
         RunResult result = run("correctArrayType", "bar");
 
-        assertThat(result.typeErrors.size() + result.errors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
+        assertThat(result.errors, is(empty()));
 
     }
 
@@ -528,24 +529,24 @@ public class UnitTests {
     public void differentSizeOverloads() throws Exception {
         RunResult result = run("differentSizeOverloads");
 
-        assertThat(result.typeErrors.size(), is(0));
-        assertThat(result.errors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
+        assertThat(result.errors, is(empty()));
     }
 
     @Test
     public void complexOverloads() throws Exception {
         RunResult result = run("complexOverloads");
 
-        assertThat(result.typeErrors.size(), is(0));
-        assertThat(result.errors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
+        assertThat(result.errors, is(empty()));
     }
 
     @Test
     public void overloadsWithOptionalParameters() throws Exception {
         RunResult result = run("overloadsWithOptionalParameters");
 
-        assertThat(result.typeErrors.size(), is(0));
-        assertThat(result.errors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
+        assertThat(result.errors, is(empty()));
     }
 
     @Test
@@ -598,7 +599,7 @@ public class UnitTests {
     public void testRestArgs() throws Exception {
         RunResult result = run("testRestArgs");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
 
     }
 
@@ -606,16 +607,7 @@ public class UnitTests {
     public void propertyWithUnderscore() throws Exception {
         RunResult result = run("propertyWithUnderscore");
 
-        assertThat(result.typeErrors.size(), is(0));
-    }
-
-    @Test
-    public void myFixedMomentHasNoError() throws Exception {
-        Benchmark benchmark = new Benchmark("fixedMoment", ParseDeclaration.Environment.ES5Core, "test/benchmarks/fixedMoment/moment.js", "test/benchmarks/fixedMoment/moment.d.ts", NODE, options().setSplitUnions(false).build()).withOptions(CheckOptions::errorFindingOptions);
-
-        RunResult result = run(benchmark, null);
-
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
@@ -640,7 +632,7 @@ public class UnitTests {
     public void genericClass4() throws Exception {
         RunResult result = run("genericClass4");
 
-        assertThat(result.errors.size(), is(0));
+        assertThat(result.errors, is(empty()));
 
     }
 
@@ -774,8 +766,8 @@ public class UnitTests {
     public void classesAndNamespaces() throws Exception {
         RunResult result = run("classesAndNamespaces");
 
-        assertThat(result.typeErrors.size(), is(0));
-        assertThat(result.errors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
+        assertThat(result.errors, is(empty()));
     }
 
     @Test
@@ -878,21 +870,21 @@ public class UnitTests {
     public void extendsArray() throws Exception {
         RunResult result = run("extendsArray");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
     public void extendsArray2() throws Exception {
         RunResult result = run("extendsArray2");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
     public void staticFieldsInheritedInClass() throws Exception {
         RunResult result = run("staticFieldsInheritedInClass");
 
-        assertThat(result.typeErrors.size(), is(0)); // It actually contains an error, according to the TypeScript language, it is just an error we choose not to check for.
+        assertThat(result.typeErrors, is(empty())); // It actually contains an error, according to the TypeScript language, it is just an error we choose not to check for.
     }
 
     @Test
@@ -946,7 +938,7 @@ public class UnitTests {
     public void intersectionWithFunction() throws Exception {
         RunResult result = run(benchFromFolder("intersectionWithFunction", options().setConstructAllTypes(true).build()).withRunMethod(BOOTSTRAP));
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
         assertThat(result.errors, everyItem(is(equalTo("RuntimeError: Cannot construct this IntersectionType")))); // <- this happens, it is ok, i cannot at runtime construct a type which is the intersection of two types.
     }
 
@@ -966,7 +958,7 @@ public class UnitTests {
     public void extendsArray4() throws Exception {
         RunResult result = run("extendsArray4");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
@@ -1033,7 +1025,7 @@ public class UnitTests {
     public void classAndClassInstances() throws Exception {
         RunResult result = run("classAndClassInstances");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
@@ -1066,14 +1058,14 @@ public class UnitTests {
     public void undefinedOnObject() throws Exception {
         RunResult result = run("undefinedOnObject");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
     public void namespacesAndClassWithNestedClass() throws Exception {
         RunResult result = run("namespacesAndClassWithNestedClass");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
 
     }
 
@@ -1081,7 +1073,7 @@ public class UnitTests {
     public void complexGenerics2() throws Exception {
         RunResult result = run("complexGenerics2");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
 
     }
 
@@ -1157,21 +1149,21 @@ public class UnitTests {
     public void booleans() throws Exception {
         RunResult result = run("booleans");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
     public void tupleSizes() throws Exception {
         RunResult result = run("tupleSizes");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
     public void complexThisTypes3() throws Exception {
         RunResult result = run("complexThisTypes3", options().setCheckDepthUseValue(2).build());
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
 
     }
 
@@ -1240,7 +1232,7 @@ public class UnitTests {
     public void canWritePrimitives() throws Exception {
         RunResult resultNoWrite = run("canWritePrimitives", options().setWritePrimitives(false).build());
 
-        assertThat(resultNoWrite.typeErrors.size(), is(0));
+        assertThat(resultNoWrite.typeErrors, is(empty()));
 
         RunResult resultWithWrite = run("canWritePrimitives", options().setWritePrimitives(true).build());
 
@@ -1256,7 +1248,7 @@ public class UnitTests {
     public void canWriteComplex() throws Exception {
         RunResult resultNoWrite = run("canWriteComplex");
 
-        assertThat(resultNoWrite.typeErrors.size(), is(0));
+        assertThat(resultNoWrite.typeErrors, is(empty()));
 
         boolean hadAnError = false;
         for (int i = 0; i < 20; i++) {
@@ -1275,7 +1267,7 @@ public class UnitTests {
     public void noIterations() throws Exception {
         RunResult result = run("noIterations", options().setMaxIterationsToRun(0).build());
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
@@ -1284,7 +1276,7 @@ public class UnitTests {
 
         RunResult result = run(bench);
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
 
         Map<String, CoverageResult> coverage = Main.genCoverage(bench);
 
@@ -1301,7 +1293,7 @@ public class UnitTests {
 
         RunResult result = run(bench);
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
 
         Map<String, CoverageResult> coverage = Main.genCoverage(bench);
 
@@ -1319,7 +1311,7 @@ public class UnitTests {
 
         RunResult result = run(bench);
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
 
         Map<String, CoverageResult> coverage = Main.genCoverage(bench);
 
@@ -1398,7 +1390,7 @@ public class UnitTests {
     public void firstMatchPolicy() throws Exception {
         RunResult result = run("firstMatchPolicy");
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     /*
@@ -1414,7 +1406,7 @@ public class UnitTests {
         // Not combining, error remain unfound
         result = run("genericsSplit", options().setCombineAllUnboundGenerics(false).build());
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
 
     }
 
@@ -1460,7 +1452,7 @@ public class UnitTests {
     public void genericExtendMethod() throws Exception {
         RunResult result = run("genericExtendMethod", options().setCombineAllUnboundGenerics(false).build());
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
 
     }
 
@@ -1468,7 +1460,7 @@ public class UnitTests {
     public void basicMemomizeExample() throws Exception {
         RunResult result = run(benchFromFolder("basicMemomizeExample"));
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
@@ -1487,7 +1479,7 @@ public class UnitTests {
 
         RunResult result = run(bench);
 
-        assertThat(result.typeErrors.size(), is(0));
+        assertThat(result.typeErrors, is(empty()));
     }
 
     @Test
@@ -1573,5 +1565,20 @@ public class UnitTests {
 
         assertThat(result.errors, not(hasItem(containsString("GetLocalVector"))));
 
+    }
+
+    // TODO: Make a second test with rest-args added.
+    @Test
+    public void optionalDoesNotMeanUndefined() throws Exception {
+        RunResult result = run("optionalDoesNotMeanUndefined", "foo");
+
+        assertThat(result.typeErrors, is(empty()));
+    }
+
+    @Test
+    public void optionalDoesNotMeanUndefinedWithRestArg() throws Exception {
+        RunResult result = run("optionalDoesNotMeanUndefinedWithRestArg", "foo");
+
+        assertThat(result.typeErrors, is(empty()));
     }
 }

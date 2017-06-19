@@ -8,9 +8,10 @@ import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
-import dk.webbies.tajscheck.util.IdentityHashSet;
+import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
+import jnr.ffi.Union;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -276,11 +277,67 @@ public class TypesUtil {
         return new ArrayList<>();
     }
 
-    public static List<Signature> splitSignatures(List<Signature> signatures) {
-        return signatures.stream().map(TypesUtil::splitSignature).reduce(new ArrayList<>(), Util::reduceList);
+    public static List<Signature> splitOptionalSignatures(List<Signature> signatures) {
+        return signatures.stream().map(TypesUtil::splitOptionalSignature).reduce(new ArrayList<>(), Util::reduceList);
     }
 
-    private static List<Signature> splitSignature(Signature signature) {
+    private static List<Signature> splitOptionalSignature(Signature signature) {
+        if (signature.getMinArgumentCount() == signature.getParameters().size()) {
+            return Collections.singletonList(signature);
+        }
+
+        if (signature.isHasRestParameter() && signature.getMinArgumentCount() + 1 == signature.getParameters().size()) {
+            return Collections.singletonList(signature);
+        }
+
+        List<Signature> result = new ArrayList<>();
+
+        Signature withNoOptional = cloneSignature(signature);
+        withNoOptional.setHasRestParameter(false);
+        result.add(withNoOptional);
+        for (int i = signature.getParameters().size() - 1; i >= signature.getMinArgumentCount(); i--) {
+            withNoOptional.getParameters().remove(i);
+        }
+
+        assert withNoOptional.getParameters().size() == withNoOptional.getMinArgumentCount();
+
+        Signature withOptional = cloneSignature(signature);
+
+        Signature.Parameter optionalParameter = withOptional.getParameters().get(signature.getMinArgumentCount());
+
+        if (!(optionalParameter.getType() instanceof SimpleType && ((SimpleType) optionalParameter.getType()).getKind() == SimpleTypeKind.Any)) {
+            assert optionalParameter.getType() instanceof UnionType;
+            optionalParameter.setType(removeUndef((UnionType) optionalParameter.getType()));
+        }
+
+        withOptional.setMinArgumentCount(withOptional.getMinArgumentCount() + 1);
+
+        result.addAll(splitOptionalSignature(withOptional));
+
+        return result;
+    }
+
+    private static Type removeUndef(UnionType union) {
+        ArrayList<Type> elements = new ArrayList<>(union.getElements());
+        union = new UnionType();
+        union.setElements(elements);
+
+        assert union.getElements().stream().anyMatch(sub -> sub instanceof SimpleType && ((SimpleType) sub).getKind() == SimpleTypeKind.Undefined);
+
+        union.setElements(union.getElements().stream().filter(sub -> !(sub instanceof SimpleType && ((SimpleType) sub).getKind() == SimpleTypeKind.Undefined)).collect(Collectors.toList()));
+
+        if (union.getElements().size() == 1) {
+            return union.getElements().iterator().next();
+        }
+
+        return union;
+    }
+
+    public static List<Signature> splitUnionsInSignatures(List<Signature> signatures) {
+        return signatures.stream().map(TypesUtil::splitUnionsInSignature).reduce(new ArrayList<>(), Util::reduceList);
+    }
+
+    private static List<Signature> splitUnionsInSignature(Signature signature) {
         for (int i = 0; i < signature.getParameters().size(); i++) {
             Signature.Parameter parameter = signature.getParameters().get(i);
             if (parameter.getType() instanceof UnionType) {
@@ -296,7 +353,7 @@ public class TypesUtil {
 
                     subSignature.getParameters().set(i, newParameter);
 
-                    result.addAll(splitSignature(subSignature));
+                    result.addAll(splitUnionsInSignature(subSignature));
                 }
                 return result;
             }

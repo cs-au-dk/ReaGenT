@@ -141,16 +141,28 @@ public class BenchmarkInfo {
     private static void applyTypeFixes(Benchmark bench, Map<Type, String> typeNames, List<Type> typesToFix, FreeGenericsFinder freeGenericsFinder) {
         List<Type> allTypes = new ArrayList<>(TypesUtil.collectAllTypes(typesToFix));
         for (Type type : allTypes) {
+
+            // Splitting optional arguments in signature
+            if (type instanceof InterfaceType) {
+                InterfaceType inter = (InterfaceType) type;
+                inter.setDeclaredCallSignatures(TypesUtil.splitOptionalSignatures(inter.getDeclaredCallSignatures()));
+                inter.setDeclaredConstructSignatures(TypesUtil.splitOptionalSignatures(inter.getDeclaredConstructSignatures()));
+            } else if (type instanceof GenericType) {
+                GenericType inter = (GenericType) type;
+                inter.setDeclaredCallSignatures(TypesUtil.splitOptionalSignatures(inter.getDeclaredCallSignatures()));
+                inter.setDeclaredConstructSignatures(TypesUtil.splitOptionalSignatures(inter.getDeclaredConstructSignatures()));
+            }
+
             // splitting unions
             if (bench.options.splitUnions) {
                 if (type instanceof InterfaceType) {
                     InterfaceType inter = (InterfaceType) type;
-                    inter.setDeclaredCallSignatures(TypesUtil.splitSignatures(inter.getDeclaredCallSignatures()));
-                    inter.setDeclaredConstructSignatures(TypesUtil.splitSignatures(inter.getDeclaredConstructSignatures()));
+                    inter.setDeclaredCallSignatures(TypesUtil.splitUnionsInSignatures(inter.getDeclaredCallSignatures()));
+                    inter.setDeclaredConstructSignatures(TypesUtil.splitUnionsInSignatures(inter.getDeclaredConstructSignatures()));
                 } else if (type instanceof GenericType) {
                     GenericType inter = (GenericType) type;
-                    inter.setDeclaredCallSignatures(TypesUtil.splitSignatures(inter.getDeclaredCallSignatures()));
-                    inter.setDeclaredConstructSignatures(TypesUtil.splitSignatures(inter.getDeclaredConstructSignatures()));
+                    inter.setDeclaredCallSignatures(TypesUtil.splitUnionsInSignatures(inter.getDeclaredCallSignatures()));
+                    inter.setDeclaredConstructSignatures(TypesUtil.splitUnionsInSignatures(inter.getDeclaredConstructSignatures()));
                 }
             }
 

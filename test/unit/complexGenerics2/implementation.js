@@ -16,7 +16,7 @@ var Bluebird = function (value) {
 };
 Bluebird.each = function () {
     return new Bluebird([]);
-}
+};
 
 module.exports = {
     Bluebird: Bluebird

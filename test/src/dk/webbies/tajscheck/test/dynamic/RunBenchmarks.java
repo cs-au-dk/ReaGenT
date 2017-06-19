@@ -13,6 +13,7 @@ import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.test.TestParsing;
 import dk.webbies.tajscheck.testcreator.TestCreator;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -195,11 +196,13 @@ public class RunBenchmarks {
     }
 
     @Test
+    @Ignore
     public void genFullDriver() throws Exception {
         Main.writeFullDriver(benchmark);
     }
 
     @Test
+    @Ignore
     public void runSmallDrivers() throws Exception {
         OutputParser.RunResult result = OutputParser.combine(RunSmall.runSmallDrivers(benchmark, RunSmall.runDriver(benchmark), 3, Integer.MAX_VALUE));
 
@@ -209,6 +212,7 @@ public class RunBenchmarks {
     }
 
     @Test
+    @Ignore
     public void runFullDriver() throws Exception {
         // Write the driver
         Benchmark b = benchmark
@@ -241,6 +245,7 @@ public class RunBenchmarks {
     }
 
     @Test
+    @Ignore
     public void coverage() throws Exception {
         if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts", "backbone.d.ts", "three.d.ts").anyMatch(benchmark.dTSFile::contains)) {
             return; // Too big, node runs out of memory generating the instrumented version.
@@ -274,7 +279,6 @@ public class RunBenchmarks {
         Main.writeFullDriver(benchmark); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");
         String output = Main.runBenchmark(benchmark);
-        System.out.println(output);
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 
         for (OutputParser.TypeError typeError : result.typeErrors) {
