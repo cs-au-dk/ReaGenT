@@ -305,8 +305,7 @@ public class TypesUtil {
 
         Signature.Parameter optionalParameter = withOptional.getParameters().get(signature.getMinArgumentCount());
 
-        if (!(optionalParameter.getType() instanceof SimpleType && ((SimpleType) optionalParameter.getType()).getKind() == SimpleTypeKind.Any)) {
-            assert optionalParameter.getType() instanceof UnionType;
+        if (optionalParameter.getType() instanceof UnionType) {
             optionalParameter.setType(removeUndef((UnionType) optionalParameter.getType()));
         }
 
@@ -329,6 +328,8 @@ public class TypesUtil {
         if (union.getElements().size() == 1) {
             return union.getElements().iterator().next();
         }
+
+        assert !union.getElements().isEmpty();
 
         return union;
     }

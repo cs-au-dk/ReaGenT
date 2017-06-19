@@ -1581,4 +1581,9 @@ public class UnitTests {
 
         assertThat(result.typeErrors, is(empty()));
     }
+
+    @Test
+    public void optionalParamsSmokeTest() throws Exception {
+        Main.writeFullDriver(benchFromFolder("optionalParamsSmokeTest").withRunMethod(BOOTSTRAP));
+    }
 }
