@@ -5,10 +5,7 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
-import dk.webbies.tajscheck.test.tajs.AssertionResult;
-import dk.webbies.tajscheck.test.tajs.TAJSUtil;
 import dk.webbies.tajscheck.util.MinimizeArray;
-import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
@@ -19,8 +16,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.BOOTSTRAP;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Created by erik1 on 10-01-2017.
@@ -182,15 +177,14 @@ public class DeltaDebug {
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
         Util.alwaysRecreate = false;
-        Benchmark bench = RunBenchmarks.benchmarks.get("q").withOptions(options -> options.setOnlyInitialize(true)).useTAJS();
+        Benchmark bench = RunBenchmarks.benchmarks.get("q").withOptions(options -> options.setOnlyInitialize(true));
 //        Benchmark bench = RunBenchmarks.benchmarks.get("Redux");
 //
         String file = bench.jsFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                MultiMap<String, AssertionResult> result = TAJSUtil.run(bench.useTAJS().withOptions(options -> options.setOnlyInitialize(true)), 60);
-                return result.isEmpty();
+                return testHasError(bench, "foo");
             } catch (NullPointerException e) {
                 return false;
             } catch (RuntimeException e) {

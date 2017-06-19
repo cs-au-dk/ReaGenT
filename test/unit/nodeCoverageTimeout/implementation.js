@@ -7,7 +7,7 @@ declare module async {
 var counter = 0;
 function stop() {
     counter++;
-    if (counter > 1000) {
+    if (counter > 10) {
         while(true) {
             // Do nothing.
         }

@@ -12,7 +12,6 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tajscheck.test.tajs.AssertionResult.BooleanResult.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
@@ -51,7 +50,11 @@ public class RunAllDynamicUnitTests {
                 .filter(Util.not(blackList::contains))
                 .filter(folderName ->
                     new File(UnitTests.benchFromFolder(folderName).dTSFile).exists()
-        ).collect(Collectors.toList());
+                )
+                .filter(folderName ->
+                    new File(UnitTests.benchFromFolder(folderName).jsFile).exists()
+                )
+                .collect(Collectors.toList());
     }
 
     @Test
@@ -59,23 +62,22 @@ public class RunAllDynamicUnitTests {
         if (!new File(UnitTests.benchFromFolder(folderName).jsFile).exists()) {
             return;
         }
-        MultiMap<String, AssertionResult> result = TAJSUnitTests.run("../unit/" + folderName);
 
-        System.out.println(TAJSUtil.prettyResult(result, (r) -> true));
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(UnitTests.benchFromFolder(folderName), 60);
+
+        System.out.println(result);
+
+
     }
 
     @Test
     public void sanityCheckAnalysis() throws Exception {
-        // Trying to bootstrap the library with itself, here it is very spurious if any warning is emitted.
+        Benchmark bench = UnitTests.benchFromFolder(folderName).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setUseAssertTypeFunctions(false).setCheckDepthReport(options.checkDepthUseValue));
 
-        Benchmark bench = UnitTests.benchFromFolder(folderName).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setUseAssertTypeFunctions(false).setCheckDepthReport(options.checkDepthUseValue)).useTAJS();
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 60);
 
-        MultiMap<String, AssertionResult> result = TAJSUtil.run(bench, 60);
-
-        for (Map.Entry<String, Collection<AssertionResult>> entry : result.asMap().entrySet()) {
-            for (AssertionResult tajsResult : entry.getValue()) {
-                assertThat(tajsResult.result, is(not(DEFINITELY_FALSE)));
-            }
-        }
+        System.out.println(result);
     }
+
+
 }

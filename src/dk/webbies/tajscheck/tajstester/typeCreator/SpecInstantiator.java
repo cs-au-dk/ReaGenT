@@ -7,6 +7,7 @@ import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.ObjectLabel;
 import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.util.AnalysisException;
+import dk.webbies.tajscheck.TypeWithContext;
 import org.apache.log4j.Logger;
 
 import java.util.*;
@@ -36,8 +37,6 @@ public class SpecInstantiator {
     private final Effects effects;
 
     // misc. paths that we choose to ignore
-    private final Set<List<String>> ignoredPaths;
-
     private Map<Type, Value> valueCache;
 
     private Map<Type, ObjectLabel> labelCache;
@@ -47,22 +46,11 @@ public class SpecInstantiator {
         this.visitor = new InstantiatorVisitor();
         this.objectLabelMaker = new ObjectLabelMakerVisitor();
         this.objectLabelKindDecider = new ObjectLabelKindDecider();
-        this.canonicalHostObjectLabelPaths = new CanonicalHostObjectLabelPaths(c.getState().getStore().keySet());
+        this.canonicalHostObjectLabelPaths = new CanonicalHostObjectLabelPaths(c.getState().getStore().keySet()); // TODO: See what is inside this thing.
         this.labelCache = newMap();
         this.valueCache = newMap();
         this.processing = newSet();
         this.effects = new Effects(c);
-        this.ignoredPaths = newSet();
-
-        // TODO @esbena: consider these cases
-        ignoredPaths.add(Arrays.asList("<the global object>", "Reflect"));
-
-        // Added by host function sources
-        ignoredPaths.add(Arrays.asList("<the global object>", "Map"));
-        ignoredPaths.add(Arrays.asList("<the global object>", "Set"));
-        ignoredPaths.add(Arrays.asList("<the global object>", "WeakMap"));
-        ignoredPaths.add(Arrays.asList("<the global object>", "WeakSet"));
-        ignoredPaths.add(Arrays.asList("<the global object>", "Object", "assign"));
 
         initializeLabelsCacheWithCanonicals();
     }
@@ -72,7 +60,17 @@ public class SpecInstantiator {
      */
     private void initializeLabelsCacheWithCanonicals() {
         canonicalHostObjectLabelPaths.getPaths().forEach(p -> {
-                    if(singletonList("print").equals(p) || singletonList("alert").equals(p) || singletonList("unescape").equals(p) || singletonList("escape").equals(p)|| p.get(p.size() - 1).equals("toString")){
+                    if (singletonList("print").equals(p) || singletonList("alert").equals(p) || singletonList("unescape").equals(p) || singletonList("escape").equals(p) || p.get(p.size() - 1).equals("toString")) {
+                        return;
+                    }
+
+                    if (!p.isEmpty() && p.iterator().next().equals("Symbol")) {
+                        return;
+                    }
+                    if (p.get(p.size() - 1).endsWith("instances")) {
+                        return;
+                    }
+                    if (Arrays.asList("Object", "module").equals(p)) {
                         return;
                     }
 
@@ -88,9 +86,9 @@ public class SpecInstantiator {
     }
 
     private Type resolveType(List<String> path) {
-        if(singletonList(globalObjectPath).equals(path)){
+        if (singletonList(globalObjectPath).equals(path)) {
             return global;
-        };
+        }
         return resolveType(global, path);
     }
 
@@ -215,10 +213,6 @@ public class SpecInstantiator {
         System.out.println(sb.toString());
     }
 
-    public void instantiateGlobal() {
-        global.accept(visitor, new MiscInfo(globalObjectPath));
-    }
-
     private ObjectLabel getObjectLabel(Type type, MiscInfo info) {
         if (!labelCache.containsKey(type)) {
             // (this call should not lead to recursion)
@@ -258,6 +252,12 @@ public class SpecInstantiator {
             info.path.pop();
         }
         return valueCache.get(type);
+    }
+
+    public Value createValue(TypeWithContext type, String path) {
+        MiscInfo misc = new MiscInfo(Arrays.asList(path.split("\\.")));
+        // TODO: Make sure natives are not re-created.
+        return instantiate(type.getType(), misc, null); // TODO: TypeContext is currently ignored.
     }
 
     private class ObjectLabelMakerVisitor implements TypeVisitorWithArgument<ObjectLabel, MiscInfo> {
@@ -407,9 +407,6 @@ public class SpecInstantiator {
             List<String> fullPath = newList(info.path);
 
             fullPath.add(propertyName);
-            if (ignoredPaths.contains(fullPath)) {
-                return;
-            }
             Value value = SpecInstantiator.this.instantiate(propertyType, info, propertyName);
 
             effects.writeProperty(label, propertyName, value);
@@ -498,7 +495,7 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(NumberLiteral t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
+            return Value.makeNum(t.getValue());
         }
 
         @Override
@@ -532,9 +529,14 @@ public class SpecInstantiator {
 
         public final Stack<String> path;
 
-        public MiscInfo(String initialPath) {
+        MiscInfo(String initialPath) {
             path = new Stack<>();
             path.push(initialPath);
+        }
+
+        MiscInfo(Collection<String> initialPath) {
+            path = new Stack<>();
+            path.addAll(initialPath);
         }
     }
 
@@ -554,9 +556,9 @@ public class SpecInstantiator {
         public ObjectLabel.Kind visit(GenericType t) {
             final ObjectLabel.Kind kind;
             if (t.getDeclaredCallSignatures().isEmpty() && t.getDeclaredConstructSignatures().isEmpty()) {
-                if(t.getDeclaredProperties().keySet().containsAll(Arrays.asList("slice", "pop", "push", "forEach", "filter", "concat"))){
+                if (t.getDeclaredProperties().keySet().containsAll(Arrays.asList("slice", "pop", "push", "forEach", "filter", "concat"))) {
                     kind = ObjectLabel.Kind.ARRAY; // TODO make this less hacky
-                }else {
+                } else {
                     kind = ObjectLabel.Kind.OBJECT;
                 }
             } else {

@@ -20,6 +20,9 @@ public class CanonicalHostObjectLabelPaths {
         for (final ObjectLabel label : labels) {
             // XXX this only works because TAJS by convention makes canonical toString values of the HostObject enums (most of them at least)!
             // e.g. "Object.prototype.propertyIsEnumerable" -> ["Object", "prototype", "propertyIsEnumerable"]
+            if (label.getHostObject() == null) {
+                continue;
+            }
             String pathString = label.getHostObject().toString();
             if (pathString.startsWith("TAJS")) {
                 continue;

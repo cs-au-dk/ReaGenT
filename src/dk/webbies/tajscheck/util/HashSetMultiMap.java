@@ -115,4 +115,8 @@ public class HashSetMultiMap<K, T> implements MultiMap<K, T> {
             }
         };
     }
+
+    public boolean contains(K key, T value) {
+        return get(key).contains(value);
+    }
 }

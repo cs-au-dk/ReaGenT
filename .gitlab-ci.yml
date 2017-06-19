@@ -85,17 +85,6 @@ test_dynamic_unit:
     expire_in: 4 week
     paths:
     - builds/TSTAJS/TajsCheck/build/reports
-  
-test_tajs:unit_no_driver:
-  <<: *cache_defs
-  stage: unit_tests
-  script:
-  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.TAJSNoDriverUnitTests"
-  - mv build/reports/tests build/reports/test_tajs_unit_no_driver
-  artifacts:
-    expire_in: 4 week
-    paths:
-    - builds/TSTAJS/TajsCheck/build/reports
 
 test_tajs:unit:
   <<: *cache_defs
@@ -115,17 +104,6 @@ test_tajs:benchmarks:
   script:
   - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks"
   - mv build/reports/tests build/reports/test_tajs_benchmarks
-  artifacts:
-    expire_in: 4 week
-    paths:
-    - builds/TSTAJS/TajsCheck/build/reports
-
-test_tajs:benchmarks_small:
-  <<: *cache_defs
-  stage: unit_tests
-  script:
-  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarksSmall"
-  - mv build/reports/tests build/reports/test_tajs_benchmarks_small
   artifacts:
     expire_in: 4 week
     paths:

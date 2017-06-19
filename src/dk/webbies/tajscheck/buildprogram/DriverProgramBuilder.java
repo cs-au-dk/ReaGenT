@@ -72,11 +72,7 @@ public class DriverProgramBuilder {
 
         program.add(variable("failOnAny", bool(info.options.failOnAny)));
 
-        if (info.bench.options.useTAJS) {
-            program.add(AstBuilder.programFromFile(DriverProgramBuilder.class.getResource("/prelude_tajs.js")));
-        } else {
-            program.add(AstBuilder.programFromFile(DriverProgramBuilder.class.getResource("/prelude.js")));
-        }
+        program.add(AstBuilder.programFromFile(DriverProgramBuilder.class.getResource("/prelude.js")));
 
         program.add(block(typeCreator.getValueVariableDeclarationList()));
 
@@ -148,11 +144,7 @@ public class DriverProgramBuilder {
                 ))
         ))));
 
-        if (info.bench.options.useTAJS) {
-            program.add(AstBuilder.programFromFile(DriverProgramBuilder.class.getResource("/dumb_tajs.js")));
-        } else {
-            program.add(AstBuilder.programFromFile(DriverProgramBuilder.class.getResource("/dumb.js")));
-        }
+        program.add(AstBuilder.programFromFile(DriverProgramBuilder.class.getResource("/dumb.js")));
 
         if (info.bench.run_method == Benchmark.RUN_METHOD.BROWSER) {
             List<Statement> scripts = new ArrayList<>();
@@ -318,7 +310,6 @@ public class DriverProgramBuilder {
 
         return Util.concat(
                 testCode,
-                info.bench.options.useTAJS && product != null ? new CheckUpperBound(info).checkType(product, test.getTypeContext(), identifier("result"), test.getPath(), test.getTestType()) : Collections.emptyList(),
                 Collections.singletonList(saveResultStatement)
         );
     }
@@ -335,21 +326,7 @@ public class DriverProgramBuilder {
      */
     private class TestBuilderVisitor implements TestVisitor<List<Statement>> {
         Expression getTypeExpression(Type type, TypeContext typeContext) {
-            if (info.bench.options.useTAJS) {
-                return call(function(block(
-                        variable("result", typeCreator.getType(type, typeContext)),
-                        ifThenElse(
-                                binary(identifier("result"), Operator.NOT_EQUAL_EQUAL, identifier(VARIABLE_NO_VALUE)),
-                                Return(identifier("result")),
-                                block(
-                                        comment("never actually reached, is only here because TAJS"),
-                                        throwStatement(newCall(identifier(RUNTIME_ERROR_NAME)))
-                                )
-                        )
-                )));
-            } else {
-                return typeCreator.getType(type, typeContext);
-            }
+            return typeCreator.getType(type, typeContext);
         }
 
         @Override

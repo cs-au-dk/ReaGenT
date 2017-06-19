@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * Created by erik1 on 16-01-2017.
  */
 public class AutomaticExperiments {
-    private static final int THREADS = 4;
+    private static final int THREADS = 3;
     private static int SMALL_DRIVER_RUNS_LIMIT = 100;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {

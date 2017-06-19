@@ -74,10 +74,6 @@ public class Benchmark {
                 this.exportName);
     }
 
-    public Benchmark useTAJS() {
-        return this.withOptions(options -> options.setUseTAJS(true).setCheckDepthReport(0));
-    }
-
     public Benchmark addDependencies(Benchmark... benchmarks) {
         assert this.run_method == RUN_METHOD.BROWSER; // <- Only works for this one.
         if (benchmarks.length == 0) {

@@ -418,30 +418,6 @@ public class TypeCreator {
 
         @Override
         public Statement visit(SimpleType simple, TypeContext typeContext) {
-            if (info.bench.options.useTAJS) {
-                switch (simple.getKind()) {
-                    case String:
-                        return Return(call(identifier("TAJS_make"), string("AnyStr")));
-                    case Any:
-                        return Return(
-                                object(new ObjectLiteral.Property("_any", object()))
-                        );
-                    case Boolean:
-                        return Return(call(identifier("TAJS_make"), string("AnyBool")));
-                    case Null:
-                        return Return(nullLiteral());
-                    case Number:
-                        return Return(call(identifier("TAJS_make"), string("AnyNum")));
-                    case Undefined:
-                    case Void: // TODO: void is actually kinda "any".
-                        return Return(
-                                unary(Operator.VOID, number(0))
-                        );
-                    default:
-                        throw new RuntimeException("Cannot yet produce a simple: " + simple.getKind());
-                }
-            }
-
             switch (simple.getKind()) {
                 case String:
                     return AstBuilder.stmtFromString(
@@ -811,16 +787,6 @@ public class TypeCreator {
                                         }).collect(Collectors.toList())),
                                         Return(bool(true))
                                 )))),
-                                info.bench.options.useTAJS ? statement(
-                                        call(
-                                                identifier("assert"),
-                                                identifier("signatureCorrect" + signatureIndex),
-                                                string(path),
-                                                string("overload " + PrettyTypes.parameters(signature.getParameters()) + " to be called"), string("it was not called"),
-                                                identifier("i"),
-                                                string("overload check TAJS")
-                                        )
-                                ) : block(),
                                 ifThen(
                                         identifier("signatureCorrect" + signatureIndex),
                                         statement(methodCall(identifier("foundSignatures"), "push", number(signatureIndex)))

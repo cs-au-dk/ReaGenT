@@ -2,16 +2,10 @@ package dk.webbies.tajscheck.test.tajs.analyze;
 
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
-import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.test.Matchers;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
-import dk.webbies.tajscheck.test.tajs.AssertionResult;
 import dk.webbies.tajscheck.test.tajs.TAJSUtil;
-import dk.webbies.tajscheck.testcreator.TestCreator;
-import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
 import junit.framework.TestCase;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -140,49 +134,19 @@ public class AnalyzeBenchmarks extends TestCase {
 //                .filter(bench -> blacklist.contains(bench.name))
 //                .filter(bench -> timeouts.contains(bench.name))
                 .filter(bench -> whitelist.contains(bench.name))
-//                .filter(bench -> simpleBenchmarks.contains(bench.name))
-                .map(Benchmark::useTAJS)
                 .collect(Collectors.toList());
     }
 
     @Test
     public void analyzeBenchmark() throws Exception {
-        // Just testing that it CAN be analyzed.
 
-        Main.writeFullDriver(benchmark);
-
-        double size = Util.readFile(Main.getFolderPath(benchmark) + Main.TEST_FILE_NAME).length() / 1024.0;
-
-        System.out.println(Util.toFixed(size, 2) + "kb driver");
-
-        if (size > 2000) {
-            System.out.println("Skipping because driver is BIG");
-            return; // Currently ignoring when the driver is too big.
-        }
-
-        try {
-            MultiMap<String, AssertionResult> result = TAJSUtil.run(benchmark.useTAJS(), 10 * 60);
-
-            assertThat(result.asMap(), is(not(emptyMap())));
-
-        } catch (TimeoutException e) {
-            System.out.println("Timeout");
-            System.out.println(e.toString());
-        }
+        // TODO: Run with the new noDriver
     }
 
     @Test
     public void initialize() throws Exception {
-        try {
-            MultiMap<String, AssertionResult> result = TAJSUtil.run(benchmark.useTAJS().withOptions(options -> options.setOnlyInitialize(true)), 60);
+        Benchmark benchmark = this.benchmark.withOptions(options -> options.setOnlyInitialize(true));
 
-            System.out.println(TAJSUtil.prettyResult(result, (r) -> true));
-
-            assertThat(result.asMap(), is(not(emptyMap())));
-        } catch (TimeoutException e) {
-            System.out.println("Timeout");
-            System.out.println(e.toString());
-            throw e;
-        }
+        // TODO: Run with the new noDriver
     }
 }

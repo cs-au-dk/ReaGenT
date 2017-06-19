@@ -1,269 +1,157 @@
 package dk.webbies.tajscheck.test.tajs;
 
-import dk.brics.tajs.lattice.Value;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
-import dk.webbies.tajscheck.util.MultiMap;
-import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.Map;
 
+import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-/**
- * Created by erik1 on 12-12-2016.
- */
 public class TAJSUnitTests {
-    private static class SimpleEntry<K, T> implements Map.Entry<K, T> {
-        private final K key;
-        private T value;
-
-        private SimpleEntry(K key, T value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        @Override
-        public K getKey() {
-            return this.key;
-        }
-
-        @Override
-        public T getValue() {
-            return value;
-        }
-
-        @Override
-        public T setValue(T value) {
-            T old = this.value;
-            this.value = value;
-            return old;
-        }
-    }
-
-    static MultiMap<String, AssertionResult> run(String folderName) throws Exception {
+    private static TAJSUtil.TajsAnalysisResults run(String folderName) throws Exception {
         Benchmark bench = benchFromFolder(folderName);
 
-        return TAJSUtil.run(bench, 60);
+        return TAJSUtil.runNoDriver(bench, 60);
     }
 
     private static Benchmark benchFromFolder(String folderName) {
         CheckOptions options = CheckOptions.builder().setCheckDepthReport(0).setCheckDepthUseValue(0).build();
-        return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", Benchmark.RUN_METHOD.NODE, options).useTAJS();
+        return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", Benchmark.RUN_METHOD.NODE, options);
     }
 
     @SuppressWarnings("UnusedReturnValue")
     private class TAJSResultTester {
-        private MultiMap<String, AssertionResult> results;
+        private TAJSUtil.TajsAnalysisResults results;
 
-        private TAJSResultTester(MultiMap<String, AssertionResult> result) {
+        private TAJSResultTester(TAJSUtil.TajsAnalysisResults result) {
             this.results = result;
         }
 
-        private TAJSResultTester forPath(String path) {
-            results = results.asMap().entrySet().stream().filter(entry -> entry.getKey().equals(path)).collect(ArrayListMultiMap.collector());
-
-            MatcherAssert.assertThat("expected something on path: " + path, results.size(),is(not(equalTo(0))));
+        private TAJSUnitTests.TAJSResultTester toPaths(String path) {
+            results = results.with(results.detectedViolations.asMap().entrySet().stream().filter(entry -> entry.getKey().equals(path)).collect(ArrayListMultiMap.collector()));
+            MatcherAssert.assertThat("expected some violation on path: " + path, results.detectedViolations.size(), is(not(equalTo(0))));
             return this;
         }
 
-        private TAJSResultTester got(Predicate<Value> matcher) {
-            for (Collection<AssertionResult> values : results.asMap().values()) {
-                for (AssertionResult value : values) {
-                    assertTrue(matcher.test(value.actual));
-                }
-            }
-
+        private TAJSUnitTests.TAJSResultTester performed(String path) {
+            MatcherAssert.assertThat("test for " + path + " hasn't been performed", results.testPerformed.stream().anyMatch(test -> test.getPath().equals(path)));
             return this;
         }
 
-        TAJSResultTester expected(String type) {
-            return expected(is(type));
-        }
-
-        TAJSResultTester expected(Matcher<String> matcher) {
-            results = results.asMap().entrySet().stream().map(entry -> {
-                Collection<AssertionResult> value = entry.getValue().stream().filter(result ->
-                        matcher.matches(result.expected)
-                ).collect(Collectors.toList());
-
-                return new SimpleEntry<>(entry.getKey(), value);
-            }).filter(entry -> !entry.getValue().isEmpty()).collect(ArrayListMultiMap.collector());
-
-            assertFalse(results.isEmpty());
-
+        private TAJSUnitTests.TAJSResultTester performedAllTests() {
+            MatcherAssert.assertThat("some tests were not performed: " + mkString(results.testNot.stream(), ", "), results.testNot.isEmpty());
             return this;
         }
 
-        TAJSResultTester toMaybePass() {
-            for (Collection<AssertionResult> values : results.asMap().values()) {
-                for (AssertionResult value : values) {
-                    assertTrue(value.result.isSometimesTrue());
-                }
-            }
-
+        TAJSUnitTests.TAJSResultTester hasNoViolations() {
+            MatcherAssert.assertThat("there are no violations", results.detectedViolations.size() == 0);
             return this;
         }
 
-        TAJSResultTester toMaybeFail() {
-            for (Collection<AssertionResult> values : results.asMap().values()) {
-                for (AssertionResult value : values) {
-                    assertTrue(value.result.isSometimesFalse());
-                }
-            }
-
-            return this;
-        }
-
-        TAJSResultTester toPass() {
-            for (Collection<AssertionResult> values : results.asMap().values()) {
-                assertTrue(values.stream().anyMatch(value -> value.result == AssertionResult.BooleanResult.DEFINITELY_TRUE));
-            }
-
-            return this;
-        }
-
-        TAJSResultTester toFail() {
-            for (Collection<AssertionResult> values : results.asMap().values()) {
-                assertTrue(values.stream().anyMatch(value -> value.result == AssertionResult.BooleanResult.DEFINITELY_FALSE));
-            }
-
-            return this;
-        }
-
-        TAJSResultTester toNotFail() {
-            for (Collection<AssertionResult> values : results.asMap().values()) {
-                assertTrue(values.stream().allMatch(value -> value.result != AssertionResult.BooleanResult.DEFINITELY_FALSE));
-            }
-
-            return this;
-        }
-
-        TAJSResultTester toNotPass() {
-            for (Collection<AssertionResult> values : results.asMap().values()) {
-                assertTrue(values.stream().allMatch(value -> value.result != AssertionResult.BooleanResult.DEFINITELY_TRUE));
-            }
-
+        TAJSUnitTests.TAJSResultTester hasViolations() {
+            MatcherAssert.assertThat("there are violations", results.detectedViolations.size() != 0);
             return this;
         }
     }
 
-    private TAJSResultTester expect(MultiMap<String, AssertionResult> result) {
+    private TAJSUnitTests.TAJSResultTester expect(TAJSUtil.TajsAnalysisResults result) {
         return new TAJSResultTester(result);
     }
 
-    @Test
-    public void driverDoesNotHaveAssertTypeFunctions() throws Exception {
-        String driver = Main.writeFullDriver(benchFromFolder("everythingIsRight")).getRight();
-
-        assertThat(driver, not(containsString("assertType_0")));
-    }
+    // TODO: Test for all kinds of primitives. Incl as arguments.
+    // TODO: Test that optional arguments are completely "resolved", as in a function is never called with "undefined".
 
     @Test
+    @Ignore // TODO: Maybe for later.
     public void unionMightFail() throws Exception {
-        MultiMap<String, AssertionResult> result = run("unionMightFail");
+        TAJSUtil.TajsAnalysisResults result = run("unionMightFail");
 
         expect(result)
-                .forPath("module.foo()")
-                .toNotFail()
-                .toNotPass();
+                .performedAllTests()
+                .performed("module.foo()");
+
+        expect(result)
+                .toPaths("module.foo()")
+                .hasViolations();
     }
 
     @Test
     public void getter() throws Exception {
-        MultiMap<String, AssertionResult> result = run("getter");
+        TAJSUtil.TajsAnalysisResults result = run("getter");
 
         expect(result)
-                .forPath("module.foo()")
-                .toPass();
+                .performed("module.foo()");
     }
 
     @Test
-    @Ignore
-    // TODO: Make a second step of this test, where the assertType functions of the dynamic analysis is used.
     public void simpleUnion() throws Exception {
-        MultiMap<String, AssertionResult> result = run("simpleUnion");
+        TAJSUtil.TajsAnalysisResults result = run("simpleUnion");
 
         expect(result)
-                .forPath("module.foo()")
-                .toPass();
+                .performed("module.foo()");
     }
 
     @Test
     public void primitiveOrObject() throws Exception {
-        MultiMap<String, AssertionResult> result = run("primitiveOrObject");
+        TAJSUtil.TajsAnalysisResults result = run("primitiveOrObject");
 
         expect(result)
-                .forPath("module.foo()")
-                .toNotFail();
+                .performed("module.foo()");
     }
 
     @Test
     public void objectWithNumberProps() throws Exception {
-        MultiMap<String, AssertionResult> result = run("objectWithNumberProps");
+        TAJSUtil.TajsAnalysisResults result = run("objectWithNumberProps");
 
         expect(result)
-                .forPath("module.foo()")
-                .toFail();
+                .performed("module.foo()");
 
         expect(result)
-                .forPath("module.bar()")
-                .toPass();
+                .performed("module.bar()");
     }
 
     @Test
     public void everythingIsRight() throws Exception {
-        MultiMap<String, AssertionResult> result = run("everythingIsRight");
+        TAJSUtil.TajsAnalysisResults result = run("everythingIsRight");
 
-        assertThat(result.size(), is(4));
-
-        expect(result)
-                .forPath("module.foo.bar")
-                .toPass()
-                .expected("boolean")
-                .got((value) -> value.isMaybeTrue() && !value.isMaybeFalse());
+        expect(result).hasNoViolations();
 
         expect(result)
-                .forPath("module.foo")
-                .toPass();
+                .performed("module.foo.bar");
 
         expect(result)
-                .forPath("module.foo.foo")
-                .toPass();
+                .performed("module.foo");
 
         expect(result)
-                .forPath("module")
-                .toPass();
+                .performed("module.foo.foo");
+
+        expect(result)
+                .performed("module");
 
     }
 
     @Test
     public void recursiveObject() throws Exception {
-        MultiMap<String, AssertionResult> result = run("recursiveObject");
+        TAJSUtil.TajsAnalysisResults result = run("recursiveObject");
 
         expect(result)
-                .forPath("module.foo.rec")
-                .toPass();
+                .performed("module.foo.rec");
     }
 
     @Test
     public void functionAndObject() throws Exception {
-        MultiMap<String, AssertionResult> result = run("functionAndObject");
+        TAJSUtil.TajsAnalysisResults result = run("functionAndObject");
 
         expect(result)
-                .forPath("module.foo.foo")
-                .toPass();
+                .performed("module.foo.foo");
     }
 
     /**
@@ -272,49 +160,52 @@ public class TAJSUnitTests {
      * But if that code isn't reachable,
      */
     @Test
-    @Ignore
+    @Ignore // TODO: maybe for later.
     public void baitingTajsUnion() throws Exception {
-        MultiMap<String, AssertionResult> result = run("baitingTajsUnion");
+        TAJSUtil.TajsAnalysisResults result = run("baitingTajsUnion");
 
         expect(result)
-                .forPath("module.foo().[union0].bar.baz")
-                .toPass();
+                .performed("module.foo().[union0].bar.baz");
 
         expect(result)
-                .forPath("module.foo().[union1].bar.baz")
-                .toPass();
+                .performed("module.foo().[union1].bar.baz");
     }
 
     @Test
+    @Ignore // TODO: Maybe for later.
     public void spuriousUnion() throws Exception {
-        MultiMap<String, AssertionResult> result = run("spuriousUnion");
+        TAJSUtil.TajsAnalysisResults result = run("spuriousUnion");
 
         expect(result)
-                .forPath("module.foo()")
-                .expected("maybe string")
-                .toFail();
+                .toPaths("module.foo()");
+                /*FIXME: .expected("maybe string")
+                .toFail();*/
     }
 
     @Test
+    @Ignore // TODO: maybe for later.
     public void spuriousOverload() throws Exception {
         // I wanted to make a more complicated test, but since TAJS cannot see that (typeof [bool/number] !== "string"), it has to be quite simple.
-        MultiMap<String, AssertionResult> result = run("spuriousOverload");
+        TAJSUtil.TajsAnalysisResults result = run("spuriousOverload");
 
         expect(result)
-                .forPath("Foo")
-                .expected("overload (a: string) to be called")
-                .toFail();
+                .performed("Foo");
+                /*FIXME:.expected("overload (a: string) to be called")
+                .toFail();*/
 
     }
 
     @Test
+    @Ignore // TODO: Maybe for layer.
     public void splitSignatures() throws Exception {
-        MultiMap<String, AssertionResult> result = run("splitSignatures");
+        TAJSUtil.TajsAnalysisResults result = run("splitSignatures");
 
         expect(result)
-                .forPath("Foo")
-                .expected("overload (a: string) to be called")
-                .toFail();
+                .performed("Foo");
+                /*FIXME:.expected("overload (a: string) to be called")
+                .toFail();*/
     }
 
 }
+
+

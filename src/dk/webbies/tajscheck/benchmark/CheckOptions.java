@@ -28,7 +28,6 @@ public final class CheckOptions {
     public final boolean firstMatchSignaturePolicy;
     public final boolean useAssertTypeFunctions;
     public final boolean onlyInitialize;
-    public final boolean useTAJS;
     public final boolean useTracified;
     public final boolean monitorUnknownPropertyAccesses;
 
@@ -55,7 +54,6 @@ public final class CheckOptions {
         this.constructAllTypes = builder.constructAllTypes;
         this.constructOnlyPrimitives = builder.constructOnlyPrimitives;
         this.onlyInitialize = builder.onlyInitialize;
-        this.useTAJS = builder.useTAJS;
         this.useTracified = builder.useTracified;
         this.monitorUnknownPropertyAccesses = builder.monitorUnknownPropertyAccesses;
         this.builder = builder;
@@ -89,7 +87,7 @@ public final class CheckOptions {
     }
 
     public boolean makeSeparateReportAssertions() {
-        return this.checkDepthReport == this.checkDepthUseValue && !useTAJS;
+        return this.checkDepthReport == this.checkDepthUseValue;
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -117,7 +115,6 @@ public final class CheckOptions {
         public boolean useAssertTypeFunctions = true; // Whether or not to combine type-cheks into assertType functions, if not they are inlined (slightly bigger, easier to read).
         public boolean onlyInitialize = false; // If true, all tests except the initializing test is removed.
 
-        public boolean useTAJS = false; // If true, run abstractly instead of concretely.
         public boolean useTracified = false;
         public boolean monitorUnknownPropertyAccesses = false;
 
@@ -130,11 +127,6 @@ public final class CheckOptions {
 
         public CheckOptions build() {
             return new CheckOptions(this);
-        }
-
-        public Builder setUseTAJS(boolean useTAJS) {
-            this.useTAJS = useTAJS;
-            return this;
         }
 
         public Builder setUseTracified(boolean useTracified) {
