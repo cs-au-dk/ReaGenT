@@ -724,6 +724,12 @@ public class UnitTests {
     // TODO: When calling a signature with optional arguments, make sure the number of arguments is actually correct. (as oposed to calling stuff with undefined)
 
     @Test
+    public void complexSanityCheck22() throws Exception {
+        // Jeg har en mistanke om at det skyldes min "kombiner generics med samme constraint" i BenchmarkInfo.
+        sanityCheck(benchFromFolder("complexSanityCheck22"), BROWSER);
+    }
+
+    @Test
     public void nodeList() throws Exception {
         sanityCheck(benchFromFolder("nodeList", options().setCheckDepthReport(1).setCheckDepthUseValue(1).build()), BROWSER);
     }
