@@ -325,6 +325,8 @@ public class TypeChecker {
                         return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("Date")), "DateConstructor"));
                     case "StringConstructor":
                         return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("String")), "StringConstructor"));
+                    case "ErrorConstructor":
+                        return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("Error")), "StringConstructor"));
                     case "Object":
                         return Arrays.asList(expectNotNull(), new SimpleTypeCheck(Check.typeOf("object"), "Object"));
                     case "Console":
