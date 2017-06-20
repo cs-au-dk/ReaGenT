@@ -201,7 +201,7 @@ public class TajsTypeTester implements TypeTestRunner {
             }
 
             return testValues(propertyValue.getAllObjectLabels(), l -> {
-                BasicBlock implicitAfterCall = UserFunctionCalls.implicitUserFunctionCall(l, new FunctionCalls.CallInfo() {
+                FunctionCalls.CallInfo callinfo = new FunctionCalls.CallInfo() {
 
                     @Override
                     public AbstractNode getSourceNode() {
@@ -240,7 +240,7 @@ public class TajsTypeTester implements TypeTestRunner {
 
                     @Override
                     public Value getUnknownArg() {
-                        return Value.join(arguments);
+                        throw new AnalysisException();
                     }
 
                     @Override
@@ -250,14 +250,16 @@ public class TajsTypeTester implements TypeTestRunner {
 
                     @Override
                     public int getResultRegister() {
-                        return AbstractNode.NO_VALUE;
+                        throw new AnalysisException();
                     }
 
                     @Override
                     public ExecutionContext getExecutionContext() {
-                        return c.getState().getExecutionContext();
+                        throw new AnalysisException();
                     }
-                }, c);
+
+                };
+                BasicBlock implicitAfterCall = UserFunctionCalls.implicitUserFunctionCall(l, callinfo, c);
 
                 Value returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), false, implicitAfterCall, c);
                 if (c.isScanning()) {

@@ -485,12 +485,12 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(StringLiteral t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
+            return Value.makeSpecialStrings(Collections.singletonList(t.getText()));
         }
 
         @Override
         public Value visit(BooleanLiteral t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
+            return Value.makeBool(t.getValue());
         }
 
         @Override
