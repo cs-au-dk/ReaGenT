@@ -1592,4 +1592,9 @@ public class UnitTests {
     public void optionalParamsSmokeTest() throws Exception {
         Main.writeFullDriver(benchFromFolder("optionalParamsSmokeTest").withRunMethod(BOOTSTRAP));
     }
+
+    @Test
+    public void optionalParamsSmokeTest2() throws Exception {
+        Main.writeFullDriver(benchFromFolder("optionalParamsSmokeTest2").withRunMethod(BOOTSTRAP));
+    }
 }

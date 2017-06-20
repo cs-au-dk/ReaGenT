@@ -278,7 +278,33 @@ public class TypesUtil {
     }
 
     public static List<Signature> splitOptionalSignatures(List<Signature> signatures) {
-        return signatures.stream().map(TypesUtil::splitOptionalSignature).reduce(new ArrayList<>(), Util::reduceList);
+        return signatures.stream().map(TypesUtil::makeSureOptionalArgumentsHaveUnionUndef).map(TypesUtil::splitOptionalSignature).reduce(new ArrayList<>(), Util::reduceList);
+    }
+
+    private static Signature makeSureOptionalArgumentsHaveUnionUndef(Signature signature) {
+        signature = cloneSignature(signature);
+        int end = signature.getParameters().size();
+        if (signature.isHasRestParameter()) {
+            end--;
+        }
+        for (int i = signature.getMinArgumentCount(); i < end; i++) {
+            Signature.Parameter parameter = signature.getParameters().get(i);
+            Type type = parameter.getType();
+            if (!(type instanceof UnionType)) {
+                UnionType union = new UnionType();
+                union.setElements(Arrays.asList(type, new SimpleType(SimpleTypeKind.Undefined)));
+                parameter.setType(union);
+            } else {
+                UnionType union = (UnionType) type;
+                boolean hasUndef = union.getElements().stream().anyMatch(sub -> sub instanceof SimpleType && ((SimpleType) sub).getKind() == SimpleTypeKind.Undefined);
+                if (!hasUndef) {
+                    UnionType newUnion = new UnionType();
+                    parameter.setType(newUnion);
+                    newUnion.setElements(Util.concat(union.getElements(), Collections.singletonList(new SimpleType(SimpleTypeKind.Undefined))));
+                }
+            }
+        }
+        return signature;
     }
 
     private static List<Signature> splitOptionalSignature(Signature signature) {
@@ -305,9 +331,7 @@ public class TypesUtil {
 
         Signature.Parameter optionalParameter = withOptional.getParameters().get(signature.getMinArgumentCount());
 
-        if (optionalParameter.getType() instanceof UnionType) {
-            optionalParameter.setType(removeUndef((UnionType) optionalParameter.getType()));
-        }
+        optionalParameter.setType(removeUndef((UnionType) optionalParameter.getType()));
 
         withOptional.setMinArgumentCount(withOptional.getMinArgumentCount() + 1);
 
@@ -327,6 +351,9 @@ public class TypesUtil {
 
         if (union.getElements().size() == 1) {
             return union.getElements().iterator().next();
+        }
+        if (union.getElements().isEmpty() && elements.size() >= 2) {
+            return new SimpleType(SimpleTypeKind.Undefined);
         }
 
         assert !union.getElements().isEmpty();
