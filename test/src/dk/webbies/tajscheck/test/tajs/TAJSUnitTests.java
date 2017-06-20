@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck.test.tajs;
 
-import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
@@ -9,11 +8,8 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Map;
-
 import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
 
 public class TAJSUnitTests {
     private static TAJSUtil.TajsAnalysisResults run(String folderName) throws Exception {
@@ -66,9 +62,6 @@ public class TAJSUnitTests {
         return new TAJSResultTester(result);
     }
 
-    // TODO: Test for all kinds of primitives. Incl as arguments.
-    // TODO: Test that optional arguments are completely "resolved", as in a function is never called with "undefined".
-
     @Test
     @Ignore // TODO: Maybe for later.
     public void unionMightFail() throws Exception {
@@ -84,11 +77,13 @@ public class TAJSUnitTests {
     }
 
     @Test
+    @Ignore // TODO: Fails to type-check the getter.
     public void getter() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("getter");
 
         expect(result)
-                .performed("module.foo()");
+                .performed("module.foo()")
+                .hasNoViolations();
     }
 
     @Test
@@ -206,6 +201,78 @@ public class TAJSUnitTests {
                 .toFail();*/
     }
 
+
+    @Test
+    @Ignore // FIXME: Currently ALL method tests are executed in the same context.
+    public void multipleFunctions() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("multipleFunctions");
+
+        expect(result)
+                .hasNoViolations();
+    }
+
+    @Test
+    public void numbers() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("numbers");
+
+        expect(result)
+                .performed("module.id(number)")
+                .hasNoViolations();
+    }
+
+    @Test
+    public void strings() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("strings");
+
+        expect(result)
+                .performed("module.id(string)")
+                .hasNoViolations();
+    }
+
+    @Test
+    public void booleans() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("booleans");
+
+        expect(result)
+                .performed("module.id(boolean)")
+                .hasNoViolations();
+    }
+
+    @Test
+    public void numberLit() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("numberLit");
+
+        expect(result)
+                .performed("module.id(3)")
+                .hasNoViolations();
+    }
+
+    @Test
+    public void stringLit() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("stringLit");
+
+        expect(result)
+                .performed("module.id(\"str\")")
+                .hasNoViolations();
+    }
+
+    @Test
+    public void boolLit() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("boolLit");
+
+        expect(result)
+                .performed("module.id(true)")
+                .hasNoViolations();
+    }
+
+    @Test
+    public void primitivesFail() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("primitivesFail");
+
+        expect(result)
+                .performed("module.id(number)")
+                .hasViolations();
+    }
 }
 
 
