@@ -45,9 +45,13 @@ public class TestCreator {
 
         List<Test> topLevelFunctionTests = new ArrayList<>();
         for (Map.Entry<String, Type> userDefinedType : info.userDefinedTypes.entrySet()) {
-            topLevelFunctionTests.addAll(addTopLevelFunctionTests(userDefinedType.getValue(), userDefinedType.getKey(), TypeContext.create(info), visitor, negativeTypesSeen, info.nativeTypes, 0, seenTopLevel));
+            TypeContext context = TypeContext.create(info);
+            if (info.freeGenericsFinder.hasThisTypes(userDefinedType.getValue())) {
+                context = context.withThisType(userDefinedType.getValue());
+            }
+            topLevelFunctionTests.addAll(addTopLevelFunctionTests(userDefinedType.getValue(), userDefinedType.getKey(), context, visitor, negativeTypesSeen, info.nativeTypes, 0, seenTopLevel));
 
-            queue.add(new TestQueueElement(userDefinedType.getValue(), new Arg(userDefinedType.getKey(), TypeContext.create(info), 0)));
+            queue.add(new TestQueueElement(userDefinedType.getValue(), new Arg(userDefinedType.getKey(), context, 0)));
         }
 
         Trie pathsToTestTrie = info.bench.pathsToTest != null ? Trie.create(info.bench.pathsToTest) : null;
@@ -637,6 +641,9 @@ public class TestCreator {
         }
 
         private Void recurse(Type type, Arg arg) {
+            if (type instanceof ThisType && arg.getTypeContext().getThisType() == null) {
+                System.out.println();
+            }
             queue.add(new TestQueueElement(type, arg));
             return null;
         }
