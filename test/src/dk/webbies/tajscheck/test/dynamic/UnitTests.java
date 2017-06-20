@@ -721,12 +721,14 @@ public class UnitTests {
         sanityCheck(benchFromFolder("complexSanityCheck21"), NODE);
     }
 
-    // TODO: When calling a signature with optional arguments, make sure the number of arguments is actually correct. (as oposed to calling stuff with undefined)
-
     @Test
     public void complexSanityCheck22() throws Exception {
-        // Jeg har en mistanke om at det skyldes min "kombiner generics med samme constraint" i BenchmarkInfo.
         sanityCheck(benchFromFolder("complexSanityCheck22"), BROWSER);
+    }
+
+    @Test(expected = AssertionError.class) // TODO: make this not fail?
+    public void complexSanityCheck23() throws Exception {
+        sanityCheck(benchFromFolder("complexSanityCheck23"), NODE);
     }
 
     @Test
@@ -1573,7 +1575,6 @@ public class UnitTests {
 
     }
 
-    // TODO: Make a second test with rest-args added.
     @Test
     public void optionalDoesNotMeanUndefined() throws Exception {
         RunResult result = run("optionalDoesNotMeanUndefined", "foo");

@@ -270,7 +270,9 @@ public class RunBenchmarks {
                 benchmark.dTSFile.contains("three.d.ts") || // bivariant function-arguments in the addGroup() method (the last argument is optional in the base class, but non-optional in the sub class).
                 benchmark.dTSFile.contains("backbone.d.ts")  || // Includes jQuery.
                 benchmark.dTSFile.contains("foundation.d.ts")  || // Includes jQuery.
-                benchmark.dTSFile.contains("angular1.d.ts")  // Includes jQuery.
+                benchmark.dTSFile.contains("angular1.d.ts") ||  // Includes jQuery.
+                benchmark.dTSFile.contains("ionic.d.ts")  || // Includes angular, which includes jQuery.
+                benchmark.dTSFile.contains("sugar.d.ts") // has known unsoundness, demonstrated in complexSanityCheck23
         ) {
             System.out.println("Is a benchmark which i know to fail. ");
             return;
