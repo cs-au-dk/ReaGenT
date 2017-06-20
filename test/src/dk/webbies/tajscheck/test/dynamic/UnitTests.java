@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.OutputParser.*;
@@ -1562,7 +1563,11 @@ public class UnitTests {
         Main.writeFullDriver(bench);
 
         String res = Main.runBenchmark(bench);
-        System.out.println(res);
+        List<String> lines = Arrays.asList(res.split(Pattern.quote("\n")));
+        if (lines.size() > 100) {
+            lines = lines.subList(0, 100);
+        }
+        System.out.println(String.join("\n", lines));
 
     }
 
