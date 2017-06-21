@@ -2,11 +2,14 @@ package dk.webbies.tajscheck.test.experiments;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
+import dk.webbies.tajscheck.util.ArrayListMultiMap;
+import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
@@ -16,23 +19,27 @@ import java.util.*;
  * Created by erik1 on 28-03-2017.
  */
 public class CountUniques {
-    public static int uniqueWarnings(Collection<String> paths, Benchmark benchmark) {
+    public static int uniqueWarnings(Collection<OutputParser.TypeError> errors, Benchmark benchmark) {
+        return groupWarnings(errors, benchmark).size();
+    }
+
+    public static MultiMap<Pair<Type, String>, OutputParser.TypeError> groupWarnings(Collection<OutputParser.TypeError> errors, Benchmark benchmark) {
         BenchmarkInfo info = BenchmarkInfo.create(benchmark.withOptions(options -> options.setDisableGenerics(false)));
 
-        Set<Pair<Type, String>> seenWarnings = Collections.synchronizedSet(new HashSet<>());
+        MultiMap<Pair<Type, String>, OutputParser.TypeError> seenWarnings = new ArrayListMultiMap<>();
 
-        paths.stream().unordered().distinct().forEach(path -> {
+        errors.forEach(te -> {
+            String path = te.getPath();
             if (!path.contains(".")) {
-                seenWarnings.add(new Pair<>(lookupType(path, info), null));
+                seenWarnings.put(new Pair<>(lookupType(path, info), null), te);
                 return;
             }
             String prop = path.substring(path.lastIndexOf(".") + 1, path.length());
             path = path.substring(0, path.lastIndexOf("."));
 
-            seenWarnings.add(new Pair<>(lookupType(path, info), prop));
+            seenWarnings.put(new Pair<>(lookupType(path, info), prop), te);
         });
-
-        return seenWarnings.size();
+        return seenWarnings;
     }
 
     private static String removeArguments(String path) {
