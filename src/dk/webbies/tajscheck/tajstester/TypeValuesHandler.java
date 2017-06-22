@@ -55,6 +55,7 @@ public class TypeValuesHandler {
     }
 
     public boolean addFeedbackValue(TypeWithContext t, Value v) {
+        assert(v != null);
         if (savedValues.containsKey(t)) {
             Value joined = v.join(savedValues.get(t));
             if (v.equals(joined)) {

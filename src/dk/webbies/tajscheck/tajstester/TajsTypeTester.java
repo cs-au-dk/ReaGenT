@@ -2,10 +2,12 @@ package dk.webbies.tajscheck.tajstester;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.brics.tajs.analysis.FunctionCalls;
+import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.js.UserFunctionCalls;
 import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
+import dk.brics.tajs.analysis.nativeobjects.JSGlobal;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.flowgraph.Function;
@@ -35,6 +37,7 @@ import static dk.webbies.tajscheck.util.Util.prettyValue;
 
 public class TajsTypeTester implements TypeTestRunner {
     private static final boolean DEBUG = true;
+    private static final boolean DEBUG_VALUES = true;
 
     private final List<Test> tests;
 
@@ -45,6 +48,8 @@ public class TajsTypeTester implements TypeTestRunner {
     final private List<TestCertificate> allCertificates = newList();
 
     private final List<Test> performed = newList();
+
+    private TypeValuesHandler valueHandler = null;
 
     public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
         this.tests = tests;
@@ -61,46 +66,53 @@ public class TajsTypeTester implements TypeTestRunner {
 
     public List<TestCertificate> getAllCertificates() {return allCertificates;}
 
+    private boolean isInTestContext(Solver.SolverInterface c) {
+        return c.getState().getContext() != null
+                && c.getState().getContext().getLocalContext() != null
+                && c.getState().getContext().getLocalContext().keySet().contains("test");
+    }
 
     public void triggerTypeTests(Solver.SolverInterface c) {
-        TypeValuesHandler valueHandler = new TypeValuesHandler(info.typeNames, c, info.getSpec());
+        if (valueHandler == null)
+            valueHandler = new TypeValuesHandler(info.typeNames, c, info.getSpec());
         TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler);
         State originalState = c.getState().clone();
 
         performed.clear();
-        final boolean[] progress = {true};
-
-        while (progress[0]) {
-            progress[0] = false;
-            for (Test test : tests) {
-                if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
-                    continue;
-                }
-
-                performed.add(test);
-
-                State newState = originalState;
-                Context currentContext = newState.getContext();
-                Map<String, Value> testPerformed = newMap();
-                if (currentContext.getLocalContext() != null) {
-                    testPerformed.putAll(currentContext.getLocalContext());
-                }
-                testPerformed.put("test", Value.makeStr(test.getPath())); //FIXME: Is getPath unique?
-
-                Context newc = Context.mk(currentContext.getThisVal(), currentContext.getFunArgs(), currentContext.getSpecialRegisters(),
-                        testPerformed, currentContext.getLocalContextAtEntry());
-
-                newState.setContext(newc);
-
-                c.getAnalysisLatticeElement().propagate(newState.clone(), newState.getBasicBlock(), newc, false);
-
-                c.withState(newState, () -> {
-                        progress[0] |= test.accept(visitor);
-                });
+        for (Test test : tests) {
+            if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
+                if (DEBUG && !c.isScanning())
+                    System.out.println("Skipped test " + test);
+                continue;
             }
-        }
+            if (DEBUG && !c.isScanning()) System.out.println("Performing test " + test);
 
-        if(DEBUG && c.isScanning()) {
+            performed.add(test);
+
+            // Generating one local context per test
+            Context currentContext = originalState.getContext();
+            Map<String, Value> testPerformed = newMap();
+            if (currentContext.getLocalContext() != null) {
+                testPerformed.putAll(currentContext.getLocalContext());
+            }
+            testPerformed.put("test", Value.makeStr(test.getPath())); //FIXME: Is getPath unique?
+
+            Context newc = Context.mk(currentContext.getThisVal(), currentContext.getFunArgs(), currentContext.getSpecialRegisters(),
+                    testPerformed, currentContext.getLocalContextAtEntry());
+
+            State newState = originalState.clone();
+            newState.setContext(newc);
+
+            c.getAnalysisLatticeElement().propagate(newState.clone(), newState.getBasicBlock(), newState.getContext(), false);
+
+            // performing the test in the local context
+            c.withState(newState, () -> {
+                test.accept(visitor);
+            });
+        }
+        if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
+
+        if (DEBUG && c.isScanning() && !isInTestContext(c)) {
             System.out.println("Performed " + performed.size() + "/" + tests.size() + " tests, detected " + allViolations.size() + " violations");
             List<Test> notPerformed = new LinkedList<>();
             notPerformed.addAll(tests);
@@ -158,9 +170,12 @@ public class TajsTypeTester implements TypeTestRunner {
             List<TypeViolation> violations = tcResult.getSecond();
 
             if(violations.isEmpty() && !filteredValue.isNone()) {
-                if(DEBUG) System.out.println("Value added for type:" + t + " in test " + test);
-                return typeValuesHandler.addFeedbackValue(t, filteredValue);
+                boolean newValue = typeValuesHandler.addFeedbackValue(t, filteredValue);
+                if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " in test " + test + ", value: " + filteredValue);
+                if(newValue && c.isScanning()) throw new RuntimeException("New values should not appear in scanning!");
+                return newValue;
             } else {
+                if(DEBUG_VALUES) System.out.println("Value " + v + " not added because it violates type " + t + " in test " + test);
                 if(c.isScanning()) {
                     allViolations.addAll(violations);
                 }
@@ -283,6 +298,8 @@ public class TajsTypeTester implements TypeTestRunner {
                 BasicBlock implicitAfterCall = UserFunctionCalls.implicitUserFunctionCall(l, callinfo, c);
 
                 Value returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), false, implicitAfterCall, c);
+
+
                 if (c.isScanning()) {
                     allCertificates.add(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{propertyValue, receiver, returnedValue}, c.getState()));
                 }
