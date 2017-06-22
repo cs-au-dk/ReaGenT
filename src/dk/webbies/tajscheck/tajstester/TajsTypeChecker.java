@@ -65,6 +65,23 @@ public class TajsTypeChecker {
         return vr;
     }
 
+    boolean typeCheck(Value v, Type type, TypeContext context, BenchmarkInfo info, int depth) {
+        List<TypeViolation> violations = new LinkedList<>();
+        List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, depth);
+        TypeWithContext tc = new TypeWithContext(type, context);
+
+        List<Value> split = split(v);
+        List<Pair<Value, List<TypeCheck>>> zip = Util.zip(split.stream(),
+                split.stream().map(splittenValue -> getTypeViolations(splittenValue, typeChecks)),
+                Pair::make).collect(Collectors.toList());
+
+        List<Value> filter = zip.stream().filter(p -> p.getSecond().isEmpty()).map(Pair::getFirst).collect(Collectors.toList());
+        List<Value> filterNot = zip.stream().filter(p -> !p.getSecond().isEmpty()).map(Pair::getFirst).collect(Collectors.toList());
+
+        return filterNot.isEmpty() && !filter.isEmpty();
+    }
+
+
     Pair<Value,List<TypeViolation>> typeCheckAndFilter(Value v, Type type, TypeContext context, BenchmarkInfo info, int depth, Test test) {
         List<TypeViolation> violations = new LinkedList<>();
         List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, depth);

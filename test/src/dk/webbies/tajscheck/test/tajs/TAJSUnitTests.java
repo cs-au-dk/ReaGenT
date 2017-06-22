@@ -203,7 +203,6 @@ public class TAJSUnitTests {
 
 
     @Test
-    @Ignore // FIXME: Currently ALL method tests are executed in the same context.
     public void multipleFunctions() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("multipleFunctions");
 

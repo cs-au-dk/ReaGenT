@@ -2,9 +2,6 @@ package dk.webbies.tajscheck.benchmark;
 
 import dk.webbies.tajscheck.util.Util;
 
-/**
- * Created by erik1 on 13-12-2016.
- */
 public final class CheckOptions {
     private Builder builder;
     public final int checkDepthUseValue;
@@ -30,6 +27,7 @@ public final class CheckOptions {
     public final boolean onlyInitialize;
     public final boolean useTracified;
     public final boolean monitorUnknownPropertyAccesses;
+    public final boolean measurePrecision;
 
 
     private CheckOptions(Builder builder) {
@@ -56,6 +54,7 @@ public final class CheckOptions {
         this.onlyInitialize = builder.onlyInitialize;
         this.useTracified = builder.useTracified;
         this.monitorUnknownPropertyAccesses = builder.monitorUnknownPropertyAccesses;
+        this.measurePrecision = builder.measurePrecision;
         this.builder = builder;
     }
 
@@ -117,6 +116,7 @@ public final class CheckOptions {
 
         public boolean useTracified = false;
         public boolean monitorUnknownPropertyAccesses = false;
+        public boolean measurePrecision = false;
 
 
         private Builder() {}
@@ -244,5 +244,11 @@ public final class CheckOptions {
             this.monitorUnknownPropertyAccesses = monitorUnknownPropertyAccesses;
             return this;
         }
+
+        public Builder setMeasurePrecision(boolean measurePrecision) {
+            this.measurePrecision = measurePrecision;
+            return this;
+        }
+
     }
 }
