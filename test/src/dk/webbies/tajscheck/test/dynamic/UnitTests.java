@@ -715,13 +715,6 @@ public class UnitTests {
         sanityCheck(benchFromFolder("complexSanityCheck20").withOptions(options -> options.setDisableGenerics(true)), NODE);
     }
 
-    @Test // TODO:
-    @Ignore
-    public void complexSanityCheck21() throws Exception {
-        // Jeg har en mistanke om at det skyldes min "kombiner generics med samme constraint" i BenchmarkInfo.
-        sanityCheck(benchFromFolder("complexSanityCheck21"), NODE);
-    }
-
     @Test
     public void complexSanityCheck22() throws Exception {
         sanityCheck(benchFromFolder("complexSanityCheck22"), BROWSER);
@@ -1602,5 +1595,20 @@ public class UnitTests {
     @Test
     public void optionalParamsSmokeTest2() throws Exception {
         Main.writeFullDriver(benchFromFolder("optionalParamsSmokeTest2").withRunMethod(BOOTSTRAP));
+    }
+
+    @Test
+    @Ignore // TODO: Likely an error in ts-spec-reader or the TypeScript compiler.
+    public void complexGenerics3() throws Exception {
+        RunResult result = run(benchFromFolder("complexGenerics3").withOptions(options -> options.setCombineAllUnboundGenerics(false)));
+
+        assertThat(result.typeErrors, is(empty()));
+    }
+
+    @Test // TODO:
+    @Ignore
+    public void complexSanityCheck21() throws Exception {
+        // Jeg har en mistanke om at det skyldes min "kombiner generics med samme constraint" i BenchmarkInfo.
+        sanityCheck(benchFromFolder("complexSanityCheck21"), NODE);
     }
 }
