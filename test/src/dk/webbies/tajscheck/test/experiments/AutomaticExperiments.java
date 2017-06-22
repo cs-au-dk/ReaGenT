@@ -34,7 +34,7 @@ public class AutomaticExperiments {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(bench.options.checkDepthUseValue).setMaxIterationsToRun(1000));
         List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
-        List<String> paths = OutputParser.combine(results).typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toList());
+        List<OutputParser.TypeError> paths = OutputParser.combine(results).typeErrors.stream().collect(Collectors.toList());
 
         int warnings = CountUniques.uniqueWarnings(paths, bench);
 
@@ -102,7 +102,7 @@ public class AutomaticExperiments {
             Util.append("classMismatches.txt", stringBuilder.toString());
         }
 
-        int uniques = CountUniques.uniqueWarnings(mismatchCount.keySet(), bench);
+        int uniques = CountUniques.uniqueWarnings(mismatchCount.asMap().values().stream().map(ArrayList::new).reduce(new ArrayList<>(), Util::reduceList), bench);
 
         return Arrays.asList(Integer.toString(uniques));
     });
@@ -161,9 +161,9 @@ public class AutomaticExperiments {
 
             OutputParser.RunResult result = OutputParser.combine(results);
 
-            List<String> paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toList());
+            List<OutputParser.TypeError> errors = result.typeErrors;
 
-            int warnings = CountUniques.uniqueWarnings(paths, bench);
+            int warnings = CountUniques.uniqueWarnings(errors, bench);
 
             if (reportTime) {
                 return Arrays.asList(Integer.toString(warnings), Util.toFixed(time / 1000.0, 2, ',') + "s");
@@ -214,9 +214,9 @@ public class AutomaticExperiments {
         Main.writeFullDriver(bench);
         OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
 
-        List<String> paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toList());
+        List<OutputParser.TypeError> errors = result.typeErrors;
 
-        int warnings = CountUniques.uniqueWarnings(paths, bench);
+        int warnings = CountUniques.uniqueWarnings(errors, bench);
 
         long end = System.currentTimeMillis();
         double time = (end - start) / 1000.0;
@@ -239,9 +239,9 @@ public class AutomaticExperiments {
                 results.add(OutputParser.parseDriverResult(Main.runBenchmark(bench)));
             }
             OutputParser.RunResult result = OutputParser.combine(results);
-            List<String> paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toList());
+            List<OutputParser.TypeError> errors = result.typeErrors;
 
-            int warnings = CountUniques.uniqueWarnings(paths, bench);
+            int warnings = CountUniques.uniqueWarnings(errors, bench);
 
             return Arrays.asList(
                     Long.toString(warnings),
