@@ -8,7 +8,11 @@ import dk.brics.tajs.analysis.js.UserFunctionCalls;
 import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.BasicBlock;
+import dk.brics.tajs.flowgraph.Function;
+import dk.brics.tajs.flowgraph.SourceLocation;
+import dk.brics.tajs.js2flowgraph.FlowGraphMutator;
 import dk.brics.tajs.lattice.*;
+import dk.brics.tajs.options.Options;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Pair;
@@ -25,6 +29,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.newList;
+import static dk.brics.tajs.util.Collections.newMap;
 import static dk.webbies.tajscheck.util.Util.mkString;
 import static dk.webbies.tajscheck.util.Util.prettyValue;
 
@@ -56,16 +61,17 @@ public class TajsTypeTester implements TypeTestRunner {
 
     public List<TestCertificate> getAllCertificates() {return allCertificates;}
 
-    public void triggerTypeTests(Solver.SolverInterface c) {
-        State callState = c.getState().clone();
 
+    public void triggerTypeTests(Solver.SolverInterface c) {
         TypeValuesHandler valueHandler = new TypeValuesHandler(info.typeNames, c, info.getSpec());
-        TajsTestVisitor visitor = new TajsTestVisitor(callState.getExtras(), c, callState, valueHandler);
+        TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler);
+        State originalState = c.getState().clone();
 
         performed.clear();
-        boolean progress = true;
-        while (progress) {
-            progress = false;
+        final boolean[] progress = {true};
+
+        while (progress[0]) {
+            progress[0] = false;
             for (Test test : tests) {
                 if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
                     continue;
@@ -73,7 +79,24 @@ public class TajsTypeTester implements TypeTestRunner {
 
                 performed.add(test);
 
-                progress |= test.accept(visitor);
+                State newState = originalState;
+                Context currentContext = newState.getContext();
+                Map<String, Value> testPerformed = newMap();
+                if (currentContext.getLocalContext() != null) {
+                    testPerformed.putAll(currentContext.getLocalContext());
+                }
+                testPerformed.put("test", Value.makeStr(test.getPath())); //FIXME: Is getPath unique?
+
+                Context newc = Context.mk(currentContext.getThisVal(), currentContext.getFunArgs(), currentContext.getSpecialRegisters(),
+                        testPerformed, currentContext.getLocalContextAtEntry());
+
+                newState.setContext(newc);
+
+                c.getAnalysisLatticeElement().propagate(newState.clone(), newState.getBasicBlock(), newc, false);
+
+                c.withState(newState, () -> {
+                        progress[0] |= test.accept(visitor);
+                });
             }
         }
 
@@ -97,16 +120,12 @@ public class TajsTypeTester implements TypeTestRunner {
 
     public class TajsTestVisitor implements TestVisitor<Boolean> {
 
-        private final StateExtras se;
         private final Solver.SolverInterface c;
         private final PropVarOperations pv;
-        private final State s;
         private final TypeValuesHandler typeValuesHandler;
         private final TajsTypeChecker typeChecker;
 
-        TajsTestVisitor(StateExtras se, Solver.SolverInterface c, State s, TypeValuesHandler typeValuesHandler) {
-            this.se = se;
-            this.s = s;
+        TajsTestVisitor(Solver.SolverInterface c, TypeValuesHandler typeValuesHandler) {
             this.pv = c.getAnalysis().getPropVarOperations();
             this.c = c;
             this.typeValuesHandler = typeValuesHandler;
@@ -131,6 +150,7 @@ public class TajsTypeTester implements TypeTestRunner {
          * @return if there was progress, which happens if any state changes (a new value is added).
          */
         public boolean attemptAddValue(Value v, TypeWithContext t, Test test) {
+            State s = c.getState();
             v = UnknownValueResolver.getRealValue(v, s);
             Pair<Value, List<TypeViolation>> tcResult = typeChecker.typeCheckAndFilter(v, t.getType(), t.getTypeContext(), info, 2, test);
 
@@ -159,6 +179,7 @@ public class TajsTypeTester implements TypeTestRunner {
 
         @Override
         public Boolean visit(PropertyReadTest test) {
+            State s = c.getState();
             Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(),test.getTypeContext()));
 
             return testValues(baseValue.getObjectLabels(), (label) -> {
@@ -178,7 +199,7 @@ public class TajsTypeTester implements TypeTestRunner {
                     ObjectLabel moduleObject = ObjectLabel.mk(ECMAScriptObjects.OBJECT_MODULE, ObjectLabel.Kind.OBJECT);
                     Value v = pv.readPropertyDirect(moduleObject, Value.makeStr("exports"));
                     if(c.isScanning()) {
-                        allCertificates.add(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, s));
+                        allCertificates.add(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()));
                     }
                     return attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test);
                 } else {
@@ -263,7 +284,7 @@ public class TajsTypeTester implements TypeTestRunner {
 
                 Value returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), false, implicitAfterCall, c);
                 if (c.isScanning()) {
-                    allCertificates.add(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{propertyValue, receiver, returnedValue}, s));
+                    allCertificates.add(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{propertyValue, receiver, returnedValue}, c.getState()));
                 }
                 return attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test);
             });

@@ -139,14 +139,19 @@ public class AnalyzeBenchmarks extends TestCase {
 
     @Test
     public void analyzeBenchmark() throws Exception {
-
         // TODO: Run with the new noDriver
+
+    }
+
+    @Test
+    public void measureBenchmark() throws Exception {
+        Benchmark benchmark = this.benchmark.withOptions(options -> options.setMeasurePrecision(true));
+        //TAJSUtil.runNoDriver(benchmark, 300);
     }
 
     @Test
     public void initialize() throws Exception {
         Benchmark benchmark = this.benchmark.withOptions(options -> options.setOnlyInitialize(true));
-
-        // TODO: Run with the new noDriver
+        //TAJSUtil.runNoDriver(benchmark, 300);
     }
 }

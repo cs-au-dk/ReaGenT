@@ -35,6 +35,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 public class TAJSUtil {
+
     public static TajsAnalysisResults runNoDriverTAJS(String file, int secondsTimeout, Benchmark.RUN_METHOD run_method, BenchmarkInfo info, List<Test> tests) throws TimeoutException {
         dk.brics.tajs.Main.reset();
 
@@ -61,7 +62,9 @@ public class TAJSUtil {
         additionalOpts.enableUseStrict();
         additionalOpts.enableEs6MiscPolyfill();
         additionalOpts.enableIncludeDom();
+
         additionalOpts.enableTypeChecks(typeTester);
+
 
         additionalOpts.enableUnevalizer();
 
@@ -103,8 +106,6 @@ public class TAJSUtil {
 
         return new TajsAnalysisResults(results, typeTester.getPerformedTests(), notPerformed);
     }
-
-
 
     public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout) throws Exception {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
