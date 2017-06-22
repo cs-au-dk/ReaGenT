@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.test.dynamic;
 
+import dk.au.cs.casa.typescript.types.Type;
 import dk.brics.tajs.options.OptionValues;
 import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
@@ -12,7 +13,10 @@ import dk.webbies.tajscheck.buildprogram.ProxyBuilder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.test.TestParsing;
+import dk.webbies.tajscheck.test.experiments.CountUniques;
 import dk.webbies.tajscheck.testcreator.TestCreator;
+import dk.webbies.tajscheck.util.MultiMap;
+import dk.webbies.tajscheck.util.Pair;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +26,7 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -228,10 +233,7 @@ public class RunBenchmarks {
 
         result.typeErrors.sort(Comparator.comparing(OutputParser.TypeError::getPath));
 
-        for (OutputParser.TypeError typeError : result.typeErrors) {
-            System.out.println(typeError.toString());
-            System.out.println();
-        }
+        printErrors(b, result);
 
         for (String error: result.errors) {
             System.out.println(error);
@@ -296,5 +298,29 @@ public class RunBenchmarks {
         // A sanitycheck that JavaScript parsing+printing is idempotent.
         System.out.println(benchmark.jsFile);
         TestParsing.testFile(benchmark.jsFile);
+    }
+
+    public static void printErrors(Benchmark bench, OutputParser.RunResult result) {
+        MultiMap<Pair<Type, String>, OutputParser.TypeError> groups = CountUniques.groupWarnings(result.typeErrors, bench);
+
+        for (Map.Entry<Pair<Type, String>, Collection<OutputParser.TypeError>> entry : groups.asMap().entrySet()) {
+            Pair<Type, String> key = entry.getKey();
+            Collection<OutputParser.TypeError> errors = entry.getValue();
+            assert !errors.isEmpty();
+
+            if (errors.size() == 1) {
+                System.out.println(errors.iterator().next());
+                System.out.println();
+            } else {
+                System.out.println("Group of " + errors.size() + " similar errors");
+                for (OutputParser.TypeError error : errors) {
+                    String errorIndented = String.join("\n", Arrays.stream(error.toString().split(Pattern.quote("\n"))).map(line -> "   " + line).collect(Collectors.toList()));
+                    System.out.println(errorIndented);
+                    System.out.println();
+                }
+                System.out.println();
+
+            }
+        }
     }
 }
