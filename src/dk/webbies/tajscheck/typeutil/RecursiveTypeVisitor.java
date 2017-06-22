@@ -96,6 +96,7 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
             if (sig.getIsolatedSignatureType() != null) {
                 sig.getIsolatedSignatureType().accept(this);
             }
+            sig.getTypeParameters().forEach(this::accept);
         }
 
         @Override
