@@ -16,6 +16,7 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.tajstester.TajsTypeChecker;
+import dk.webbies.tajscheck.tajstester.TesterContextSensitivity;
 import dk.webbies.tajscheck.tajstester.TypeViolation;
 import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.testcreator.test.Test;
@@ -42,7 +43,8 @@ public class TAJSUtil {
         IAnalysisMonitoring baseMonitoring = new Monitoring();
         OptionValues additionalOpts = new OptionValues();
         CmdLineParser parser = new CmdLineParser(additionalOpts);
-        TajsTypeTester typeTester = new TajsTypeTester(tests, info);
+        TesterContextSensitivity contextStrategy = new TesterContextSensitivity();
+        TajsTypeTester typeTester = new TajsTypeTester(tests, info, contextStrategy);
 
         try {
             parser.parseArgument(file);
@@ -64,6 +66,7 @@ public class TAJSUtil {
         additionalOpts.enableIncludeDom();
 
         additionalOpts.enableTypeChecks(typeTester);
+        additionalOpts.setContextSensitivityStrategy(contextStrategy);
 
 
         additionalOpts.enableUnevalizer();

@@ -9,6 +9,8 @@ import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.lattice.*;
+import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
+import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Pair;
@@ -25,13 +27,16 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.newList;
-import static dk.brics.tajs.util.Collections.newMap;
+import static dk.brics.tajs.util.Collections.newSet;
 import static dk.webbies.tajscheck.util.Util.mkString;
 import static dk.webbies.tajscheck.util.Util.prettyValue;
 
-public class TajsTypeTester implements TypeTestRunner {
+public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTestRunner {
     private static final boolean DEBUG = true;
+
     private static final boolean DEBUG_VALUES = true;
+
+    private final TesterContextSensitivity testerContextSensitivity;
 
     private final List<Test> tests;
 
@@ -46,9 +51,18 @@ public class TajsTypeTester implements TypeTestRunner {
     private TypeValuesHandler valueHandler = null;
     private String LOCAL_CONTEXT_MARKER = "TAJSCheckTest";
 
-    public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
+    private BasicBlock allTestsBlock;
+
+    private Context allTestsContext;
+
+    private Set<Test> retractedTests = newSet();
+
+    private Solver.SolverInterface c;
+
+    public TajsTypeTester(List<Test> tests, BenchmarkInfo info, TesterContextSensitivity testerContextSensitivity) {
         this.tests = tests;
         this.info = info;
+        this.testerContextSensitivity = testerContextSensitivity;
     }
 
     public int getTotalTests() {return tests.size();}
@@ -61,13 +75,17 @@ public class TajsTypeTester implements TypeTestRunner {
 
     public List<TestCertificate> getAllCertificates() {return allCertificates;}
 
-    private boolean isInTestContext(Solver.SolverInterface c) {
-        return c.getState().getContext() != null
-                && c.getState().getContext().getLocalContext() != null
-                && c.getState().getContext().getLocalContext().keySet().contains(LOCAL_CONTEXT_MARKER);
-    }
-
     public void triggerTypeTests(Solver.SolverInterface c) {
+
+        if(testerContextSensitivity.isLocalTestContext(c.getState().getContext())) {
+            c.addToWorklist(allTestsBlock, allTestsContext);
+            return;
+        }
+
+        allTestsBlock = c.getState().getBasicBlock();
+        allTestsContext = c.getState().getContext();
+
+
         if (valueHandler == null)
             valueHandler = new TypeValuesHandler(info.typeNames, c, info.getSpec());
         TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler);
@@ -87,14 +105,7 @@ public class TajsTypeTester implements TypeTestRunner {
 
             // Generating one local context per test
             Context currentContext = originalState.getContext();
-            Map<String, Value> testPerformed = newMap();
-            if (currentContext.getLocalContext() != null) {
-                testPerformed.putAll(currentContext.getLocalContext());
-            }
-            testPerformed.put(LOCAL_CONTEXT_MARKER, Value.makeStr(i + ":" + test.getPath()));
-
-            Context newc = Context.mk(currentContext.getThisVal(), currentContext.getFunArgs(), currentContext.getSpecialRegisters(),
-                    testPerformed, currentContext.getLocalContextAtEntry());
+            Context newc = testerContextSensitivity.makeLocalTestContext(currentContext, test);
 
             State newState = originalState.clone();
             newState.setContext(newc);
@@ -108,7 +119,7 @@ public class TajsTypeTester implements TypeTestRunner {
         }
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
 
-        if (DEBUG && c.isScanning() && !isInTestContext(c)) {
+        if (DEBUG && c.isScanning()) {
             System.out.println("Performed " + performed.size() + "/" + tests.size() + " tests, detected " + allViolations.size() + " violations");
             List<Test> notPerformed = new LinkedList<>();
             notPerformed.addAll(tests);
@@ -124,6 +135,27 @@ public class TajsTypeTester implements TypeTestRunner {
         // Use the type in the context to return the right value
         System.out.println("Called function " + call.getFunctionValue());
         return Value.makeNone();
+    }
+
+
+    @Override
+    public void visitBlockTransfer(BasicBlock b, State s) {
+        super.visitBlockTransfer(b, s);
+        if(testerContextSensitivity.isTestContext(s.getContext())) {
+            Test t = testerContextSensitivity.getTest(s.getContext());
+            if(retractedTests.contains(t)) {
+                s.setToNone();
+            }
+        }
+    }
+
+    public void retractTest(Test t) {
+        retractedTests.add(t);
+    }
+
+    @Override
+    public void registerSolverInterface(GenericSolver.SolverInterface c) {
+        this.c = (Solver.SolverInterface) c;
     }
 
     public class TajsTestVisitor implements TestVisitor<Boolean> {
@@ -189,7 +221,6 @@ public class TajsTypeTester implements TypeTestRunner {
         public Value attemptGetValue(TypeWithContext t) {
             return typeValuesHandler.findFeedbackValue(t);
         }
-
 
         @Override
         public Boolean visit(PropertyReadTest test) {

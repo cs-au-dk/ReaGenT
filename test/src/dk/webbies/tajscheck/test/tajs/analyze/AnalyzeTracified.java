@@ -12,9 +12,6 @@ import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Created by erik1 on 19-12-2016.
- */
 @RunWith(Parameterized.class)
 public class AnalyzeTracified {
 
