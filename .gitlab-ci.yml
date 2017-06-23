@@ -5,30 +5,32 @@ variables:
 
 before_script:
   - echo "Runnning on $CI_RUNNER_DESCRIPTION"
-  - npm config set cache $(pwd)/npm-cache
-  - echo "NPM cache set to $(pwd)/npm-cache"
+  - npm config set cache $/cache/npm-cache
+  - echo "NPM cache set to $/cache/npm-cache"
+  - export GRADLE_USER_HOME=/cache/.gradle
   # Configuring TAJS
   - echo "desktop=false"  >> .tajsconfig
   - npm install
   - (cd ts-spec-reader && npm install && node_modules/typescript/bin/tsc --module commonjs src/*.ts)
+
+cache:
+  key: "SharedCache"
+  paths:
+    - $GRADLE_USER_HOME/caches/
+    - $GRADLE_USER_HOME/wrapper/
+    - $GRADLE_USER_HOME/build-cache/
+    - ts-spec-reader/node_modules/
+    - node_modules/
+    - /cache/npm-cache
+    
   
 stages:
   - build_tajs
   - unit_tests
   - wrapup
 
-.job_template: &cache_defs
-  cache:
-    paths:
-    - ts-spec-reader/node_modules/
-    - node_modules/
-    - gradle-cache/
-    - .gradle/
-    - npm-cache/
-
 
 build_tajs_task:
-  <<: *cache_defs
   stage: build_tajs
   artifacts:
     expire_in: 4 week
@@ -36,14 +38,13 @@ build_tajs_task:
     paths:
     - build
   script: 
-    - gradle -g gradle-cache compileTest
+    - gradle compileTest
 
 ######################
 ##### UNIT TESTS #####
 ######################
 
 test_parsing:
-  <<: *cache_defs
   stage: unit_tests
   script:
   - gradle :test -i --tests "dk.webbies.tajscheck.test.TestParsing"
@@ -54,7 +55,6 @@ test_parsing:
     - builds/TSTAJS/TajsCheck/build/reports
 
 test_various:
-  <<: *cache_defs
   stage: unit_tests
   script:
   - gradle :test -i --tests "dk.webbies.tajscheck.test.TestVarious"
@@ -65,7 +65,6 @@ test_various:
     - builds/TSTAJS/TajsCheck/build/reports
 
 test_dynamic_benchmarks:
-  <<: *cache_defs
   stage: unit_tests
   script:
   - gradle :test -i --tests "dk.webbies.tajscheck.test.dynamic.RunBenchmarks"
@@ -76,7 +75,6 @@ test_dynamic_benchmarks:
     - builds/TSTAJS/TajsCheck/build/reports
 
 test_dynamic_unit:
-  <<: *cache_defs
   stage: unit_tests
   script:
   - gradle :test -i --tests "dk.webbies.tajscheck.test.dynamic.UnitTests"
@@ -87,7 +85,6 @@ test_dynamic_unit:
     - builds/TSTAJS/TajsCheck/build/reports
 
 test_tajs:unit:
-  <<: *cache_defs
   stage: unit_tests
   script:
   - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.TAJSUnitTests"
@@ -99,7 +96,6 @@ test_tajs:unit:
 
 
 test_tajs:benchmarks:
-  <<: *cache_defs
   stage: unit_tests
   script:
   - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks"
@@ -110,7 +106,6 @@ test_tajs:benchmarks:
     - builds/TSTAJS/TajsCheck/build/reports
 
 test_tajs:benchmarks_tracified:
-  <<: *cache_defs
   stage: unit_tests
   script:
   - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeTracified"
