@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck;
 
-import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.buildprogram.DriverProgramBuilder;
@@ -23,7 +22,10 @@ import java.net.ServerSocket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -73,7 +75,8 @@ public class Main {
         return new Pair<>(info, AstToStringVisitor.toString(program));
     }
 
-    public static String generateSmallestDriver(Benchmark bench, BooleanSupplier test) throws IOException {
+    public static String generateSmallestDriver(Benchmark bench, Function<String, Collection<Integer>> test) throws IOException {
+        int THREADS = 2;
         BenchmarkInfo info = BenchmarkInfo.create(bench);
 
         List<Test> tests = new TestCreator(info).createTests();
@@ -81,19 +84,33 @@ public class Main {
         Test[] testsArray = tests.toArray(new Test[]{});
         int prevSize = -1;
 
-        Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(new DriverProgramBuilder(Arrays.asList(testsArray), info).buildDriver(null)));
+        String filename = getFolderPath(bench) + TEST_FILE_NAME;
+        Util.writeFile(filename, AstToStringVisitor.toString(new DriverProgramBuilder(Arrays.asList(testsArray), info).buildDriver(null)));
 
-        if (!test.getAsBoolean()) {
+        Collection<Integer> firstResult = test.apply(filename);
+        if (firstResult == null) {
             throw new RuntimeException("Does not initially satisfy condition!");
         }
 
+        Test[] finalTestsArray = testsArray;
+        testsArray = firstResult.stream().map(index -> finalTestsArray[index]).collect(Collectors.toList()).toArray(new Test[]{});
+
         while (prevSize != testsArray.length) {
             prevSize = testsArray.length;
-            testsArray = MinimizeArray.minimizeArray((testsToTest) -> {
+            AtomicInteger counter = new AtomicInteger(0);
+            testsArray = MinimizeArray.minimizeArrayQuick(THREADS, (testsToTest) -> {
                 try {
-                    Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(new DriverProgramBuilder(Arrays.asList(testsToTest), info).buildDriver(null)));
+                    String fileName = getFolderPath(bench) + counter.incrementAndGet() + TEST_FILE_NAME;
+                    Util.writeFile(fileName, AstToStringVisitor.toString(new DriverProgramBuilder(Arrays.asList(testsToTest), info).buildDriver(null)));
 
-                    return test.getAsBoolean();
+                    Collection<Integer> testsRun = test.apply(fileName);
+                    Util.deleteFile(fileName);
+                    if (testsRun != null) {
+                        Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME + ".smallest", AstToStringVisitor.toString(new DriverProgramBuilder(Arrays.asList(testsToTest), info).buildDriver(null)));
+                        return testsRun.stream().map(index -> testsToTest[index]).collect(Collectors.toList()).toArray(new Test[]{});
+                    } else {
+                        return null;
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -102,7 +119,7 @@ public class Main {
 
         Statement program = new DriverProgramBuilder(Arrays.asList(testsArray), info).buildDriver(null);
 
-        Util.writeFile(getFolderPath(bench) + TEST_FILE_NAME, AstToStringVisitor.toString(program));
+        Util.writeFile(filename, AstToStringVisitor.toString(program));
 
         return AstToStringVisitor.toString(program);
     }
@@ -249,13 +266,7 @@ public class Main {
 
         genCoverageReport(coverageResult, bench);
 
-        String testFileLastPart = testFileName.substring(testFileName.lastIndexOf('/') + 1);
-        for (Map.Entry<String, CoverageResult> entry : result.entrySet()) {
-            if (entry.getKey().endsWith(testFileLastPart)) {
-                return entry.getValue().split(splitRules);
-            }
-        }
-        throw new NullPointerException();
+        return result.get(testFileName.substring(testFileName.lastIndexOf('/') + 1)).split(splitRules);
     }
 
     private static void genCoverageReport(String coverageResult, Benchmark bench) throws IOException {

@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck;
 
-import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
@@ -11,20 +10,22 @@ import java.util.stream.Collectors;
  */
 public class OutputParser {
     public static final class TypeError {
-        public final String path;
+        public String path;
         public String expected;
         public String typeof;
         public String toString;
         public String JSON;
         public String type;
+        public Set<Integer> testsCalled;
 
-        public TypeError(String path, String expected, String typeof, String toString, String JSON, String type) {
+        public TypeError(String path, String expected, String typeof, String toString, String JSON, String type, Set<Integer> testsCalled) {
             this.path = path;
             this.expected = expected;
             this.typeof = typeof;
             this.toString = toString;
             this.JSON = JSON;
             this.type = type;
+            this.testsCalled = testsCalled;
         }
 
         @Override
@@ -73,14 +74,17 @@ public class OutputParser {
     }
 
     public static RunResult parseDriverResult(String output) {
+        return parseDriverResult(output, false, null);
+    }
+
+    public static RunResult parseDriverResult(String output, boolean collectCalledTests, String filterPath) {
         if (output.isEmpty()) {
             return new RunResult(new ArrayList<>(), new ArrayList<>(), -1, Collections.emptySet());
         }
         List<String> split = Arrays.stream(output.split("\n")).filter(line -> !line.trim().isEmpty()).collect(Collectors.toList());
 
-        Pair<List<String>, Pair<Integer, Set<Integer>>> testStats = extractTestStats(split);
-        split = testStats.getLeft();
-
+        int totalTests = -1;
+        Set<Integer> testsCalled = new HashSet<>();
 
         List<String> errors = new ArrayList<>();
 
@@ -102,53 +106,41 @@ public class OutputParser {
         split = split.stream().filter(str -> !str.startsWith("Initial random: ")).collect(Collectors.toList());
 
         if (split.size() == 0) {
-            return new RunResult(new ArrayList<>(), errors, testStats.getRight().getLeft(), testStats.getRight().getRight());
+            return new RunResult(new ArrayList<>(), errors, totalTests, testsCalled);
         }
 
         List<String> singleResultCollector = new ArrayList<>();
 
-        singleResultCollector.add(split.get(0));
-        for (int i = 1; i < split.size(); i++) {
+        for (int i = 0; i < split.size(); i++) {
             String line = split.get(i);
 
-            if (!line.startsWith(" ")) {
-                typeErrors.add(parseSingleResult(singleResultCollector));
-                singleResultCollector.clear();
-            }
-            singleResultCollector.add(line);
-
-        }
-
-        typeErrors.add(parseSingleResult(singleResultCollector));
-
-        assert typeErrors.stream().allMatch(Objects::nonNull);
-
-        return new RunResult(typeErrors, errors, testStats.getRight().getLeft(), testStats.getRight().getRight());
-    }
-
-    // Test called:
-    // total number of tests:
-    private static Pair<List<String>, Pair<Integer, Set<Integer>>> extractTestStats(List<String> split) {
-        int totalTests = -1;
-        Set<Integer> testsCalled = new HashSet<>();
-        List<String> filtered = new ArrayList<>();
-
-        for (String str : split) {
-            if (str.startsWith("Test called: ")) {
-                int testCalled = Integer.parseInt(Util.removePrefix(str, "Test called: ").trim());
+            if (line.startsWith("Test called: ")) {
+                int testCalled = Integer.parseInt(Util.removePrefix(line, "Test called: ").trim());
                 testsCalled.add(testCalled);
-            } else if (str.startsWith("total number of tests: ")) {
+            } else if (line.startsWith("total number of tests: ")) {
                 assert totalTests == -1;
-                totalTests = Integer.parseInt(Util.removePrefix(str, "total number of tests: ").trim());
+                totalTests = Integer.parseInt(Util.removePrefix(line, "total number of tests: ").trim());
             } else {
-                filtered.add(str);
+                if (!line.startsWith(" ")) {
+                    if (!singleResultCollector.isEmpty()) {
+                        typeErrors.add(parseSingleResult(singleResultCollector, testsCalled, collectCalledTests, filterPath));
+                    }
+                    singleResultCollector.clear();
+                }
+                singleResultCollector.add(line);
             }
         }
 
-        return new Pair<>(filtered, new Pair<>(totalTests, testsCalled));
+        if (!singleResultCollector.isEmpty()) {
+            typeErrors.add(parseSingleResult(singleResultCollector, testsCalled, collectCalledTests, filterPath));
+        }
+
+        typeErrors = typeErrors.stream().filter(Objects::nonNull).collect(Collectors.toList());
+
+        return new RunResult(typeErrors, errors, totalTests, testsCalled);
     }
 
-    private static TypeError parseSingleResult(List<String> lines) {
+    private static TypeError parseSingleResult(List<String> lines, Set<Integer> testsCalled, boolean collectCalledTests, String filterPath) {
         if (!(lines.size() == 6 || lines.size() == 5)) {
             System.out.println();
         }
@@ -189,7 +181,15 @@ public class OutputParser {
             JSON = lines.get(5).substring(jsonPrefix.length(), lines.get(5).length());
         }
 
-        return new TypeError(path, expected, typeof, toString, JSON, type);
+        if (filterPath != null && !filterPath.equals(path)) {
+            return null;
+        }
+
+        Set<Integer> typeErrorTestsCalled = null;
+        if (collectCalledTests) {
+            typeErrorTestsCalled = new HashSet<>(testsCalled);
+        }
+        return new TypeError(path, expected, typeof, toString, JSON, type, typeErrorTestsCalled);
     }
 
     public static RunResult combine(List<RunResult> results) {

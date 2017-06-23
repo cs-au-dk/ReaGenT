@@ -174,17 +174,17 @@ public class DeltaDebug {
         Util.writeFile(filePath, file);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException { // TODO: Run
         Util.isDeltaDebugging = true;
         Util.alwaysRecreate = false;
-        Benchmark bench = RunBenchmarks.benchmarks.get("q").withOptions(options -> options.setOnlyInitialize(true));
-//        Benchmark bench = RunBenchmarks.benchmarks.get("Redux");
-//
-        String file = bench.jsFile;
+        Benchmark bench = RunBenchmarks.benchmarks.get("Sugar");
+        String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                return testHasError(bench, "foo");
+                return testSoundness(bench);
+            } catch (IllegalArgumentException e) {
+                return false;
             } catch (NullPointerException e) {
                 return false;
             } catch (RuntimeException e) {
@@ -229,7 +229,7 @@ public class DeltaDebug {
 
 
     private static boolean testSoundness(Benchmark bench) throws Exception {
-        bench = bench.withRunMethod(BOOTSTRAP).withOptions(options -> options.setMaxIterationsToRun(100 * 1000).setConstructAllTypes(true).setCheckDepthReport(0));
+        bench = bench.withRunMethod(BOOTSTRAP).withOptions(options -> options.setMaxIterationsToRun(5 * 1000).setConstructAllTypes(true).setCheckDepthReport(0));
 
         Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");

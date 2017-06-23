@@ -9,8 +9,11 @@ import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.function.BooleanSupplier;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -19,12 +22,11 @@ import java.util.stream.Collectors;
  */
 public class DeltaTest {
     public static void main(String[] args) throws IOException {
-//        Benchmark bench = RunBenchmarks.benchmarks.get("Backbone.js");
-        Benchmark bench = RunBenchmarks.benchmarks.get("RxJS");
+        Benchmark bench = RunBenchmarks.benchmarks.get("jQuery");
+//        Benchmark bench = RunBenchmarks.benchmarks.get("async");
 //        Benchmark bench = RunBenchmarks.benchmarks.get("RxJS");
-        bench = bench.withOptions(options -> options.setConstructClassInstances(true).setConstructClassTypes(true));
-        String testPath = "window.Rx.Notification.accept";
-        String typeof = "FOO";
+        bench = bench.withOptions(options -> options.setWriteAll(true)).withOptions(CheckOptions::errorFindingOptions).withOptions(options -> options.setMaxTime(10 * 1000));
+        String testPath = "jQuery().clone";
 //        String expected = "(undefined or (a non null value and Array and (arrayIndex: (null or ([any] and a non null value and a generic type marker (._isUnboundGeneric))))))";
 
         String driver = Util.readFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME);
@@ -36,11 +38,11 @@ public class DeltaTest {
                 .map(String::trim)
                 .collect(Collectors.toList());
 
-//        bench = bench.withPathsToTest(paths);
+        bench = bench.withPathsToTest(paths);
 
         while (true) {
             try {
-                Main.generateSmallestDriver(bench, testHasTypeError(bench, new OutputParser.TypeError(testPath, "", typeof, "", "", "")));
+                Main.generateSmallestDriver(bench, testHasTypeError(bench, new OutputParser.TypeError(testPath, null, null, null, null, null, null)));
                 break;
             } catch (RuntimeException e) {
                 System.err.println(e.getMessage());
@@ -48,17 +50,41 @@ public class DeltaTest {
                 // continue
             }
         }
+        System.exit(0);
     }
 
-    public static BooleanSupplier testHasTypeError(Benchmark bench, OutputParser.TypeError typeError) {
-        return () -> {
-            OutputParser.RunResult result;
+    public static Function<String, Collection<Integer>> testHasTypeError(Benchmark bench, OutputParser.TypeError typeError) {
+        return (path) -> {
             try {
-                result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+                String out = Main.runBenchmark(path, bench);
+                OutputParser.RunResult result = OutputParser.parseDriverResult(out, true, null);
+                Optional<OutputParser.TypeError> first = result.typeErrors.stream().filter(te -> {
+                    if (typeError.typeof != null && !te.typeof.equals(typeError.typeof)) {
+                        return false;
+                    }
+                    if (typeError.expected != null && !te.expected.equals(typeError.expected)) {
+                        return false;
+                    }
+                    if (typeError.toString != null && !te.toString.equals(typeError.toString)) {
+                        return false;
+                    }
+                    if (typeError.type != null && !te.type.equals(typeError.type)) {
+                        return false;
+                    }
+                    if (typeError.JSON != null && !te.JSON.equals(typeError.JSON)) {
+                        return false;
+                    }
+                    //noinspection RedundantIfStatement
+                    if (te.getPath().equals(typeError.getPath())) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }).findFirst();
+                return first.map(typeError1 -> typeError1.testsCalled).orElse(null);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            return result.typeErrors.stream().anyMatch(te -> te.getPath().equals(typeError.getPath()));
         };
     }
 }
