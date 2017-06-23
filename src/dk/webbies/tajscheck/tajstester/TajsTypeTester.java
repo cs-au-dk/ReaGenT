@@ -57,8 +57,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private Set<Test> retractedTests = newSet();
 
-    private Solver.SolverInterface c;
-
     public TajsTypeTester(List<Test> tests, BenchmarkInfo info, TesterContextSensitivity testerContextSensitivity) {
         this.tests = tests;
         this.info = info;
@@ -151,11 +149,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public void retractTest(Test t) {
         retractedTests.add(t);
-    }
-
-    @Override
-    public void registerSolverInterface(GenericSolver.SolverInterface c) {
-        this.c = (Solver.SolverInterface) c;
     }
 
     public class TajsTestVisitor implements TestVisitor<Boolean> {

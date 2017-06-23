@@ -11,12 +11,17 @@ import dk.webbies.tajscheck.testcreator.test.Test;
 import java.util.Map;
 
 import static dk.brics.tajs.util.Collections.newMap;
+import static dk.brics.tajs.util.Collections.singleton;
 
 public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
 
     public static final String TEST_IDENTIFIER = "$_$test";
 
     private Map<String, Test> contextTest = newMap();
+
+    private final PKey.StringPKey testSpecialLocation = PKey.StringPKey.mk(TEST_IDENTIFIER);
+
+
 
     @Override
     public Context makeFunctionEntryContext(State state, ObjectLabel function, FunctionCalls.CallInfo callInfo, Value this_objs, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
@@ -26,7 +31,6 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
     private Context tagTestContext(Context sourceContext, Context destinationContext) {
         if ((sourceContext.getLocalContext() != null && sourceContext.getLocalContext().containsKey(TEST_IDENTIFIER))
                 || (sourceContext.getFunArgs() != null && sourceContext.getFunArgs().getSelectedClosureVariables() != null && sourceContext.getFunArgs().getSelectedClosureVariables().containsKey(PKey.StringPKey.mk(TEST_IDENTIFIER)))) {
-            PKey.StringPKey testSpecialLocation = PKey.StringPKey.mk(TEST_IDENTIFIER);
 
             Value t1 = sourceContext.getLocalContext() == null ? null : sourceContext.getLocalContext().getOrDefault(TEST_IDENTIFIER, null);
             Value t2 = sourceContext.getFunArgs() == null ? null : sourceContext.getFunArgs().getSelectedClosureVariables().getOrDefault(testSpecialLocation, null);
@@ -40,16 +44,31 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
             assert (destinationContext.getLocalContext() == null || !destinationContext.getLocalContext().containsKey(TEST_IDENTIFIER) || destinationContext.getLocalContext().get(TEST_IDENTIFIER).equals(picked));
             assert (destinationContext.getFunArgs() == null || destinationContext.getFunArgs().getSelectedClosureVariables() == null || !destinationContext.getFunArgs().getSelectedClosureVariables().containsKey(testSpecialLocation) || destinationContext.getFunArgs().getSelectedClosureVariables().get(testSpecialLocation).equals(picked));
 
-            Map<PKey.StringPKey, Value> newCVars = destinationContext.getFunArgs() == null || destinationContext.getFunArgs().getSelectedClosureVariables() == null ? newMap() : destinationContext.getFunArgs().getSelectedClosureVariables();
-            newCVars.putIfAbsent(testSpecialLocation, picked);
-            ContextArguments cargs = sourceContext.getFunArgs() == null ?
-                    new ContextArguments(null, null, newCVars)
-                    : sourceContext.getFunArgs().copyWith(null, newCVars, null, null);
+            ContextArguments cargs = tagContextArguments(sourceContext.getFunArgs(), destinationContext.getFunArgs(), picked);
 
             Context modified = Context.mk(destinationContext.getThisVal(), cargs, destinationContext.getSpecialRegisters(), destinationContext.getLocalContext(), destinationContext.getLocalContextAtEntry());
             return modified;
         }
         return destinationContext;
+    }
+
+    private ContextArguments tagContextArguments(ContextArguments sourceArgs, ContextArguments args, Value tag) {
+        Map<PKey.StringPKey, Value> newCVars = args == null || args.getSelectedClosureVariables() == null ? newMap() : args.getSelectedClosureVariables();
+        newCVars.putIfAbsent(testSpecialLocation, tag);
+        ContextArguments cargs = sourceArgs == null ?
+                new ContextArguments(null, null, newCVars)
+                : sourceArgs.copyWith(null, newCVars, null, null);
+        return cargs;
+    }
+
+    @Override
+    protected HeapContext makeHeapContext(ContextArguments funargs, Solver.SolverInterface c) {
+        HeapContext hc = super.makeHeapContext(funargs, c);
+        if(isFunctionTestContext(c.getState().getContext())) {
+            String tag = getTag(c.getState().getContext());
+            return hc.copyWith(tagContextArguments(funargs, hc.getFunctionArguments(), Value.makeSpecialStrings(singleton(tag))), null);
+        }
+        return hc;
     }
 
     public Context makeLocalTestContext(Context from, Test test) {
@@ -78,16 +97,19 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
 
     public boolean isTestContext(Context c) { return isFunctionTestContext(c) || isLocalTestContext(c); }
 
-    public Test getTest(Context c) {
+    public String getTag(Context c) {
         if(isLocalTestContext(c)) {
-            return contextTest.get(c.getLocalContext().get(TEST_IDENTIFIER).getSpecialStrings().iterator().next());
+            return c.getLocalContext().get(TEST_IDENTIFIER).getSpecialStrings().iterator().next();
         }
         else if(isFunctionTestContext(c)) {
-            String s = c.getFunArgs().getSelectedClosureVariables().get(PKey.StringPKey.mk(TEST_IDENTIFIER)).getSpecialStrings().iterator().next();
-            return contextTest.get(s);
+            return c.getFunArgs().getSelectedClosureVariables().get(PKey.StringPKey.mk(TEST_IDENTIFIER)).getSpecialStrings().iterator().next();
         }
 
         throw new RuntimeException("Unable to get a test from context " + c);
+    }
+
+    public Test getTest(Context c) {
+        return contextTest.get(getTag(c));
     }
 
 }
