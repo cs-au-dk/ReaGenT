@@ -2,6 +2,7 @@ package dk.webbies.tajscheck.tajstester;
 
 import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.FunctionCalls;
+import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.TracifierBasicContextSensitivity;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
