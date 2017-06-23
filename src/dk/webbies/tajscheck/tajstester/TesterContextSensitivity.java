@@ -77,7 +77,7 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
         if (from.getLocalContext() != null) {
             testPerformed.putAll(from.getLocalContext());
         }
-        testPerformed.put(TesterContextSensitivity.TEST_IDENTIFIER, Value.makeStr(test.getPath())); //FIXME: Is getPath unique?
+        testPerformed.put(TesterContextSensitivity.TEST_IDENTIFIER, Value.makeSpecialStrings(singleton(test.getPath()))); //FIXME: Is getPath unique?
 
         Context newContext = Context.mk(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(),
                 testPerformed, from.getLocalContextAtEntry());
