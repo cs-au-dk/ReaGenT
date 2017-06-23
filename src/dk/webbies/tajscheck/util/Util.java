@@ -666,8 +666,12 @@ public class Util {
         return l;
     }
 
+    public static <E> String mkString(Collection<E> l, String separator) {
+        return mkString(l.stream(), separator);
+    }
+
     public static <E> String mkString(Stream<E> l, String separator) {
-        return l.map(e -> e.toString()).reduce("", (c, a) -> a + separator + c);
+        return String.join(separator, l.map(Object::toString).collect(Collectors.toList()));
     }
 
 

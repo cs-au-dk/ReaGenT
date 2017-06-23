@@ -13,8 +13,10 @@ import static org.hamcrest.CoreMatchers.*;
 
 public class TAJSUnitTests {
     private static TAJSUtil.TajsAnalysisResults run(String folderName) throws Exception {
-        Benchmark bench = benchFromFolder(folderName);
+        return run(benchFromFolder(folderName));
+    }
 
+    private static TAJSUtil.TajsAnalysisResults run(Benchmark bench) throws Exception {
         return TAJSUtil.runNoDriver(bench, 60);
     }
 
@@ -43,7 +45,7 @@ public class TAJSUnitTests {
         }
 
         private TAJSUnitTests.TAJSResultTester performedAllTests() {
-            MatcherAssert.assertThat("some tests were not performed: " + mkString(results.testNot.stream(), ", "), results.testNot.isEmpty());
+            MatcherAssert.assertThat("some tests were not performed: " + mkString(results.testNot, ", "), results.testNot.isEmpty());
             return this;
         }
 
@@ -201,6 +203,10 @@ public class TAJSUnitTests {
                 .toFail();*/
     }
 
+    @Test
+    public void overloads() throws Exception {
+        expect(run("overLoads")).hasNoViolations();
+    }
 
     @Test
     public void multipleFunctions() throws Exception {
@@ -271,6 +277,11 @@ public class TAJSUnitTests {
         expect(result)
                 .performed("module.id(number)")
                 .hasViolations();
+    }
+
+    @Test
+    public void samePathFunctions() throws Exception {
+        expect(run(benchFromFolder("samePathFunctions").withOptions(options -> options.setSplitUnions(false)))).hasNoViolations();
     }
 }
 

@@ -2,19 +2,13 @@ package dk.webbies.tajscheck.tajstester;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.brics.tajs.analysis.FunctionCalls;
-import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.js.UserFunctionCalls;
 import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
-import dk.brics.tajs.analysis.nativeobjects.JSGlobal;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.BasicBlock;
-import dk.brics.tajs.flowgraph.Function;
-import dk.brics.tajs.flowgraph.SourceLocation;
-import dk.brics.tajs.js2flowgraph.FlowGraphMutator;
 import dk.brics.tajs.lattice.*;
-import dk.brics.tajs.options.Options;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Pair;
@@ -50,6 +44,7 @@ public class TajsTypeTester implements TypeTestRunner {
     private final List<Test> performed = newList();
 
     private TypeValuesHandler valueHandler = null;
+    private String LOCAL_CONTEXT_MARKER = "TAJSCheckTest";
 
     public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
         this.tests = tests;
@@ -69,7 +64,7 @@ public class TajsTypeTester implements TypeTestRunner {
     private boolean isInTestContext(Solver.SolverInterface c) {
         return c.getState().getContext() != null
                 && c.getState().getContext().getLocalContext() != null
-                && c.getState().getContext().getLocalContext().keySet().contains("test");
+                && c.getState().getContext().getLocalContext().keySet().contains(LOCAL_CONTEXT_MARKER);
     }
 
     public void triggerTypeTests(Solver.SolverInterface c) {
@@ -79,7 +74,8 @@ public class TajsTypeTester implements TypeTestRunner {
         State originalState = c.getState().clone();
 
         performed.clear();
-        for (Test test : tests) {
+        for (int i = 0; i < tests.size(); i++) {
+            Test test = tests.get(i);
             if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
                 if (DEBUG && !c.isScanning())
                     System.out.println("Skipped test " + test);
@@ -95,7 +91,7 @@ public class TajsTypeTester implements TypeTestRunner {
             if (currentContext.getLocalContext() != null) {
                 testPerformed.putAll(currentContext.getLocalContext());
             }
-            testPerformed.put("test", Value.makeStr(test.getPath())); //FIXME: Is getPath unique?
+            testPerformed.put(LOCAL_CONTEXT_MARKER, Value.makeStr(i + ":" + test.getPath()));
 
             Context newc = Context.mk(currentContext.getThisVal(), currentContext.getFunArgs(), currentContext.getSpecialRegisters(),
                     testPerformed, currentContext.getLocalContextAtEntry());
@@ -117,9 +113,9 @@ public class TajsTypeTester implements TypeTestRunner {
             List<Test> notPerformed = new LinkedList<>();
             notPerformed.addAll(tests);
             notPerformed.removeAll(performed);
-            System.out.println("Tests not performed:\n   " + mkString(notPerformed.stream(), "\n   "));
-            System.out.println("Test details:\n   " + mkString(allCertificates.stream(), "\n   "));
-            System.out.println("Violations:\n   " + mkString(allViolations.stream(), "\n   "));
+            System.out.println("Tests not performed:\n   " + mkString(notPerformed, "\n   "));
+            System.out.println("Test details:\n   " + mkString(allCertificates, "\n   "));
+            System.out.println("Violations:\n   " + mkString(allViolations, "\n   "));
         }
     }
 
@@ -162,6 +158,9 @@ public class TajsTypeTester implements TypeTestRunner {
          * @return if there was progress, which happens if any state changes (a new value is added).
          */
         public boolean attemptAddValue(Value v, TypeWithContext t, Test test) {
+            if (v.isNone()) {
+                return false;
+            }
             State s = c.getState();
             v = UnknownValueResolver.getRealValue(v, s);
             Pair<Value, List<TypeViolation>> tcResult = typeChecker.typeCheckAndFilter(v, t.getType(), t.getTypeContext(), info, 2, test);
