@@ -204,11 +204,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    public void overloads2() throws Exception {
-        expect(run("overLoads2")).hasNoViolations();
-    }
-
-    @Test
     public void multipleFunctions() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("multipleFunctions");
 
