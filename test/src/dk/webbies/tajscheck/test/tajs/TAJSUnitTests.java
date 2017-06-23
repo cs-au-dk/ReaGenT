@@ -204,8 +204,8 @@ public class TAJSUnitTests {
     }
 
     @Test
-    public void overloads() throws Exception {
-        expect(run("overLoads")).hasNoViolations();
+    public void overloads2() throws Exception {
+        expect(run("overLoads2")).hasNoViolations();
     }
 
     @Test
