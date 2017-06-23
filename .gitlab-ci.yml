@@ -5,8 +5,8 @@ variables:
 
 before_script:
   - echo "Runnning on $CI_RUNNER_DESCRIPTION"
-  - npm config set cache $/cache/npm-cache
-  - echo "NPM cache set to $/cache/npm-cache"
+  - npm config set cache /cache/npm-cache
+  - echo "NPM cache set to /cache/npm-cache"
   - export GRADLE_USER_HOME=/cache/.gradle
   # Configuring TAJS
   - echo "desktop=false"  >> .tajsconfig
