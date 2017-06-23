@@ -1,5 +1,7 @@
 package dk.webbies.tajscheck.tajstester;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.FunctionCalls;
 import dk.brics.tajs.analysis.Solver;
@@ -18,7 +20,9 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
 
     public static final String TEST_IDENTIFIER = "$_$test";
 
-    private Map<String, Test> contextTest = newMap();
+    BiMap<String, Test> contextTest = HashBiMap.create();
+
+    private int testIds = 0;
 
     private final PKey.StringPKey testSpecialLocation = PKey.StringPKey.mk(TEST_IDENTIFIER);
 
@@ -73,15 +77,20 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
     }
 
     public Context makeLocalTestContext(Context from, Test test) {
+        if(!contextTest.inverse().containsKey(test)) {
+            contextTest.put(test.getPath() + "_" + testIds++, test);
+        }
+        String testId = contextTest.inverse().get(test);
+
         Map<String, Value> testPerformed = newMap();
         if (from.getLocalContext() != null) {
             testPerformed.putAll(from.getLocalContext());
         }
-        testPerformed.put(TesterContextSensitivity.TEST_IDENTIFIER, Value.makeSpecialStrings(singleton(test.getPath()))); //FIXME: Is getPath unique?
+        testPerformed.put(TesterContextSensitivity.TEST_IDENTIFIER, Value.makeSpecialStrings(singleton(testId)));
 
         Context newContext = Context.mk(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(),
                 testPerformed, from.getLocalContextAtEntry());
-        contextTest.putIfAbsent(test.getPath(), test);
+        contextTest.putIfAbsent(testId, test);
         return newContext;
     }
 
