@@ -2,6 +2,7 @@ package dk.webbies.tajscheck.tajstester;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.brics.tajs.analysis.FunctionCalls;
+import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.js.UserFunctionCalls;
@@ -90,8 +91,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         State originalState = c.getState().clone();
 
         performed.clear();
-        for (int i = 0; i < tests.size(); i++) {
-            Test test = tests.get(i);
+        for (Test test : tests) {
             if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
                 if (DEBUG && !c.isScanning())
                     System.out.println("Skipped test " + test);
@@ -233,16 +233,18 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         @Override
         public Boolean visit(LoadModuleTest test) {
             return c.withState(c.getState(), () -> {
+                Value v;
                 if (info.bench.run_method == Benchmark.RUN_METHOD.NODE) {
                     ObjectLabel moduleObject = ObjectLabel.mk(ECMAScriptObjects.OBJECT_MODULE, ObjectLabel.Kind.OBJECT);
-                    Value v = pv.readPropertyDirect(moduleObject, Value.makeStr("exports"));
-                    if(c.isScanning()) {
-                        allCertificates.add(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()));
-                    }
-                    return attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test);
+                    v = UnknownValueResolver.getProperty(moduleObject, PKey.mk("exports"), c.getState(), false);
                 } else {
-                    throw new RuntimeException("Not supported as of yet.");
+                    ObjectLabel globalObject = InitialStateBuilder.GLOBAL;
+                    v = UnknownValueResolver.getProperty(globalObject, PKey.mk(test.getPath()), c.getState(), false);
                 }
+                if(c.isScanning()) {
+                    allCertificates.add(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()));
+                }
+                return attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test);
             });
         }
 

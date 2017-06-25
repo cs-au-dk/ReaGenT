@@ -6,6 +6,7 @@ import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.nativeobjects.concrete.TAJSSplitConcreteSemantics;
 import dk.brics.tajs.lattice.ObjectLabel;
 import dk.brics.tajs.lattice.State;
+import dk.brics.tajs.lattice.UnknownValueResolver;
 import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.util.Pair;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -110,7 +111,7 @@ public class TajsTypeChecker {
 
             if(typeCheck instanceof FieldTypeCheck) {
                 FieldTypeCheck fieldTypeCheck = (FieldTypeCheck)typeCheck;
-                Value propertyValue = pv.readPropertyValue(v.getAllObjectLabels(), fieldTypeCheck.getField());
+                Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(v.getAllObjectLabels(), fieldTypeCheck.getField()), c.getState());
                 if(propertyValue.isMaybeAbsent()) {
                     propertyValue = Value.join(propertyValue, Value.makeUndef());
                 }
@@ -196,7 +197,7 @@ public class TajsTypeChecker {
 
         @Override
         public Boolean visit(FieldCheck check, Value o) {
-            Value propertyValue = pv.readPropertyValue(o.getAllObjectLabels(), check.getField());
+            Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(o.getAllObjectLabels(), check.getField()), c.getState());
             if (propertyValue.isMaybeAbsent()) {
                 propertyValue = Value.join(propertyValue, Value.makeUndef());
             }

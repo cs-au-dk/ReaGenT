@@ -89,6 +89,8 @@ public class SpecInstantiator {
         if (singletonList(globalObjectPath).equals(path)) {
             return global;
         }
+        if(path.size() > 0 && path.get(0).equals("Window"))
+            path = path.subList(1, path.size());
         return resolveType(global, path);
     }
 
