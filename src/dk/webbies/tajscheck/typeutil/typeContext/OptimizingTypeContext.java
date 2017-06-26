@@ -13,6 +13,7 @@ import java.util.*;
  */
 public class OptimizingTypeContext implements TypeContext {
     private final Map<TypeParameterType, Type> map;
+    private final Set<TypeParameterType> overwritten;
     private final Type thisType;
     private final BenchmarkInfo info;
     private final Map<OptimizingTypeContext, OptimizingTypeContext> cache;
@@ -34,6 +35,7 @@ public class OptimizingTypeContext implements TypeContext {
     private OptimizingTypeContext(BenchmarkInfo info) {
         this(
                 Collections.emptyMap(),
+                Collections.emptySet(),
                 null,
                 info,
                 info.getAttribute(OptimizingTypeContext.class, "cache", HashMap::new),
@@ -41,11 +43,12 @@ public class OptimizingTypeContext implements TypeContext {
         );
     }
 
-    private OptimizingTypeContext(Map<TypeParameterType, Type> map, Type thisType, BenchmarkInfo info, Map<OptimizingTypeContext, OptimizingTypeContext> cache, Map<Pair<Type, OptimizingTypeContext>, OptimizingTypeContext> optimizationCache) {
-        if (map == null) {
-            throw new NullPointerException();
+    private OptimizingTypeContext(Map<TypeParameterType, Type> map, Set<TypeParameterType> overwritten, Type thisType, BenchmarkInfo info, Map<OptimizingTypeContext, OptimizingTypeContext> cache, Map<Pair<Type, OptimizingTypeContext>, OptimizingTypeContext> optimizationCache) {
+        if (map == null || overwritten == null) {
+            throw new RuntimeException();
         }
         this.map = map;
+        this.overwritten = overwritten;
         this.thisType = thisType;
         this.info = info;
         this.cache = cache;
@@ -55,26 +58,31 @@ public class OptimizingTypeContext implements TypeContext {
     @Override
     public OptimizingTypeContext append(Map<TypeParameterType, Type> newParameters) {
         Map<TypeParameterType, Type> newMap = new HashMap<>(this.map);
+        Set<TypeParameterType> overwritten = null;
         for (Map.Entry<TypeParameterType, Type> entry : newParameters.entrySet()) {
             Type previous = newMap.put(entry.getKey(), entry.getValue());
             if (previous != null && info.freeGenericsFinder.findFreeGenerics(entry.getValue()).contains(entry.getKey())) {
-                newMap.put(entry.getKey(), ANY);
+                if (overwritten == null) {
+                    overwritten = new HashSet<>(this.overwritten);
+                }
+                overwritten.add(entry.getKey());
             }
         }
-        return new OptimizingTypeContext(newMap, this.thisType, info, cache, optimizationCache).cannonicalize();
+        overwritten = overwritten == null ? this.overwritten : overwritten;
+        return new OptimizingTypeContext(newMap, overwritten, this.thisType, info, cache, optimizationCache).cannonicalize();
     }
 
     @Override
     public OptimizingTypeContext withThisType(Type thisType) {
         if (thisType == null || this.thisType == null) {
-            return new OptimizingTypeContext(this.map, thisType, info, cache, optimizationCache);
+            return new OptimizingTypeContext(this.map, this.overwritten, thisType, info, cache, optimizationCache);
         }
         Set<Type> baseTypes = TypesUtil.getAllBaseTypes(this.thisType, new HashSet<>());
 
         if (baseTypes.contains(thisType)) {
             return this;
         } else {
-            return new OptimizingTypeContext(this.map, thisType, info, cache, optimizationCache).cannonicalize();
+            return new OptimizingTypeContext(this.map, this.overwritten, thisType, info, cache, optimizationCache).cannonicalize();
         }
     }
 
@@ -89,7 +97,14 @@ public class OptimizingTypeContext implements TypeContext {
         if (type == null) {
             return null;
         }
-        return new TypeWithContext(type, this.optimizeTypeParameters(type));
+        OptimizingTypeContext context = this;
+        if (overwritten.contains(parameter)) {
+            HashMap<TypeParameterType, Type> appendMap = new HashMap<>();
+            appendMap.put(parameter, ANY);
+            context = context.append(appendMap);
+        }
+
+        return new TypeWithContext(type, context.optimizeTypeParameters(type));
     }
 
     public static final SimpleType ANY = new SimpleType(SimpleTypeKind.Any);
@@ -122,6 +137,7 @@ public class OptimizingTypeContext implements TypeContext {
         OptimizingTypeContext that = (OptimizingTypeContext) o;
 
         if (map != null ? !map.equals(that.map) : that.map != null) return false;
+        if (overwritten != null ? !overwritten.equals(that.overwritten) : that.overwritten != null) return false;
         if (thisType != null ? !thisType.equals(that.thisType) : that.thisType != null) return false;
         return info != null ? info.equals(that.info) : that.info == null;
     }
@@ -129,6 +145,7 @@ public class OptimizingTypeContext implements TypeContext {
     @Override
     public int hashCode() {
         int result = map != null ? map.hashCode() : 0;
+        result = 31 * result + (overwritten != null ? overwritten.hashCode() : 0);
         result = 31 * result + (thisType != null ? thisType.hashCode() : 0);
         result = 31 * result + (info != null ? info.hashCode() : 0);
         return result;
@@ -151,7 +168,7 @@ public class OptimizingTypeContext implements TypeContext {
         if (info.bench.options.disableSizeOptimization) {
             return this;
         }
-        OptimizingTypeContext clone = new OptimizingTypeContext(new HashMap<>(this.map), this.thisType, this.info, this.cache, optimizationCache);
+        OptimizingTypeContext clone = new OptimizingTypeContext(new HashMap<>(this.map), this.overwritten, this.thisType, this.info, this.cache, optimizationCache);
 
         Set<TypeParameterType> reachable = new HashSet<>(info.freeGenericsFinder.findFreeGenerics(baseType));
 
@@ -199,8 +216,6 @@ public class OptimizingTypeContext implements TypeContext {
         boolean dirty = false;
         for (Map.Entry<TypeParameterType, Type> entry : clone.map.entrySet()) {
             if (entry.getValue() instanceof TypeParameterType && clone.map.containsKey(entry.getValue()) && !(clone.map.get(entry.getValue()) instanceof TypeParameterType)) { // Not putting in the shortcut, if it points to a type-parameter, because that could get complex (or circular).
-                int count = OptimizingTypeContext.counter++;
-//                System.out.println(count);
                 entry.setValue(clone.map.get(entry.getValue()));
                 dirty = true;
             }
@@ -223,6 +238,4 @@ public class OptimizingTypeContext implements TypeContext {
         }
         return clone;
     }
-
-    static int counter = 0;
 }
