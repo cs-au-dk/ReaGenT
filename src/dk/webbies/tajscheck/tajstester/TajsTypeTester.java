@@ -1,5 +1,7 @@
 package dk.webbies.tajscheck.tajstester;
 
+import dk.au.cs.casa.typescript.types.SimpleType;
+import dk.au.cs.casa.typescript.types.SimpleTypeKind;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.brics.tajs.analysis.FunctionCalls;
 import dk.brics.tajs.analysis.PropVarOperations;
@@ -324,6 +326,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                 if (c.isScanning()) {
                     allCertificates.add(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{function, receiver, returnedValue}, c.getState()));
+
+                    if (returnedValue.isNone() && !(test.getReturnType() instanceof SimpleType && ((SimpleType) test.getReturnType()).getKind() == SimpleTypeKind.Never)) {
+                        allViolations.add(new TypeViolation("Function " + function + " always returns exceptionally", test));
+                    }
                 }
                 return attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test);
             });
