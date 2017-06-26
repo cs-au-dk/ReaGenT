@@ -10,7 +10,6 @@ import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
-import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Pair;
@@ -49,7 +48,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private final List<Test> performed = newList();
 
     private TypeValuesHandler valueHandler = null;
-    private String LOCAL_CONTEXT_MARKER = "TAJSCheckTest";
 
     private BasicBlock allTestsBlock;
 
@@ -90,8 +88,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         State originalState = c.getState().clone();
 
         performed.clear();
-        for (int i = 0; i < tests.size(); i++) {
-            Test test = tests.get(i);
+        for (Test test : tests) {
             if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
                 if (DEBUG && !c.isScanning())
                     System.out.println("Skipped test " + test);
@@ -248,18 +245,21 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         @Override
         public Boolean visit(MethodCallTest test) {
-            Value receiver = attemptGetValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
+            final Value receiver = attemptGetValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
 
-            List<Value> arguments = test.getParameters().stream().map(paramType -> typeValuesHandler.createValue(paramType, test.getTypeContext())).collect(Collectors.toList());
-
-            Value propertyValue = pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName())));
             //TODO: Filter this value ! ::  propertyValue = new TypeValuesFilter(propertyValue, propertyType)
+            Value function = pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName())));
+            return functionTest(test, receiver, function, false);
+        }
+
+        private Boolean functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
+            List<Value> arguments = test.getParameters().stream().map(paramType -> typeValuesHandler.createValue(paramType, test.getTypeContext())).collect(Collectors.toList());
 
             if (test.isRestArgs()) {
                 throw new RuntimeException();
             }
 
-            return testValues(propertyValue.getAllObjectLabels(), l -> {
+            return testValues(function.getAllObjectLabels(), l -> {
                 FunctionCalls.CallInfo callinfo = new FunctionCalls.CallInfo() {
 
                     @Override
@@ -274,7 +274,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                     @Override
                     public boolean isConstructorCall() {
-                        return false;
+                        return isConstructorCall;
                     }
 
                     @Override
@@ -322,9 +322,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                 Value returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), false, implicitAfterCall, c);
 
-
                 if (c.isScanning()) {
-                    allCertificates.add(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{propertyValue, receiver, returnedValue}, c.getState()));
+                    allCertificates.add(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{function, receiver, returnedValue}, c.getState()));
                 }
                 return attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test);
             });
@@ -332,12 +331,16 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         @Override
         public Boolean visit(ConstructorCallTest test) {
-            throw new RuntimeException();
+            Value receiver = Value.makeUndef();
+            Value function = attemptGetValue(test.getFunction(), test.getTypeContext());
+            return functionTest(test, receiver, function, true);
         }
 
         @Override
         public Boolean visit(FunctionCallTest test) {
-            throw new RuntimeException();
+            Value receiver = Value.makeUndef(); // TODO: Global object?
+            Value function = attemptGetValue(test.getFunction(), test.getTypeContext());
+            return functionTest(test, receiver, function, false);
         }
 
         @Override

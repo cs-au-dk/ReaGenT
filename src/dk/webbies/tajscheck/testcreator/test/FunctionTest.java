@@ -14,18 +14,29 @@ import java.util.List;
 public abstract class FunctionTest extends Test {
     private final List<Type> parameters;
     private final List<Signature> precedingSignatures;
+    private boolean restArgs;
 
-    public FunctionTest(Collection<Type> typeToTest, List<Type> parameters, Type returnType, String path, TypeContext typeContext, List<Signature> precedingSignatures) {
+    public FunctionTest(Collection<Type> typeToTest, List<Type> parameters, Type returnType, String path, TypeContext typeContext, List<Signature> precedingSignatures, boolean restArgs) {
         super(typeToTest, parameters, returnType, path + PrettyTypes.parametersTypes(parameters), typeContext);
         this.parameters = parameters;
         this.precedingSignatures = precedingSignatures;
+        this.restArgs = restArgs;
     }
 
     public List<Type> getParameters() {
         return parameters;
     }
 
+    public final boolean isRestArgs() {
+        return restArgs;
+    }
+
     public List<Signature> getPrecedingSignatures() {
         return precedingSignatures;
+    }
+
+    public final Type getReturnType() {
+        assert this.getProduces().size() == 1;
+        return this.getProduces().iterator().next();
     }
 }

@@ -12,12 +12,10 @@ import java.util.List;
  */
 public class ConstructorCallTest extends FunctionTest {
     private final Type function;
-    private final boolean restArgs;
 
     public ConstructorCallTest(Type function, List<Type> parameters, Type returnType, String path, TypeContext typeContext, boolean restArgs, List<Signature> precedingSignatures) {
-        super(Collections.singletonList(function), parameters, returnType, path + ".new", typeContext, precedingSignatures);
+        super(Collections.singletonList(function), parameters, returnType, path + ".new", typeContext, precedingSignatures, restArgs);
         this.function = function;
-        this.restArgs = restArgs;
     }
 
     public Type getFunction() {
@@ -44,9 +42,5 @@ public class ConstructorCallTest extends FunctionTest {
     @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
-    }
-
-    public boolean isRestArgs() {
-        return restArgs;
     }
 }

@@ -20,7 +20,7 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
 
     public static final String TEST_IDENTIFIER = "$_$test";
 
-    BiMap<String, Test> contextTest = HashBiMap.create();
+    private BiMap<String, Test> contextTest = HashBiMap.create();
 
     private int testIds = 0;
 
@@ -77,7 +77,7 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
     }
 
     public Context makeLocalTestContext(Context from, Test test) {
-        if(!contextTest.inverse().containsKey(test)) {
+        if(!contextTest.containsValue(test)) {
             contextTest.put(test.getPath() + "_" + testIds++, test);
         }
         String testId = contextTest.inverse().get(test);

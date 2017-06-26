@@ -13,20 +13,16 @@ import java.util.List;
 public class MethodCallTest extends FunctionTest {
     private Type object;
     private final String propertyName;
-    private final boolean restArgs;
 
     public MethodCallTest(Type object, Type function, String propertyName, List<Type> parameters, Type returnType, String path, TypeContext typeContext, boolean restArgs, List<Signature> precedingSignatures) {
-        super(Arrays.asList(object, function), parameters, returnType, path, typeContext, precedingSignatures);
+        super(Arrays.asList(object, function), parameters, returnType, path, typeContext, precedingSignatures, restArgs);
         this.object = object;
         this.propertyName = propertyName;
-        this.restArgs = restArgs;
     }
 
     public Type getObject() {
         return object;
     }
-
-    public Type getReturnType() {return getProduces().iterator().next();}
 
     public String getPropertyName() {
         return propertyName;
@@ -54,10 +50,6 @@ public class MethodCallTest extends FunctionTest {
     @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
-    }
-
-    public boolean isRestArgs() {
-        return restArgs;
     }
 
     @Override

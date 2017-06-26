@@ -12,12 +12,10 @@ import java.util.List;
  */
 public class FunctionCallTest extends FunctionTest {
     private final Type function;
-    private final boolean restArgs;
 
     public FunctionCallTest(Type function, List<Type> parameters, Type returnType, String path, TypeContext typeContext, boolean restArgs, List<Signature> precedingSignatures) {
-        super(Collections.singletonList(function), parameters, returnType, path, typeContext, precedingSignatures);
+        super(Collections.singletonList(function), parameters, returnType, path, typeContext, precedingSignatures, restArgs);
         this.function = function;
-        this.restArgs = restArgs;
     }
 
     public Type getFunction() {
@@ -44,9 +42,5 @@ public class FunctionCallTest extends FunctionTest {
     @Override
     public <T> T accept(TestVisitor<T> visitor) {
         return visitor.visit(this);
-    }
-
-    public boolean isRestArgs() {
-        return restArgs;
     }
 }

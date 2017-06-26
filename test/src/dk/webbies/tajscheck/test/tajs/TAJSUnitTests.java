@@ -3,10 +3,15 @@ package dk.webbies.tajscheck.test.tajs;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import dk.webbies.tajscheck.tajstester.TypeViolation;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
+import dk.webbies.tajscheck.util.MultiMap;
 import org.hamcrest.MatcherAssert;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.CoreMatchers.*;
@@ -57,6 +62,14 @@ public class TAJSUnitTests {
         TAJSUnitTests.TAJSResultTester hasViolations() {
             MatcherAssert.assertThat("there are violations", results.detectedViolations.size() != 0);
             return this;
+        }
+
+        TAJSResultTester forPath(String path) {
+            MultiMap<String, TypeViolation> detectedViolations = results.detectedViolations.asMap().entrySet().stream().filter(entry -> entry.getKey().startsWith(path)).collect(ArrayListMultiMap.collector());
+            List<dk.webbies.tajscheck.testcreator.test.Test> performedTest = results.testPerformed.stream().filter(test -> test.getPath().startsWith(path)).collect(Collectors.toList());
+            List<dk.webbies.tajscheck.testcreator.test.Test> testsNot = results.testNot.stream().filter(test -> test.getPath().startsWith(path)).collect(Collectors.toList());
+
+            return new TAJSResultTester(new TAJSUtil.TajsAnalysisResults(detectedViolations, performedTest, testsNot));
         }
     }
 
@@ -281,7 +294,24 @@ public class TAJSUnitTests {
 
     @Test
     public void samePathFunctions() throws Exception {
-        expect(run(benchFromFolder("samePathFunctions").withOptions(options -> options.setSplitUnions(false)))).hasNoViolations();
+        expect(run(benchFromFolder("samePathFunctions").withOptions(options -> options.setSplitUnions(false))))
+                .hasNoViolations();
+    }
+
+    @Test
+    public void function() throws Exception {
+        expect(run("function"))
+                .performedAllTests()
+                .forPath("foo()")
+                .hasViolations();
+    }
+
+    @Test
+    public void constructor() throws Exception {
+        expect(run("constructor"))
+                .performedAllTests()
+                .forPath("construct.new()")
+                .hasViolations();
     }
 }
 
