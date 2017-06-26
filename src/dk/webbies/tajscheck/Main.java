@@ -266,7 +266,14 @@ public class Main {
 
         genCoverageReport(coverageResult, bench);
 
-        return result.get(testFileName.substring(testFileName.lastIndexOf('/') + 1)).split(splitRules);
+        String testFileLastPart = testFileName.substring(testFileName.lastIndexOf('/') + 1);
+        for (Map.Entry<String, CoverageResult> entry : result.entrySet()) {
+            if (entry.getKey().endsWith(testFileLastPart)) {
+                return entry.getValue().split(splitRules);
+            }
+        }
+        throw new NullPointerException();
+
     }
 
     private static void genCoverageReport(String coverageResult, Benchmark bench) throws IOException {
