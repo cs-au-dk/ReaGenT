@@ -1609,6 +1609,12 @@ public class UnitTests {
     }
 
     @Test
+    public void complexSanityCheck24() throws Exception {
+        // should only fail if complexSanityCheck21 also fails.
+        sanityCheck(benchFromFolder("complexSanityCheck24"), NODE);
+    }
+
+    @Test
     @Ignore // TODO: Likely an error in ts-spec-reader or the TypeScript compiler.
     public void complexGenerics3() throws Exception {
         RunResult result = run(benchFromFolder("complexGenerics3").withOptions(options -> options.setCombineAllUnboundGenerics(false)));
