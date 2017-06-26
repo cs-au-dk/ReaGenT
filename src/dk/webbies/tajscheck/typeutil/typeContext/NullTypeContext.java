@@ -6,7 +6,6 @@ import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
-import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 
 import java.util.Collections;
 import java.util.Map;
@@ -58,7 +57,7 @@ public class NullTypeContext implements TypeContext {
     }
 
     @Override
-    public TypeContext optimizeTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder) {
+    public TypeContext optimizeTypeParameters(Type baseType) {
         return this;
     }
 

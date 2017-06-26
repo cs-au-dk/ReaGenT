@@ -66,7 +66,7 @@ public class TestCreator {
                 }
             }
 
-            arg = arg.withTypeContext(arg.typeContext.optimizeTypeParameters(element.type, info.freeGenericsFinder));
+            arg = arg.withTypeContext(arg.typeContext.optimizeTypeParameters(element.type));
 
             if (info.freeGenericsFinder.hasThisTypes(element.type)) {
                 arg = arg.withThisType(element.type);
@@ -786,7 +786,7 @@ public class TestCreator {
             TestQueueElement element = queue.poll();
             arg = element.arg;
 
-            arg = arg.withTypeContext(arg.typeContext.optimizeTypeParameters(element.type, info.freeGenericsFinder));
+            arg = arg.withTypeContext(arg.typeContext.optimizeTypeParameters(element.type));
 
             if (info.freeGenericsFinder.hasThisTypes(element.type)) {
                 arg = arg.withThisType(element.type);

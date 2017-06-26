@@ -1339,17 +1339,13 @@ public class UnitTests {
 
     @Test
     public void notDuplicatedAssertTypeFunctions() throws Exception {
-        Main.writeFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", options().setUseAssertTypeFunctions(true).build()));
+        CheckOptions options = options().setUseAssertTypeFunctions(true).build();
+        Main.writeFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", options));
 
-        String driver = Main.generateFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", options().setUseAssertTypeFunctions(true).build())).getRight();
+        String driver = Main.generateFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", options)).getRight();
 
         int matches = StringUtils.countMatches(driver,
-                "(assert, exp, path, testType) {\n" +
-                "        if (!(assert(true, path, \"[any]\", exp, i, testType))) {\n" +
-                "            return false;\n" +
-                "        }\n" +
-                "        return true;\n" +
-                "    }");
+                "if (!(assert(true === exp._isUnboundGeneric, path, \"a generic type marker (._isUnboundGeneric)\", exp, i, testType))) {");
 
         assertThat(matches, is(1));
     }
@@ -1598,17 +1594,16 @@ public class UnitTests {
     }
 
     @Test
+    public void complexSanityCheck21() throws Exception {
+        // Jeg har en mistanke om at det skyldes min "kombiner generics med samme constraint" i BenchmarkInfo.
+        sanityCheck(benchFromFolder("complexSanityCheck21"), NODE);
+    }
+
+    @Test
     @Ignore // TODO: Likely an error in ts-spec-reader or the TypeScript compiler.
     public void complexGenerics3() throws Exception {
         RunResult result = run(benchFromFolder("complexGenerics3").withOptions(options -> options.setCombineAllUnboundGenerics(false)));
 
         assertThat(result.typeErrors, is(empty()));
-    }
-
-    @Test // TODO:
-    @Ignore
-    public void complexSanityCheck21() throws Exception {
-        // Jeg har en mistanke om at det skyldes min "kombiner generics med samme constraint" i BenchmarkInfo.
-        sanityCheck(benchFromFolder("complexSanityCheck21"), NODE);
     }
 }

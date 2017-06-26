@@ -14,7 +14,6 @@ import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
-import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.*;
@@ -131,7 +130,7 @@ public class TypeCreator {
             }
         }
 
-        TypeContext newContext = typeContext.optimizeTypeParameters(type, info.freeGenericsFinder);
+        TypeContext newContext = typeContext.optimizeTypeParameters(type);
         if (!newContext.equals(typeContext)) {
             putProducedValueIndex(index, type, newContext);
         }
@@ -487,7 +486,7 @@ public class TypeCreator {
                 List<Type> recursiveGenerics = TypesUtil.findRecursiveDefinition(type, typeContext, info.typeParameterIndexer);
                 if (!recursiveGenerics.isEmpty()) {
                     IntersectionType intersection = new IntersectionType();
-                    intersection.setElements(recursiveGenerics);
+                    intersection.setElements(recursiveGenerics.stream().filter(Objects::nonNull).collect(Collectors.toList()));
 
                     return Return(constructType(intersection, typeContext));
                 }
@@ -1296,7 +1295,7 @@ public class TypeCreator {
             while (key.getType() instanceof ReferenceType) {
                 ReferenceType ref = (ReferenceType) key.getType();
                 Type target = ref.getTarget();
-                TypeContext typeContext = new TypesUtil(info).generateParameterMap(ref, key.getTypeContext()).optimizeTypeParameters(target, info.freeGenericsFinder);
+                TypeContext typeContext = new TypesUtil(info).generateParameterMap(ref, key.getTypeContext()).optimizeTypeParameters(target);
                 key = new TypeWithContext(target, typeContext);
                 values.addAll(valueLocations.get(key));
             }

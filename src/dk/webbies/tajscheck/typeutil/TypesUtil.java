@@ -228,14 +228,18 @@ public class TypesUtil {
         throw new RuntimeException(type.getClass().getSimpleName());
     }
 
-    public static boolean isEmptyInterface(InterfaceType type) {
-        return type.getDeclaredProperties().isEmpty() &&
-                type.getBaseTypes().isEmpty() &&
-                type.getTypeParameters().isEmpty() &&
-                type.getDeclaredCallSignatures().isEmpty() &&
-                type.getDeclaredConstructSignatures().isEmpty() &&
-                type.getDeclaredStringIndexType() == null &&
-                type.getDeclaredNumberIndexType() == null;
+    public static boolean isEmptyInterface(Type type) {
+        if (!(type instanceof InterfaceType)) {
+            return false;
+        }
+        InterfaceType inter = (InterfaceType) type;
+        return inter.getDeclaredProperties().isEmpty() &&
+                inter.getBaseTypes().isEmpty() &&
+                inter.getTypeParameters().isEmpty() &&
+                inter.getDeclaredCallSignatures().isEmpty() &&
+                inter.getDeclaredConstructSignatures().isEmpty() &&
+                inter.getDeclaredStringIndexType() == null &&
+                inter.getDeclaredNumberIndexType() == null;
     }
 
     public static List<Type> findRecursiveDefinition(TypeParameterType firstType, TypeContext typeContext, TypeParameterIndexer typeParameterIndexer) {

@@ -241,6 +241,14 @@ public class BenchmarkInfo {
             voidSignature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Void));
         }
 
+        for (Type type : allTypes) {
+            if (type instanceof TypeParameterType) {
+                TypeParameterType parameter = (TypeParameterType) type;
+                if (parameter.getConstraint() != null && TypesUtil.isEmptyInterface(parameter.getConstraint())) {
+                    parameter.setConstraint(null);
+                }
+            }
+        }
 
         // Combining type-arguments, that are identical (have the same constraint). We can however only do that if it is not referenced anywhere.
         if (bench.options.combineAllUnboundGenerics) {
@@ -276,7 +284,7 @@ public class BenchmarkInfo {
                         //noinspection SuspiciousMethodCalls
                         if (typeArgument instanceof TypeParameterType && arguments.contains(typeArgument)) {
                             TypeParameterType parameter = (TypeParameterType) typeArgument;
-                            if (parameter.getConstraint() != null && map.containsKey(parameter.getConstraint())) {
+                            if (map.containsKey(parameter.getConstraint())) {
                                 return map.get(parameter.getConstraint());
                             } else {
                                 throw new RuntimeException();

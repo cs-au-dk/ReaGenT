@@ -2,9 +2,7 @@ package dk.webbies.tajscheck.typeutil.typeContext;
 
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 
 import java.util.*;
 
@@ -26,7 +24,7 @@ public interface TypeContext {
 
     public TypeContext append(TypeContext other);
 
-    public TypeContext optimizeTypeParameters(Type baseType, FreeGenericsFinder freeGenericsFinder);
+    public TypeContext optimizeTypeParameters(Type baseType);
 
     public static TypeContext create(BenchmarkInfo info) {
         if (info.bench.options.disableGenerics) {
