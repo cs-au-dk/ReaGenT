@@ -308,6 +308,21 @@ public class TAJSUnitTests {
                 .forPath("construct.new()")
                 .hasViolations();
     }
+
+    @Test
+    public void nestedFunctions() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("nestedFunctions");
+        expect(result)
+                .performedAllTests();
+
+        expect(result)
+                .forPath("module.foo().foo")
+                .hasViolations();
+
+        expect(result)
+                .forPath("module.foo().bar")
+                .hasNoViolations();
+    }
 }
 
 
