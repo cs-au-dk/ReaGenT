@@ -8,6 +8,7 @@ import dk.brics.tajs.lattice.ObjectLabel;
 import dk.brics.tajs.lattice.State;
 import dk.brics.tajs.lattice.UnknownValueResolver;
 import dk.brics.tajs.lattice.Value;
+import dk.brics.tajs.util.Collections;
 import dk.brics.tajs.util.Pair;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -121,7 +122,7 @@ public class TajsTypeChecker {
             else if(typeCheck instanceof SimpleTypeCheck) {
                 SimpleTypeCheck simpleTypeCheck = (SimpleTypeCheck)typeCheck;
                 if(!simpleTypeCheck.getCheck().accept(cc, v)) {
-                    return singletonList(typeCheck).stream();
+                    return Collections.singletonList(typeCheck).stream();
                 } else {
                     return new LinkedList<TypeCheck>().stream();
                 }

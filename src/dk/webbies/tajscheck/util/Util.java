@@ -660,12 +660,6 @@ public class Util {
         }
     }
 
-    public static <T> List<T> singletonList(T t) {
-        List<T> l = new LinkedList<>();
-        l.add(t);
-        return l;
-    }
-
     public static <E> String mkString(Collection<E> l, String separator) {
         return mkString(l.stream(), separator);
     }
