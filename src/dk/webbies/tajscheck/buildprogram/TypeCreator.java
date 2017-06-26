@@ -15,6 +15,7 @@ import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
+import dk.webbies.tajscheck.typeutil.typeContext.OptimizingTypeContext;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.*;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -485,10 +486,7 @@ public class TypeCreator {
             if (typeContext.containsKey(type)) {
                 List<Type> recursiveGenerics = TypesUtil.findRecursiveDefinition(type, typeContext, info.typeParameterIndexer);
                 if (!recursiveGenerics.isEmpty()) {
-                    IntersectionType intersection = new IntersectionType();
-                    intersection.setElements(recursiveGenerics.stream().filter(Objects::nonNull).collect(Collectors.toList()));
-
-                    return Return(constructType(intersection, typeContext));
+                    return Return(constructType(OptimizingTypeContext.ANY, TypeContext.create(info)));
                 }
 
                 TypeWithContext lookup = typeContext.get(type);

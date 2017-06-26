@@ -666,6 +666,15 @@ public class UnitTests {
     }
 
     @Test
+    public void doesNotHaveUnboundGenerics() throws Exception {
+        Benchmark bench = benchFromFolder("doesNotHaveUnboundGenerics").withRunMethod(BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true));
+        Main.writeFullDriver(bench);
+        String driver = Main.generateFullDriver(bench).getRight();
+
+        assertThat(driver, not(containsString(TypeParameterIndexer.IS_UNSTRAINED_GENERIC_MARKER)));
+    }
+
+    @Test
     public void complexSanityCheck11() throws Exception {
         sanityCheck(benchFromFolder("complexSanityCheck11"));
     }
