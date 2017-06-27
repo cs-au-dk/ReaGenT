@@ -201,7 +201,6 @@ public class RunBenchmarks {
     }
 
     @Test
-    @Ignore
     public void genFullDriver() throws Exception {
         Main.writeFullDriver(benchmark);
     }
@@ -217,7 +216,6 @@ public class RunBenchmarks {
     }
 
     @Test
-    @Ignore
     public void runFullDriver() throws Exception {
         // Write the driver
         Benchmark b = benchmark
@@ -231,15 +229,11 @@ public class RunBenchmarks {
         // Parse and print the result
         OutputParser.RunResult result = OutputParser.parseDriverResult(out);
 
-        result.typeErrors.sort(Comparator.comparing(OutputParser.TypeError::getPath));
-
         printErrors(b, result);
 
         for (String error: result.errors) {
             System.out.println(error);
         }
-
-        List<String> badFields = ProxyBuilder.extractFields(ProxyBuilder.filterErrors(result.errors)).stream().distinct().collect(Collectors.toList());
 
         System.out.println();
 
