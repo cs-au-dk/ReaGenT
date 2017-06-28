@@ -216,6 +216,7 @@ public class RunBenchmarks {
     }
 
     @Test
+    @Ignore
     public void runFullDriver() throws Exception {
         // Write the driver
         Benchmark b = benchmark

@@ -118,7 +118,6 @@ public class OutputParser {
                 int testCalled = Integer.parseInt(Util.removePrefix(line, "Test called: ").trim());
                 testsCalled.add(testCalled);
             } else if (line.startsWith("total number of tests: ")) {
-                assert totalTests == -1;
                 totalTests = Integer.parseInt(Util.removePrefix(line, "total number of tests: ").trim());
             } else {
                 if (!line.startsWith(" ")) {
