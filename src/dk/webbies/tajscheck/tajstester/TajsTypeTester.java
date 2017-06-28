@@ -13,6 +13,7 @@ import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
+import dk.brics.tajs.solver.BlockAndContext;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Pair;
@@ -36,7 +37,7 @@ import static dk.webbies.tajscheck.util.Util.prettyValue;
 public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTestRunner {
     private static final boolean DEBUG = true;
 
-    private static final boolean DEBUG_VALUES = true;
+    private static final boolean DEBUG_VALUES = false;
 
     private final TesterContextSensitivity testerContextSensitivity;
 
@@ -76,45 +77,57 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public void triggerTypeTests(Solver.SolverInterface c) {
 
+        if(allTestsBlock == null) {
+            init(c);
+        }
+
         if(testerContextSensitivity.isLocalTestContext(c.getState().getContext())) {
-            c.addToWorklist(allTestsBlock, allTestsContext);
+            if(!c.isScanning()) {
+                if(DEBUG_VALUES) System.out.println("New flow for " + c.getState().getBasicBlock().getIndex() + ", " + c.getState().getContext());
+                // Then we can re-run the tests to see if more can be performed
+                c.addToWorklist(allTestsBlock, allTestsContext);
+            }
             return;
         }
 
-        allTestsBlock = c.getState().getBasicBlock();
-        allTestsContext = c.getState().getContext();
-
-
-        if (valueHandler == null)
-            valueHandler = new TypeValuesHandler(info.typeNames, c, info.getSpec());
         TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler);
         State originalState = c.getState().clone();
 
         performed.clear();
         for (Test test : tests) {
-            if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
-                if (DEBUG && !c.isScanning())
-                    System.out.println("Skipped test " + test);
-                continue;
-            }
-            if (DEBUG && !c.isScanning()) System.out.println("Performing test " + test);
-
-            performed.add(test);
-
             // Generating one local context per test
-            Context currentContext = originalState.getContext();
-            Context newc = testerContextSensitivity.makeLocalTestContext(currentContext, test);
+            Context newc = testerContextSensitivity.makeLocalTestContext(allTestsContext, test);
 
-            State newState = originalState.clone();
-            newState.setContext(newc);
+            State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
-            c.getAnalysisLatticeElement().propagate(newState.clone(), newState.getBasicBlock(), newState.getContext(), false);
+            // attempting to perform the test in the local context
+            c.withState(testState, () -> {
 
-            // performing the test in the local context
-            c.withState(newState, () -> {
+                if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
+                    if (DEBUG && !c.isScanning())
+                        System.out.println("Skipped test " + test);
+                    return;
+                }
+                if (DEBUG && !c.isScanning()) System.out.println("Performing test " + test);
+
+                performed.add(test);
+
                 test.accept(visitor);
             });
         }
+
+        // we propagate states for each depending states
+        for(Test on : tests) {
+            for (Test dependingTest : tests) {
+                if (!depends(dependingTest, on)) continue;
+
+                Context dependentContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, dependingTest);
+                Context onContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, on);
+                State source = c.getAnalysisLatticeElement().getState(allTestsBlock, onContext);
+                c.propagateToBasicBlock(source.clone(), allTestsBlock, dependentContext);
+            }
+        }
+
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
 
         if (DEBUG && c.isScanning()) {
@@ -126,6 +139,28 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             System.out.println("Test details:\n   " + mkString(allCertificates, "\n   "));
             System.out.println("Violations:\n   " + mkString(allViolations, "\n   "));
         }
+    }
+
+    private void init(Solver.SolverInterface c) {
+        allTestsBlock = c.getState().getBasicBlock();
+        allTestsContext = c.getState().getContext();
+
+        State originalState = c.getState().clone();
+        for (Test test : tests) {
+            // Generating one local context per test
+            Context newc = testerContextSensitivity.makeLocalTestContext(allTestsContext, test);
+
+            // and propagating to them the after-load state
+            if (c.getAnalysisLatticeElement().getState(allTestsBlock, newc) == null) {
+                c.propagate(originalState.clone(), new BlockAndContext<>(allTestsBlock, newc), false);
+            }
+        }
+        if(valueHandler == null)
+            valueHandler = new TypeValuesHandler(info.typeNames, c, info.getSpec());
+    }
+
+    private boolean depends(Test dependents, Test on) {
+        return true; //FIXME: Use fine-grain dependency computation between tests
     }
 
 
@@ -219,9 +254,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         public Boolean visit(PropertyReadTest test) {
             State s = c.getState();
             Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(),test.getTypeContext()));
-
             return testValues(baseValue.getObjectLabels(), (label) -> {
-                Value propertyValue = pv.readPropertyValue(Collections.singletonList(label), Value.makePKeyValue(PKey.mk(test.getProperty())));
+                Value propertyValue = UnknownValueResolver.getProperty(label, PKey.mk(test.getProperty()), c.getState(), false);
                 TypeWithContext closedType = new TypeWithContext(test.getPropertyType(), test.getTypeContext());
                 if(c.isScanning()) {
                     allCertificates.add(new TestCertificate(test, "Property " + test.getProperty() + " accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s));
@@ -232,28 +266,27 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         @Override
         public Boolean visit(LoadModuleTest test) {
-            return c.withState(c.getState(), () -> {
-                Value v;
-                if (info.bench.run_method == Benchmark.RUN_METHOD.NODE) {
-                    ObjectLabel moduleObject = ObjectLabel.mk(ECMAScriptObjects.OBJECT_MODULE, ObjectLabel.Kind.OBJECT);
-                    v = UnknownValueResolver.getProperty(moduleObject, PKey.mk("exports"), c.getState(), false);
-                } else {
-                    ObjectLabel globalObject = InitialStateBuilder.GLOBAL;
-                    v = UnknownValueResolver.getProperty(globalObject, PKey.mk(test.getPath()), c.getState(), false);
-                }
-                if(c.isScanning()) {
-                    allCertificates.add(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()));
-                }
-                return attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test);
-            });
+            Value v;
+            if (info.bench.run_method == Benchmark.RUN_METHOD.NODE) {
+                ObjectLabel moduleObject = ObjectLabel.mk(ECMAScriptObjects.OBJECT_MODULE, ObjectLabel.Kind.OBJECT);
+                v = UnknownValueResolver.getProperty(moduleObject, PKey.mk("exports"), c.getState(), false);
+            } else {
+                ObjectLabel globalObject = InitialStateBuilder.GLOBAL;
+                v = UnknownValueResolver.getProperty(globalObject, PKey.mk(test.getPath()), c.getState(), false);
+            }
+            if (c.isScanning()) {
+                allCertificates.add(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()));
+            }
+
+            return attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test);
         }
 
         @Override
         public Boolean visit(MethodCallTest test) {
             final Value receiver = attemptGetValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
-
             //TODO: Filter this value ! ::  propertyValue = new TypeValuesFilter(propertyValue, propertyType)
-            Value function = pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName())));
+            //Value function = receiver.getAllObjectLabels().stream().map(l -> UnknownValueResolver.getProperty(l, PKey.mk(test.getPropertyName()), c.getState(), false)).reduce(Value.makeNone(), (x,y) -> UnknownValueResolver.join(x, y, c.getState()));
+            Value function = UnknownValueResolver.getRealValue(pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName()))), c.getState());
             return functionTest(test, receiver, function, false);
         }
 
@@ -325,7 +358,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 };
                 BasicBlock implicitAfterCall = UserFunctionCalls.implicitUserFunctionCall(l, callinfo, c);
 
-                Value returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), false, implicitAfterCall, c);
+                Value returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), true, implicitAfterCall, c);
 
                 if (c.isScanning()) {
                     allCertificates.add(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{function, receiver, returnedValue}, c.getState()));
