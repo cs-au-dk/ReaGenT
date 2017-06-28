@@ -54,6 +54,7 @@ public class TypeValuesHandler {
         return instantiator.createValue(t, name);
     }
 
+    // TODO: Use the code from TypeCreator, such that we add all possible variations of the value.
     public boolean addFeedbackValue(TypeWithContext t, Value v) {
         assert(v != null);
         if (savedValues.containsKey(t)) {
