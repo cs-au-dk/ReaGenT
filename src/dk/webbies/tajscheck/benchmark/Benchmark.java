@@ -79,15 +79,29 @@ public class Benchmark {
         if (benchmarks.length == 0) {
             throw new RuntimeException();
         }
-        Benchmark clone = withRunMethod(this.run_method);// <- Clone
+        ArrayList<Benchmark> dependencies = new ArrayList<>(this.dependencies);
         for (Benchmark benchmark : benchmarks) {
             if (benchmark == null) {
                 throw new RuntimeException();
             }
-            clone.dependencies.add(benchmark);
+            dependencies.add(benchmark);
         }
 
-        return clone;
+        return this.withDependencies(dependencies);
+    }
+
+    private Benchmark withDependencies(List<Benchmark> dependencies) {
+        return new Benchmark(
+                this.name,
+                this.environment,
+                this.jsFile,
+                this.dTSFile,
+                this.run_method,
+                this.pathsToTest,
+                this.options,
+                dependencies,
+                this.exportName
+        );
     }
 
     public List<Benchmark> getDependencies() {

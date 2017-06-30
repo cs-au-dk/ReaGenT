@@ -125,7 +125,6 @@ public class RunBenchmarks {
         register(new Benchmark("Vue.js", ParseDeclaration.Environment.ES6DOM, "test/benchmarks/vue/vue.js", "test/benchmarks/vue/index.d.ts", BROWSER, options));
         register(new Benchmark("three.js", ParseDeclaration.Environment.ES6DOM, "test/benchmarks/three/three.js", "test/benchmarks/three/three.d.ts", BROWSER,
                 options.getBuilder()
-                .setCheckDepthReport(2)
                 .setDisableGenerics(true)
                 .build()
         ));
@@ -149,8 +148,7 @@ public class RunBenchmarks {
         register(new Benchmark("Redux", ParseDeclaration.Environment.ES5Core, "test/benchmarks/redux/redux.js", "test/benchmarks/redux/reduxModule.d.ts", NODE, options, "redux"));
 
         register(new Benchmark("Ionic", ParseDeclaration.Environment.ES5Core, "test/benchmarks/ionic/ionic.js", "test/benchmarks/ionic/ionic.d.ts", BROWSER, options)
-            .addDependencies(jQuery)
-            .addDependencies(angular)
+            .addDependencies(jQuery, angular)
         );
 
         register(new Benchmark("Foundation", ParseDeclaration.Environment.ES5Core, "test/benchmarks/foundation/foundation.js", "test/benchmarks/foundation/foundation.d.ts", BROWSER, options)
@@ -165,8 +163,7 @@ public class RunBenchmarks {
 
         Benchmark pickadate = new Benchmark("pickadate.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/pickadate/picker.js", "test/benchmarks/pickadate/pickadate.d.ts", BROWSER, options).addDependencies(jQuery); // Just a jQuery plugin, I therefore don't test it.
         register(new Benchmark("Materialize", ParseDeclaration.Environment.ES5Core, "test/benchmarks/materialize/materialize.js", "test/benchmarks/materialize/materialize.d.ts", BROWSER, options)
-                .addDependencies(jQuery)
-                .addDependencies(pickadate)
+                .addDependencies(jQuery, pickadate)
         );
 
         register(new Benchmark("CodeMirror", ParseDeclaration.Environment.ES5Core, "test/benchmarks/codemirror/codemirror.js", "test/benchmarks/codemirror/codemirror.d.ts", BROWSER, options));
