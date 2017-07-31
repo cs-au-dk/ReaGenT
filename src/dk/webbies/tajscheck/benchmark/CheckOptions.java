@@ -2,6 +2,7 @@ package dk.webbies.tajscheck.benchmark;
 
 import dk.webbies.tajscheck.util.Util;
 
+@SuppressWarnings("WeakerAccess")
 public final class CheckOptions {
     private Builder builder;
     public final int checkDepthUseValue;
@@ -12,10 +13,10 @@ public final class CheckOptions {
     public final boolean disableSizeOptimization;
     public final boolean combineAllUnboundGenerics;
     public final boolean disableGenerics;
-    public final boolean constructClassInstances; // TODO: Test.
-    public final boolean constructClassTypes; // TODO: Test.
-    public final boolean constructAllTypes; // TODO: Test.
-    public final boolean constructOnlyPrimitives; // TODO: Test.
+    public final boolean constructClassInstances;
+    public final boolean constructClassTypes;
+    public final boolean constructAllTypes;
+    public final boolean constructOnlyPrimitives;
     public final int maxTime;
     public final boolean failOnAny;
     public final boolean makeTSInferLike;
