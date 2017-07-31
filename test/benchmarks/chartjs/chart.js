@@ -1060,7 +1060,6 @@
         n = wh + f * (v - wh);  // linear interpolation
 
         switch (i) {
-            default:
             case 6:
             case 0: r = v; g = n; b = wh; break;
             case 1: r = n; g = v; b = wh; break;
@@ -1068,6 +1067,7 @@
             case 3: r = wh; g = n; b = v; break;
             case 4: r = n; g = wh; b = v; break;
             case 5: r = v; g = wh; b = n; break;
+            default: r = v; g = n; b = wh; break;
         }
 
         return [r * 255, g * 255, b * 255];
@@ -8022,13 +8022,6 @@
             }
 
             switch (pointStyle) {
-                // Default includes circle
-                default:
-                    ctx.beginPath();
-                    ctx.arc(x, y, radius, 0, Math.PI * 2);
-                    ctx.closePath();
-                    ctx.fill();
-                    break;
                 case 'triangle':
                     ctx.beginPath();
                     edgeLength = 3 * radius / Math.sqrt(3);
@@ -8098,6 +8091,13 @@
                     ctx.moveTo(x, y);
                     ctx.lineTo(x + radius, y);
                     ctx.closePath();
+                    break;
+                // Default includes circle
+                default:
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.closePath();
+                    ctx.fill();
                     break;
             }
 
