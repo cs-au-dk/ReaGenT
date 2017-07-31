@@ -91,7 +91,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler);
-        State originalState = c.getState().clone();
 
         performed.clear();
         for (Test test : tests) {
@@ -104,8 +103,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             c.withState(testState, () -> {
 
                 if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
-                    if (DEBUG && !c.isScanning())
+                    if (DEBUG && !c.isScanning()) {
                         System.out.println("Skipped test " + test);
+                    }
                     return;
                 }
                 if (DEBUG && !c.isScanning()) System.out.println("Performing test " + test);
@@ -361,7 +361,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 Value returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), true, implicitAfterCall, c);
 
                 if (c.isScanning()) {
-                    allCertificates.add(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{function, receiver, returnedValue}, c.getState()));
+                    if (isConstructorCall) {
+                        allCertificates.add(new TestCertificate(test, "Function [0] has been called as constructor and returned [1]", new Value[]{function, returnedValue}, c.getState()));
+                    } else {
+                        allCertificates.add(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{function, receiver, returnedValue}, c.getState()));
+                    }
 
                     if (returnedValue.isNone() && !(test.getReturnType() instanceof SimpleType && ((SimpleType) test.getReturnType()).getKind() == SimpleTypeKind.Never)) {
                         allViolations.add(new TypeViolation("Function " + function + " always returns exceptionally", test));
@@ -373,14 +377,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         @Override
         public Boolean visit(ConstructorCallTest test) {
-            Value receiver = Value.makeUndef();
             Value function = attemptGetValue(test.getFunction(), test.getTypeContext());
-            return functionTest(test, receiver, function, true);
+            return functionTest(test, null, function, true); // receiver is ignored, since it is a constructor-call.
         }
 
         @Override
         public Boolean visit(FunctionCallTest test) {
-            Value receiver = Value.makeUndef(); // TODO: Global object?
+            Value receiver = Value.makeObject(InitialStateBuilder.GLOBAL).joinUndef();
             Value function = attemptGetValue(test.getFunction(), test.getTypeContext());
             return functionTest(test, receiver, function, false);
         }
