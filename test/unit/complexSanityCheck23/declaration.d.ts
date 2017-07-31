@@ -1,8 +1,8 @@
 interface Foo {
-    forEach<T>(eachFn: number): ErrorConstructor;
+    forEach(eachFn: number): void;
 }
 interface Bar {
-    forEach<T>(search?: string): ErrorConstructor;
+    forEach(search: string): void;
 }
 
 declare var Sugar: Foo & Bar;

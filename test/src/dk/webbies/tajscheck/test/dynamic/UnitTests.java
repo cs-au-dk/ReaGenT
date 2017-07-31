@@ -793,7 +793,7 @@ public class UnitTests {
         sanityCheck(benchFromFolder("complexSanityCheck22"), BROWSER);
     }
 
-    @Test(expected = AssertionError.class) // TODO: make this not fail?
+    @Test(expected = AssertionError.class)
     public void complexSanityCheck23() throws Exception {
         sanityCheck(benchFromFolder("complexSanityCheck23"), NODE);
     }
