@@ -5,12 +5,12 @@ export module module {
     };
 }*/
 
-module.exports = {
-    foo: function () {
-        var foo = {};
-        Object.defineProperty(foo, 'bar', {
-            get: function() { return 0xdeadbeef; }
-        });
-        return foo;
-    }
+module.exports = function () {
+    var obj = {};
+
+    Object.defineProperty(obj, 'bar', {
+        get: function() { return 321; }
+    });
+
+    return obj;
 };

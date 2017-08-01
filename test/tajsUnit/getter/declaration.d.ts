@@ -1,6 +1,4 @@
 
-export module module {
-    function foo() : {
-        bar: number
-    };
+export function foo () : {
+    bar: number
 }

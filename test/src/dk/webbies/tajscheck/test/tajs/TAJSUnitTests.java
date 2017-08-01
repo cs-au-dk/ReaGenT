@@ -38,12 +38,6 @@ public class TAJSUnitTests {
             this.results = result;
         }
 
-        private TAJSUnitTests.TAJSResultTester toPaths(String path) {
-            results = results.with(results.detectedViolations.asMap().entrySet().stream().filter(entry -> entry.getKey().equals(path)).collect(ArrayListMultiMap.collector()));
-            MatcherAssert.assertThat("expected some violation on path: " + path, results.detectedViolations.size(), is(not(equalTo(0))));
-            return this;
-        }
-
         private TAJSUnitTests.TAJSResultTester performed(String path) {
             MatcherAssert.assertThat("test for " + path + " hasn't been performed", results.testPerformed.stream().anyMatch(test -> test.getPath().equals(path)));
             return this;
@@ -78,27 +72,43 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: Maybe for later.
     public void unionMightFail() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("unionMightFail");
 
         expect(result)
-                .performedAllTests()
                 .performed("module.foo()");
 
         expect(result)
-                .toPaths("module.foo()")
+                .forPath("module.foo()")
                 .hasViolations();
     }
 
     @Test
-    @Ignore // TODO: Fails to type-check the getter.
+    @Ignore // TODO: When we start supporting callbacks.
+    public void callbacks() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("callbacks");
+
+        expect(result)
+                .performed("module.foo()");
+
+        expect(result)
+                .forPath("module.foo()")
+                .hasViolations();
+    }
+
+    @Test(timeout = 30 * 1000)
+    @Ignore // TODO: Calling "pv.readPropertyValue" with a getter property, seems to go wrong (it seems to mix in the base object).
     public void getter() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("getter");
 
         expect(result)
-                .performed("module.foo()")
                 .hasNoViolations();
+    }
+
+    @Test(timeout = 30 * 1000)
+    @Ignore // TODO: Goes in an infinite loop.
+    public void getterInfiniteLoop() throws Exception {
+        run("getterInfiniteLoop"); // smoke test, is good if it ever terminates.
     }
 
     @Test
@@ -187,7 +197,7 @@ public class TAJSUnitTests {
         TAJSUtil.TajsAnalysisResults result = run("spuriousUnion");
 
         expect(result)
-                .toPaths("module.foo()");
+                .forPath("module.foo()");
                 /*FIXME: .expected("maybe string")
                 .toFail();*/
     }
