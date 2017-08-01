@@ -72,7 +72,7 @@ public class RunAllDynamicUnitTests {
 
     @Test
     public void sanityCheckAnalysis() throws Exception {
-        Benchmark bench = UnitTests.benchFromFolder(folderName).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setUseAssertTypeFunctions(false).setCheckDepthReport(options.checkDepthUseValue));
+        Benchmark bench = UnitTests.benchFromFolder(folderName).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setUseAssertTypeFunctions(false).setCheckDepthReport(options.dynamicOptions.checkDepthUseValue));
 
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 60);
 

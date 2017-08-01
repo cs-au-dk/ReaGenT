@@ -5,6 +5,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.Value;
 import dk.webbies.tajscheck.TypeWithContext;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
@@ -14,12 +15,14 @@ import java.util.Map;
 public class TypeValuesHandler {
 
     private final Map<Type, String> typeNames;
+    private BenchmarkInfo info;
     private final Map<TypeWithContext, Value> savedValues = new HashMap<>();
     private final SpecInstantiator instantiator;
 
-    TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, SpecReader spec) {
+    TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, BenchmarkInfo info) {
         this.typeNames = typeNames;
-        this.instantiator = new SpecInstantiator(spec, c);
+        this.info = info;
+        this.instantiator = new SpecInstantiator(info.getSpec(), c);
     }
 
     public Value findFeedbackValue(TypeWithContext t) {
@@ -34,6 +37,9 @@ public class TypeValuesHandler {
     }
 
     public Value createValue(TypeWithContext t) {
+        if (!info.shouldConstructType(t.getType())) {
+            return Value.makeNone();
+        }
         String name;
         if ((t.getType() instanceof SimpleType)) {
             name = ((SimpleType) t.getType()).getKind().toString() + ".instance";

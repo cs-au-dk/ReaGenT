@@ -9,13 +9,12 @@ import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.au.cs.casa.typescript.types.StringLiteral;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.CheckOptions;
+import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
-import dk.webbies.tajscheck.typeutil.typeContext.OptimizingTypeContext;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.*;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -65,7 +64,7 @@ public class TypeCreator {
             for (Type type : test.getTypeToTest()) {
                 getType(type, test.getTypeContext());
             }
-            if (test instanceof FunctionTest && info.bench.options.firstMatchSignaturePolicy) {
+            if (test instanceof FunctionTest && info.bench.options.dynamicOptions.firstMatchSignaturePolicy) {
                 if (!((FunctionTest) test).getPrecedingSignatures().isEmpty()) {
                     InterfaceType precedingSignaturesInterface = TypesUtil.signaturesToInterface(((FunctionTest) test).getPrecedingSignatures(), info.typeNames);
                     constructType(precedingSignaturesInterface, test.getTypeContext());
@@ -663,14 +662,14 @@ public class TypeCreator {
                 Type restType = getArrayType(parameters.get(parameters.size() - 1).getType());
 
                 // The check used to see if an error should be reported.
-                if (options.checkDepthUseValue != options.checkDepthReport) {
+                if (options.dynamicOptions.checkDepthUseValue != options.dynamicOptions.checkDepthReport) {
                     typeChecks.add(block(
                             comment("This is just the call to see if an error should be reported, the check to see if the signature is valid is below. "),
                             statement(call(function(statement(call(
                             identifier("assert"),
                             call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
                                     function(block(
-                                            Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.checkDepthReport))
+                                            Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.dynamicOptions.checkDepthReport))
                                     ), "exp")
                             ),
                             string(path + ".[restArgs]"),
@@ -686,7 +685,7 @@ public class TypeCreator {
                         identifier("assert"),
                         call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
                                 function(block(
-                                        Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.checkDepthUseValue))
+                                        Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.dynamicOptions.checkDepthUseValue))
                                 ), "exp")
                         ),
                         string(path + ".[restArgs]"),
@@ -701,13 +700,13 @@ public class TypeCreator {
 
             Util.zip(args.stream(), parameters.stream(), (argName, par) ->
                     block(
-                            info.options.makeSeparateReportAssertions() ? block() : expressionStatement(call(function(
+                            info.options.dynamicOptions.makeSeparateReportAssertions() ? block() : expressionStatement(call(function(
                                     block(
                                             comment("There warnings are just reported, not used to see if the value should be used (that comes below). "),
-                                            typeChecker.assertResultingType(new TypeWithContext(par.getType(), typeContext), identifier(argName), path + ".[" + argName + "]", info.options.checkDepthReport, "argument")
+                                            typeChecker.assertResultingType(new TypeWithContext(par.getType(), typeContext), identifier(argName), path + ".[" + argName + "]", info.options.dynamicOptions.checkDepthReport, "argument")
                                     )
                             ))),
-                            typeChecker.assertResultingType(new TypeWithContext(par.getType(), typeContext), identifier(argName), path + ".[" + argName + "]", options.checkDepthUseValue, "argument")
+                            typeChecker.assertResultingType(new TypeWithContext(par.getType(), typeContext), identifier(argName), path + ".[" + argName + "]", options.dynamicOptions.checkDepthUseValue, "argument")
                     )
             ).forEach(typeChecks::add);
 
@@ -752,7 +751,7 @@ public class TypeCreator {
                             checkRestArgs = ifThen(unary(Operator.NOT,
                                     call(identifier("checkRestArgs"), identifier("args"), number(parameters.size() - 1),
                                             function(block(
-                                                    Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.checkDepthForUnions))
+                                                    Return(typeChecker.checkResultingType(new TypeWithContext(restType, typeContext), identifier("exp"), path + ".[restArgs]", options.dynamicOptions.checkDepthForUnions))
                                             ), "exp")
                                     )),
                                     Return(bool(false))
@@ -770,7 +769,7 @@ public class TypeCreator {
                                             Signature.Parameter arg = parameterPair.getLeft();
 
                                             return block(
-                                                    variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(new TypeWithContext(arg.getType(), typeContext), identifier("arg" + argIndex), path + ".[arg" + argIndex + "]", options.checkDepthForUnions)),
+                                                    variable(identifier("arg" + argIndex + "Correct"), typeChecker.checkResultingType(new TypeWithContext(arg.getType(), typeContext), identifier("arg" + argIndex), path + ".[arg" + argIndex + "]", options.dynamicOptions.checkDepthForUnions)),
                                                     ifThen(
                                                             unary(Operator.NOT, identifier("arg" + argIndex + "Correct")),
                                                             Return(bool(false))

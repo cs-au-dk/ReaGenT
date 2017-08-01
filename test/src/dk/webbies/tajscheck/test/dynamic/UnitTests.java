@@ -4,14 +4,13 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.BooleanLiteral;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
-import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.ExecutionRecording;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.CheckOptions;
+import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.TypeParameterIndexer;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.util.Util;
@@ -252,8 +251,6 @@ public class UnitTests {
         assertThat(result.typeErrors, is(empty()));
     }
 
-    // TODO: Some test that a rest-recording can actually play. (One recording finds an error, another recording doesn't, same declaration file and implementation).
-
     @Test
     public void simpleFunctionArg() throws Exception {
         RunResult result = run("simpleFunctionArg", "someSeed");
@@ -418,6 +415,11 @@ public class UnitTests {
 
     private static CheckOptions.Builder options() {
         return CheckOptions.builder().setMaxIterationsToRun(10000);
+    }
+
+    @Test
+    public void testOptions() throws Exception {
+        options().build().getBuilder();
     }
 
     @Test

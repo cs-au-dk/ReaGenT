@@ -58,7 +58,7 @@ public class DriverProgramBuilder {
         List<Statement> program = new ArrayList<>();
         this.typeCreator = new TypeCreator(tests, info, typeChecker);
 
-        this.transformer = (info.options.monitorUnknownPropertyAccesses ? new ProxyBuilder(program, info).transformer() : ValueTransformer.identityTransformer);
+        this.transformer = (info.options.dynamicOptions.monitorUnknownPropertyAccesses ? new ProxyBuilder(program, info).transformer() : ValueTransformer.identityTransformer);
 
         // var initialRandomness = Math.random()
         if (recording == null || recording.seed == null) {
@@ -67,10 +67,10 @@ public class DriverProgramBuilder {
             program.add(variable("initialRandomness", string(recording.seed)));
         }
 
-        program.add(variable("maxTime", number(info.options.maxTime)));
-        program.add(variable("maxIterations", number(info.options.maxIterationsToRun)));
+        program.add(variable("maxTime", number(info.options.dynamicOptions.maxTime)));
+        program.add(variable("maxIterations", number(info.options.dynamicOptions.maxIterationsToRun)));
 
-        program.add(variable("failOnAny", bool(info.options.failOnAny)));
+        program.add(variable("failOnAny", bool(info.options.dynamicOptions.failOnAny)));
 
         program.add(AstBuilder.programFromFile(DriverProgramBuilder.class.getResource("/prelude.js")));
 
@@ -207,13 +207,13 @@ public class DriverProgramBuilder {
             Type product = produces.iterator().next();
             int index = typeCreator.getTestProducesIndexes(test).iterator().next();
             saveResultStatement = block(
-                    info.options.makeSeparateReportAssertions() ? block() : expressionStatement(call(function(
+                    info.options.dynamicOptions.makeSeparateReportAssertions() ? block() : expressionStatement(call(function(
                             block(
                                     comment("There warnings are just reported, not used to see if the value should be used (that comes below). "),
-                                    typeChecker.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepthReport, test.getTestType())
+                                    typeChecker.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.dynamicOptions.checkDepthReport, test.getTestType())
                             )
                     ))),
-                    typeChecker.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepthUseValue, test.getTestType()),
+                    typeChecker.assertResultingType(new TypeWithContext(product, test.getTypeContext()), identifier("result"), test.getPath(), info.options.dynamicOptions.checkDepthUseValue, test.getTestType()),
                     statement(binary(identifier(VALUE_VARIABLE_PREFIX + index), Operator.EQUAL, identifier("result"))),
                     statement(call(identifier("registerValue"), number(index)))
             );
@@ -227,7 +227,7 @@ public class DriverProgramBuilder {
                                 Type type = pair.getLeft();
                                 Integer valueIndex = pair.getRight();
                                 return block(
-                                        variable("passed" + valueIndex, typeChecker.checkResultingType(new TypeWithContext(type, test.getTypeContext()), identifier("result"), test.getPath(), info.options.checkDepthForUnions)),
+                                        variable("passed" + valueIndex, typeChecker.checkResultingType(new TypeWithContext(type, test.getTypeContext()), identifier("result"), test.getPath(), info.options.dynamicOptions.checkDepthForUnions)),
                                         ifThen(
                                                 identifier("passed" + valueIndex),
                                                 statement(methodCall(identifier("passedResults"), "push", number(valueIndex)))
@@ -252,7 +252,7 @@ public class DriverProgramBuilder {
                                                             number(0)
                                                     ),
                                                     string(test.getPath()),
-                                                    string(typeChecker.getTypeDescription(new TypeWithContext(createUnionType(produces), test.getTypeContext()), info.options.checkDepthForUnions)),
+                                                    string(typeChecker.getTypeDescription(new TypeWithContext(createUnionType(produces), test.getTypeContext()), info.options.dynamicOptions.checkDepthForUnions)),
                                                     identifier("result"),
                                                     identifier("i"),
                                                     string(test.getTestType())
@@ -366,7 +366,7 @@ public class DriverProgramBuilder {
 
         @Override
         public List<Statement> visit(MethodCallTest test) {
-            if (info.options.makeTSInferLike) {
+            if (info.options.dynamicOptions.makeTSInferLike) {
                 return Collections.singletonList(throwStatement(newCall(identifier("Error"))));
             } else {
                 return callFunction(test, test.getObject(), test.getParameters(), test.isRestArgs(), (base, parameters) ->
@@ -378,7 +378,7 @@ public class DriverProgramBuilder {
 
         @Override
         public List<Statement> visit(ConstructorCallTest test) {
-            if (info.options.makeTSInferLike) {
+            if (info.options.dynamicOptions.makeTSInferLike) {
                 return callFunction(test, test.getFunction(), Collections.emptyList(), false, (exp, parameters) -> {
                     return AstBuilder.newCall(exp, parameters.stream().map(Pair::getLeft).collect(Collectors.toList()));
                 });
@@ -391,7 +391,7 @@ public class DriverProgramBuilder {
 
         @Override
         public List<Statement> visit(FunctionCallTest test) {
-            if (info.options.makeTSInferLike) {
+            if (info.options.dynamicOptions.makeTSInferLike) {
                 return Collections.singletonList(throwStatement(newCall(identifier("Error"))));
             } else {
                 return callFunction(test, test.getFunction(), test.getParameters(), test.isRestArgs(), (exp, parameters) -> {
@@ -454,7 +454,7 @@ public class DriverProgramBuilder {
                 return identifier("argument_" + index);
             }).collect(Collectors.toList());
 
-            if (!test.getPrecedingSignatures().isEmpty() && info.bench.options.firstMatchSignaturePolicy) {
+            if (!test.getPrecedingSignatures().isEmpty() && info.bench.options.dynamicOptions.firstMatchSignaturePolicy) {
                 result.add(block(
                         tryCatch(
                                 block(

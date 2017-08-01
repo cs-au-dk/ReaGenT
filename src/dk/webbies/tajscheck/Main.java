@@ -52,6 +52,9 @@ public class Main {
     }
 
     public static String createRecordedProgram(Benchmark bench, ExecutionRecording recording) throws Exception {
+        if (true) {
+            throw new RuntimeException("Test this thing before using");
+        }
         String programString = generateFullDriver(bench, recording).getRight();
 
         Util.writeFile(getFolderPath(bench) + "recorded.js", programString);
@@ -145,7 +148,7 @@ public class Main {
     }
 
     public static String runBenchmark(String testFilePath, Benchmark bench) throws IOException {
-        int timeout = bench.options.maxTime + Math.min(10 * 1000, bench.options.maxTime);
+        int timeout = bench.options.dynamicOptions.maxTime + Math.min(10 * 1000, bench.options.dynamicOptions.maxTime);
         switch (bench.run_method) {
             case NODE:
                 return Util.runNodeScript(testFilePath, timeout);
@@ -176,13 +179,13 @@ public class Main {
     public static Map<String, CoverageResult> genCoverage(Benchmark bench, String testFileName, boolean writeDriver) throws IOException {
         if (writeDriver) {
             try {
-                writeFullDriver(bench.withOptions(options -> options.setCheckDepthReport(options.checkDepthUseValue)));
+                writeFullDriver(bench.withOptions(options -> options.dynamicOptions.setCheckDepthReport(options.dynamicOptions.checkDepthUseValue).getOuterBuilder()));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
 
-        int timeout = bench.options.maxTime + Math.min(10 * 1000, bench.options.maxTime);
+        int timeout = bench.options.dynamicOptions.maxTime + Math.min(10 * 1000, bench.options.dynamicOptions.maxTime);
 
         if (bench.run_method == Benchmark.RUN_METHOD.NODE) {
             StringBuilder prefix = new StringBuilder();

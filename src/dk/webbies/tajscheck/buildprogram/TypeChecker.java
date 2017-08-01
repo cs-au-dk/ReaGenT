@@ -62,7 +62,7 @@ public class TypeChecker {
         path = sanitizePath(path);
 
         List<TypeCheck> typeChecks = type.getType().accept(new CreateTypeCheckVisitor(info), new Arg(type.getTypeContext(), depth));
-        if (info.bench.options.useAssertTypeFunctions) {
+        if (info.bench.options.dynamicOptions.useAssertTypeFunctions) {
             return block(
                     ifThen(
                             unary(Operator.NOT, checkToAssertions(typeChecks, exp, string(path), string(testType))),

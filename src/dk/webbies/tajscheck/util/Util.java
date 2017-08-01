@@ -636,7 +636,7 @@ public class Util {
 
     // http://stackoverflow.com/questions/1667854/copy-all-values-from-fields-in-one-class-to-another-through-reflection#answer-35103361
     // Possibly only works on primitives, but that is all i use it for anyway, so that is ok.
-    public static <T> void copyAllFields(T to, T from) {
+    public static <T> void copyPrimitives(T to, T from) {
         Class<?> clazz = from.getClass();
         List<Field> fields = new ArrayList<>();
         do {
@@ -646,8 +646,12 @@ public class Util {
 
         for (Field field : fields) {
             try {
-                field.setAccessible(true);
-                field.set(to, field.get(from));
+                if (field.getType().isPrimitive()) {
+                    field.setAccessible(true);
+                    field.set(to, field.get(from));
+                } else {
+                    // Do nothing.
+                }
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }

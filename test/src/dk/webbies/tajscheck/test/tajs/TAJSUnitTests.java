@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.test.tajs;
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
-import dk.webbies.tajscheck.benchmark.CheckOptions;
+import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.TypeViolation;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;

@@ -156,10 +156,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
         }
         if(valueHandler == null)
-            valueHandler = new TypeValuesHandler(info.typeNames, c, info.getSpec());
+            valueHandler = new TypeValuesHandler(info.typeNames, c, info);
     }
 
     private boolean depends(Test dependents, Test on) {
+        // TODO: Have multiple strategies.
+        // 1: ALL (the trivial, return true).
+        // 2: "tree", so only from tests that return value, to another test that possibly uses the value (including function arguments).
         return true; //FIXME: Use fine-grain dependency computation between tests
     }
 
@@ -292,6 +295,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         private Boolean functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
             List<Value> arguments = test.getParameters().stream().map(paramType -> typeValuesHandler.createValue(paramType, test.getTypeContext())).collect(Collectors.toList());
+
+            if (arguments.stream().anyMatch(Value::isNone)) {
+                return false;
+            }
 
             if (test.isRestArgs()) {
                 throw new RuntimeException();

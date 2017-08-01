@@ -5,7 +5,7 @@ import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
-import dk.webbies.tajscheck.benchmark.CheckOptions;
+import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.buildprogram.ProxyBuilder;
 import dk.webbies.tajscheck.paser.AST.BinaryExpression;
 import dk.webbies.tajscheck.paser.AST.BlockStatement;
@@ -31,7 +31,7 @@ public class AutomaticExperiments {
     private static int SMALL_DRIVER_RUNS_LIMIT = 100;
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> runSmall = new Pair<>("runSmall", (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(bench.options.checkDepthUseValue).setMaxIterationsToRun(1000));
+        bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(bench.options.dynamicOptions.checkDepthUseValue).setMaxIterationsToRun(1000));
         List<OutputParser.RunResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runDriver(bench), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
         List<OutputParser.TypeError> paths = OutputParser.combine(results).typeErrors.stream().collect(Collectors.toList());
@@ -44,7 +44,7 @@ public class AutomaticExperiments {
     private static final Pair<String, Experiment.ExperimentSingleRunner> type = new Pair<>("type", (bench) -> bench.run_method.toString());
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> smallCoverage = new Pair<>(Arrays.asList("small-coverage(stmt)", "small-coverage(func)", "small-coverage(branches)"), (bench) -> {
-        bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(bench.options.checkDepthUseValue).setMaxIterationsToRun(1000));
+        bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(bench.options.dynamicOptions.checkDepthUseValue).setMaxIterationsToRun(1000));
         List<CoverageResult> results = RunSmall.runSmallDrivers(bench, RunSmall.runCoverage(bench), SMALL_DRIVER_RUNS_LIMIT, Integer.MAX_VALUE);
 
         CoverageResult result = CoverageResult.combine(results);
@@ -285,7 +285,7 @@ public class AutomaticExperiments {
 
             Map<String, CoverageResult> out;
             try {
-                out = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5))); // <- More timeout, instrumented code is slower.
+                out = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.dynamicOptions.maxTime * 5))); // <- More timeout, instrumented code is slower.
                 if (out.isEmpty()) {
                     return Arrays.asList(null, null, null);
                 }
@@ -316,14 +316,14 @@ public class AutomaticExperiments {
 
             Map<String, CoverageResult> out = new HashMap<>();
 
-            String driver = Main.generateFullDriver(bench.withOptions(options -> options.setCheckDepthReport(options.checkDepthUseValue))).getRight();
+            String driver = Main.generateFullDriver(bench.withOptions(options -> options.setCheckDepthReport(options.dynamicOptions.checkDepthUseValue))).getRight();
 
             CoverageResult firstCoverage = null;
             for (int i = 0; i < runs; i++) {
                 try {
                     Util.writeFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME, driver);
 
-                    Map<String, CoverageResult> subResult = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.maxTime * 5)), false); // <- more timeout
+                    Map<String, CoverageResult> subResult = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.dynamicOptions.maxTime * 5)), false); // <- more timeout
                     out = CoverageResult.combine(out, subResult);
                     if (out.get(bench.getJSName()) == null) {
                         return Arrays.asList(uniquePaths, null, null, null, null, null, null);

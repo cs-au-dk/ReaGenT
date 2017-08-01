@@ -1,30 +1,22 @@
 package dk.webbies.tajscheck.test.dynamic;
 
 import dk.au.cs.casa.typescript.types.Type;
-import dk.brics.tajs.options.OptionValues;
 import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
-import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.CheckOptions;
-import dk.webbies.tajscheck.buildprogram.ProxyBuilder;
+import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
-import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.test.TestParsing;
 import dk.webbies.tajscheck.test.experiments.CountUniques;
-import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Pair;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
 
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
