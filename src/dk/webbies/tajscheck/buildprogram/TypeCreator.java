@@ -104,14 +104,9 @@ public class TypeCreator {
         return valueVariableDeclarationList;
     }
 
+    private final Set<Tuple3<Integer, Type, TypeContext>> seenPutValue = new HashSet<>();
     private void putProducedValueIndex(int index, Type type, TypeContext typeContext) {
-        putProducedValueIndex(index, type, typeContext, false);
-    }
-
-
-    private final Set<Tuple4<Integer, Type, TypeContext, Boolean>> seenPutValue = new HashSet<>();
-    private void putProducedValueIndex(int index, Type type, TypeContext typeContext, boolean touchedThisTypes) {
-        Tuple4<Integer, Type, TypeContext, Boolean> seenKey = new Tuple4<>(index, type, typeContext, touchedThisTypes);
+        Tuple3<Integer, Type, TypeContext> seenKey = new Tuple3<>(index, type, typeContext);
         if (seenPutValue.contains(seenKey)) {
             return;
         }
@@ -119,14 +114,12 @@ public class TypeCreator {
 
         valueLocations.put(new TypeWithContext(type, typeContext), index);
 
-        if (!touchedThisTypes) {
-            if (typeContext.getThisType() != null) {
-                putProducedValueIndex(index, type, typeContext.withThisType(null), true);
-            }
-            if (typeContext.getThisType() == null) {
-                if (info.freeGenericsFinder.hasThisTypes(type) && !(type instanceof ClassType)) {
-                    putProducedValueIndex(index, type, typeContext.withThisType(type), true);
-                }
+        if (typeContext.getThisType() != null) {
+            putProducedValueIndex(index, type, typeContext.withThisType(null));
+        }
+        if (typeContext.getThisType() == null) {
+            if (info.freeGenericsFinder.hasThisTypes(type) && !(type instanceof ClassType)) {
+                putProducedValueIndex(index, type, typeContext.withThisType(type));
             }
         }
 
@@ -151,7 +144,7 @@ public class TypeCreator {
             ClassInstanceType instanceType = (ClassInstanceType) type;
 
             if (instanceType != ((ClassType) instanceType.getClassType()).getInstance()) {
-                putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstance(), typeContext, touchedThisTypes);
+                putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstance(), typeContext);
             }
 
             putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext);
@@ -172,7 +165,7 @@ public class TypeCreator {
                 } else if (!(baseClass instanceof InterfaceType || baseClass instanceof GenericType || baseClass instanceof ClassInstanceType)) {
                     throw new RuntimeException("Not sure about: " + baseClass.getClass().getSimpleName());
                 }
-                putProducedValueIndex(index, baseClass, subTypeContext, touchedThisTypes);
+                putProducedValueIndex(index, baseClass, subTypeContext);
             }
 
         } else if (type instanceof ThisType) {
