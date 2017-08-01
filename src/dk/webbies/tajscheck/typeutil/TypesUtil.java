@@ -14,6 +14,7 @@ import dk.webbies.tajscheck.util.Util;
 import jnr.ffi.Union;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -678,5 +679,89 @@ public class TypesUtil {
             }
         });
         return new Pair<>(result, TypeContext.create(info).append(newParameters));
+    }
+
+    public void forAllSubTypes(Type type, TypeContext typeContext, Consumer<TypeWithContext> callback) {
+        forAllSubTypes(type, typeContext, new HashSet<>(), callback);
+    }
+
+    private void forAllSubTypes(Type type, TypeContext typeContext, Set<TypeWithContext> seen, Consumer<TypeWithContext> callback) {
+        TypeWithContext seenKey = new TypeWithContext(type, typeContext);
+        if (seen.contains(seenKey)) {
+            return;
+        }
+        seen.add(seenKey);
+
+        callback.accept(seenKey);
+
+        if (typeContext.getThisType() != null) {
+            forAllSubTypes(type, typeContext.withThisType(null), seen, callback);
+        }
+        if (typeContext.getThisType() == null) {
+            if (info.freeGenericsFinder.hasThisTypes(type) && !(type instanceof ClassType)) {
+                forAllSubTypes(type, typeContext.withThisType(type), seen, callback);
+            }
+        }
+
+        TypeContext newContext = typeContext.optimizeTypeParameters(type);
+        if (!newContext.equals(typeContext)) {
+            forAllSubTypes(type, newContext, seen, callback);
+        }
+
+        if (type instanceof InterfaceType) {
+            List<Type> baseTypes = ((InterfaceType) type).getBaseTypes();
+            baseTypes.forEach(baseType -> forAllSubTypes(baseType, typeContext, seen, callback));
+        } else if (type instanceof IntersectionType) {
+            List<Type> baseTypes = ((IntersectionType) type).getElements();
+            baseTypes.forEach(baseType -> forAllSubTypes(baseType, typeContext, seen, callback));
+        } else if (type instanceof ReferenceType) {
+            forAllSubTypes(((ReferenceType) type).getTarget(), new TypesUtil(info).generateParameterMap((ReferenceType) type, typeContext), seen, callback);
+        } else if (type instanceof GenericType) {
+            forAllSubTypes(((GenericType) type).toInterface(), typeContext, seen, callback);
+        } else if (type instanceof ClassType) {
+            forAllSubTypes(type, typeContext.withThisType(((ClassType) type).getInstanceType()), seen, callback);
+        } else if (type instanceof ClassInstanceType) {
+            ClassInstanceType instanceType = (ClassInstanceType) type;
+
+            if (instanceType != ((ClassType) instanceType.getClassType()).getInstance()) {
+                forAllSubTypes(((ClassType) instanceType.getClassType()).getInstance(), typeContext, seen, callback);
+            }
+
+            forAllSubTypes(((ClassType) instanceType.getClassType()).getInstanceType(), typeContext, seen, callback);
+            if (info.freeGenericsFinder.hasThisTypes(instanceType.getClassType())) {
+                forAllSubTypes(((ClassType) instanceType.getClassType()).getInstanceType(), typeContext.withThisType(instanceType), seen, callback);
+            }
+
+            for (Type baseClass : ((ClassType) instanceType.getClassType()).getBaseTypes()) {
+                TypeContext subTypeContext = typeContext;
+                if (baseClass instanceof ReferenceType) {
+                    subTypeContext = new TypesUtil(info).generateParameterMap((ReferenceType) baseClass, typeContext);
+                    baseClass = ((ReferenceType) baseClass).getTarget();
+                } else if (baseClass instanceof ClassInstanceType) {
+                    baseClass = ((ClassInstanceType) baseClass).getClassType();
+                }
+                if (baseClass instanceof ClassType) {
+                    baseClass = ((ClassType) baseClass).getInstance();
+                } else if (!(baseClass instanceof InterfaceType || baseClass instanceof GenericType || baseClass instanceof ClassInstanceType)) {
+                    throw new RuntimeException("Not sure about: " + baseClass.getClass().getSimpleName());
+                }
+                forAllSubTypes(baseClass, subTypeContext, seen, callback);
+            }
+
+        } else if (type instanceof ThisType) {
+            Type thisType = typeContext.getThisType();
+            forAllSubTypes(thisType != null ? thisType : ((ThisType) type).getConstraint(), typeContext, seen, callback);
+        } else if (type instanceof TypeParameterType) {
+            if (typeContext.get((TypeParameterType) type) != null) {
+                TypeWithContext lookup = typeContext.get((TypeParameterType) type);
+                forAllSubTypes(lookup.getType(), lookup.getTypeContext(), seen, callback);
+            } else {
+                // Do nothing
+            }
+        } else if (type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType || type instanceof IndexedAccessType) {
+            // Do nothing.
+        } else {
+            throw new RuntimeException(type.getClass().getName());
+        }
     }
 }

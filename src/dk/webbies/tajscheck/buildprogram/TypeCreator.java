@@ -20,6 +20,7 @@ import dk.webbies.tajscheck.util.*;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.buildprogram.DriverProgramBuilder.*;
@@ -96,96 +97,13 @@ public class TypeCreator {
         int index = valueCounter++;
         valueVariableDeclarationList.add(variable(VALUE_VARIABLE_PREFIX + index, identifier(VARIABLE_NO_VALUE)));
 
-        putProducedValueIndex(index, type, typeContext);
+        new TypesUtil(info).forAllSubTypes(type, typeContext, subType -> valueLocations.put(subType, index));
         return index;
     }
 
     public Collection<Statement> getValueVariableDeclarationList() {
         return valueVariableDeclarationList;
     }
-
-    private final Set<Tuple3<Integer, Type, TypeContext>> seenPutValue = new HashSet<>();
-    private void putProducedValueIndex(int index, Type type, TypeContext typeContext) {
-        Tuple3<Integer, Type, TypeContext> seenKey = new Tuple3<>(index, type, typeContext);
-        if (seenPutValue.contains(seenKey)) {
-            return;
-        }
-        seenPutValue.add(seenKey);
-
-        valueLocations.put(new TypeWithContext(type, typeContext), index);
-
-        if (typeContext.getThisType() != null) {
-            putProducedValueIndex(index, type, typeContext.withThisType(null));
-        }
-        if (typeContext.getThisType() == null) {
-            if (info.freeGenericsFinder.hasThisTypes(type) && !(type instanceof ClassType)) {
-                putProducedValueIndex(index, type, typeContext.withThisType(type));
-            }
-        }
-
-        TypeContext newContext = typeContext.optimizeTypeParameters(type);
-        if (!newContext.equals(typeContext)) {
-            putProducedValueIndex(index, type, newContext);
-        }
-
-        if (type instanceof InterfaceType) {
-            List<Type> baseTypes = ((InterfaceType) type).getBaseTypes();
-            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext));
-        } else if (type instanceof IntersectionType) {
-            List<Type> baseTypes = ((IntersectionType) type).getElements();
-            baseTypes.forEach(baseType -> putProducedValueIndex(index, baseType, typeContext));
-        } else if (type instanceof ReferenceType) {
-            putProducedValueIndex(index, ((ReferenceType) type).getTarget(), new TypesUtil(info).generateParameterMap((ReferenceType) type, typeContext));
-        } else if (type instanceof GenericType) {
-            putProducedValueIndex(index, ((GenericType) type).toInterface(), typeContext);
-        } else if (type instanceof ClassType) {
-            valueLocations.put(new TypeWithContext(type, typeContext.withThisType(((ClassType) type).getInstanceType())), index);
-        } else if (type instanceof ClassInstanceType) {
-            ClassInstanceType instanceType = (ClassInstanceType) type;
-
-            if (instanceType != ((ClassType) instanceType.getClassType()).getInstance()) {
-                putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstance(), typeContext);
-            }
-
-            putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext);
-            if (info.freeGenericsFinder.hasThisTypes(instanceType.getClassType())) {
-                putProducedValueIndex(index, ((ClassType) instanceType.getClassType()).getInstanceType(), typeContext.withThisType(instanceType));
-            }
-
-            for (Type baseClass : ((ClassType) instanceType.getClassType()).getBaseTypes()) {
-                TypeContext subTypeContext = typeContext;
-                if (baseClass instanceof ReferenceType) {
-                    subTypeContext = new TypesUtil(info).generateParameterMap((ReferenceType) baseClass, typeContext);
-                    baseClass = ((ReferenceType) baseClass).getTarget();
-                } else if (baseClass instanceof ClassInstanceType) {
-                    baseClass = ((ClassInstanceType) baseClass).getClassType();
-                }
-                if (baseClass instanceof ClassType) {
-                    baseClass = ((ClassType) baseClass).getInstance();
-                } else if (!(baseClass instanceof InterfaceType || baseClass instanceof GenericType || baseClass instanceof ClassInstanceType)) {
-                    throw new RuntimeException("Not sure about: " + baseClass.getClass().getSimpleName());
-                }
-                putProducedValueIndex(index, baseClass, subTypeContext);
-            }
-
-        } else if (type instanceof ThisType) {
-            Type thisType = typeContext.getThisType();
-            putProducedValueIndex(index, thisType != null ? thisType : ((ThisType) type).getConstraint(), typeContext);
-        } else if (type instanceof TypeParameterType) {
-            if (typeContext.get((TypeParameterType) type) != null) {
-                TypeWithContext lookup = typeContext.get((TypeParameterType) type);
-                putProducedValueIndex(index, lookup.getType(), lookup.getTypeContext());
-            } else {
-                // Do nothing
-            }
-        } else if (type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType || type instanceof IndexedAccessType) {
-            // Do nothing.
-        } else {
-            throw new RuntimeException(type.getClass().getName());
-        }
-
-    }
-
 
     private Statement constructUnion(List<Type> types, TypeContext typeContext) {
         List<Integer> elements = types.stream().distinct().map((type) -> getTypeIndex(type, typeContext)).collect(Collectors.toList());
