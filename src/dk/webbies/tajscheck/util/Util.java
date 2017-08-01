@@ -676,6 +676,15 @@ public class Util {
     public static String prettyValue(Value v, State s){
         if(v.isNone()) return "None";
         String labels = mkString(v.getAllObjectLabels().stream().map(l -> s.getObject(l,false)), ",");
+
+        if (v.isMaybeGetter()) {
+            labels += " [getter]";
+        }
+        if (v.isMaybeSetter()) {
+            labels += " [setter]";
+        }
+        v = v.restrictToNotGetterSetter();
+
         Value nonObject = v.restrictToNotObject();
         if(!nonObject.isNone()) {
             return nonObject + ", " + labels;
