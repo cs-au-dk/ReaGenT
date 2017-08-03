@@ -592,7 +592,7 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(ReferenceType t) {
-            throw new RuntimeException("Not implemented...");
+            return t.getTarget().accept(this);
         }
 
         @Override
