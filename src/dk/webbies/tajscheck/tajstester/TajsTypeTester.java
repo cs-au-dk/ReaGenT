@@ -288,12 +288,21 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         @Override
         public Void visit(LoadModuleTest test) {
             Value v;
-            if (info.bench.run_method == Benchmark.RUN_METHOD.NODE) {
-                ObjectLabel moduleObject = ObjectLabel.mk(ECMAScriptObjects.OBJECT_MODULE, ObjectLabel.Kind.OBJECT);
-                v = UnknownValueResolver.getProperty(moduleObject, PKey.mk("exports"), c.getState(), false);
-            } else {
-                ObjectLabel globalObject = InitialStateBuilder.GLOBAL;
-                v = UnknownValueResolver.getProperty(globalObject, PKey.mk(test.getPath()), c.getState(), false);
+            switch (info.bench.run_method) {
+                case NODE:
+                    ObjectLabel moduleObject = ObjectLabel.mk(ECMAScriptObjects.OBJECT_MODULE, ObjectLabel.Kind.OBJECT);
+                    v = UnknownValueResolver.getProperty(moduleObject, PKey.mk("exports"), c.getState(), false);
+                    break;
+                case BROWSER:
+                    ObjectLabel globalObject = InitialStateBuilder.GLOBAL;
+                    v = UnknownValueResolver.getProperty(globalObject, PKey.mk(test.getPath()), c.getState(), false);
+                    break;
+                case BOOTSTRAP:
+                    v = valueHandler.createValue(test.getModuleType(), test.getTypeContext());
+                    assert !v.isNone();
+                    break;
+                default:
+                    throw new RuntimeException("Unknown");
             }
             if (c.isScanning()) {
                 allCertificates.add(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()));

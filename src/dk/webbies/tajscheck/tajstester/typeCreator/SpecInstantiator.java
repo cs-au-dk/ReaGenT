@@ -452,9 +452,8 @@ public class SpecInstantiator {
             ObjectLabel singletonLabel = label.makeSingleton();
             effects.newObject(singletonLabel);
             effects.multiplyObject(singletonLabel);
-            ObjectLabel summaryLabel = singletonLabel.makeSummary();
-            initializer.apply(summaryLabel);
-            return Value.makeObject(summaryLabel);
+            initializer.apply(singletonLabel); // TODO: This might be too strong, it should be summarized at some point.
+            return Value.makeObject(singletonLabel);
         }
 
         @Override

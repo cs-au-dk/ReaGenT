@@ -1,21 +1,13 @@
 package dk.webbies.tajscheck.test.tajs;
 
 import dk.brics.tajs.analysis.Analysis;
-import dk.brics.tajs.analysis.TAJSFunctionsEvaluator;
-import dk.brics.tajs.flowgraph.AbstractNode;
-import dk.brics.tajs.lattice.Context;
-import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
 import dk.brics.tajs.options.Options;
 import dk.brics.tajs.util.AnalysisLimitationException;
-import dk.brics.tajs.util.ExperimentalAnalysisVariables;
-import dk.brics.tajs.util.Pair;
-import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
-import dk.webbies.tajscheck.tajstester.TajsTypeChecker;
 import dk.webbies.tajscheck.tajstester.TesterContextSensitivity;
 import dk.webbies.tajscheck.tajstester.TypeViolation;
 import dk.webbies.tajscheck.testcreator.TestCreator;
@@ -27,17 +19,15 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import java.util.*;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Predicate;
 
 import static dk.brics.tajs.Main.initLogging;
-import static dk.webbies.tajscheck.util.Pair.toTAJS;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 public class TAJSUtil {
 
-    public static TajsAnalysisResults runNoDriverTAJS(String file, int secondsTimeout, Benchmark.RUN_METHOD run_method, BenchmarkInfo info, List<Test> tests) throws TimeoutException {
+    public static TajsAnalysisResults runNoDriverTAJS(String file, int secondsTimeout, BenchmarkInfo info, List<Test> tests) throws TimeoutException {
         dk.brics.tajs.Main.reset();
 
         IAnalysisMonitoring baseMonitoring = new Monitoring();
@@ -46,9 +36,18 @@ public class TAJSUtil {
         TesterContextSensitivity contextStrategy = new TesterContextSensitivity();
         TajsTypeTester typeTester = new TajsTypeTester(tests, info, contextStrategy);
 
-        try {
-            parser.parseArgument(file);
-        } catch (CmdLineException e) {
+        if (info.bench.run_method == Benchmark.RUN_METHOD.BOOTSTRAP) {
+            try {
+                parser.parseArgument("resources/empty.js");
+            } catch (CmdLineException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            try {
+                parser.parseArgument(file);
+            } catch (CmdLineException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         additionalOpts.enableTest();
@@ -114,7 +113,7 @@ public class TAJSUtil {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
         List<Test> tests = new TestCreator(info).createTests();
 
-        TajsAnalysisResults result = runNoDriverTAJS(bench.jsFile, secondsTimeout, bench.run_method, info, tests);
+        TajsAnalysisResults result = runNoDriverTAJS(bench.jsFile, secondsTimeout, info, tests);
 
         //System.out.println(prettyResult(result, assertionResult -> assertionResult.result.isSometimesFalse()));
 

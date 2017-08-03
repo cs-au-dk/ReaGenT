@@ -28,7 +28,11 @@ public class TAJSUnitTests {
         return TAJSUtil.runNoDriver(bench, 60);
     }
 
-    private static Benchmark benchFromFolder(String folderName, CheckOptions.Builder options) {
+    static Benchmark benchFromFolder(String folderName) {
+        return benchFromFolder(folderName, options());
+    }
+
+    static Benchmark benchFromFolder(String folderName, CheckOptions.Builder options) {
         return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", Benchmark.RUN_METHOD.NODE, options.build());
     }
 
@@ -37,19 +41,19 @@ public class TAJSUnitTests {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    private class TAJSResultTester {
+    static class TAJSResultTester {
         private TAJSUtil.TajsAnalysisResults results;
 
         private TAJSResultTester(TAJSUtil.TajsAnalysisResults result) {
             this.results = result;
         }
 
-        private TAJSUnitTests.TAJSResultTester performed(String path) {
+        TAJSUnitTests.TAJSResultTester performed(String path) {
             MatcherAssert.assertThat("test for " + path + " hasn't been performed", results.testPerformed.stream().anyMatch(test -> test.getPath().equals(path)));
             return this;
         }
 
-        private TAJSUnitTests.TAJSResultTester performedAllTests() {
+        TAJSUnitTests.TAJSResultTester performedAllTests() {
             MatcherAssert.assertThat("some tests were not performed: " + mkString(results.testNot, ", "), results.testNot.isEmpty());
             return this;
         }
@@ -73,7 +77,7 @@ public class TAJSUnitTests {
         }
     }
 
-    private TAJSUnitTests.TAJSResultTester expect(TAJSUtil.TajsAnalysisResults result) {
+    public static TAJSUnitTests.TAJSResultTester expect(TAJSUtil.TajsAnalysisResults result) {
         return new TAJSResultTester(result);
     }
 
