@@ -1,16 +1,17 @@
 package dk.webbies.tajscheck.tajstester;
 
-import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.Value;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TypeValuesHandler {
 
@@ -60,20 +61,23 @@ public class TypeValuesHandler {
         return instantiator.createValue(t, name);
     }
 
-    // TODO: Use the code from TypeCreator, such that we add all possible variations of the value.
     public boolean addFeedbackValue(TypeWithContext t, Value v) {
         assert(v != null);
-        if (savedValues.containsKey(t)) {
-            Value joined = v.join(savedValues.get(t));
-            if (v.equals(joined)) {
-                return false;
+        AtomicBoolean valueWasAdded = new AtomicBoolean(false);
+        new TypesUtil(info).forAllSubTypes(t.getType(), t.getTypeContext(), (subType) -> {
+            if (savedValues.containsKey(subType)) {
+                Value joined = v.join(savedValues.get(subType));
+                if (v.equals(joined)) {
+                    return;
+                }
+                savedValues.put(subType, joined);
+                valueWasAdded.set(true);
+            } else {
+                savedValues.put(subType, v);
+                valueWasAdded.set(true);
             }
-            savedValues.put(t, joined);
-            return true;
-        } else {
-            savedValues.put(t, v);
-            return true;
-        }
+        });
+        return valueWasAdded.get();
     }
 }
 

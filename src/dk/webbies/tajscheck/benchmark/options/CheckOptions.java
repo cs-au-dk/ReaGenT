@@ -86,8 +86,8 @@ public final class CheckOptions {
 
         public boolean useTracified = false;
 
-        public DynamicOptions.Builder dynamicOptions = new DynamicOptions.Builder(this);
-        public StaticOptions.Builder staticOptions = new StaticOptions.Builder(this);
+        public final DynamicOptions.Builder dynamicOptions = new DynamicOptions.Builder(this);
+        public final StaticOptions.Builder staticOptions = new StaticOptions.Builder(this);
 
         private Builder() {}
 

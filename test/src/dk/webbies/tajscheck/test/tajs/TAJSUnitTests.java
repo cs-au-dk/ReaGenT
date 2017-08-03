@@ -14,20 +14,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.util.Util.mkString;
-import static org.hamcrest.CoreMatchers.*;
 
 public class TAJSUnitTests {
     private static TAJSUtil.TajsAnalysisResults run(String folderName) throws Exception {
-        return run(benchFromFolder(folderName));
+        return run(benchFromFolder(folderName, options()));
+    }
+
+    private static TAJSUtil.TajsAnalysisResults run(String folderName, CheckOptions.Builder options) throws Exception {
+        return run(benchFromFolder(folderName, options));
     }
 
     private static TAJSUtil.TajsAnalysisResults run(Benchmark bench) throws Exception {
         return TAJSUtil.runNoDriver(bench, 60);
     }
 
-    private static Benchmark benchFromFolder(String folderName) {
-        CheckOptions options = CheckOptions.builder().setCheckDepthReport(0).setCheckDepthUseValue(0).build();
-        return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", Benchmark.RUN_METHOD.NODE, options);
+    private static Benchmark benchFromFolder(String folderName, CheckOptions.Builder options) {
+        return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", Benchmark.RUN_METHOD.NODE, options.build());
+    }
+
+    private static CheckOptions.Builder options() {
+        return CheckOptions.builder().setCheckDepthReport(0).setCheckDepthUseValue(0);
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -96,7 +102,7 @@ public class TAJSUnitTests {
                 .hasViolations();
     }
 
-    @Test(timeout = 30 * 1000)
+    @Test
     @Ignore // TODO: Calling "pv.readPropertyValue" with a getter property, seems to go wrong (it seems to mix in the base object).
     public void getter() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("getter");
@@ -109,6 +115,29 @@ public class TAJSUnitTests {
     @Ignore // TODO: Goes in an infinite loop.
     public void getterInfiniteLoop() throws Exception {
         run("getterInfiniteLoop"); // smoke test, is good if it ever terminates.
+    }
+
+    @Test
+    public void classInstance() throws Exception {
+        expect(run("classInstance"))
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
+    public void sideEffects() throws Exception {
+        TAJSUtil.TajsAnalysisResults withSideEffects = run("sideEffects");
+
+        expect(withSideEffects)
+                .performedAllTests()
+                .hasViolations();
+
+        TAJSUtil.TajsAnalysisResults noSideEffects = run("sideEffects", options().staticOptions.setLimitSideEffects(true).getOuterBuilder());
+
+        expect(noSideEffects)
+                .performedAllTests()
+                .hasNoViolations();
+
     }
 
     @Test
@@ -299,7 +328,7 @@ public class TAJSUnitTests {
 
     @Test
     public void samePathFunctions() throws Exception {
-        expect(run(benchFromFolder("samePathFunctions").withOptions(options -> options.setSplitUnions(false))))
+        expect(run(benchFromFolder("samePathFunctions", options()).withOptions(options -> options.setSplitUnions(false))))
                 .hasNoViolations();
     }
 

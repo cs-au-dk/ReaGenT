@@ -21,9 +21,11 @@ import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.testcreator.test.*;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -159,11 +161,38 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             valueHandler = new TypeValuesHandler(info.typeNames, c, info);
     }
 
-    private boolean depends(Test dependents, Test on) {
-        // TODO: Have multiple strategies.
-        // 1: ALL (the trivial, return true).
-        // 2: "tree", so only from tests that return value, to another test that possibly uses the value (including function arguments).
-        return true; //FIXME: Use fine-grain dependency computation between tests
+    // returns true if "dependent" depends on "on".
+    private Map<Pair<Test, Test>, Boolean> dependsCache = new HashMap<>();
+    private boolean depends(Test dependent, Test on) {
+        if (!info.options.staticOptions.limitSideEffects) {
+            return true;
+        }
+        Pair<Test, Test> key = Pair.make(dependent, on);
+        if (dependsCache.containsKey(key)) {
+            return dependsCache.get(key);
+        }
+        AtomicBoolean result = new AtomicBoolean(false);
+
+
+        Set<TypeWithContext> consumes = new HashSet<>();
+        for (Type toTest : dependent.getTypeToTest()) {
+            consumes.add(new TypeWithContext(toTest, dependent.getTypeContext()));
+        }
+
+        for (Type produces : on.getProduces()) {
+            new TypesUtil(info).forAllSubTypes(produces, on.getTypeContext(), produce -> {
+                if (consumes.contains(produce)) {
+                    result.set(true);
+                }
+            });
+        }
+
+        if (result.get()) {
+            System.out.println(on.getPath() + " -> " + dependent.getPath());
+        }
+
+        dependsCache.put(key, result.get());
+        return result.get();
     }
 
 
@@ -189,7 +218,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         retractedTests.add(t);
     }
 
-    public class TajsTestVisitor implements TestVisitor<Boolean> {
+    public class TajsTestVisitor implements TestVisitor<Void> {
 
         private final Solver.SolverInterface c;
         private final PropVarOperations pv;
@@ -203,16 +232,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             this.typeChecker = new TajsTypeChecker(c, info);
         }
 
-        private <T> boolean testValues(Collection<T> values, Predicate<T> consumer) {
-            boolean progress = false;
-            for (T value : values) {
-                if (consumer.test(value)) {
-                    progress = true;
-                }
-            }
-            return progress;
-        }
-
         /**
          *
          * @param v the abstract value
@@ -220,9 +239,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
          * @param test the test that was performed.
          * @return if there was progress, which happens if any state changes (a new value is added).
          */
-        public boolean attemptAddValue(Value v, TypeWithContext t, Test test) {
+        public void attemptAddValue(Value v, TypeWithContext t, Test test) {
             if (v.isNone()) {
-                return false;
+                return;
             }
             State s = c.getState();
             v = UnknownValueResolver.getRealValue(v, s);
@@ -235,13 +254,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 boolean newValue = typeValuesHandler.addFeedbackValue(t, filteredValue);
                 if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " in test " + test + ", value: " + filteredValue);
                 if(newValue && c.isScanning()) throw new RuntimeException("New values should not appear in scanning!");
-                return newValue;
             } else {
                 if(DEBUG_VALUES) System.out.println("Value " + v + " not added because it violates type " + t + " in test " + test);
                 if(c.isScanning()) {
                     allViolations.addAll(violations);
                 }
-                return false;
             }
         }
 
@@ -254,21 +271,22 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         @Override
-        public Boolean visit(PropertyReadTest test) {
+        public Void visit(PropertyReadTest test) {
             State s = c.getState();
             Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(),test.getTypeContext()));
-            return testValues(baseValue.getObjectLabels(), (label) -> {
+            baseValue.getObjectLabels().forEach(label -> {
                 Value propertyValue = UnknownValueResolver.getProperty(label, PKey.mk(test.getProperty()), c.getState(), false);
                 TypeWithContext closedType = new TypeWithContext(test.getPropertyType(), test.getTypeContext());
                 if(c.isScanning()) {
                     allCertificates.add(new TestCertificate(test, "Property " + test.getProperty() + " accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s));
                 }
-                return attemptAddValue(propertyValue, closedType, test);
+                attemptAddValue(propertyValue, closedType, test);
             });
+            return null;
         }
 
         @Override
-        public Boolean visit(LoadModuleTest test) {
+        public Void visit(LoadModuleTest test) {
             Value v;
             if (info.bench.run_method == Benchmark.RUN_METHOD.NODE) {
                 ObjectLabel moduleObject = ObjectLabel.mk(ECMAScriptObjects.OBJECT_MODULE, ObjectLabel.Kind.OBJECT);
@@ -281,11 +299,12 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 allCertificates.add(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()));
             }
 
-            return attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test);
+            attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test);
+            return null;
         }
 
         @Override
-        public Boolean visit(MethodCallTest test) {
+        public Void visit(MethodCallTest test) {
             final Value receiver = attemptGetValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
             //TODO: Filter this value ! ::  propertyValue = new TypeValuesFilter(propertyValue, propertyType)
             //Value function = receiver.getAllObjectLabels().stream().map(l -> UnknownValueResolver.getProperty(l, PKey.mk(test.getPropertyName()), c.getState(), false)).reduce(Value.makeNone(), (x,y) -> UnknownValueResolver.join(x, y, c.getState()));
@@ -293,18 +312,18 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             return functionTest(test, receiver, function, false);
         }
 
-        private Boolean functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
+        private Void functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
             List<Value> arguments = test.getParameters().stream().map(paramType -> typeValuesHandler.createValue(paramType, test.getTypeContext())).collect(Collectors.toList());
 
             if (arguments.stream().anyMatch(Value::isNone)) {
-                return false;
+                return null;
             }
 
             if (test.isRestArgs()) {
                 throw new RuntimeException();
             }
 
-            return testValues(function.getAllObjectLabels(), l -> {
+            function.getAllObjectLabels().forEach(l -> {
                 FunctionCalls.CallInfo callinfo = new FunctionCalls.CallInfo() {
 
                     @Override
@@ -378,30 +397,32 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                         allViolations.add(new TypeViolation("Function " + function + " always returns exceptionally", test));
                     }
                 }
-                return attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test);
+                attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test);
             });
+
+            return null;
         }
 
         @Override
-        public Boolean visit(ConstructorCallTest test) {
+        public Void visit(ConstructorCallTest test) {
             Value function = attemptGetValue(test.getFunction(), test.getTypeContext());
             return functionTest(test, null, function, true); // receiver is ignored, since it is a constructor-call.
         }
 
         @Override
-        public Boolean visit(FunctionCallTest test) {
+        public Void visit(FunctionCallTest test) {
             Value receiver = Value.makeObject(InitialStateBuilder.GLOBAL).joinUndef();
             Value function = attemptGetValue(test.getFunction(), test.getTypeContext());
             return functionTest(test, receiver, function, false);
         }
 
         @Override
-        public Boolean visit(FilterTest test) {
+        public Void visit(FilterTest test) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(UnionTypeTest test) {
+        public Void visit(UnionTypeTest test) {
             Value value = attemptGetValue(test.getGetUnionType(), test.getTypeContext());
 
             List<Type> matchingTypes = test.getGetUnionType().getElements().stream().filter(subType ->
@@ -414,21 +435,22 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 }
             }
 
-            return testValues(matchingTypes, subType -> attemptAddValue(value, new TypeWithContext(subType, test.getTypeContext()), test));
+            matchingTypes.forEach(subType -> attemptAddValue(value, new TypeWithContext(subType, test.getTypeContext()), test));
+            return null;
         }
 
         @Override
-        public Boolean visit(NumberIndexTest test) {
+        public Void visit(NumberIndexTest test) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(StringIndexTest test) {
+        public Void visit(StringIndexTest test) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(PropertyWriteTest test) {
+        public Void visit(PropertyWriteTest test) {
             throw new RuntimeException();
         }
     }
