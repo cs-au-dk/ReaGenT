@@ -211,4 +211,16 @@ public class OptimizingTypeContext implements TypeContext {
         }
         return clone;
     }
+
+    @Override
+    public String toString() {
+        if (map.isEmpty() && thisType == null) {
+            return "TypeContext{}";
+        }
+
+        return "TypeContext{" +
+                "map=" + map +
+                ", thisType=" + thisType +
+                '}';
+    }
 }
