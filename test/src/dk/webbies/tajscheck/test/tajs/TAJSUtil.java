@@ -99,7 +99,7 @@ public class TAJSUtil {
         List<TypeViolation> violations = typeTester.getAllViolations();
         MultiMap<String, TypeViolation> results =  new ArrayListMultiMap<>();
         for(TypeViolation vio : violations) {
-            results.put(vio.test.getPath(), vio);
+            results.put(vio.path, vio);
         }
 
         List<Test> notPerformed = new LinkedList<>();

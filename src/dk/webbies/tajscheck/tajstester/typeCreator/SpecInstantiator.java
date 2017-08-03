@@ -8,10 +8,12 @@ import dk.brics.tajs.lattice.ObjectLabel;
 import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import org.apache.log4j.Logger;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.*;
 import static java.util.Collections.singletonList;
@@ -257,8 +259,7 @@ public class SpecInstantiator {
     }
 
     public Value createValue(TypeWithContext type, String path) {
-        MiscInfo misc = new MiscInfo(Arrays.asList(path.split("\\.")));
-        // TODO: Make sure natives are not re-created.
+        MiscInfo misc = new MiscInfo(Arrays.asList(path.split("\\.")), type.getTypeContext());
         return instantiate(type.getType(), misc, null); // TODO: TypeContext is currently ignored.
     }
 
@@ -276,13 +277,12 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel visit(GenericType t, MiscInfo miscInfo) {
-            // TODO should this really be the exact same implementation as for the InterfaceType? (we only lose the type parameters?)
-            return ObjectLabel.mk(SpecObjects.getObjectAbstraction(miscInfo.path), getObjectLabelKind(t));
+            return t.toInterface().accept(this, miscInfo);
         }
 
         @Override
         public ObjectLabel visit(InterfaceType t, MiscInfo miscInfo) {
-            return ObjectLabel.mk(SpecObjects.getObjectAbstraction(miscInfo.path), getObjectLabelKind(t));
+            return ObjectLabel.mk(SpecObjects.getObjectAbstraction(miscInfo.path, new TypeWithContext(t, miscInfo.context)), getObjectLabelKind(t));
         }
 
         @Override
@@ -297,7 +297,7 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel visit(TupleType t, MiscInfo miscInfo) {
-            return ObjectLabel.mk(SpecObjects.getTupleAbstraction(miscInfo.path), getObjectLabelKind(t));
+            return ObjectLabel.mk(SpecObjects.getTupleAbstraction(miscInfo.path, new TypeWithContext(t, miscInfo.context)), getObjectLabelKind(t));
         }
 
         @Override
@@ -529,13 +529,10 @@ public class SpecInstantiator {
     private class MiscInfo {
 
         public final Stack<String> path;
+        public final TypeContext context;
 
-        MiscInfo(String initialPath) {
-            path = new Stack<>();
-            path.push(initialPath);
-        }
-
-        MiscInfo(Collection<String> initialPath) {
+        MiscInfo(Collection<String> initialPath, TypeContext context) {
+            this.context = context;
             path = new Stack<>();
             path.addAll(initialPath);
         }
@@ -555,7 +552,7 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(GenericType t) {
-            final ObjectLabel.Kind kind;
+            ObjectLabel.Kind kind;
             if (t.getDeclaredCallSignatures().isEmpty() && t.getDeclaredConstructSignatures().isEmpty()) {
                 if (t.getDeclaredProperties().keySet().containsAll(Arrays.asList("slice", "pop", "push", "forEach", "filter", "concat"))) {
                     kind = ObjectLabel.Kind.ARRAY; // TODO make this less hacky
@@ -565,16 +562,30 @@ public class SpecInstantiator {
             } else {
                 kind = ObjectLabel.Kind.FUNCTION;
             }
+            if (kind == ObjectLabel.Kind.OBJECT) {
+                for (ObjectLabel.Kind label : t.getBaseTypes().stream().map(subType -> subType.accept(this)).collect(Collectors.toList())) {
+                    if (label != ObjectLabel.Kind.OBJECT) {
+                        kind = label;
+                    }
+                }
+            }
             return kind;
         }
 
         @Override
         public ObjectLabel.Kind visit(InterfaceType t) {
-            final ObjectLabel.Kind kind;
+            ObjectLabel.Kind kind;
             if (t.getDeclaredCallSignatures().isEmpty() && t.getDeclaredConstructSignatures().isEmpty()) {
                 kind = ObjectLabel.Kind.OBJECT;
             } else {
                 kind = ObjectLabel.Kind.FUNCTION;
+            }
+            if (kind == ObjectLabel.Kind.OBJECT) {
+                for (ObjectLabel.Kind label : t.getBaseTypes().stream().map(subType -> subType.accept(this)).collect(Collectors.toList())) {
+                    if (label != ObjectLabel.Kind.OBJECT) {
+                        kind = label;
+                    }
+                }
             }
             return kind;
         }

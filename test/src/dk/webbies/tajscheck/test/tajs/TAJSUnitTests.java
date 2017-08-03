@@ -94,15 +94,14 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: When we start supporting callbacks.
     public void callbacks() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("callbacks");
 
         expect(result)
-                .performed("module.foo()");
+                .performed("module.foo(obj)");
 
         expect(result)
-                .forPath("module.foo()")
+                .forPath("module.foo(obj)")
                 .hasViolations();
     }
 

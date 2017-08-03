@@ -1,8 +1,6 @@
 package dk.webbies.tajscheck.tajstester;
 
-import dk.au.cs.casa.typescript.types.SimpleType;
-import dk.au.cs.casa.typescript.types.SimpleTypeKind;
-import dk.au.cs.casa.typescript.types.Type;
+import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.FunctionCalls;
 import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.PropVarOperations;
@@ -18,8 +16,8 @@ import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Pair;
 import dk.webbies.tajscheck.TypeWithContext;
-import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.tajstester.typeCreator.SpecObjects;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -196,10 +194,43 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     }
 
 
-    public Value evaluateCallToSymbolicFunction(ECMAScriptObjects nativeObject, FunctionCalls.CallInfo call, Solver.SolverInterface c) {
-        // Use the type in the context to return the right value
-        System.out.println("Called function " + call.getFunctionValue());
-        return Value.makeNone();
+    @Override
+    public Value evaluateCallToSymbolicFunction(HostObject hostObject, FunctionCalls.CallInfo call, Solver.SolverInterface c) {
+        TypeWithContext typeWithContext = ((SpecObjects.FullPath) hostObject).getType();
+        String path = ((SpecObjects.FullPath) hostObject).asText();
+
+        if (call.isUnknownNumberOfArgs() || call.isConstructorCall()) {
+            throw new RuntimeException(call.isUnknownNumberOfArgs() + " - " + call.isConstructorCall());
+        }
+
+        if (typeWithContext.getType() instanceof InterfaceType) {
+            dk.webbies.tajscheck.util.Pair<InterfaceType, TypeContext> pair = new TypesUtil(info).constructSyntheticInterfaceWithBaseTypes((InterfaceType) typeWithContext.getType(), info.typeNames, info.freeGenericsFinder);
+            InterfaceType inter = pair.getLeft();
+            TypeContext context = typeWithContext.getTypeContext().append(pair.getRight());
+
+            List<Signature> signatures = inter.getDeclaredCallSignatures();
+            if (signatures.size() != 1) {
+                throw new RuntimeException();
+            }
+
+            Signature signature = signatures.get(0);
+
+            if (signature.isHasRestParameter()) {
+                throw new RuntimeException();
+            }
+            if (signature.getParameters().size() != call.getNumberOfArgs()) {
+                if (c.isScanning()) {
+                    allViolations.add(new TypeViolation("Expected  " + signature.getParameters().size() + " args, got " + call.getNumberOfArgs(), path));
+                }
+            }
+
+            for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
+                attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), context), null, c);
+            }
+            return valueHandler.createValue(signature.getResolvedReturnType(), context);
+        } else {
+            throw new RuntimeException(typeWithContext.getType().getClass().getSimpleName());
+        }
     }
 
 
@@ -210,6 +241,36 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             Test t = testerContextSensitivity.getTest(s.getContext());
             if(retractedTests.contains(t)) {
                 s.setToNone();
+            }
+        }
+    }
+
+    /**
+     *
+     * @param v the abstract value
+     * @param t the type
+     * @param path the Path from which the value is added.
+     * @return if there was progress, which happens if any state changes (a new value is added).
+     */
+    public void attemptAddValue(Value v, TypeWithContext t, String path, Solver.SolverInterface c) {
+        if (v.isNone()) {
+            return;
+        }
+        State s = c.getState();
+        v = UnknownValueResolver.getRealValue(v, s);
+        Pair<Value, List<TypeViolation>> tcResult = new TajsTypeChecker(c, info).typeCheckAndFilter(v, t.getType(), t.getTypeContext(), info, 2, path);
+
+        Value filteredValue = tcResult.getFirst();
+        List<TypeViolation> violations = tcResult.getSecond();
+
+        if(violations.isEmpty() && !filteredValue.isNone()) {
+            boolean newValue = valueHandler.addFeedbackValue(t, filteredValue);
+            if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + filteredValue);
+            if(newValue && c.isScanning()) throw new RuntimeException("New values should not appear in scanning!");
+        } else {
+            if(DEBUG_VALUES) System.out.println("Value " + v + " not added because it violates type " + t + " path:" + path);
+            if(c.isScanning()) {
+                allViolations.addAll(violations);
             }
         }
     }
@@ -232,36 +293,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             this.typeChecker = new TajsTypeChecker(c, info);
         }
 
-        /**
-         *
-         * @param v the abstract value
-         * @param t the type
-         * @param test the test that was performed.
-         * @return if there was progress, which happens if any state changes (a new value is added).
-         */
-        public void attemptAddValue(Value v, TypeWithContext t, Test test) {
-            if (v.isNone()) {
-                return;
-            }
-            State s = c.getState();
-            v = UnknownValueResolver.getRealValue(v, s);
-            Pair<Value, List<TypeViolation>> tcResult = typeChecker.typeCheckAndFilter(v, t.getType(), t.getTypeContext(), info, 2, test);
-
-            Value filteredValue = tcResult.getFirst();
-            List<TypeViolation> violations = tcResult.getSecond();
-
-            if(violations.isEmpty() && !filteredValue.isNone()) {
-                boolean newValue = typeValuesHandler.addFeedbackValue(t, filteredValue);
-                if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " in test " + test + ", value: " + filteredValue);
-                if(newValue && c.isScanning()) throw new RuntimeException("New values should not appear in scanning!");
-            } else {
-                if(DEBUG_VALUES) System.out.println("Value " + v + " not added because it violates type " + t + " in test " + test);
-                if(c.isScanning()) {
-                    allViolations.addAll(violations);
-                }
-            }
-        }
-
         public Value attemptGetValue(Type t, TypeContext context) {
             return typeValuesHandler.findFeedbackValue(new TypeWithContext(t, context));
         }
@@ -280,7 +311,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 if(c.isScanning()) {
                     allCertificates.add(new TestCertificate(test, "Property " + test.getProperty() + " accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s));
                 }
-                attemptAddValue(propertyValue, closedType, test);
+                attemptAddValue(propertyValue, closedType, test.getPath(), c);
             });
             return null;
         }
@@ -308,7 +339,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 allCertificates.add(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()));
             }
 
-            attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test);
+            attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test.getPath(), c);
             return null;
         }
 
@@ -403,10 +434,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     }
 
                     if (returnedValue.isNone() && !(test.getReturnType() instanceof SimpleType && ((SimpleType) test.getReturnType()).getKind() == SimpleTypeKind.Never)) {
-                        allViolations.add(new TypeViolation("Function " + function + " always returns exceptionally", test));
+                        allViolations.add(new TypeViolation("Function " + function + " always returns exceptionally", test.getPath()));
                     }
                 }
-                attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test);
+                attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test.getPath(), c);
             });
 
             return null;
@@ -435,16 +466,16 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             Value value = attemptGetValue(test.getGetUnionType(), test.getTypeContext());
 
             List<Type> matchingTypes = test.getGetUnionType().getElements().stream().filter(subType ->
-                    typeChecker.typeCheckAndFilter(value, subType, test.getTypeContext(), info, 2, test).getSecond().isEmpty()
+                    typeChecker.typeCheckAndFilter(value, subType, test.getTypeContext(), info, 2, test.getPath()).getSecond().isEmpty()
             ).collect(Collectors.toList());
 
             if (matchingTypes.isEmpty()) {
                 if(c.isScanning()) {
-                    allViolations.addAll(Collections.singletonList(new TypeViolation("Values matched none of the unions", test)));
+                    allViolations.addAll(Collections.singletonList(new TypeViolation("Values matched none of the unions", test.getPath())));
                 }
             }
 
-            matchingTypes.forEach(subType -> attemptAddValue(value, new TypeWithContext(subType, test.getTypeContext()), test));
+            matchingTypes.forEach(subType -> attemptAddValue(value, new TypeWithContext(subType, test.getTypeContext()), test.getPath(), c));
             return null;
         }
 

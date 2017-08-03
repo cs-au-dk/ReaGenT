@@ -84,7 +84,7 @@ public class TajsTypeChecker {
     }
 
 
-    Pair<Value,List<TypeViolation>> typeCheckAndFilter(Value v, Type type, TypeContext context, BenchmarkInfo info, int depth, Test test) {
+    Pair<Value,List<TypeViolation>> typeCheckAndFilter(Value v, Type type, TypeContext context, BenchmarkInfo info, int depth, String path) {
         List<TypeViolation> violations = new LinkedList<>();
         List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, depth);
         TypeWithContext tc = new TypeWithContext(type, context);
@@ -99,10 +99,10 @@ public class TajsTypeChecker {
         Set<TypeCheck> filterNotViolations = zip.stream().filter(p -> !p.getSecond().isEmpty()).flatMap(p -> p.getSecond().stream()).collect(Collectors.toSet());
 
         if(!filterNot.isEmpty() && !filter.isEmpty()) {
-            violations.add(new TypeViolation("Expected " + tc + " but found spurious values: " + prettyValues(filterNot, c.getState()) + " violating " + mkString(filterNotViolations.stream(), ","), test));
+            violations.add(new TypeViolation("Expected " + tc + " but found spurious values: " + prettyValues(filterNot, c.getState()) + " violating " + mkString(filterNotViolations.stream(), ","), path));
         }
         if(filter.isEmpty()) {
-            violations.add(new TypeViolation("Expected " + tc + " but found value: " + prettyValue(v, c.getState()) + " violating " + mkString(filterNotViolations.stream(), ","), test));
+            violations.add(new TypeViolation("Expected " + tc + " but found value: " + prettyValue(v, c.getState()) + " violating " + mkString(filterNotViolations.stream(), ","), path));
         }
         return Pair.make(filter.stream().reduce(Value.makeNone(), (a, b) -> a.join(b)), violations);
     }

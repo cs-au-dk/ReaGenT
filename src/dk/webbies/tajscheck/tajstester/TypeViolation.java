@@ -4,15 +4,15 @@ import dk.webbies.tajscheck.testcreator.test.Test;
 
 public class TypeViolation {
     final public String message;
-    final public Test test;
-    TypeViolation(String message, Test t){
+    final public String path;
+    TypeViolation(String message, String path){
         this.message = message;
-        this.test = t;
+        this.path = path;
     }
 
     @Override
     public String toString() {
-        return message + " in test " + test;
+        return message + " in test " + path;
     }
 }
 
