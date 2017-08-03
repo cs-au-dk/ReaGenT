@@ -140,12 +140,20 @@ public class AnalyzeBenchmarks extends TestCase {
     @Test
     public void analyzeBenchmark() throws Exception {
         Benchmark benchmark = this.benchmark;
-        TAJSUtil.runNoDriver(benchmark, 300);
+        try {
+            TAJSUtil.runNoDriver(benchmark, 300);
+        } catch (TimeoutException ignored) {
+            // this is OK.
+        }
     }
 
     @Test
     public void initialize() throws Exception {
         Benchmark benchmark = this.benchmark.withOptions(options -> options.setOnlyInitialize(true));
-        TAJSUtil.runNoDriver(benchmark, 300);
+        try {
+            TAJSUtil.runNoDriver(benchmark, 300);
+        } catch (TimeoutException ignored) {
+            // this is OK.
+        }
     }
 }
