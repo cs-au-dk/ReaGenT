@@ -21,6 +21,7 @@ import dk.webbies.tajscheck.tajstester.typeCreator.SpecObjects;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
+import dk.webbies.tajscheck.util.ArrayListMultiMap;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,6 +52,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private final List<Test> performed = newList();
 
+    private final ArrayListMultiMap<Test, Test> depends;
+
     private TypeValuesHandler valueHandler = null;
 
     private BasicBlock allTestsBlock;
@@ -63,6 +66,14 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         this.tests = tests;
         this.info = info;
         this.testerContextSensitivity = testerContextSensitivity;
+        this.depends = new ArrayListMultiMap<>();
+        for (Test dependsTest : tests) {
+            for (Test onTest : tests) {
+                if (depends(dependsTest, onTest)) {
+                    depends.put(dependsTest, onTest);
+                }
+            }
+        }
     }
 
     public int getTotalTests() {return tests.size();}
@@ -117,10 +128,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         // we propagate states for each depending states
-        for(Test on : tests) {
-            for (Test dependingTest : tests) {
-                if (!depends(dependingTest, on)) continue;
-
+        for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
+            Test dependingTest = entry.getKey();
+            for (Test on : entry.getValue()) {
                 Context dependentContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, dependingTest);
                 Context onContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, on);
                 State source = c.getAnalysisLatticeElement().getState(allTestsBlock, onContext);
@@ -160,17 +170,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     }
 
     // returns true if "dependent" depends on "on".
-    private Map<Pair<Test, Test>, Boolean> dependsCache = new HashMap<>();
     private boolean depends(Test dependent, Test on) {
         if (!info.options.staticOptions.limitSideEffects) {
             return true;
         }
-        Pair<Test, Test> key = Pair.make(dependent, on);
-        if (dependsCache.containsKey(key)) {
-            return dependsCache.get(key);
-        }
         AtomicBoolean result = new AtomicBoolean(false);
-
 
         Set<TypeWithContext> consumes = new HashSet<>();
         for (Type toTest : dependent.getTypeToTest()) {
@@ -189,7 +193,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             System.out.println(on.getPath() + " -> " + dependent.getPath());
         }
 
-        dependsCache.put(key, result.get());
         return result.get();
     }
 
