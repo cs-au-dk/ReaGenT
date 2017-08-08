@@ -391,6 +391,15 @@ public class TAJSUnitTests {
                 .forPath("foo().[numberIndexer]")
                 .hasViolations();
     }
+
+    @Test
+    public void testRestArgs() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("testRestArgs");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 }
 
 

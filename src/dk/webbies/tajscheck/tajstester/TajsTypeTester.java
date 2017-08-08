@@ -367,8 +367,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 return null;
             }
 
-            if (test.isRestArgs()) {
-                throw new RuntimeException();
+            boolean restArgs = test.isRestArgs();
+
+            final Value restArgType = restArgs ? typeValuesHandler.createValue(new TypesUtil(info).extractRestArgsType(test.getParameters()), test.getTypeContext()) : null;
+            if (restArgs) {
+                arguments.remove(arguments.size() - 1);
             }
 
             function.getAllObjectLabels().forEach(l -> {
@@ -402,7 +405,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     @Override
                     public Value getArg(int i) {
                         if (i >= arguments.size()) {
-                            return Value.makeUndef();
+                            if (restArgs) {
+                                return restArgType;
+                            } else {
+                                return Value.makeUndef();
+                            }
                         }
                         return arguments.get(i);
                     }
@@ -414,12 +421,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                     @Override
                     public Value getUnknownArg() {
-                        throw new AnalysisException();
+                        assert restArgs;
+                        return restArgType.join(Value.makeUndef());
                     }
 
                     @Override
                     public boolean isUnknownNumberOfArgs() {
-                        return false;
+                        return restArgs;
                     }
 
                     @Override
