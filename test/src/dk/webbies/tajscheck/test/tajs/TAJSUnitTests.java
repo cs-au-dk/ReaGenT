@@ -33,7 +33,11 @@ public class TAJSUnitTests {
     }
 
     static Benchmark benchFromFolder(String folderName, CheckOptions.Builder options) {
-        return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", Benchmark.RUN_METHOD.NODE, options.build());
+        return benchFromFolder(folderName, options, Benchmark.RUN_METHOD.NODE);
+    }
+
+    static Benchmark benchFromFolder(String folderName, CheckOptions.Builder options, Benchmark.RUN_METHOD run_method) {
+        return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", run_method, options.build());
     }
 
     private static CheckOptions.Builder options() {
@@ -363,6 +367,11 @@ public class TAJSUnitTests {
         expect(result)
                 .forPath("module.foo().bar")
                 .hasNoViolations();
+    }
+
+    @Test
+    public void functionCall1() throws Exception {
+        run(benchFromFolder("functionCall1", options(), Benchmark.RUN_METHOD.BROWSER)); // Smoke test.
     }
 }
 

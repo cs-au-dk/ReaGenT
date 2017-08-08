@@ -396,6 +396,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                     @Override
                     public Value getArg(int i) {
+                        if (i >= arguments.size()) {
+                            return Value.makeUndef();
+                        }
                         return arguments.get(i);
                     }
 
