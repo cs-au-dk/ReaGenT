@@ -675,23 +675,24 @@ public class Util {
 
     public static String prettyValue(Value v, State s){
         if(v.isNone()) return "None";
-        String labels = mkString(v.getAllObjectLabels().stream().map(l -> s.getObject(l,false)), ",");
-
-        if (v.isMaybeGetter()) {
-            labels += " [getter]";
-        }
-        if (v.isMaybeSetter()) {
-            labels += " [setter]";
-        }
-        v = v.restrictToNotGetterSetter();
 
         Value nonObject = v.restrictToNotObject();
-        if(!nonObject.isNone()) {
-            return nonObject + ", " + labels;
+        List<String> prettyStrings = new ArrayList<>();
+
+        if (!nonObject.isNone()) {
+            prettyStrings.add(nonObject.toString());
         }
-        else {
-            return labels;
+
+        v.getAllObjectLabels().stream().map(l -> s.getObject(l,false)).map(Object::toString).forEach(prettyStrings::add);
+
+        if (v.isMaybeGetter()) {
+            prettyStrings.add("[getter]");
         }
+        if (v.isMaybeSetter()) {
+            prettyStrings.add("[setter]");
+        }
+
+        return String.join(", ", prettyStrings);
     }
 
 }
