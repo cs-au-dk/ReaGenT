@@ -66,8 +66,9 @@ public class TypeValuesHandler {
         AtomicBoolean valueWasAdded = new AtomicBoolean(false);
         new TypesUtil(info).forAllSubTypes(t.getType(), t.getTypeContext(), (subType) -> {
             if (savedValues.containsKey(subType)) {
-                Value joined = v.join(savedValues.get(subType));
-                if (v.equals(joined)) {
+                Value prevValue = savedValues.get(subType);
+                Value joined = v.join(prevValue);
+                if (prevValue.equals(joined)) {
                     return;
                 }
                 savedValues.put(subType, joined);
