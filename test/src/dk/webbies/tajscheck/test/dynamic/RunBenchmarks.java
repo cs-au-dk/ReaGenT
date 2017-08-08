@@ -97,7 +97,7 @@ public class RunBenchmarks {
         register(new Benchmark("MathJax", ParseDeclaration.Environment.ES5Core, "test/benchmarks/mathjax/mathjax.js", "test/benchmarks/mathjax/mathjax.d.ts", BROWSER, options));
 
         register(new Benchmark("PeerJS", ParseDeclaration.Environment.ES5Core, "test/benchmarks/peerjs/peerjs.js", "test/benchmarks/peerjs/peerjs.d.ts", BROWSER, options));
-        register(new Benchmark("PleaseJS", ParseDeclaration.Environment.ES5Core, "test/benchmarks/pleasejs/please.js", "test/benchmarks/pleasejs/please.d.ts", NODE, options));
+        register(new Benchmark("PleaseJS", ParseDeclaration.Environment.ES5Core, "test/benchmarks/pleasejs/please.js", "test/benchmarks/pleasejs/please.d.ts", BROWSER, options));
         Benchmark webcomponents = new Benchmark("webcomponents.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/webcomponents/webcomponents.js", "test/benchmarks/webcomponents/webcomponents.d.ts", BROWSER, options); // Doesn't really directly expose an API, so I'm just keeping it as dependency only.
         register(new Benchmark("Polymer", ParseDeclaration.Environment.ES5Core, "test/benchmarks/polymer/polymer.js", "test/benchmarks/polymer/polymer.d.ts", BROWSER, options).addDependencies(webcomponents));
         register(new Benchmark("q", ParseDeclaration.Environment.ES5Core, "test/benchmarks/q/q.js", "test/benchmarks/q/q.d.ts", NODE, options));
