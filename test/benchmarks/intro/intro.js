@@ -1491,11 +1491,6 @@
 
         // align the hint element
         switch (position) {
-            default:
-            case 'top-left':
-                hint.style.left = offset.left + 'px';
-                hint.style.top = offset.top + 'px';
-                break;
             case 'top-right':
                 hint.style.left = (offset.left + offset.width) + 'px';
                 hint.style.top = offset.top + 'px';
@@ -1514,6 +1509,11 @@
                 break;
             case 'top-middle':
                 hint.style.left = (offset.left + (offset.width / 2)) + 'px';
+                hint.style.top = offset.top + 'px';
+                break;
+            case 'top-left':
+            default:
+                hint.style.left = offset.left + 'px';
                 hint.style.top = offset.top + 'px';
                 break;
         }
