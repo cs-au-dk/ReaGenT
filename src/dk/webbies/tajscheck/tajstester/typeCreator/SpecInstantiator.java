@@ -481,7 +481,12 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(TypeParameterType t, MiscInfo info) {
-            throw new RuntimeException("Not implemented...");
+            if (info.context.containsKey(t)) {
+                TypeWithContext lookup = info.context.get(t);
+                return lookup.getType().accept(this, info.withContext(lookup.getTypeContext()));
+            } else {
+                throw new RuntimeException("Not implemented...");
+            }
         }
 
         @Override
@@ -535,6 +540,10 @@ public class SpecInstantiator {
             this.context = context;
             path = new Stack<>();
             path.addAll(initialPath);
+        }
+
+        public MiscInfo withContext(TypeContext typeContext) {
+            return new MiscInfo(path, typeContext);
         }
     }
 
