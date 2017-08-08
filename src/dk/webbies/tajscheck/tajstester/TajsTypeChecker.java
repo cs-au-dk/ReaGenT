@@ -43,7 +43,7 @@ public class TajsTypeChecker {
         this.info = info;
     }
 
-    private List<Value> split(Value v) {
+    public static List<Value> split(Value v) {
 
         List<Value> vr = v.restrictToObject().getAllObjectLabels().stream().map(Value::makeObject).collect(Collectors.toList());
         if(v.isMaybeUndef()) vr.add(Value.makeUndef());

@@ -468,17 +468,32 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         public Void visit(UnionTypeTest test) {
             Value value = attemptGetValue(test.getGetUnionType(), test.getTypeContext());
 
-            List<Type> matchingTypes = test.getGetUnionType().getElements().stream().filter(subType ->
-                    typeChecker.typeCheckAndFilter(value, subType, test.getTypeContext(), info, 2, test.getPath()).getSecond().isEmpty()
-            ).collect(Collectors.toList());
+            Set<Type> nonMatchedTypes = new HashSet<>(test.getGetUnionType().getElements());
 
-            if (matchingTypes.isEmpty()) {
+            for (Value splitValue : TajsTypeChecker.split(value)) {
+                List<Type> matchingTypes = test.getGetUnionType().getElements().stream().filter(subType -> {
+                    boolean matched = typeChecker.typeCheckAndFilter(splitValue, subType, test.getTypeContext(), info, 2, test.getPath()).getSecond().isEmpty();
+                    if (matched) {
+                        nonMatchedTypes.remove(subType);
+                    }
+                    return matched;
+                }).collect(Collectors.toList());
+
+                if (matchingTypes.isEmpty()) {
+                    if(c.isScanning()) {
+                        allViolations.addAll(Collections.singletonList(new TypeViolation("Values matched none of the unions", test.getPath())));
+                    }
+                }
+
+                matchingTypes.forEach(subType -> attemptAddValue(splitValue, new TypeWithContext(subType, test.getTypeContext()), test.getPath(), c));
+            }
+
+            for (Type nonMatchedType : nonMatchedTypes) {
                 if(c.isScanning()) {
-                    allViolations.addAll(Collections.singletonList(new TypeViolation("Values matched none of the unions", test.getPath())));
+                    allViolations.addAll(Collections.singletonList(new TypeViolation("No value matches the type: " + nonMatchedType + " in from union " + test.getGetUnionType(), test.getPath())));
                 }
             }
 
-            matchingTypes.forEach(subType -> attemptAddValue(value, new TypeWithContext(subType, test.getTypeContext()), test.getPath(), c));
             return null;
         }
 

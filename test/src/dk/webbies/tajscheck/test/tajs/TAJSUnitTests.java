@@ -224,14 +224,13 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: Maybe for later.
     public void spuriousUnion() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("spuriousUnion");
 
         expect(result)
-                .forPath("module.foo()");
-                /*FIXME: .expected("maybe string")
-                .toFail();*/
+                .performedAllTests()
+                .forPath("module.foo()")
+                .hasViolations();
     }
 
     @Test
