@@ -141,6 +141,20 @@ public class BenchmarkInfo {
 
     private static void applyTypeFixes(Benchmark bench, Map<Type, String> typeNames, List<Type> typesToFix, FreeGenericsFinder freeGenericsFinder) {
         List<Type> allTypes = new ArrayList<>(TypesUtil.collectAllTypes(typesToFix));
+
+        for (Type type : allTypes) {
+            if (type instanceof InterfaceType) {
+                InterfaceType inter = (InterfaceType) type;
+                inter.setDeclaredNumberIndexType(addUndefUnion(inter.getDeclaredNumberIndexType()));
+                inter.setDeclaredStringIndexType(addUndefUnion(inter.getDeclaredStringIndexType()));
+            }
+            if (type instanceof GenericType) {
+                GenericType inter = (GenericType) type;
+                inter.setDeclaredNumberIndexType(addUndefUnion(inter.getDeclaredNumberIndexType()));
+                inter.setDeclaredStringIndexType(addUndefUnion(inter.getDeclaredStringIndexType()));
+            }
+        }
+
         for (Type type : allTypes) {
 
             // Generic signatures sometimes have their return-type in the target signature.
@@ -309,6 +323,15 @@ public class BenchmarkInfo {
                 }
             }
         }
+    }
+
+    private static Type addUndefUnion(Type indexType) {
+        if (indexType == null) {
+            return null;
+        }
+        UnionType unionType = new UnionType();
+        unionType.setElements(Arrays.asList(indexType, new SimpleType(SimpleTypeKind.Undefined)));
+        return unionType;
     }
 
     public static void fixSignatureReturn(Signature signature) {

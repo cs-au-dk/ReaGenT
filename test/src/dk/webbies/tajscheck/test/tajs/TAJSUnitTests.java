@@ -373,6 +373,24 @@ public class TAJSUnitTests {
     public void functionCall1() throws Exception {
         run(benchFromFolder("functionCall1", options(), Benchmark.RUN_METHOD.BROWSER)); // Smoke test.
     }
+
+    @Test
+    public void numberIndexer() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("numberIndexer");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
+    public void numberIndexerFails() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("numberIndexerFails");
+
+        expect(result)
+                .forPath("foo().[numberIndexer]")
+                .hasViolations();
+    }
 }
 
 

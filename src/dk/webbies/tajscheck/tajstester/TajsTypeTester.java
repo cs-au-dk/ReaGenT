@@ -117,6 +117,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     if (DEBUG && !c.isScanning()) {
                         System.out.println("Skipped test " + test);
                     }
+                    if (c.isScanning()) {
+                        System.out.println("Never performed test " + test);
+                    }
                     return;
                 }
                 if (DEBUG && !c.isScanning()) System.out.println("Performing test " + test);
@@ -269,7 +272,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         if(violations.isEmpty() && !filteredValue.isNone()) {
             boolean newValue = valueHandler.addFeedbackValue(t, filteredValue);
             if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + filteredValue);
-            if(newValue && c.isScanning()) throw new RuntimeException("New values should not appear in scanning!");
+            if(newValue && c.isScanning()) {
+                throw new RuntimeException("New values should not appear in scanning!");
+            }
         } else {
             if(DEBUG_VALUES) System.out.println("Value " + v + " not added because it violates type " + t + " path:" + path);
             if(c.isScanning()) {
@@ -502,7 +507,15 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         @Override
         public Void visit(NumberIndexTest test) {
-            throw new RuntimeException();
+            State s = c.getState();
+            Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(),test.getTypeContext()));
+            Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(baseValue.getAllObjectLabels(), Value.makeAnyStrUInt()), c.getState());
+            if(c.isScanning()) {
+                allCertificates.add(new TestCertificate(test, "numberIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s));
+            }
+            TypeWithContext resultType = new TypeWithContext(test.getReturnType(), test.getTypeContext());
+            attemptAddValue(propertyValue, resultType, test.getPath(), c);
+            return null;
         }
 
         @Override
