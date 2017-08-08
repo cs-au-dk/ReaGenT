@@ -9,10 +9,17 @@ import java.util.*;
  * Created by erik1 on 01-11-2016.
  */
 public class PrettyTypes {
-    public static String parametersTypes(List<Type> parameters) {
+    public static String parametersTypes(List<Type> parameters, boolean isRestArgs) {
         StringBuilder builder = new StringBuilder();
 
         builder.append("(");
+        parameters = new ArrayList<>(parameters);
+
+        Type restArgsType = isRestArgs ? TypesUtil.extractRestArgsType(parameters) : null;
+        if (isRestArgs) {
+            parameters.remove(parameters.size() - 1);
+        }
+
         for (int i = 0; i < parameters.size(); i++) {
             Type type = parameters.get(i);
             builder.append(type(type));
@@ -20,6 +27,10 @@ public class PrettyTypes {
             if (i != parameters.size() - 1) {
                 builder.append(", ");
             }
+        }
+
+        if (isRestArgs) {
+            builder.append(", ...").append(type(restArgsType));
         }
 
         builder.append(")");

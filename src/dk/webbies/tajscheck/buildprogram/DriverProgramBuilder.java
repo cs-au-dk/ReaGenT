@@ -16,6 +16,7 @@ import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
@@ -402,12 +403,7 @@ public class DriverProgramBuilder {
 
         private List<Statement> callFunction(FunctionTest test, Type object, List<Type> orgParameterTypes, boolean restArgs, BiFunction<Expression, List<Pair<Expression, Type>>, Expression> callGenerator) {
             if (restArgs) {
-                Type restArgArr = orgParameterTypes.get(orgParameterTypes.size() - 1);
-                assert restArgArr instanceof ReferenceType;
-                assert "Array".equals(info.typeNames.get(((ReferenceType) restArgArr).getTarget()));
-                assert ((ReferenceType) restArgArr).getTypeArguments().size() == 1;
-
-                Type restArgType = ((ReferenceType) restArgArr).getTypeArguments().iterator().next();
+                Type restArgType = new TypesUtil(info).extractRestArgsType(orgParameterTypes);
 
                 List<Type> parameterTypes = orgParameterTypes.subList(0, orgParameterTypes.size() - 1);
 

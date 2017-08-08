@@ -764,4 +764,12 @@ public class TypesUtil {
             throw new RuntimeException(type.getClass().getName());
         }
     }
+
+    public static Type extractRestArgsType(List<Type> orgParameterTypes) {
+        Type restArgArr = orgParameterTypes.get(orgParameterTypes.size() - 1);
+        assert restArgArr instanceof ReferenceType;
+        assert ((ReferenceType) restArgArr).getTypeArguments().size() == 1;
+
+        return ((ReferenceType) restArgArr).getTypeArguments().iterator().next();
+    }
 }
