@@ -137,5 +137,29 @@ public class TAJSUtil {
         TajsAnalysisResults with(MultiMap<String, TypeViolation> newViolations) {
             return new TajsAnalysisResults(newViolations, testPerformed, testNot);
         }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("Tests not performed (").append(testNot.size()).append(")").append("\n");
+            for (Test notPerformed : testNot) {
+                builder.append("   ").append(notPerformed).append("\n");
+            }
+
+            builder.append("Tests performed (").append(testPerformed.size()).append(")").append("\n");
+            for (Test performed : testPerformed) {
+                builder.append("   ").append(performed).append("\n");
+            }
+
+            builder.append("Violations (").append(detectedViolations.size()).append(")").append("\n");
+            for (Map.Entry<String, Collection<TypeViolation>> entry : detectedViolations.asMap().entrySet()) {
+                builder.append("   for path: ").append(entry.getKey()).append(" (").append(entry.getValue().size()).append(")\n");
+                for (TypeViolation violation : entry.getValue()) {
+                    builder.append("      ").append(violation).append("\n");
+                }
+            }
+
+            return builder.toString();
+        }
     }
 }

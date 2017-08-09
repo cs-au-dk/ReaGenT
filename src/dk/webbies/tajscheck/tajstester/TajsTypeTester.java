@@ -1,17 +1,17 @@
 package dk.webbies.tajscheck.tajstester;
 
 import dk.au.cs.casa.typescript.types.*;
-import dk.brics.tajs.analysis.FunctionCalls;
-import dk.brics.tajs.analysis.InitialStateBuilder;
-import dk.brics.tajs.analysis.PropVarOperations;
-import dk.brics.tajs.analysis.Solver;
+import dk.brics.tajs.analysis.*;
+import dk.brics.tajs.analysis.FunctionCalls.CallInfo;
 import dk.brics.tajs.analysis.js.UserFunctionCalls;
 import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
+import dk.brics.tajs.monitoring.IAnalysisMonitoring;
 import dk.brics.tajs.solver.BlockAndContext;
+import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Pair;
@@ -25,7 +25,6 @@ import dk.webbies.tajscheck.util.ArrayListMultiMap;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -36,7 +35,7 @@ import static dk.webbies.tajscheck.util.Util.mkString;
 import static dk.webbies.tajscheck.util.Util.prettyValue;
 
 public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTestRunner {
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private static final boolean DEBUG_VALUES = false;
 
@@ -117,7 +116,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     if (DEBUG && !c.isScanning()) {
                         System.out.println("Skipped test " + test);
                     }
-                    if (c.isScanning()) {
+                    if (DEBUG && c.isScanning()) {
                         System.out.println("Never performed test " + test);
                     }
                     return;
@@ -192,7 +191,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             });
         }
 
-        if (result.get()) {
+        if (result.get() && DEBUG) {
             System.out.println(on.getPath() + " -> " + dependent.getPath());
         }
 
@@ -201,7 +200,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
 
     @Override
-    public Value evaluateCallToSymbolicFunction(HostObject hostObject, FunctionCalls.CallInfo call, Solver.SolverInterface c) {
+    public Value evaluateCallToSymbolicFunction(HostObject hostObject, CallInfo call, Solver.SolverInterface c) {
         TypeWithContext typeWithContext = ((SpecObjects.FullPath) hostObject).getType();
         String path = ((SpecObjects.FullPath) hostObject).asText();
 
@@ -215,28 +214,63 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             TypeContext context = typeWithContext.getTypeContext().append(pair.getRight());
 
             List<Signature> signatures = inter.getDeclaredCallSignatures();
-            if (signatures.size() != 1) {
-                throw new RuntimeException();
-            }
 
-            Signature signature = signatures.get(0);
+            if (signatures.size() == 1) {
+                Signature signature = signatures.get(0);
 
-            if (signature.isHasRestParameter()) {
-                throw new RuntimeException();
-            }
-            if (signature.getParameters().size() != call.getNumberOfArgs()) {
-                if (c.isScanning()) {
-                    allViolations.add(new TypeViolation("Expected  " + signature.getParameters().size() + " args, got " + call.getNumberOfArgs(), path));
+                if (signature.isHasRestParameter()) {
+                    throw new RuntimeException();
                 }
+                if (signature.getParameters().size() != call.getNumberOfArgs()) {
+                    if (c.isScanning()) {
+                        allViolations.add(new TypeViolation("Expected  " + signature.getParameters().size() + " args, got " + call.getNumberOfArgs(), path));
+                    }
+                }
+
+                for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
+                    attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), context), null, c); // TODO: explicit test for Value.isNone.
+                }
+                return valueHandler.createValue(signature.getResolvedReturnType(), context);
+            } else {
+                List<Signature> matchingSignatures = signatures.stream().filter(sig -> sigMatches(sig, context, call, c, path)).collect(Collectors.toList());
+
+                if (matchingSignatures.isEmpty() && c.isScanning()) {
+                    allViolations.add(new TypeViolation("None of the overloads matched how the callback was called" , path));
+                }
+
+                for (Signature signature : matchingSignatures) {
+                    if (signature.isHasRestParameter()) {
+                        throw new RuntimeException();
+                    }
+                    for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
+                        attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), context), null, c); // TODO: explicit test for Value.isNone.
+                    }
+                }
+
+                return Value.join(matchingSignatures.stream().map(sig -> valueHandler.createValue(sig.getResolvedReturnType(), context)).collect(Collectors.toList()));
             }
 
-            for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
-                attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), context), null, c);
-            }
-            return valueHandler.createValue(signature.getResolvedReturnType(), context);
+
         } else {
             throw new RuntimeException(typeWithContext.getType().getClass().getSimpleName());
         }
+    }
+
+    private boolean sigMatches(Signature signature, TypeContext context, CallInfo call, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c, String path) {
+        if (signature.isHasRestParameter()) {
+            throw new RuntimeException();
+        }
+        if (signature.getParameters().size() != call.getNumberOfArgs()) {
+            return false;
+        }
+        for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
+            Value argValue = call.getArg(i);
+            Type argType = signature.getParameters().get(i).getType();
+            if (argValue.isNone() || !getViolations(argValue, new TypeWithContext(argType, context), path, c).getSecond().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
 
@@ -256,15 +290,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
      * @param v the abstract value
      * @param t the type
      * @param path the Path from which the value is added.
-     * @return if there was progress, which happens if any state changes (a new value is added).
+     * @return if the value satisfied the type
      */
-    public void attemptAddValue(Value v, TypeWithContext t, String path, Solver.SolverInterface c) {
+    public boolean attemptAddValue(Value v, TypeWithContext t, String path, Solver.SolverInterface c) {
         if (v.isNone()) {
-            return;
+            return true;
         }
-        State s = c.getState();
-        v = UnknownValueResolver.getRealValue(v, s);
-        Pair<Value, List<TypeViolation>> tcResult = new TajsTypeChecker(c, info).typeCheckAndFilter(v, t.getType(), t.getTypeContext(), info, 2, path);
+        Pair<Value, List<TypeViolation>> tcResult = getViolations(v, t, path, c);
 
         Value filteredValue = tcResult.getFirst();
         List<TypeViolation> violations = tcResult.getSecond();
@@ -276,11 +308,17 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 throw new RuntimeException("New values should not appear in scanning!");
             }
         } else {
-            if(DEBUG_VALUES) System.out.println("Value " + v + " not added because it violates type " + t + " path:" + path);
+            if(DEBUG_VALUES) System.out.println("Value " + UnknownValueResolver.getRealValue(v, c.getState()) + " not added because it violates type " + t + " path:" + path);
             if(c.isScanning()) {
                 allViolations.addAll(violations);
             }
         }
+
+        return violations.isEmpty();
+    }
+
+    private Pair<Value, List<TypeViolation>> getViolations(Value v, TypeWithContext t, String path, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
+        return new TajsTypeChecker(c, info).typeCheckAndFilter(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), info, 2, path);
     }
 
     public void retractTest(Test t) {
@@ -375,7 +413,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
 
             function.getAllObjectLabels().forEach(l -> {
-                FunctionCalls.CallInfo callinfo = new FunctionCalls.CallInfo() {
+                CallInfo callinfo = new CallInfo() {
 
                     @Override
                     public AbstractNode getSourceNode() {

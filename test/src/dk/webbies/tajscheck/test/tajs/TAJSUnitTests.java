@@ -400,6 +400,40 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations();
     }
+
+    @Test
+    public void overloadedCallbacks() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("overloadedCallbacks");
+
+        expect(result)
+                .performedAllTests()
+                .forPath("module.foo(obj)")
+                .hasViolations();
+
+        expect(result)
+                .forPath("Foo")
+                .hasNoViolations();
+    }
+
+    @Test
+    public void overloadedCallbacks2() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("overloadedCallbacks2");
+
+        expect(result)
+                .performedAllTests()
+                .forPath("Foo")
+                .hasViolations();
+
+    }
+    @Test
+    public void overloadedCallbacks3() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("overloadedCallbacks3");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+
+    }
 }
 
 

@@ -676,7 +676,7 @@ public class Util {
     public static String prettyValue(Value v, State s){
         if(v.isNone()) return "None";
 
-        Value nonObject = v.restrictToNotObject();
+        Value nonObject = v.restrictToNotGetterSetter().restrictToNotObject();
         List<String> prettyStrings = new ArrayList<>();
 
         if (!nonObject.isNone()) {
