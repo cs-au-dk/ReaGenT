@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.test.tajs.analyze;
 
 import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.tajs.TAJSUtil;
@@ -35,19 +36,15 @@ public class AnalyzeBenchmarks extends TestCase {
 
     // Benchmarks that seem analyzeable.
     static final Set<String> whitelist = new HashSet<>(Arrays.asList(
-            "D3.js",
             "q",
             "async",
-            "Redux",
             "Leaflet",
             "reveal.js",
             "intro.js",
             "PleaseJS",
             "highlight.js",
-            "RxJS",
             "Zepto.js",
             "pathjs",
-            "Moment.js",
             "CodeMirror",
             "PhotoSwipe",
             "Jasmine",
@@ -55,27 +52,17 @@ public class AnalyzeBenchmarks extends TestCase {
             "box2dweb",
             "Sortable",
             "accounting.js",
-            "CreateJS",
             "lunr.js",
-            "jQuery",
-            "Knockout",
-
-            // Below timed out before the tracifier branch
-            "Chart.js",
-            "PeerJS",
-            "PixiJS",
-            "Handlebars",
-            "axios",
-
-            // Crashed before the tracifier branch
-            "Medium Editor"
+            "PDF.js",
+            "Foundation",
+            "Materialize",
+            "Backbone.js"
     ));
 
 
     // Benchmarks that does not invoke any DOM functions, and are on the whitelist
     static final Set<String> simpleBenchmarks = new HashSet<>(Arrays.asList(
             "async",
-            "Redux",
             "PleaseJS",
 //            "Moment.js",
 //            "box2dweb",
@@ -86,35 +73,44 @@ public class AnalyzeBenchmarks extends TestCase {
     // Benchmarks that for various reasons are unanalyzeable.
     static final Set<String> blacklist = new HashSet<>(Arrays.asList(
             // because it has getters/setters, which TAJS does not support
-            "PDF.js",
             "Vue.js",
             "three.js",
             "Ember.js",
             "Polymer", // <- because webcomponents has getter.
 
             "Ace", // Calls unmodelled Object.freeze
+            "jQuery", // Too imprecise calls to Function
             "RequireJS", // weird error, replicated in TestMicro
             "QUnit", // weird error with arrays.
             "React", // No transfer function for Object.freeze.
+            "axios", // Empty value
             "Modernizr", // Run a WebGL function that is unsupported. (and sometimes it timeouts)
             "Hammer.js", // Object.assign crashes TAJS
+            "RxJS", // Unexpected polymorphic value
+            "Redux", // TypeError, call to non-function (DOM): HTMLTextAreaElement constructor
+            "Knockout", // Trying to call toString for Array with redefined join-property.
             "MathJax" // "Unevalable eval: window"
     ));
 
     // Benchmarks where just the initialization reaches a timeout
     static final Set<String> timeouts = new HashSet<>(Arrays.asList(
+            "Chart.js",
             "AngularJS",
-            "Foundation",
-            "Materialize",
             "P2.js",
             "bluebird",
             "Fabric.js",
             "Ionic",
             "Video.js",
-            "Backbone.js",
+            "PeerJS",
+            "CreateJS",
+            "Handlebars",
+            "D3.js",
+            "Moment.js",
+            "PixiJS",
             "Lodash",
             "Sugar", // sometimes within the timeout, but far from always, so it ends up here. 
-            "Underscore.js"
+            "Underscore.js",
+            "Medium Editor"
     ));
 
     // Sanity checks on the above lists.
@@ -141,9 +137,20 @@ public class AnalyzeBenchmarks extends TestCase {
     public void analyzeBenchmark() throws Exception {
         Benchmark benchmark = this.benchmark;
         try {
-            TAJSUtil.runNoDriver(benchmark, 300);
+            System.out.println(TAJSUtil.runNoDriver(benchmark, 90));
         } catch (TimeoutException ignored) {
-            // this is OK.
+            System.err.println("Timeout");
+        }
+    }
+
+    @Test
+    public void analyzeBenchmarkLimitedSideEffects() throws Exception {
+        Benchmark benchmark = this.benchmark.withOptions(options -> options.staticOptions.setLimitSideEffects(true).getOuterBuilder());
+        try {
+            System.out.println(TAJSUtil.runNoDriver(benchmark, 90));
+
+        } catch (TimeoutException ignored) {
+            System.err.println("Timeout");
         }
     }
 
@@ -151,9 +158,9 @@ public class AnalyzeBenchmarks extends TestCase {
     public void initialize() throws Exception {
         Benchmark benchmark = this.benchmark.withOptions(options -> options.setOnlyInitialize(true));
         try {
-            TAJSUtil.runNoDriver(benchmark, 300);
+            System.out.println(TAJSUtil.runNoDriver(benchmark, 30));
         } catch (TimeoutException ignored) {
-            // this is OK.
+            System.err.println("Timeout");
         }
     }
 }
