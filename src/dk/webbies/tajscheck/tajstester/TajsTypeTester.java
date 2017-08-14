@@ -228,7 +228,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 }
 
                 for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
-                    attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), context), null, c); // TODO: explicit test for Value.isNone.
+                    attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), context), info.typeNames.get(inter) + ".[arg" + i + "]", c);
                 }
                 return valueHandler.createValue(signature.getResolvedReturnType(), context);
             } else {
@@ -243,7 +243,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                         throw new RuntimeException();
                     }
                     for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
-                        attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), context), null, c); // TODO: explicit test for Value.isNone.
+                        attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), context), info.typeNames.get(inter) + ".[arg" + i + "]", c);
                     }
                 }
 
