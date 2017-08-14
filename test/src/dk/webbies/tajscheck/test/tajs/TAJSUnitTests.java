@@ -434,6 +434,19 @@ public class TAJSUnitTests {
                 .hasNoViolations();
 
     }
+
+    @Test
+    public void constructors2() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run(benchFromFolder("constructors2", options(), Benchmark.RUN_METHOD.BROWSER));
+
+        System.out.println(result);
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+
+
+    }
 }
 
 
