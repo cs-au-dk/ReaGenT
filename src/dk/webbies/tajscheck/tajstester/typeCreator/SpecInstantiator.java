@@ -485,7 +485,8 @@ public class SpecInstantiator {
                 TypeWithContext lookup = info.context.get(t);
                 return lookup.getType().accept(this, info.withContext(lookup.getTypeContext()));
             } else {
-                throw new RuntimeException("Not implemented...");
+                System.err.println("Returning anyBool instead of an unbound type parameter");
+                return Value.makeAnyBool(); // TODO:
             }
         }
 
@@ -511,7 +512,8 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(ClassInstanceType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
+            System.err.println("Inaccurately modelling class instances");
+            return ((ClassType) t.getClassType()).getInstanceType().accept(this, miscInfo); // TODO:
         }
 
         @Override
