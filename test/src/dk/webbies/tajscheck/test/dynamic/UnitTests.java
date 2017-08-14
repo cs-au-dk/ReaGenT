@@ -79,12 +79,14 @@ public class UnitTests {
 
     private String runDriver(Benchmark bench, String seed, boolean skipConsistencyCheck) throws Exception {
         if (!skipConsistencyCheck) {
-//            sanityCheck(bench); // TODO:
+            sanityCheck(bench);
         }
 
         Main.writeFullDriver(bench, new ExecutionRecording(null, seed));
 
-        return Main.runBenchmark(bench);
+        String out = Main.runBenchmark(bench);
+        System.out.println(out);
+        return out;
     }
 
     private static void sanityCheck(Benchmark bench) throws Exception {
@@ -470,12 +472,12 @@ public class UnitTests {
 
         expect(result)
                 .forPath("module.foo().[numberIndexer]")
-                .expected("number")
+                .expected("(number or undefined)")
                 .got(TYPEOF, "string");
 
         expect(result)
                 .forPath("module.foo()")
-                .expected("(numberIndexer: number)")
+                .expected("(numberIndexer: (number or undefined))")
                 .got(JSON, "{\"1\":1,\"3\":4,\"7\":1,\"10\":\"blah\"}");
     }
 
@@ -492,7 +494,7 @@ public class UnitTests {
 
         expect(result)
                 .forPath("module.foo()")
-                .expected("(numberIndexer: number)")
+                .expected("(numberIndexer: (number or undefined))")
                 .got(JSON, "{\"1\":1,\"3\":4,\"7\":1,\"10\":\"blah\"}");
     }
 
@@ -504,7 +506,7 @@ public class UnitTests {
 
         expect(result)
                 .forPath("module.foo().[stringIndexer]")
-                .expected("number")
+                .expected("(number or undefined)")
                 .got(TYPEOF, "string");
     }
 
@@ -514,7 +516,7 @@ public class UnitTests {
 
         expect(result)
                 .forPath("module.foo().[numberIndexer]")
-                .expected("number")
+                .expected("(number or undefined)")
                 .got(TYPEOF, "string");
     }
 
@@ -524,7 +526,7 @@ public class UnitTests {
 
         expect(result)
                 .forPath("module.foo().[stringIndexer]")
-                .expected("number")
+                .expected("(number or undefined)")
                 .got(TYPEOF, "string");
     }
 
