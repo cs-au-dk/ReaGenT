@@ -60,11 +60,17 @@ public class Effects {
         if (object.isAllNone()) {
             throw new AnalysisException("Trying to write properties of BottomObject?! (" + label + ")");
         }
-        boolean propertyExists = !c.getState().getPrototypeWithProperty(label, PKey.mk(propertyName)).isEmpty();
-        if (!propertyExists) { // the property already exists, presumably because of a concious decision in the InitialStateBuilder
-            stats.newProperty(label, propertyName);
-            c.getAnalysis().getPropVarOperations().writeProperty(label, propertyName, value);
+        stats.newProperty(label, propertyName);
+        c.getAnalysis().getPropVarOperations().writeProperty(label, propertyName, value);
+    }
+
+    public void writeNumberIndexer(ObjectLabel label, Value value) {
+        Obj object = c.getState().getObject(label, true);
+        if (object.isAllNone()) {
+            throw new AnalysisException("Trying to write properties of BottomObject?! (" + label + ")");
         }
+        stats.newProperty(label, "[numberIndexer]");
+        object.setDefaultArrayProperty(value.join(Value.makeAbsent()));
     }
 
     public static class Stats {

@@ -8,7 +8,9 @@ import dk.brics.tajs.lattice.ObjectLabel;
 import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
+import dk.webbies.tajscheck.util.Util;
 import org.apache.log4j.Logger;
 
 import java.util.*;
@@ -359,37 +361,34 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(AnonymousType t, MiscInfo info) {
-            String message = "Not implemented... at " + info.path;
-            if (true) {
-                throw new RuntimeException(message);
-            }
-            log.warn(message);
-            return Value.makeNull();
+            throw new RuntimeException();
         }
 
         @Override
         public Value visit(ClassType t, MiscInfo info) {
-            throw new RuntimeException("Not implemented...");
+            System.err.println("Inaccurate modelling of classes");
+            return TypesUtil.classToInterface(t, null).accept(this, info);
         }
 
         @Override
         public Value visit(GenericType t, MiscInfo info) {
-            // TODO should this really be the exact same implementation as for the InterfaceType? (we only lose the type parameters?)
-            ObjectLabel objectLabel = SpecInstantiator.this.getObjectLabel(t.getTarget() /* use unparametized type */, info);
-            return withNewObject(objectLabel, label -> {
-                Map<String, Type> declaredProperties = t.getDeclaredProperties();
-                writeProperties(label, declaredProperties, info);
-                if (label.getKind() == ObjectLabel.Kind.FUNCTION) {
-                    // TODO implement function stubs
-                }
-            });
+            return t.toInterface().accept(this, info);
         }
 
         @Override
         public Value visit(InterfaceType t, MiscInfo info) {
             return withNewObject(SpecInstantiator.this.getObjectLabel(t, info), label -> {
                 Map<String, Type> declaredProperties = t.getDeclaredProperties();
+
+                if (t.getDeclaredNumberIndexType() != null) {
+                    effects.writeNumberIndexer(label, t.getDeclaredNumberIndexType().accept(this, info.apendPath("[numberIndexer]")));
+                }
                 writeProperties(label, declaredProperties, info);
+
+                if (t.getDeclaredStringIndexType() != null) {
+                    throw new RuntimeException();
+                }
+
                 if (label.getKind() == ObjectLabel.Kind.FUNCTION) {
                     // TODO implement function stubs
                 }
@@ -549,6 +548,10 @@ public class SpecInstantiator {
 
         public MiscInfo withContext(TypeContext typeContext) {
             return new MiscInfo(path, typeContext);
+        }
+
+        public MiscInfo apendPath(String path) {
+            return new MiscInfo(Util.concat(this.path, Collections.singletonList(path)), context);
         }
     }
 
