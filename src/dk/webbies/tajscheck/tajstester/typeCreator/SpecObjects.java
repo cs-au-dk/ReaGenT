@@ -14,11 +14,6 @@ import static dk.brics.tajs.util.Collections.newList;
 public class SpecObjects implements HostObject {
 
     // FIXME ensure proper linking: the actual use of this class is based on *where* the abstraction is needed, and *not* where it is defined!
-
-    public static SpecObjects getTupleAbstraction(List<String> path, TypeWithContext type) {
-        return new FullPath(path, type);
-    }
-
     public static SpecObjects getObjectAbstraction(List<String> path, TypeWithContext type) {
         return new FullPath(newList(path), type);
     }

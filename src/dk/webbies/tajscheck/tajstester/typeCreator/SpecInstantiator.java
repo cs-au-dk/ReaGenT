@@ -12,7 +12,7 @@ import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import org.apache.log4j.Logger;
 
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.*;
@@ -282,6 +282,10 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel visit(InterfaceType t, MiscInfo miscInfo) {
+            return makeObjectLabel(t, miscInfo);
+        }
+
+        private ObjectLabel makeObjectLabel(Type t, MiscInfo miscInfo) {
             return ObjectLabel.mk(SpecObjects.getObjectAbstraction(miscInfo.path, new TypeWithContext(t, miscInfo.context)), getObjectLabelKind(t));
         }
 
@@ -297,7 +301,7 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel visit(TupleType t, MiscInfo miscInfo) {
-            return ObjectLabel.mk(SpecObjects.getTupleAbstraction(miscInfo.path, new TypeWithContext(t, miscInfo.context)), getObjectLabelKind(t));
+            return makeObjectLabel(t, miscInfo);
         }
 
         @Override
@@ -378,7 +382,6 @@ public class SpecInstantiator {
                 if (label.getKind() == ObjectLabel.Kind.FUNCTION) {
                     // TODO implement function stubs
                 }
-                return null;
             });
         }
 
@@ -390,7 +393,6 @@ public class SpecInstantiator {
                 if (label.getKind() == ObjectLabel.Kind.FUNCTION) {
                     // TODO implement function stubs
                 }
-                return null;
             });
         }
 
@@ -438,21 +440,23 @@ public class SpecInstantiator {
                     return Value.makeUndef();
                 case Null:
                     return Value.makeNull();
+                case Never:
+                    return Value.makeNone();
                 default:
                     throw new RuntimeException("Unhandled TypeKind: " + t);
             }
         }
 
-        private Value withNewObject(ObjectLabel label, Function<ObjectLabel, Void> initializer) {
+        private Value withNewObject(ObjectLabel label, Consumer<ObjectLabel> initializer) {
             if (label.getHostObject().getAPI() != HostAPIs.SPEC) {
-                initializer.apply(label);
+                initializer.accept(label);
                 return Value.makeObject(label);
             }
             // make the object a singleton to get the instantiation writes strongly
             ObjectLabel singletonLabel = label.makeSingleton();
             effects.newObject(singletonLabel);
             effects.multiplyObject(singletonLabel);
-            initializer.apply(singletonLabel); // TODO: This might be too strong, it should be summarized at some point.
+            initializer.accept(singletonLabel); // TODO: This might be too strong, it should be summarized at some point.
             return Value.makeObject(singletonLabel);
         }
 
@@ -464,7 +468,6 @@ public class SpecInstantiator {
                     String indexName = i + "";
                     writeProperty(label, indexName, componentType, info);
                 }
-                return null;
             });
         }
 
