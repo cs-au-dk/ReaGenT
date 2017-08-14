@@ -16,6 +16,10 @@ import dk.webbies.tajscheck.buildprogram.TypeChecker;
 import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
+import dk.webbies.tajscheck.paser.AST.BooleanLiteral;
+import dk.webbies.tajscheck.paser.AST.Expression;
+import dk.webbies.tajscheck.paser.AST.Identifier;
+import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.testcreator.test.check.*;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -190,8 +194,24 @@ public class TajsTypeChecker {
 
         @Override
         public Boolean visit(InstanceOfCheck check, Value o) {
+            if (!o.restrictToNotObject().isNone()) {
+                return false;
+            }
             //TODO: The checks should carry a value! (maybe not, instanceof checks are only used against values defined by the standard library, never for types defined by the library under test).
 //            Operators.instof(o, v2, c);
+            if (check.getExp() instanceof Identifier) {
+                String name = ((Identifier) check.getExp()).getName();
+                switch (name) {
+                    case "Array":
+                        return o.getObjectLabels().stream().allMatch(label -> label.getKind() == ObjectLabel.Kind.ARRAY);
+                    case "RegExp":
+                        return o.getObjectLabels().stream().allMatch(label -> label.getKind() == ObjectLabel.Kind.REGEXP);
+                    case "Element":
+                        System.err.println("Skipping instanceof check on  Element against " + o);
+                    default:
+                        System.err.println("Skipping instanceof check on " + name + " against " + o);
+                }
+            }
             System.err.println("Skipping instance of check" + check + " against " + o);
             return true;
         }
@@ -210,18 +230,28 @@ public class TajsTypeChecker {
 
         @Override
         public Boolean visit(NumberIndexCheck check, Value o) {
-            System.err.println("Skipping check" + check + " against " + o);
-            return true;
+            Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(o.getAllObjectLabels(), Value.makeAnyStrUInt()), c.getState());
+            return check.getSubCheck().accept(this, propertyValue);
         }
 
         @Override
         public Boolean visit(StringIndexCheck check, Value o) {
+            if (o.isMaybeUndef() && o.restrictToNotUndef().isNone()) {
+                return true;
+            }
+            if (!o.isNotBool()) {
+                return false;
+            }
             System.err.println("Skipping check" + check + " against " + o);
             return true;
         }
 
         @Override
         public Boolean visit(ExpressionCheck check, Value o) { // TODO: This is very rarely used, and we should be able to switch-case us out of every case where it is used.
+            Expression exp = check.getGenerator().apply(AstBuilder.number(1337));
+            if (exp instanceof BooleanLiteral) {
+                return ((BooleanLiteral) exp).getBooleanValue();
+            }
             System.err.println("Skipping check" + check + " against " + o);
             return true;
         }
