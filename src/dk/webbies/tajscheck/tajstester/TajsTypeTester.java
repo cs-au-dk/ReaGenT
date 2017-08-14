@@ -407,7 +407,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
             boolean restArgs = test.isRestArgs();
 
-            final Value restArgType = restArgs ? typeValuesHandler.createValue(new TypesUtil(info).extractRestArgsType(test.getParameters()), test.getTypeContext()) : null;
+            final Value restArgType = restArgs ? typeValuesHandler.createValue(TypesUtil.extractRestArgsType(test.getParameters()), test.getTypeContext()) : null;
             if (restArgs) {
                 arguments.remove(arguments.size() - 1);
             }
@@ -479,9 +479,16 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     }
 
                 };
-                BasicBlock implicitAfterCall = UserFunctionCalls.implicitUserFunctionCall(l, callinfo, c);
 
-                Value returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), true, implicitAfterCall, c);
+                final Value returnedValue;
+
+                if (l.getHostObject() != null && l.getHostObject().getAPI() == HostAPIs.SPEC) {
+                    returnedValue = TajsTypeTester.this.evaluateCallToSymbolicFunction(l.getHostObject(), callinfo, c);
+                } else {
+                    BasicBlock implicitAfterCall = UserFunctionCalls.implicitUserFunctionCall(l, callinfo, c);
+
+                    returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), true, implicitAfterCall, c);
+                }
 
                 if (c.isScanning()) {
                     if (isConstructorCall) {
