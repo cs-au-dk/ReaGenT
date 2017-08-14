@@ -121,9 +121,9 @@ public class TAJSUtil {
     }
 
     public static class TajsAnalysisResults {
-        MultiMap<String, TypeViolation> detectedViolations;
-        List<Test> testPerformed;
-        List<Test> testNot;
+        public MultiMap<String, TypeViolation> detectedViolations;
+        public List<Test> testPerformed;
+        public List<Test> testNot;
 
         TajsAnalysisResults(MultiMap<String, TypeViolation> detectedViolations,
                             List<Test> testPerformed,
