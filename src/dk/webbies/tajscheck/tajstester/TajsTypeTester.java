@@ -573,7 +573,15 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         @Override
         public Void visit(StringIndexTest test) {
-            throw new RuntimeException();
+            State s = c.getState();
+            Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(),test.getTypeContext()));
+            Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(baseValue.getAllObjectLabels(), Value.makeAnyStr()), c.getState());
+            if(c.isScanning()) {
+                allCertificates.add(new TestCertificate(test, "stringIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s));
+            }
+            TypeWithContext resultType = new TypeWithContext(test.getReturnType(), test.getTypeContext());
+            attemptAddValue(propertyValue, resultType, test.getPath(), c);
+            return null;
         }
 
         @Override

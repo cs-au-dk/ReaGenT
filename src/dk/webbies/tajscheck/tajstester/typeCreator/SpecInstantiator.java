@@ -386,7 +386,7 @@ public class SpecInstantiator {
                 writeProperties(label, declaredProperties, info);
 
                 if (t.getDeclaredStringIndexType() != null) {
-                    throw new RuntimeException();
+                    effects.writeStringIndexer(label, t.getDeclaredStringIndexType().accept(this, info.apendPath("[stringIndexer]")));
                 }
 
                 if (label.getKind() == ObjectLabel.Kind.FUNCTION) {

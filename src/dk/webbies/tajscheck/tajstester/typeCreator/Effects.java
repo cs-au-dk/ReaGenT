@@ -73,6 +73,15 @@ public class Effects {
         object.setDefaultArrayProperty(value.join(Value.makeAbsent()));
     }
 
+    public void writeStringIndexer(ObjectLabel label, Value value) {
+        Obj object = c.getState().getObject(label, true);
+        if (object.isAllNone()) {
+            throw new AnalysisException("Trying to write properties of BottomObject?! (" + label + ")");
+        }
+        stats.newProperty(label, "[stringIndexer]");
+        object.setDefaultNonArrayProperty(value.join(Value.makeAbsent()));
+    }
+
     public static class Stats {
 
         private Set<ObjectLabel> newObjects = newSet();

@@ -16,10 +16,9 @@ import dk.webbies.tajscheck.buildprogram.TypeChecker;
 import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
-import dk.webbies.tajscheck.paser.AST.BooleanLiteral;
-import dk.webbies.tajscheck.paser.AST.Expression;
-import dk.webbies.tajscheck.paser.AST.Identifier;
+import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
+import dk.webbies.tajscheck.paser.ExpressionVisitor;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.testcreator.test.check.*;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -181,15 +180,9 @@ public class TajsTypeChecker {
 
         @Override
         public Boolean visit(EqualityCheck check, Value o) {
-
-            try {
-                Value v = TAJSSplitConcreteSemantics.eval(check.getExpression().toString());
-                if(!v.isNone()) return v.equals(o);
-            } catch(Exception e) {
-                System.err.println("Skipping equality check " + check + " against " + o);
-            }
-
-            return true;
+            Boolean result = check.getExpression().accept(new CheckEqualityVisitor(o));
+            assert result != null;
+            return result;
         }
 
         @Override
@@ -254,6 +247,133 @@ public class TajsTypeChecker {
             }
             System.err.println("Skipping check" + check + " against " + o);
             return true;
+        }
+
+
+    }
+
+    private static class CheckEqualityVisitor implements ExpressionVisitor<Boolean> {
+        private Value o;
+
+        public CheckEqualityVisitor(Value o) {
+            this.o = o;
+        }
+
+        @Override
+        public Boolean visit(BinaryExpression binOp) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(BooleanLiteral bool) {
+            if (o.isMaybeAnyBool()) {
+                return false;
+            }
+            if (bool.getBooleanValue()) {
+                return o.isMaybeTrue();
+            } else {
+                return o.isMaybeFalse();
+            }
+        }
+
+        @Override
+        public Boolean visit(CallExpression callExpression) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(CommaExpression commaExpression) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(ConditionalExpression conditionalExpression) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(FunctionExpression functionExpression) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(Identifier identifier) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(MemberExpression memberExpression) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(DynamicAccessExpression memberLookupExpression) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(MethodCallExpression methodCallExpression) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(NewExpression newExpression) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(NullLiteral nullLiteral) {
+            return o.isMaybeNull();
+        }
+
+        @Override
+        public Boolean visit(NumberLiteral numberLiteral) {
+            return !o.isMaybeAnyNum() && o.isMaybeNum(numberLiteral.getNumber());
+        }
+
+        @Override
+        public Boolean visit(ObjectLiteral objectLiteral) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(StringLiteral stringLiteral) {
+            return !o.isMaybeAnyStr() && o.isMaybeStr(stringLiteral.getString());
+        }
+
+        @Override
+        public Boolean visit(ThisExpression thisExpression) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(UnaryExpression unaryExpression) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(UndefinedLiteral undefinedLiteral) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(GetterExpression getter) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(SetterExpression setter) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(ArrayLiteral arrayLiteral) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Boolean visit(RegExpExpression regExp) {
+            throw new RuntimeException();
         }
     }
 }

@@ -447,6 +447,25 @@ public class TAJSUnitTests {
 
 
     }
+
+    @Test
+    public void stringIndexer() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("stringIndexer");
+
+        System.out.println(result);
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
+    public void primitives() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("primitives", options().staticOptions.setLimitSideEffects(true).getOuterBuilder());
+        System.out.println(result);
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 }
-
-
