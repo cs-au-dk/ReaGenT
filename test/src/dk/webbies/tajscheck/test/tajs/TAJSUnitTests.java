@@ -468,4 +468,15 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations();
     }
+
+    @Test
+    public void createRecursiveObject() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("createRecursiveObject");
+
+        System.out.println(result);
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 }

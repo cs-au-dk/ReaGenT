@@ -226,7 +226,7 @@ public class SpecInstantiator {
             if (canonicalHostObjectLabelPaths.has(info.path)) {
                 label = canonicalHostObjectLabelPaths.get(info.path);
             } else {
-                label = type.accept(objectLabelMaker, info).makeSummary();
+                label = type.accept(objectLabelMaker, info);
             }
             labelCache.put(type, label);
         }
@@ -452,7 +452,7 @@ public class SpecInstantiator {
                 return Value.makeObject(label);
             }
             // make the object a singleton to get the instantiation writes strongly
-            ObjectLabel singletonLabel = label.makeSingleton();
+            ObjectLabel singletonLabel = label;
             effects.newObject(singletonLabel);
             effects.multiplyObject(singletonLabel);
             initializer.accept(singletonLabel); // TODO: This might be too strong, it should be summarized at some point.

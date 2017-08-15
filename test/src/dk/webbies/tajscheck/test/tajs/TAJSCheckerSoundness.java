@@ -47,7 +47,8 @@ public class TAJSCheckerSoundness { // TODO: A lot of things fails here.
 
         return result.stream()
                 .filter(bench -> !bench.name.equals("unit-exponentialComplexity"))
-                .filter(bench -> !blackList.contains(bench.name)).collect(Collectors.toList());
+                .filter(bench -> !blackList.contains(bench.name))
+                .collect(Collectors.toList());
 //        return result;
     }
 
@@ -120,7 +121,7 @@ public class TAJSCheckerSoundness { // TODO: A lot of things fails here.
 //            "unit-constructOnlyPrimitives",
             "unit-correctArrayType",
             "unit-createNumberIndexer",
-            "unit-createStringIndexer",
+//            "unit-createStringIndexer",
             "unit-deepUnion",
 //            "unit-differentSizeOverloads",
 //            "unit-doesNotHaveUnboundGenerics",
@@ -174,7 +175,7 @@ public class TAJSCheckerSoundness { // TODO: A lot of things fails here.
 //            "unit-interfacesAndObjectsParsing",
             "unit-intersectionTypes",
             "unit-intersectionWithFunction",
-            "unit-keyOf",
+//            "unit-keyOf",
             "unit-mappedTypes",
 //            "unit-missingProperty",
             "unit-monitorUndeclaredAccess1",

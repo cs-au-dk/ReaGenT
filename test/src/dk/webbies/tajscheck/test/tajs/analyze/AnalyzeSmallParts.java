@@ -36,7 +36,7 @@ public class AnalyzeSmallParts extends TestCase {
         Set<String> failedBenchmarks = new HashSet<>();
         for (Benchmark benchmark : getBenchmarks()) {
             result.add(new Object[]{benchmark, null, failedBenchmarks});
-            List<List<String>> pathsToTest = RunSmall.getPathsToTest(benchmark, Integer.MAX_VALUE, 1);
+            List<List<String>> pathsToTest = RunSmall.getPathsToTest(benchmark, 100, 1);
             for (List<String> paths : pathsToTest) {
                 assert paths.size() == 1;
                 String path = paths.iterator().next();
