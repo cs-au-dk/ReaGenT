@@ -330,7 +330,12 @@ public class BenchmarkInfo {
             return null;
         }
         UnionType unionType = new UnionType();
-        unionType.setElements(Arrays.asList(indexType, new SimpleType(SimpleTypeKind.Undefined)));
+        SimpleType undef = new SimpleType(SimpleTypeKind.Undefined);
+        if (indexType instanceof UnionType) {
+            unionType.setElements(Util.concat(((UnionType) indexType).getElements(), Collections.singletonList(undef)));
+        } else {
+            unionType.setElements(Arrays.asList(indexType, undef));
+        }
         return unionType;
     }
 
