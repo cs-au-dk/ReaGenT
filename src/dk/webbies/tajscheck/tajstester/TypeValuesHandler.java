@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.tajstester;
 import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.Value;
+import dk.brics.tajs.solver.GenericSolver;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
@@ -16,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TypeValuesHandler {
 
     private final Map<Type, String> typeNames;
+    private final GenericSolver.SolverInterface c;
     private BenchmarkInfo info;
     private final Map<TypeWithContext, Value> savedValues = new HashMap<>();
     private final SpecInstantiator instantiator;
@@ -23,6 +25,7 @@ public class TypeValuesHandler {
     TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, BenchmarkInfo info) {
         this.typeNames = typeNames;
         this.info = info;
+        this.c = c;
         this.instantiator = new SpecInstantiator(info.getSpec(), c, info);
     }
 

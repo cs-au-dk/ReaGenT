@@ -69,6 +69,11 @@ public class TAJSUnitTests {
             return this;
         }
 
+        TAJSUnitTests.TAJSResultTester hasNoWarnings() {
+            MatcherAssert.assertThat("there are no warnings", results.detectedWarnings.size() == 0);
+            return this;
+        }
+
         TAJSUnitTests.TAJSResultTester hasViolations() {
             MatcherAssert.assertThat("there are violations", results.detectedViolations.size() != 0);
             return this;
@@ -486,5 +491,15 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .forPath("module.foo(obj)")
                 .hasViolations();
+    }
+
+    @Test
+    public void correctUnion() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("correctUnion");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoViolations();
     }
 }

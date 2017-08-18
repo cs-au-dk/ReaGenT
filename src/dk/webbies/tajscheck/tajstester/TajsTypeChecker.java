@@ -96,6 +96,10 @@ public class TajsTypeChecker {
                     propertyValue = Value.join(propertyValue, Value.makeUndef());
                 }
 
+                if (propertyValue.isNone()) {
+                    return Collections.singletonList(new Tuple3<>(path, v, typeCheck)).stream();
+                }
+
                 return split(propertyValue).stream().flatMap(splittenValue -> getTypeViolations(splittenValue, fieldTypeCheck.getFieldChecks(), path + "." + field).stream());
             }
             else if(typeCheck instanceof SimpleTypeCheck) {
@@ -187,7 +191,7 @@ public class TajsTypeChecker {
 
         @Override
         public Boolean visit(FieldCheck check, Value o) {
-            Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(o.getAllObjectLabels(), check.getField()), c.getState());
+            Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(o.getAllObjectLabels(), Value.makeStr(check.getField()), info.options.staticOptions.killGetters), c.getState());
             if (propertyValue.isMaybeAbsent()) {
                 propertyValue = Value.join(propertyValue, Value.makeUndef());
             }
