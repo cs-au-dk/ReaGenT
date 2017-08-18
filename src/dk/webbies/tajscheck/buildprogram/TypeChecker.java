@@ -763,7 +763,7 @@ public class TypeChecker {
         return new SimpleTypeCheck(check, expected.toString());
     }
 
-    static TypeCheck createIntersection(List<TypeCheck> checks) {
+    public static TypeCheck createIntersection(List<TypeCheck> checks) {
         if (checks.isEmpty()) {
             return new SimpleTypeCheck(Check.alwaysTrue(), "[any]");
         }

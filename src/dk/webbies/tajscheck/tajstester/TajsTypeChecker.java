@@ -75,6 +75,9 @@ public class TajsTypeChecker {
         List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, info.options.staticOptions.checkDepth);
 
         List<Value> split = split(v);
+        if (split.isEmpty()) {
+            return Collections.singletonList(new TypeViolation("No value found", path));
+        }
         List<Tuple3<String, Value, TypeCheck>> violations = split.stream().flatMap(splittenValue -> getTypeViolations(splittenValue, typeChecks, path).stream()).collect(Collectors.toList());
 
         return violations.stream().map(tuple -> {
@@ -96,11 +99,12 @@ public class TajsTypeChecker {
                     propertyValue = Value.join(propertyValue, Value.makeUndef());
                 }
 
-                if (propertyValue.isNone()) {
-                    return Collections.singletonList(new Tuple3<>(path, v, typeCheck)).stream();
+                List<Value> split = split(propertyValue);
+                if (split.isEmpty()) {
+                    return Collections.singletonList(new Tuple3<>(path + "." + field, Value.makeNone(), TypeChecker.createIntersection(fieldTypeCheck.getFieldChecks()))).stream();
                 }
 
-                return split(propertyValue).stream().flatMap(splittenValue -> getTypeViolations(splittenValue, fieldTypeCheck.getFieldChecks(), path + "." + field).stream());
+                return split.stream().flatMap(splittenValue -> getTypeViolations(splittenValue, fieldTypeCheck.getFieldChecks(), path + "." + field).stream());
             }
             else if(typeCheck instanceof SimpleTypeCheck) {
                 SimpleTypeCheck simpleTypeCheck = (SimpleTypeCheck)typeCheck;
@@ -197,6 +201,9 @@ public class TajsTypeChecker {
             }
 
             List<Value> split = split(propertyValue);
+            if (split.isEmpty()) {
+                return false;
+            }
 
             return split.stream().allMatch(value -> check.getChecks().stream().allMatch(subCheck -> subCheck.accept(this, value)));
         }

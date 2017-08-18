@@ -296,12 +296,17 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel visit(ReferenceType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
+            return t.getTarget().accept(this, miscInfo);
         }
 
         @Override
         public ObjectLabel visit(SimpleType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
+            switch (t.getKind()) {
+                case Null:
+                    return null;
+                default:
+                    throw new RuntimeException("Unknown case: " + t.getKind());
+            }
         }
 
         @Override
@@ -311,6 +316,10 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel visit(UnionType t, MiscInfo miscInfo) {
+            List<ObjectLabel> labels = t.getElements().stream().map(elem -> elem.accept(this, miscInfo.apendPath("<union-member>"))).filter(Objects::nonNull).collect(Collectors.toList());
+            if (labels.size() == 1) {
+                return labels.iterator().next();
+            }
             throw new RuntimeException("Not implemented...");
         }
 
@@ -370,7 +379,7 @@ public class SpecInstantiator {
         @Override
         public Value visit(ClassType t, MiscInfo info) {
             System.err.println("Inaccurate modelling of classes");
-            return TypesUtil.classToInterface(t, null).accept(this, info);
+            return TypesUtil.classToInterface(t, SpecInstantiator.this.info.freeGenericsFinder).accept(this, info);
         }
 
         @Override
@@ -470,6 +479,7 @@ public class SpecInstantiator {
                     String indexName = i + "";
                     writeProperty(label, indexName, componentType, info);
                 }
+                writeProperty(label, "length", new NumberLiteral(t.getElementTypes().size()), info);
             });
         }
 
@@ -490,9 +500,14 @@ public class SpecInstantiator {
                 TypeWithContext lookup = info.context.get(t);
                 return lookup.getType().accept(this, info.withContext(lookup.getTypeContext()));
             } else {
-                System.err.println("Returning anyBool instead of an unbound type parameter");
-                return Value.makeAnyBool(); // TODO:
+                System.err.println("Just returning a dummy object for unbound type parameters.");
+                return unboundTypeParameter.accept(this, info);
             }
+        }
+
+        private final InterfaceType unboundTypeParameter = SpecReader.makeEmptySyntheticInterfaceType();
+        {
+            unboundTypeParameter.getDeclaredProperties().put("_isUnboundGeneric", new BooleanLiteral(true));
         }
 
         @Override
@@ -523,7 +538,7 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(ThisType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
+            return miscInfo.context.getThisType().accept(this, miscInfo);
         }
 
         @Override
