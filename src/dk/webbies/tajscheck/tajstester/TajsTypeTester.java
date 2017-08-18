@@ -212,8 +212,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         TypeWithContext typeWithContext = ((SpecObjects.FullPath) hostObject).getType();
         String path = ((SpecObjects.FullPath) hostObject).asText();
 
-        if (call.isUnknownNumberOfArgs() || call.isConstructorCall()) {
-            throw new RuntimeException(call.isUnknownNumberOfArgs() + " - " + call.isConstructorCall());
+        if (call.isUnknownNumberOfArgs()) {
+            throw new RuntimeException("unknown args");
         }
 
         if (typeWithContext.getType() instanceof InterfaceType) {
@@ -221,7 +221,14 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             InterfaceType inter = pair.getLeft();
             TypeContext context = typeWithContext.getTypeContext().append(pair.getRight());
 
-            List<Signature> signatures = inter.getDeclaredCallSignatures();
+            List<Signature> signatures = call.isConstructorCall() ? inter.getDeclaredConstructSignatures() : inter.getDeclaredCallSignatures();
+
+            if (signatures.size() == 0) {
+                if (c.isScanning()) {
+                    allViolations.add(new TypeViolation("Called a non function", path));
+                }
+                return Value.makeNone();
+            }
 
             if (signatures.size() == 1) {
                 Signature signature = signatures.get(0);
@@ -238,6 +245,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
                     attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), context), info.typeNames.get(inter) + ".[arg" + i + "]", c);
                 }
+                assert signature.getResolvedReturnType() != null;
                 return valueHandler.createValue(signature.getResolvedReturnType(), context);
             } else {
                 List<Signature> matchingSignatures = signatures.stream().filter(sig -> sigMatches(sig, context, call, c, path)).collect(Collectors.toList());
@@ -263,6 +271,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     }
                 }
 
+                assert matchingSignatures.stream().map(Signature::getResolvedReturnType).allMatch(Objects::nonNull);
                 return Value.join(matchingSignatures.stream().map(sig -> valueHandler.createValue(sig.getResolvedReturnType(), context)).collect(Collectors.toList()));
             }
 

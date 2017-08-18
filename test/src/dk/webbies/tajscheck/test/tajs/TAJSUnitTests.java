@@ -502,4 +502,13 @@ public class TAJSUnitTests {
                 .hasNoViolations()
                 .hasNoViolations();
     }
+
+    @Test
+    public void createConstructor() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("createConstructor");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 }
