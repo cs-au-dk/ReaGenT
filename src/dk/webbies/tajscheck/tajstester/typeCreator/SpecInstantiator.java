@@ -112,7 +112,7 @@ public class SpecInstantiator {
         Type newRoot = root.accept(new TypeVisitor<Type>() {
             @Override
             public Type visit(AnonymousType anonymousType) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
@@ -137,62 +137,62 @@ public class SpecInstantiator {
 
             @Override
             public Type visit(SimpleType simpleType) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
             public Type visit(TupleType tupleType) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
             public Type visit(UnionType unionType) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
             public Type visit(TypeParameterType typeParameterType) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
             public Type visit(StringLiteral t) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
             public Type visit(BooleanLiteral t) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
             public Type visit(NumberLiteral t) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
             public Type visit(IntersectionType t) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
             public Type visit(ClassInstanceType t) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
             public Type visit(ThisType t) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
             public Type visit(IndexType t) {
-                return null;
+                throw new RuntimeException();
             }
 
             @Override
             public Type visit(IndexedAccessType t) {
-                return null;
+                throw new RuntimeException();
             }
         });
         if (newRoot == null) {
