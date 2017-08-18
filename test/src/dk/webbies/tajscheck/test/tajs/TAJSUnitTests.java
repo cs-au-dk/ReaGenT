@@ -120,8 +120,7 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
-    @Test(timeout = 30 * 1000)
-    @Ignore // TODO: Goes in an infinite loop.
+    @Test()
     public void getterInfiniteLoop() throws Exception {
         run("getterInfiniteLoop"); // smoke test, is good if it ever terminates.
     }
