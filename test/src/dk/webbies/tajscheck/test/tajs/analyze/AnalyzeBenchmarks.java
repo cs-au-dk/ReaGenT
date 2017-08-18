@@ -7,6 +7,7 @@ import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.tajs.TAJSUtil;
 import dk.webbies.tajscheck.util.Util;
 import junit.framework.TestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -134,6 +135,7 @@ public class AnalyzeBenchmarks extends TestCase {
     }
 
     @Test
+    @Ignore
     public void analyzeBenchmark() throws Exception {
         Benchmark benchmark = this.benchmark;
         try {
