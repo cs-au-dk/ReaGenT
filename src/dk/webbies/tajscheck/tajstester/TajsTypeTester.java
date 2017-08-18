@@ -35,7 +35,7 @@ import static dk.webbies.tajscheck.util.Util.mkString;
 import static dk.webbies.tajscheck.util.Util.prettyValue;
 
 public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTestRunner {
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     private static final boolean DEBUG_VALUES = false;
 
@@ -167,8 +167,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 c.propagate(originalState.clone(), new BlockAndContext<>(allTestsBlock, newc), false);
             }
         }
-        if(valueHandler == null)
+        if(valueHandler == null) {
             valueHandler = new TypeValuesHandler(info.typeNames, c, info);
+        }
     }
 
     // returns true if "dependent" depends on "on".

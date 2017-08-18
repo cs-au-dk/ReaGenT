@@ -8,6 +8,7 @@ import dk.brics.tajs.lattice.ObjectLabel;
 import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Util;
@@ -39,13 +40,14 @@ public class SpecInstantiator {
     private final CanonicalHostObjectLabelPaths canonicalHostObjectLabelPaths;
 
     private final Effects effects;
+    private final BenchmarkInfo info;
 
     // misc. paths that we choose to ignore
     private Map<Type, Value> valueCache;
 
     private Map<Type, ObjectLabel> labelCache;
 
-    public SpecInstantiator(SpecReader reader, Solver.SolverInterface c) {
+    public SpecInstantiator(SpecReader reader, Solver.SolverInterface c, BenchmarkInfo info) {
         this.global = reader.getGlobal();
         this.visitor = new InstantiatorVisitor();
         this.objectLabelMaker = new ObjectLabelMakerVisitor();
@@ -55,6 +57,7 @@ public class SpecInstantiator {
         this.valueCache = newMap();
         this.processing = newSet();
         this.effects = new Effects(c);
+        this.info = info;
 
         initializeLabelsCacheWithCanonicals();
     }
@@ -417,7 +420,7 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(ReferenceType t, MiscInfo info) {
-            // NB: we are ignoring t.getTypeArguments()
+            info = info.withContext(new TypesUtil(SpecInstantiator.this.info).generateParameterMap(t, info.context));
             return SpecInstantiator.this.instantiate(t.getTarget(), info, null);
         }
 

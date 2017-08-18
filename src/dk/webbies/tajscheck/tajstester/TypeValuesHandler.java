@@ -23,7 +23,7 @@ public class TypeValuesHandler {
     TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, BenchmarkInfo info) {
         this.typeNames = typeNames;
         this.info = info;
-        this.instantiator = new SpecInstantiator(info.getSpec(), c);
+        this.instantiator = new SpecInstantiator(info.getSpec(), c, info);
     }
 
     public Value findFeedbackValue(TypeWithContext t) {
