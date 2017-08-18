@@ -78,8 +78,14 @@ public class TAJSUnitTests {
             MultiMap<String, TypeViolation> detectedViolations = results.detectedViolations.asMap().entrySet().stream().filter(entry -> entry.getKey().startsWith(path)).collect(ArrayListMultiMap.collector());
             List<dk.webbies.tajscheck.testcreator.test.Test> performedTest = results.testPerformed.stream().filter(test -> test.getPath().startsWith(path)).collect(Collectors.toList());
             List<dk.webbies.tajscheck.testcreator.test.Test> testsNot = results.testNot.stream().filter(test -> test.getPath().startsWith(path)).collect(Collectors.toList());
+            MultiMap<String, TypeViolation> warnings = results.detectedWarnings.asMap().entrySet().stream().filter(entry -> entry.getKey().startsWith(path)).collect(ArrayListMultiMap.collector());
 
-            return new TAJSResultTester(new TAJSUtil.TajsAnalysisResults(detectedViolations, performedTest, testsNot));
+            return new TAJSResultTester(new TAJSUtil.TajsAnalysisResults(detectedViolations, warnings, performedTest, testsNot));
+        }
+
+        TAJSUnitTests.TAJSResultTester hasWarnings() {
+            MatcherAssert.assertThat("there are warnings", results.detectedWarnings.size() != 0);
+            return this;
         }
     }
 
@@ -235,19 +241,18 @@ public class TAJSUnitTests {
         expect(result)
                 .performedAllTests()
                 .forPath("module.foo()")
-                .hasViolations();
+                .hasWarnings();
     }
 
     @Test
-    @Ignore // TODO: maybe for later.
     public void spuriousOverload() throws Exception {
         // I wanted to make a more complicated test, but since TAJS cannot see that (typeof [bool/number] !== "string"), it has to be quite simple.
         TAJSUtil.TajsAnalysisResults result = run("spuriousOverload");
 
         expect(result)
-                .performed("Foo");
-                /*FIXME:.expected("overload (a: string) to be called")
-                .toFail();*/
+                .performed("module.foo(obj)")
+                .forPath("Foo")
+                .hasWarnings();
 
     }
 

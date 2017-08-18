@@ -96,17 +96,21 @@ public class TAJSUtil {
             throw new TimeoutException(e.toString());
         }
 
-        List<TypeViolation> violations = typeTester.getAllViolations();
-        MultiMap<String, TypeViolation> results =  new ArrayListMultiMap<>();
-        violations.stream().distinct().forEach(vio -> {
-            results.put(vio.path, vio);
+        MultiMap<String, TypeViolation> violations =  new ArrayListMultiMap<>();
+        typeTester.getAllViolations().stream().distinct().forEach(vio -> {
+            violations.put(vio.path, vio);
+        });
+
+        MultiMap<String, TypeViolation> warnings =  new ArrayListMultiMap<>();
+        typeTester.getAllWarnings().stream().distinct().forEach(vio -> {
+            warnings.put(vio.path, vio);
         });
 
         List<Test> notPerformed = new LinkedList<>();
         notPerformed.addAll(typeTester.getAllTests());
         notPerformed.removeAll(typeTester.getPerformedTests());
 
-        return new TajsAnalysisResults(results, typeTester.getPerformedTests(), notPerformed);
+        return new TajsAnalysisResults(violations, warnings, typeTester.getPerformedTests(), notPerformed);
     }
 
     public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout) throws Exception {
@@ -122,20 +126,18 @@ public class TAJSUtil {
 
     public static class TajsAnalysisResults {
         public MultiMap<String, TypeViolation> detectedViolations;
+        public MultiMap<String, TypeViolation> detectedWarnings;
         public List<Test> testPerformed;
         public List<Test> testNot;
 
         TajsAnalysisResults(MultiMap<String, TypeViolation> detectedViolations,
-                            List<Test> testPerformed,
+                            MultiMap<String, TypeViolation> warnings, List<Test> testPerformed,
                             List<Test> testNot) {
 
             this.detectedViolations = detectedViolations;
+            this.detectedWarnings = warnings;
             this.testPerformed = testPerformed;
             this.testNot = testNot;
-        }
-
-        TajsAnalysisResults with(MultiMap<String, TypeViolation> newViolations) {
-            return new TajsAnalysisResults(newViolations, testPerformed, testNot);
         }
 
         @Override
@@ -151,15 +153,21 @@ public class TAJSUtil {
                 builder.append("   ").append(performed).append("\n");
             }
 
-            builder.append("Violations (").append(detectedViolations.size()).append(")").append("\n");
-            for (Map.Entry<String, Collection<TypeViolation>> entry : detectedViolations.asMap().entrySet()) {
+            printTypeViolations(builder, this.detectedViolations, "Violations");
+
+            printTypeViolations(builder, this.detectedWarnings, "Warnings");
+
+            return builder.toString();
+        }
+
+        private void printTypeViolations(StringBuilder builder, MultiMap<String, TypeViolation> violations, String name) {
+            builder.append(name).append(" (").append(violations.size()).append(")").append("\n");
+            for (Map.Entry<String, Collection<TypeViolation>> entry : violations.asMap().entrySet()) {
                 builder.append("   for path: ").append(entry.getKey()).append(" (").append(entry.getValue().size()).append(")\n");
                 for (TypeViolation violation : entry.getValue()) {
                     builder.append("      ").append(violation).append("\n");
                 }
             }
-
-            return builder.toString();
         }
     }
 }

@@ -19,6 +19,7 @@ import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecObjects;
 import dk.webbies.tajscheck.testcreator.test.*;
+import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
@@ -46,6 +47,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private final BenchmarkInfo info;
 
     final private List<TypeViolation> allViolations = newList();
+
+    final private List<TypeViolation> allWarnings = newList();
 
     final private List<TestCertificate> allCertificates = newList();
 
@@ -82,6 +85,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     public List<Test> getPerformedTests() {return performed;}
 
     public List<TypeViolation> getAllViolations() {return allViolations;}
+
+    public List<TypeViolation> getAllWarnings() {
+        return allWarnings;
+    }
 
     public List<TestCertificate> getAllCertificates() {return allCertificates;}
 
@@ -237,6 +244,14 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                 if (matchingSignatures.isEmpty() && c.isScanning()) {
                     allViolations.add(new TypeViolation("None of the overloads matched how the callback was called" , path));
+                }
+
+                if (matchingSignatures.size() < signatures.size() && c.isScanning()) {
+                    ArrayList<Signature> nonMatchingSignatures = new ArrayList<>(signatures);
+                    nonMatchingSignatures.removeAll(matchingSignatures);
+                    for (Signature nonMatchingSignature : nonMatchingSignatures) {
+                        allWarnings.add(new TypeViolation("Signatures with args " + PrettyTypes.parameters(nonMatchingSignature.getParameters()) + " was never called", path));
+                    }
                 }
 
                 for (Signature signature : matchingSignatures) {
@@ -549,7 +564,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
             for (Type nonMatchedType : nonMatchedTypes) {
                 if(c.isScanning()) {
-                    allViolations.addAll(Collections.singletonList(new TypeViolation("No value matches the type: " + nonMatchedType + " in from union " + test.getGetUnionType(), test.getPath())));
+                    allWarnings.addAll(Collections.singletonList(new TypeViolation("No value matches the type: " + nonMatchedType + " in from union " + test.getGetUnionType(), test.getPath())));
                 }
             }
 
