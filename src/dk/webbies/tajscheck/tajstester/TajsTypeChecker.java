@@ -91,7 +91,7 @@ public class TajsTypeChecker {
             if(typeCheck instanceof FieldTypeCheck) {
                 FieldTypeCheck fieldTypeCheck = (FieldTypeCheck)typeCheck;
                 String field = fieldTypeCheck.getField();
-                Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(v.getAllObjectLabels(), field), c.getState());
+                Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(v.getAllObjectLabels(), Value.makeStr(field), info.options.staticOptions.killGetters), c.getState());
                 if(propertyValue.isMaybeAbsent()) {
                     propertyValue = Value.join(propertyValue, Value.makeUndef());
                 }

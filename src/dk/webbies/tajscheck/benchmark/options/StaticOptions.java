@@ -9,16 +9,19 @@ package dk.webbies.tajscheck.benchmark.options;
 public class StaticOptions {
     public final boolean limitSideEffects;
     public final int checkDepth;
+    public final boolean killGetters;
 
 
     public StaticOptions(StaticOptions.Builder builder) {
         this.limitSideEffects = builder.limitSideEffects;
         this.checkDepth = builder.checkDepth;
+        this.killGetters = builder.killGetters;
     }
 
     public static final class Builder {
         private boolean limitSideEffects = false; // Make data-flow only happen between tests that are strictly dependent on each other.
         public int checkDepth = 2;
+        public boolean killGetters = false;
 
         public Builder setLimitSideEffects(boolean limitSideEffects) {
             this.limitSideEffects = limitSideEffects;
@@ -27,6 +30,11 @@ public class StaticOptions {
 
         public Builder setCheckDepth(int checkDepth) {
             this.checkDepth = checkDepth;
+            return this;
+        }
+
+        public Builder setKillGetters(boolean killGetters) {
+            this.killGetters = killGetters;
             return this;
         }
 
