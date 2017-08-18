@@ -266,7 +266,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
             Value argValue = call.getArg(i);
             Type argType = signature.getParameters().get(i).getType();
-            if (argValue.isNone() || !getViolations(argValue, new TypeWithContext(argType, context), path, c).getSecond().isEmpty()) {
+            if (argValue.isNone() || !getViolations(argValue, new TypeWithContext(argType, context), path, c).isEmpty()) {
                 return false;
             }
         }
@@ -287,28 +287,25 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     /**
      *
-     * @param v the abstract value
+     * @param value the abstract value
      * @param t the type
      * @param path the Path from which the value is added.
      * @return if the value satisfied the type
      */
-    public boolean attemptAddValue(Value v, TypeWithContext t, String path, Solver.SolverInterface c) {
-        if (v.isNone()) {
+    public boolean attemptAddValue(Value value, TypeWithContext t, String path, Solver.SolverInterface c) {
+        if (value.isNone()) {
             return true;
         }
-        Pair<Value, List<TypeViolation>> tcResult = getViolations(v, t, path, c);
+        List<TypeViolation> violations = getViolations(value, t, path, c);
 
-        Value filteredValue = tcResult.getFirst();
-        List<TypeViolation> violations = tcResult.getSecond();
-
-        if(violations.isEmpty() && !filteredValue.isNone()) {
-            boolean newValue = valueHandler.addFeedbackValue(t, filteredValue);
-            if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + filteredValue);
+        if(violations.isEmpty() && !value.isNone()) {
+            boolean newValue = valueHandler.addFeedbackValue(t, value);
+            if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + value);
             if(newValue && c.isScanning()) {
                 throw new RuntimeException("New values should not appear in scanning!");
             }
         } else {
-            if(DEBUG_VALUES) System.out.println("Value " + UnknownValueResolver.getRealValue(v, c.getState()) + " not added because it violates type " + t + " path:" + path);
+            if(DEBUG_VALUES) System.out.println("Value " + UnknownValueResolver.getRealValue(value, c.getState()) + " not added because it violates type " + t + " path:" + path);
             if(c.isScanning()) {
                 allViolations.addAll(violations);
             }
@@ -317,8 +314,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         return violations.isEmpty();
     }
 
-    private Pair<Value, List<TypeViolation>> getViolations(Value v, TypeWithContext t, String path, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
-        return new TajsTypeChecker(c, info).typeCheckAndFilter(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), info, 2, path);
+    private List<TypeViolation> getViolations(Value v, TypeWithContext t, String path, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
+        return new TajsTypeChecker(c, info).typeCheckAndFilter(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), info, path);
     }
 
     public void retractTest(Test t) {
@@ -533,7 +530,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
             for (Value splitValue : TajsTypeChecker.split(value)) {
                 List<Type> matchingTypes = test.getGetUnionType().getElements().stream().filter(subType -> {
-                    boolean matched = typeChecker.typeCheckAndFilter(splitValue, subType, test.getTypeContext(), info, 2, test.getPath()).getSecond().isEmpty();
+                    boolean matched = typeChecker.typeCheckAndFilter(splitValue, subType, test.getTypeContext(), info, test.getPath()).isEmpty();
                     if (matched) {
                         nonMatchedTypes.remove(subType);
                     }

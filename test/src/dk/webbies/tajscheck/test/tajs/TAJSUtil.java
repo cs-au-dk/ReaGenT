@@ -98,9 +98,9 @@ public class TAJSUtil {
 
         List<TypeViolation> violations = typeTester.getAllViolations();
         MultiMap<String, TypeViolation> results =  new ArrayListMultiMap<>();
-        for(TypeViolation vio : violations) {
+        violations.stream().distinct().forEach(vio -> {
             results.put(vio.path, vio);
-        }
+        });
 
         List<Test> notPerformed = new LinkedList<>();
         notPerformed.addAll(typeTester.getAllTests());

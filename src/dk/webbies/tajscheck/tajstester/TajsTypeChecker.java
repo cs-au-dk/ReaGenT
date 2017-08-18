@@ -3,7 +3,6 @@ package dk.webbies.tajscheck.tajstester;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
-import dk.brics.tajs.analysis.nativeobjects.concrete.TAJSSplitConcreteSemantics;
 import dk.brics.tajs.lattice.ObjectLabel;
 import dk.brics.tajs.lattice.State;
 import dk.brics.tajs.lattice.UnknownValueResolver;
@@ -19,15 +18,16 @@ import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.paser.ExpressionVisitor;
-import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.testcreator.test.check.*;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
+import dk.webbies.tajscheck.util.Tuple3;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static dk.webbies.tajscheck.util.Util.*;
 
@@ -70,64 +70,40 @@ public class TajsTypeChecker {
         return vr;
     }
 
-    boolean typeCheck(Value v, Type type, TypeContext context, BenchmarkInfo info, int depth) {
-        List<TypeViolation> violations = new LinkedList<>();
-        List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, depth);
-        TypeWithContext tc = new TypeWithContext(type, context);
+
+    List<TypeViolation> typeCheckAndFilter(Value v, Type type, TypeContext context, BenchmarkInfo info, String path) {
+        List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, info.options.staticOptions.checkDepth);
 
         List<Value> split = split(v);
-        List<Pair<Value, List<TypeCheck>>> zip = Util.zip(split.stream(),
-                split.stream().map(splittenValue -> getTypeViolations(splittenValue, typeChecks)),
-                Pair::make).collect(Collectors.toList());
+        List<Tuple3<String, Value, TypeCheck>> violations = split.stream().flatMap(splittenValue -> getTypeViolations(splittenValue, typeChecks, path).stream()).collect(Collectors.toList());
 
-        List<Value> filter = zip.stream().filter(p -> p.getSecond().isEmpty()).map(Pair::getFirst).collect(Collectors.toList());
-        List<Value> filterNot = zip.stream().filter(p -> !p.getSecond().isEmpty()).map(Pair::getFirst).collect(Collectors.toList());
-
-        return filterNot.isEmpty() && !filter.isEmpty();
+        return violations.stream().map(tuple -> {
+            String violationPath = tuple.getA();
+            Value value = tuple.getB();
+            TypeCheck check = tuple.getC();
+            return new TypeViolation("Expected " + check.getExpected() + " but found " + value, violationPath);
+        }).collect(Collectors.toList());
     }
 
-
-    Pair<Value,List<TypeViolation>> typeCheckAndFilter(Value v, Type type, TypeContext context, BenchmarkInfo info, int depth, String path) {
-        List<TypeViolation> violations = new LinkedList<>();
-        List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, depth);
-        TypeWithContext tc = new TypeWithContext(type, context);
-
-        List<Value> split = split(v);
-        List<Pair<Value, List<TypeCheck>>> zip = Util.zip(split.stream(),
-                split.stream().map(splittenValue -> getTypeViolations(splittenValue, typeChecks)),
-                Pair::make).collect(Collectors.toList());
-
-        List<Value> filter = zip.stream().filter(p -> p.getSecond().isEmpty()).map(Pair::getFirst).collect(Collectors.toList());
-        List<Value> filterNot = zip.stream().filter(p -> !p.getSecond().isEmpty()).map(Pair::getFirst).collect(Collectors.toList());
-        Set<TypeCheck> filterNotViolations = zip.stream().filter(p -> !p.getSecond().isEmpty()).flatMap(p -> p.getSecond().stream()).collect(Collectors.toSet());
-
-        if(!filterNot.isEmpty() && !filter.isEmpty()) {
-            violations.add(new TypeViolation("Expected " + tc + " but found spurious values: " + prettyValues(filterNot, c.getState()) + " violating " + mkString(filterNotViolations.stream(), ","), path));
-        }
-        if(filter.isEmpty()) {
-            violations.add(new TypeViolation("Expected " + tc + " but found value: " + prettyValue(v, c.getState()) + " violating " + mkString(filterNotViolations.stream(), ","), path));
-        }
-        return Pair.make(filter.stream().reduce(Value.makeNone(), (a, b) -> a.join(b)), violations);
-    }
-
-    private List<TypeCheck> getTypeViolations(Value v, List<TypeCheck> typeChecks) {
+    private List<Tuple3<String, Value, TypeCheck>> getTypeViolations(Value v, List<TypeCheck> typeChecks, String path) {
         return typeChecks.stream().flatMap(typeCheck -> {
 
             if(typeCheck instanceof FieldTypeCheck) {
                 FieldTypeCheck fieldTypeCheck = (FieldTypeCheck)typeCheck;
-                Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(v.getAllObjectLabels(), fieldTypeCheck.getField()), c.getState());
+                String field = fieldTypeCheck.getField();
+                Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(v.getAllObjectLabels(), field), c.getState());
                 if(propertyValue.isMaybeAbsent()) {
                     propertyValue = Value.join(propertyValue, Value.makeUndef());
                 }
 
-                return split(propertyValue).stream().flatMap(splittenValue -> getTypeViolations(splittenValue, fieldTypeCheck.getFieldChecks()).stream());
+                return split(propertyValue).stream().flatMap(splittenValue -> getTypeViolations(splittenValue, fieldTypeCheck.getFieldChecks(), path + "." + field).stream());
             }
             else if(typeCheck instanceof SimpleTypeCheck) {
                 SimpleTypeCheck simpleTypeCheck = (SimpleTypeCheck)typeCheck;
                 if(!simpleTypeCheck.getCheck().accept(cc, v)) {
-                    return Collections.singletonList(typeCheck).stream();
+                    return Collections.singletonList(new Tuple3<>(path, v, typeCheck)).stream();
                 } else {
-                    return new LinkedList<TypeCheck>().stream();
+                    return Stream.empty();
                 }
             }
             else throw new RuntimeException("Unexpected");
