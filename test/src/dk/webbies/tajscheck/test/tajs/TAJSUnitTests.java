@@ -257,14 +257,13 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: Maybe for layer.
     public void splitSignatures() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("splitSignatures");
 
         expect(result)
-                .performed("Foo");
-                /*FIXME:.expected("overload (a: string) to be called")
-                .toFail();*/
+                .performedAllTests()
+                .forPath("Foo")
+                .hasWarnings();
     }
 
     @Test
