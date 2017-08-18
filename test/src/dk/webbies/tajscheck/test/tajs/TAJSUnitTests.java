@@ -17,7 +17,9 @@ import static dk.webbies.tajscheck.util.Util.mkString;
 
 public class TAJSUnitTests {
     private static TAJSUtil.TajsAnalysisResults run(String folderName) throws Exception {
-        return run(benchFromFolder(folderName, options()));
+        TAJSUtil.TajsAnalysisResults result = run(benchFromFolder(folderName, options()));
+        System.out.println(result);
+        return result;
     }
 
     private static TAJSUtil.TajsAnalysisResults run(String folderName, CheckOptions.Builder options) throws Exception {
@@ -439,8 +441,6 @@ public class TAJSUnitTests {
     public void constructors2() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run(benchFromFolder("constructors2", options(), Benchmark.RUN_METHOD.BROWSER));
 
-        System.out.println(result);
-
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
@@ -452,8 +452,6 @@ public class TAJSUnitTests {
     public void stringIndexer() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("stringIndexer");
 
-        System.out.println(result);
-
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
@@ -462,8 +460,6 @@ public class TAJSUnitTests {
     @Test
     public void primitives() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("primitives", options().staticOptions.setLimitSideEffects(true).getOuterBuilder());
-        System.out.println(result);
-
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
@@ -473,10 +469,19 @@ public class TAJSUnitTests {
     public void createRecursiveObject() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("createRecursiveObject");
 
-        System.out.println(result);
-
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
+    }
+
+    @Test
+    @Ignore // TODO: this test fails because you can write strongly to everything of the same type.
+    public void weakWrites() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("weakWrites");
+
+        expect(result)
+                .performedAllTests()
+                .forPath("module.foo(obj)")
+                .hasViolations();
     }
 }
