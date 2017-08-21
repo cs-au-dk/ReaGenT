@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.test.tajs.analyze;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.tajs.TAJSUtil;
 import dk.webbies.tajscheck.util.Util;
@@ -17,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -135,9 +137,8 @@ public class AnalyzeBenchmarks extends TestCase {
     }
 
     @Test
-    @Ignore
     public void analyzeBenchmark() throws Exception {
-        Benchmark benchmark = this.benchmark;
+        Benchmark benchmark = this.benchmark.withOptions(options());
         try {
             System.out.println(TAJSUtil.runNoDriver(benchmark, 90));
         } catch (TimeoutException ignored) {
@@ -145,9 +146,17 @@ public class AnalyzeBenchmarks extends TestCase {
         }
     }
 
+    private Function<CheckOptions.Builder, CheckOptions.Builder> options() {
+        return options -> options
+                .setCombineNullAndUndefined(true) // because no-one cares.
+                .staticOptions
+                    .setKillGetters(true) // because getters currently causes the analysis to loop.
+                .getOuterBuilder();
+    }
+
     @Test
     public void analyzeBenchmarkLimitedSideEffects() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options -> options.staticOptions.setLimitSideEffects(true).getOuterBuilder());
+        Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).staticOptions.setLimitSideEffects(true).getOuterBuilder());
         try {
             System.out.println(TAJSUtil.runNoDriver(benchmark, 90));
 
@@ -158,7 +167,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
     @Test
     public void initialize() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options -> options.setOnlyInitialize(true));
+        Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).setOnlyInitialize(true));
         try {
             System.out.println(TAJSUtil.runNoDriver(benchmark, 30));
         } catch (TimeoutException ignored) {

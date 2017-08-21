@@ -166,7 +166,7 @@ public class CountUniques {
         @Override
         public Type visit(ClassType t, Arg arg) {
             if (info.freeGenericsFinder.hasThisTypes(t)) {
-                arg = arg.withContext(arg.context.withThisType(t.getInstanceType()));
+                arg = arg.withContext(arg.context.withThisType(info.typesUtil.createClassInstanceType(t)));
             }
             if (firstPath(arg.path).equals("new()")) {
                 return recurse(t.getInstance(), arg.rest());
@@ -304,7 +304,7 @@ public class CountUniques {
 
         @Override
         public Type visit(ReferenceType t, Arg arg) {
-            return recurse(t.getTarget(), arg.withContext(new TypesUtil(info).generateParameterMap(t, arg.context)));
+            return recurse(t.getTarget(), arg.withContext(info.typesUtil.generateParameterMap(t, arg.context)));
         }
 
         @Override
@@ -391,7 +391,7 @@ public class CountUniques {
 
         @Override
         public Type visit(ClassInstanceType t, Arg arg) {
-            return recurse(((ClassType) t.getClassType()).getInstanceType(), arg);
+            return recurse(info.typesUtil.createClassInstanceType(((ClassType) t.getClassType())), arg);
         }
 
         @Override
