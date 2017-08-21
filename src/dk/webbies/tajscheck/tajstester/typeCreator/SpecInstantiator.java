@@ -11,6 +11,7 @@ import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
+import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.apache.log4j.Logger;
 
@@ -277,6 +278,9 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel visit(ClassType t, MiscInfo miscInfo) {
+            if (info.freeGenericsFinder.hasThisTypes(t)) {
+                miscInfo = miscInfo.withContext(miscInfo.context.withThisType(t));
+            }
             System.err.println("Inaccurate modelling of classType");
             return info.typesUtil.classToInterface(t).accept(this, miscInfo);
         }
@@ -288,6 +292,9 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel visit(InterfaceType t, MiscInfo miscInfo) {
+            if (info.freeGenericsFinder.hasThisTypes(t)) {
+                miscInfo = miscInfo.withContext(miscInfo.context.withThisType(t));
+            }
             return makeObjectLabel(t, miscInfo);
         }
 
@@ -404,16 +411,21 @@ public class SpecInstantiator {
                 info = info.withContext(info.context.withThisType(t));
             }
             MiscInfo finalInfo = info;
-            return withNewObject(SpecInstantiator.this.getObjectLabel(t, info), label -> {
-                Map<String, Type> declaredProperties = t.getDeclaredProperties();
+            Pair<InterfaceType, Map<TypeParameterType, Type>> withBaseTypes = SpecInstantiator.this.info.typesUtil.constructSyntheticInterfaceWithBaseTypes(t);
+            t = withBaseTypes.getLeft();
+            info = info.withContext(info.context.append(withBaseTypes.getRight()));
 
-                if (t.getDeclaredNumberIndexType() != null) {
-                    effects.writeNumberIndexer(label, t.getDeclaredNumberIndexType().accept(this, finalInfo.apendPath("[numberIndexer]")));
+            InterfaceType finalT = t;
+            return withNewObject(SpecInstantiator.this.getObjectLabel(t, info), label -> {
+                Map<String, Type> declaredProperties = finalT.getDeclaredProperties();
+
+                if (finalT.getDeclaredNumberIndexType() != null) {
+                    effects.writeNumberIndexer(label, finalT.getDeclaredNumberIndexType().accept(this, finalInfo.apendPath("[numberIndexer]")));
                 }
                 writeProperties(label, declaredProperties, finalInfo);
 
-                if (t.getDeclaredStringIndexType() != null) {
-                    effects.writeStringIndexer(label, t.getDeclaredStringIndexType().accept(this, finalInfo.apendPath("[stringIndexer]")));
+                if (finalT.getDeclaredStringIndexType() != null) {
+                    effects.writeStringIndexer(label, finalT.getDeclaredStringIndexType().accept(this, finalInfo.apendPath("[stringIndexer]")));
                 }
 
                 if (label.getKind() == ObjectLabel.Kind.FUNCTION) {
@@ -479,11 +491,12 @@ public class SpecInstantiator {
                 return Value.makeObject(label);
             }
             // make the object a singleton to get the instantiation writes strongly
-            ObjectLabel singletonLabel = label;
-            effects.newObject(singletonLabel);
-            effects.multiplyObject(singletonLabel);
-            initializer.accept(singletonLabel); // TODO: This might be too strong, it should be summarized at some point.
-            return Value.makeObject(singletonLabel);
+            effects.newObject(label);
+            effects.multiplyObject(label);
+            initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
+
+            effects.writeStringIndexer(label, Value.makeUndef()); // otherwise everything crashes when reading an undefined property.
+            return Value.makeObject(label);
         }
 
         @Override

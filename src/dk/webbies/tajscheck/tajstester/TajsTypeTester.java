@@ -14,7 +14,6 @@ import dk.brics.tajs.solver.BlockAndContext;
 import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
-import dk.brics.tajs.util.Pair;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecObjects;
@@ -217,7 +216,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         if (typeWithContext.getType() instanceof InterfaceType) {
-            dk.webbies.tajscheck.util.Pair<InterfaceType, TypeContext> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes((InterfaceType) typeWithContext.getType(), info.typeNames, info.freeGenericsFinder);
+            dk.webbies.tajscheck.util.Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes((InterfaceType) typeWithContext.getType());
             InterfaceType inter = pair.getLeft();
             TypeContext context = typeWithContext.getTypeContext().append(pair.getRight());
 

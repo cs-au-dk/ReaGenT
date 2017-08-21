@@ -20,7 +20,6 @@ import dk.webbies.tajscheck.util.*;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.buildprogram.DriverProgramBuilder.*;
@@ -173,7 +172,7 @@ public class TypeCreator {
 
             List<Signature> signatures = t.getSignatures().stream().map(sig -> info.typesUtil.createConstructorSignature(t, sig)).collect(Collectors.toList());
 
-            Pair<InterfaceType, TypeContext> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes(info.typesUtil.classToInterface(t), info.typeNames, info.freeGenericsFinder);
+            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes(info.typesUtil.classToInterface(t));
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
 
@@ -240,7 +239,7 @@ public class TypeCreator {
                 typeContext = typeContext.withThisType(type);
             }
 
-            Pair<InterfaceType, TypeContext> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes(type, info.typeNames, info.freeGenericsFinder);
+            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes(type);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();

@@ -483,6 +483,24 @@ public class TAJSUnitTests {
     }
 
     @Test
+    public void extendsInterface() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("extendsInterface");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
+    public void readUndefProp() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("readUndefProp");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
     @Ignore // TODO: this test fails because you can write strongly to everything of the same type.
     public void weakWrites() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("weakWrites");

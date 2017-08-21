@@ -4,7 +4,6 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.FreeGenericsFinder;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.typeContext.OptimizingTypeContext;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -670,9 +669,9 @@ public class TypesUtil {
         }
     }
 
-    public Pair<InterfaceType, TypeContext> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter, Map<Type, String> typeNames, FreeGenericsFinder freeGenericsFinder) {
+    public Pair<InterfaceType, Map<TypeParameterType, Type>> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter) {
         if (inter.getBaseTypes().isEmpty()) {
-            return new Pair<>(inter, TypeContext.create(info));
+            return new Pair<>(inter, Collections.emptyMap());
         }
 //        assert inter.getTypeParameters().isEmpty(); // This should only happen when constructed from a generic/reference type, and in that case we have handled the TypeParameters.
         Map<TypeParameterType, Type> newParameters = new HashMap<>();
@@ -683,7 +682,7 @@ public class TypesUtil {
         result.setDeclaredNumberIndexType(inter.getDeclaredNumberIndexType());
         result.setDeclaredStringIndexType(inter.getDeclaredStringIndexType());
 
-        typeNames.put(result, typeNames.get(inter));
+        info.typeNames.put(result, info.typeNames.get(inter));
         inter.getBaseTypes().forEach(subType -> {
             if (subType instanceof ReferenceType) {
                 newParameters.putAll(generateParameterMap((ReferenceType) subType).getMap());
@@ -698,8 +697,8 @@ public class TypesUtil {
             if (subType instanceof ClassInstanceType) {
                 subType = this.createClassInstanceType(((ClassType) ((ClassInstanceType) subType).getClassType()));
             }
-            Pair<InterfaceType, TypeContext> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) subType, typeNames, freeGenericsFinder);
-            newParameters.putAll(pair.getRight().getMap());
+            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) subType);
+            newParameters.putAll(pair.getRight());
             InterfaceType type = pair.getLeft();
             result.getDeclaredCallSignatures().addAll((type.getDeclaredCallSignatures()));
             result.getDeclaredConstructSignatures().addAll(type.getDeclaredConstructSignatures());
@@ -717,7 +716,7 @@ public class TypesUtil {
                 result.getDeclaredProperties().put(entry.getKey(), entry.getValue());
             }
         });
-        return new Pair<>(result, TypeContext.create(info).append(newParameters));
+        return new Pair<>(result, newParameters);
     }
 
     public void forAllSubTypes(Type type, TypeContext typeContext, Consumer<TypeWithContext> callback) {
