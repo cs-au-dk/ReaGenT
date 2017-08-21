@@ -67,7 +67,7 @@ public class TypeValuesHandler {
     public boolean addFeedbackValue(TypeWithContext t, Value v) {
         assert(v != null);
         AtomicBoolean valueWasAdded = new AtomicBoolean(false);
-        new TypesUtil(info).forAllSubTypes(t.getType(), t.getTypeContext(), (subType) -> {
+        info.typesUtil.forAllSubTypes(t.getType(), t.getTypeContext(), (subType) -> {
             if (savedValues.containsKey(subType)) {
                 Value prevValue = savedValues.get(subType);
                 Value joined = v.join(prevValue);

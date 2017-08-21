@@ -192,7 +192,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         for (Type produces : on.getProduces()) {
-            new TypesUtil(info).forAllSubTypes(produces, on.getTypeContext(), produce -> {
+            info.typesUtil.forAllSubTypes(produces, on.getTypeContext(), produce -> {
                 if (consumes.contains(produce)) {
                     result.set(true);
                 }
@@ -217,7 +217,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         if (typeWithContext.getType() instanceof InterfaceType) {
-            dk.webbies.tajscheck.util.Pair<InterfaceType, TypeContext> pair = new TypesUtil(info).constructSyntheticInterfaceWithBaseTypes((InterfaceType) typeWithContext.getType(), info.typeNames, info.freeGenericsFinder);
+            dk.webbies.tajscheck.util.Pair<InterfaceType, TypeContext> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes((InterfaceType) typeWithContext.getType(), info.typeNames, info.freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             TypeContext context = typeWithContext.getTypeContext().append(pair.getRight());
 

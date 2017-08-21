@@ -21,20 +21,51 @@ public class BenchmarkInfo {
     public final Map<Type, String> typeNames;
     public final TypeParameterIndexer typeParameterIndexer;
     public final CheckOptions options;
+    public final TypesUtil typesUtil;
     private SpecReader spec;
     private final Set<Type> globalProperties;
     public final Map<String, Type> userDefinedTypes;
 
     private final Map<Class<?>, Map<String, Object>> attributes = new HashMap<>();
 
-    private BenchmarkInfo(Benchmark bench, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TypeParameterIndexer typeParameterIndexer, Set<Type> globalProperties, SpecReader spec, Map<String, Type> userDefinedTypes) {
+    private BenchmarkInfo(Benchmark bench) {
         this.bench = bench;
+        this.options = bench.options;
+        this.typesUtil = new TypesUtil(this);
+        this.typeParameterIndexer = new TypeParameterIndexer(bench.options);
+
+        this.spec = ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile));
+
+        SpecReader emptySpec = ParseDeclaration.getTypeSpecification(bench.environment, new ArrayList<>());
+
+        this.nativeTypes = TypesUtil.collectNativeTypes(spec, emptySpec);
+
+        this.typeNames = ParseDeclaration.getTypeNamesMap(spec);
+
+        this.freeGenericsFinder = new FreeGenericsFinder(spec.getGlobal(), this);
+
+        this.globalProperties = spec.getGlobal().getDeclaredProperties().values().stream().map(prop -> {
+            if (prop instanceof ReferenceType) {
+                return ((ReferenceType) prop).getTarget();
+            } else {
+                return prop;
+            }
+        }).collect(Collectors.toSet());
+
+        this.userDefinedTypes = getUserDefinedTypes(bench, spec, emptySpec);
+
+        applyTypeFixes(bench, spec, typeNames, nativeTypes, freeGenericsFinder, this);
+    }
+
+    public BenchmarkInfo(Benchmark bench, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, Map<Type, String> typeNames, TypeParameterIndexer typeParameterIndexer, Set<Type> globalProperties, SpecReader spec, Map<String, Type> userDefinedTypes) {
+        this.bench = bench;
+        this.options = bench.options;
+        this.typesUtil = new TypesUtil(this);
         this.nativeTypes = nativeTypes;
         this.freeGenericsFinder = freeGenericsFinder;
         this.typeNames = typeNames;
         this.typeParameterIndexer = typeParameterIndexer;
         this.globalProperties = globalProperties;
-        this.options = bench.options;
         this.spec = spec;
         this.userDefinedTypes = userDefinedTypes;
     }
@@ -44,31 +75,7 @@ public class BenchmarkInfo {
     }
 
     public static BenchmarkInfo create(Benchmark bench) {
-        SpecReader spec = ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile));
-
-        SpecReader emptySpec = ParseDeclaration.getTypeSpecification(bench.environment, new ArrayList<>());
-
-        Set<Type> nativeTypes = TypesUtil.collectNativeTypes(spec, emptySpec);
-
-        Map<Type, String> typeNames = ParseDeclaration.getTypeNamesMap(spec);
-
-        FreeGenericsFinder freeGenericsFinder = new FreeGenericsFinder(spec.getGlobal());
-
-        applyTypeFixes(bench, spec, typeNames, nativeTypes, freeGenericsFinder);
-
-        TypeParameterIndexer typeParameterIndexer = new TypeParameterIndexer(bench.options);
-
-        Set<Type> globalProperties = ((InterfaceType) spec.getGlobal()).getDeclaredProperties().values().stream().map(prop -> {
-            if (prop instanceof ReferenceType) {
-                return ((ReferenceType) prop).getTarget();
-            } else {
-                return prop;
-            }
-        }).collect(Collectors.toSet());
-
-        Map<String, Type> userDefinedTypes = getUserDefinedTypes(bench, spec, emptySpec);
-
-        return new BenchmarkInfo(bench, nativeTypes, freeGenericsFinder, typeNames, typeParameterIndexer, globalProperties, spec, userDefinedTypes);
+        return new BenchmarkInfo(bench);
     }
 
     private static Map<String, Type> getUserDefinedTypes(Benchmark bench, SpecReader spec, SpecReader emptySpec) {
@@ -107,7 +114,7 @@ public class BenchmarkInfo {
         return userDefinedTypes;
     }
 
-    private static void applyTypeFixes(Benchmark bench, SpecReader spec, Map<Type, String> typeNames, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder) {
+    private static void applyTypeFixes(Benchmark bench, SpecReader spec, Map<Type, String> typeNames, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, BenchmarkInfo info) {
         // Various fixes, to transform the types into something more consistent (+ workarounds).
         List<Type> typesToFix = new ArrayList<>();
         for (Type type : ((InterfaceType) spec.getGlobal()).getDeclaredProperties().values()) {
@@ -119,7 +126,7 @@ public class BenchmarkInfo {
         for (SpecReader.NamedType type : spec.getAmbientTypes()) {
             typesToFix.add(type.type);
         }
-        applyTypeFixes(bench, typeNames, typesToFix, freeGenericsFinder);
+        applyTypeFixes(bench, typeNames, typesToFix, freeGenericsFinder, info);
 
 
         // Fixing if the top-level export is a class, sometimes we can an interface with a prototype property instead of the actual class.
@@ -139,8 +146,8 @@ public class BenchmarkInfo {
         }
     }
 
-    private static void applyTypeFixes(Benchmark bench, Map<Type, String> typeNames, List<Type> typesToFix, FreeGenericsFinder freeGenericsFinder) {
-        List<Type> allTypes = new ArrayList<>(TypesUtil.collectAllTypes(typesToFix));
+    private static void applyTypeFixes(Benchmark bench, Map<Type, String> typeNames, List<Type> typesToFix, FreeGenericsFinder freeGenericsFinder, BenchmarkInfo info) {
+        List<Type> allTypes = new ArrayList<>(TypesUtil.collectAllTypes(typesToFix, info));
 
         for (Type type : allTypes) {
             if (type instanceof InterfaceType) {
@@ -285,9 +292,9 @@ public class BenchmarkInfo {
                 if (type instanceof InterfaceType) {
                     parameters.addAll(Util.cast(TypeParameterType.class, ((InterfaceType) type).getTypeParameters()));
                 } else if (type instanceof ClassInstanceType) {
-                    parameters.addAll(Util.cast(TypeParameterType.class, ((ClassType) ((ClassInstanceType) type).getClassType()).getInstanceType().getTypeParameters()));
+                    parameters.addAll(Util.cast(TypeParameterType.class, ((ClassType) ((ClassInstanceType) type).getClassType()).getTypeParameters()));
                 } else if (type instanceof ClassType) {
-                    parameters.addAll(Util.cast(TypeParameterType.class, ((ClassType) type).getInstanceType().getTypeParameters()));
+                    parameters.addAll(Util.cast(TypeParameterType.class, ((ClassType) type).getTypeParameters()));
                 } else if (type instanceof GenericType) {
                     parameters.addAll(Util.cast(TypeParameterType.class, ((GenericType) type).getTypeParameters()));
                 } else if (type instanceof ReferenceType) {

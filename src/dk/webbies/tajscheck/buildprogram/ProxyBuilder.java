@@ -33,15 +33,17 @@ public class ProxyBuilder {
     private final Map<Type, String> assignedNames = new HashMap<>();
 
     private final Statement knownProperyObjectCreation;
+    private final BenchmarkInfo info;
 
     ProxyBuilder(List<Statement> program, BenchmarkInfo info) {
 
-        this.global = (InterfaceType) info.getSpec().getGlobal();
+        this.global = info.getSpec().getGlobal();
         this.typeNames = info.typeNames;
         this.program = program;
+        this.info = info;
 
         // we extract all properties from all known types
-        DeclaredPropertyExtractor dep = new DeclaredPropertyExtractor();
+        DeclaredPropertyExtractor dep = new DeclaredPropertyExtractor(info);
         global.accept(dep);
         this.properties = dep.getProperties();
 
@@ -436,7 +438,7 @@ public class ProxyBuilder {
 
         @Override
         public Void visit(ClassInstanceType t) {
-            return ((ClassType) t.getClassType()).getInstanceType().accept(this);
+            return info.typesUtil.createClassInstanceType(((ClassType) t.getClassType())).accept(this);
         }
 
         @Override
@@ -459,6 +461,10 @@ public class ProxyBuilder {
     private static class DeclaredPropertyExtractor extends RecursiveTypeVisitor<Void> {
         private final Map<Type, Collection<String>> properties = new HashMap<>();
         private final Set<Type> visited = new HashSet<>();
+
+        private DeclaredPropertyExtractor(BenchmarkInfo info) {
+            super(info);
+        }
 
         Map<Type, Collection<String>> getProperties() {
             return properties;

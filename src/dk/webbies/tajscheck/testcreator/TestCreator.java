@@ -193,7 +193,7 @@ public class TestCreator {
 
 
         if (type instanceof ReferenceType) {
-            TypeContext newParameters = new TypesUtil(info).generateParameterMap((ReferenceType) type);
+            TypeContext newParameters = info.typesUtil.generateParameterMap((ReferenceType) type);
             type = ((ReferenceType) type).getTarget();
             path = path + ".<>";
             typeContext = typeContext.append(newParameters);
@@ -421,7 +421,7 @@ public class TestCreator {
             seen.add(withParameters);
 
             if (info.freeGenericsFinder.hasThisTypes(t)) {
-                arg = arg.withThisType(t.getInstanceType());
+                arg = arg.withThisType(info.typesUtil.createClassInstanceType(t));
             }
 
             for (Type baseType : t.getBaseTypes()) {
@@ -435,7 +435,7 @@ public class TestCreator {
                 precedingSignatures.add(signature);
             }
 
-            recurse(t.getInstanceType(), arg.append("new()"));
+            recurse(info.typesUtil.createClassInstanceType(t), arg.append("new()"));
 
             visitProperties(t, arg.withThisType(null), t.getStaticProperties());
 
@@ -502,21 +502,19 @@ public class TestCreator {
                 arg = arg.withThisType(t);
             }
 
-            TypesUtil typesUtil = new TypesUtil(info);
-
-            for (TypeWithContext stringIndexer : typesUtil.getAllStringIndexerTypes(t, arg.typeContext)) {
+            for (TypeWithContext stringIndexer : info.typesUtil.getAllStringIndexerTypes(t, arg.typeContext)) {
                 Arg subArg = arg.withTypeContext(stringIndexer.getTypeContext());
                 tests.add(new StringIndexTest(t, stringIndexer.getType(), arg.path, subArg.typeContext));
                 recurse(stringIndexer.getType(), subArg.append("[stringIndexer]").withTopLevelFunctions());
             }
 
-            for (TypeWithContext stringIndexer : typesUtil.getAllNumberIndexerTypes(t, arg.typeContext)) {
+            for (TypeWithContext stringIndexer : info.typesUtil.getAllNumberIndexerTypes(t, arg.typeContext)) {
                 Arg subArg = arg.withTypeContext(stringIndexer.getTypeContext());
                 tests.add(new NumberIndexTest(t, stringIndexer.getType(), arg.path, subArg.typeContext));
                 recurse(stringIndexer.getType(), subArg.append("[numberIndexer]").withTopLevelFunctions());
             }
 
-            for (Pair<TypeContext, Map<String, Type>> propertiesPair : typesUtil.getAllPropertyDeclarations(t, arg.typeContext)) {
+            for (Pair<TypeContext, Map<String, Type>> propertiesPair : info.typesUtil.getAllPropertyDeclarations(t, arg.typeContext)) {
                 Arg subArg = arg.withTypeContext(propertiesPair.getLeft());
                 visitProperties(t, subArg, propertiesPair.getRight());
             }
@@ -592,7 +590,7 @@ public class TestCreator {
             }
 
             if (propertyType instanceof ReferenceType) {
-                TypeContext newParameters = new TypesUtil(info).generateParameterMap((ReferenceType) propertyType);
+                TypeContext newParameters = info.typesUtil.generateParameterMap((ReferenceType) propertyType);
                 Type subType = ((ReferenceType) propertyType).getTarget();
                 Arg newArg = arg.append("<>").withParameters(newParameters);
                 addMethodCallTest(baseType, newArg, key, subType, seen);
@@ -633,7 +631,7 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            TypeContext newParameters = new TypesUtil(info).generateParameterMap(t);
+            TypeContext newParameters = info.typesUtil.generateParameterMap(t);
 
             recurse(t.getTarget(), arg.append("<>").withParameters(newParameters));
 
@@ -749,7 +747,7 @@ public class TestCreator {
 
         @Override
         public Void visit(ClassInstanceType t, Arg arg) {
-            InterfaceType instanceType = ((ClassType) t.getClassType()).getInstanceType();
+            InterfaceType instanceType = info.typesUtil.createClassInstanceType(((ClassType) t.getClassType()));
             // tests.add(new FilterTest(t, instanceType, arg.path, arg.typeContext, Check.alwaysTrue())); // Not needed, the TypeCreator will make sure the actual InstanceType is found.
 
             recurse(instanceType, arg);
@@ -836,7 +834,7 @@ public class TestCreator {
                 return null;
             }
 
-            recurse(t.getInstanceType(), arg.append("new()"));
+            recurse(info.typesUtil.createClassInstanceType(t), arg.append("new()"));
 
             assert !t.getSignatures().isEmpty();
 
@@ -937,7 +935,7 @@ public class TestCreator {
                 return null;
             }
 
-            TypeContext newParameters = new TypesUtil(info).generateParameterMap(t);
+            TypeContext newParameters = info.typesUtil.generateParameterMap(t);
 
             recurse(t.getTarget(), arg.append("<>").withParameters(newParameters));
 
@@ -1021,7 +1019,7 @@ public class TestCreator {
 
         @Override
         public Void visit(ClassInstanceType t, Arg arg) {
-            return recurse(((ClassType) t.getClassType()).getInstanceType(), arg);
+            return recurse(info.typesUtil.createClassInstanceType(((ClassType) t.getClassType())), arg);
         }
 
         @Override

@@ -403,7 +403,7 @@ public class DriverProgramBuilder {
 
         private List<Statement> callFunction(FunctionTest test, Type object, List<Type> orgParameterTypes, boolean restArgs, BiFunction<Expression, List<Pair<Expression, Type>>, Expression> callGenerator) {
             if (restArgs) {
-                Type restArgType = new TypesUtil(info).extractRestArgsType(orgParameterTypes);
+                Type restArgType = TypesUtil.extractRestArgsType(orgParameterTypes);
 
                 List<Type> parameterTypes = orgParameterTypes.subList(0, orgParameterTypes.size() - 1);
 

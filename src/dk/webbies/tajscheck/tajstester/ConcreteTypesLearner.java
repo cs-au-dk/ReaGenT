@@ -1,13 +1,10 @@
 package dk.webbies.tajscheck.tajstester;
 
-import dk.au.cs.casa.typescript.types.ClassType;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
-import dk.brics.tajs.flowgraph.Function;
 import dk.brics.tajs.lattice.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 
 import java.util.HashMap;
@@ -44,7 +41,7 @@ public class ConcreteTypesLearner {
 
     ConcreteTypesLearner(BenchmarkInfo info) {
         this.info = info;
-        this.allTypes = TypesUtil.collectAllTypes(info.getSpec().getGlobal());
+        this.allTypes = TypesUtil.collectAllTypes(info.getSpec().getGlobal(), info);
     }
 
     public void printInfo() {
@@ -57,7 +54,7 @@ public class ConcreteTypesLearner {
 
     private Set<Type> getSubtypes(Type supertype) {
         //FIXME: Why all base type is not taking contexts and returning type with contexts ?
-        return allTypes.stream().filter(subtype -> TypesUtil.getAllBaseTypes(subtype).contains(supertype)).collect(Collectors.toSet());
+        return allTypes.stream().filter(subtype -> info.typesUtil.getAllBaseTypes(subtype).contains(supertype)).collect(Collectors.toSet());
     }
 
 

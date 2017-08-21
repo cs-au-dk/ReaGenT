@@ -277,7 +277,8 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel visit(ClassType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
+            System.err.println("Inaccurate modelling of classType");
+            return info.typesUtil.classToInterface(t).accept(this, miscInfo);
         }
 
         @Override
@@ -290,8 +291,18 @@ public class SpecInstantiator {
             return makeObjectLabel(t, miscInfo);
         }
 
+        private Map<TypeWithContext, ObjectLabel> labelCache = new HashMap<>();
         private ObjectLabel makeObjectLabel(Type t, MiscInfo miscInfo) {
-            return ObjectLabel.mk(SpecObjects.getObjectAbstraction(miscInfo.path, new TypeWithContext(t, miscInfo.context)), getObjectLabelKind(t));
+            TypeWithContext key = new TypeWithContext(t, miscInfo.context);
+            if (labelCache.containsKey(key)) {
+                return labelCache.get(key);
+            }
+            if (labelCache.size() > 0) {
+                labelCache.keySet().iterator().next().equals(key);
+            }
+            ObjectLabel label = ObjectLabel.mk(SpecObjects.getObjectAbstraction(miscInfo.path, key), getObjectLabelKind(t));
+            labelCache.put(key, label);
+            return label;
         }
 
         @Override
@@ -355,7 +366,7 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel visit(ThisType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
+            return miscInfo.context.getThisType().accept(this, miscInfo);
         }
 
         @Override
@@ -379,7 +390,7 @@ public class SpecInstantiator {
         @Override
         public Value visit(ClassType t, MiscInfo info) {
             System.err.println("Inaccurate modelling of classes");
-            return TypesUtil.classToInterface(t, SpecInstantiator.this.info.freeGenericsFinder).accept(this, info);
+            return SpecInstantiator.this.info.typesUtil.classToInterface(t).accept(this, info);
         }
 
         @Override
@@ -389,16 +400,20 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(InterfaceType t, MiscInfo info) {
+            if (SpecInstantiator.this.info.freeGenericsFinder.hasThisTypes(t)) {
+                info = info.withContext(info.context.withThisType(t));
+            }
+            MiscInfo finalInfo = info;
             return withNewObject(SpecInstantiator.this.getObjectLabel(t, info), label -> {
                 Map<String, Type> declaredProperties = t.getDeclaredProperties();
 
                 if (t.getDeclaredNumberIndexType() != null) {
-                    effects.writeNumberIndexer(label, t.getDeclaredNumberIndexType().accept(this, info.apendPath("[numberIndexer]")));
+                    effects.writeNumberIndexer(label, t.getDeclaredNumberIndexType().accept(this, finalInfo.apendPath("[numberIndexer]")));
                 }
-                writeProperties(label, declaredProperties, info);
+                writeProperties(label, declaredProperties, finalInfo);
 
                 if (t.getDeclaredStringIndexType() != null) {
-                    effects.writeStringIndexer(label, t.getDeclaredStringIndexType().accept(this, info.apendPath("[stringIndexer]")));
+                    effects.writeStringIndexer(label, t.getDeclaredStringIndexType().accept(this, finalInfo.apendPath("[stringIndexer]")));
                 }
 
                 if (label.getKind() == ObjectLabel.Kind.FUNCTION) {
@@ -429,7 +444,7 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(ReferenceType t, MiscInfo info) {
-            info = info.withContext(new TypesUtil(SpecInstantiator.this.info).generateParameterMap(t, info.context));
+            info = info.withContext(SpecInstantiator.this.info.typesUtil.generateParameterMap(t, info.context));
             return SpecInstantiator.this.instantiate(t.getTarget(), info, null);
         }
 
@@ -532,8 +547,11 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(ClassInstanceType t, MiscInfo miscInfo) {
+            if (SpecInstantiator.this.info.freeGenericsFinder.hasThisTypes(t)) {
+                miscInfo = miscInfo.withContext(miscInfo.context.withThisType(t));
+            }
             System.err.println("Inaccurately modelling class instances");
-            return ((ClassType) t.getClassType()).getInstanceType().accept(this, miscInfo); // TODO:
+            return info.typesUtil.createClassInstanceType(((ClassType) t.getClassType())).accept(this, miscInfo); // TODO:
         }
 
         @Override

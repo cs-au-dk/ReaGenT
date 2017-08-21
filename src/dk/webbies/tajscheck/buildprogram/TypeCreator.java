@@ -97,7 +97,7 @@ public class TypeCreator {
         int index = valueCounter++;
         valueVariableDeclarationList.add(variable(VALUE_VARIABLE_PREFIX + index, identifier(VARIABLE_NO_VALUE)));
 
-        new TypesUtil(info).forAllSubTypes(type, typeContext, subType -> valueLocations.put(subType, index));
+        info.typesUtil.forAllSubTypes(type, typeContext, subType -> valueLocations.put(subType, index));
         return index;
     }
 
@@ -164,16 +164,16 @@ public class TypeCreator {
         @Override
         public Statement visit(ClassType t, TypeContext typeContext) {
             if (info.freeGenericsFinder.hasThisTypes(t)) {
-                typeContext = typeContext.withThisType(t.getInstanceType());
+                typeContext = typeContext.withThisType(info.typesUtil.createClassInstanceType(t));
             }
 
             assert t.getSignatures().size() > 0;
 
             List<Statement> addProperties = new ArrayList<>();
 
-            List<Signature> signatures = t.getSignatures().stream().map(sig -> TypesUtil.createConstructorSignature(t, sig)).collect(Collectors.toList());
+            List<Signature> signatures = t.getSignatures().stream().map(sig -> info.typesUtil.createConstructorSignature(t, sig)).collect(Collectors.toList());
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(info).constructSyntheticInterfaceWithBaseTypes(TypesUtil.classToInterface(t, info.freeGenericsFinder), info.typeNames, info.freeGenericsFinder);
+            Pair<InterfaceType, TypeContext> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes(info.typesUtil.classToInterface(t), info.typeNames, info.freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
 
@@ -240,7 +240,7 @@ public class TypeCreator {
                 typeContext = typeContext.withThisType(type);
             }
 
-            Pair<InterfaceType, TypeContext> pair = new TypesUtil(info).constructSyntheticInterfaceWithBaseTypes(type, info.typeNames, info.freeGenericsFinder);
+            Pair<InterfaceType, TypeContext> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes(type, info.typeNames, info.freeGenericsFinder);
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
             assert inter.getBaseTypes().isEmpty();
@@ -249,7 +249,7 @@ public class TypeCreator {
 
             Expression constructInitial;
             if (numberOfSignatures == 0) {
-                Type nativebase = TypesUtil.getNativeBase(type, info.nativeTypes, info.typeNames);
+                Type nativebase = info.typesUtil.getNativeBase(type, info.nativeTypes, info.typeNames);
                 if (nativebase != null) {
                     constructInitial = constructType(nativebase, typeContext);
                 } else {
@@ -323,7 +323,7 @@ public class TypeCreator {
                 return constructArray(typeContext, indexType);
             }
 
-            return Return(constructType(type.getTarget(), new TypesUtil(info).generateParameterMap(type, typeContext)));
+            return Return(constructType(type.getTarget(), info.typesUtil.generateParameterMap(type, typeContext)));
         }
 
         @Override
@@ -497,7 +497,7 @@ public class TypeCreator {
 
         @Override
         public Statement visit(ClassInstanceType t, TypeContext typeContext) {
-            return ((ClassType) t.getClassType()).getInstanceType().accept(this, typeContext);
+            return info.typesUtil.createClassInstanceType(((ClassType) t.getClassType())).accept(this, typeContext);
         }
 
         @Override
@@ -1198,7 +1198,7 @@ public class TypeCreator {
             while (key.getType() instanceof ReferenceType) {
                 ReferenceType ref = (ReferenceType) key.getType();
                 Type target = ref.getTarget();
-                TypeContext typeContext = new TypesUtil(info).generateParameterMap(ref, key.getTypeContext()).optimizeTypeParameters(target);
+                TypeContext typeContext = info.typesUtil.generateParameterMap(ref, key.getTypeContext()).optimizeTypeParameters(target);
                 key = new TypeWithContext(target, typeContext);
                 values.addAll(valueLocations.get(key));
             }

@@ -560,7 +560,7 @@ public class TypeChecker {
             if (info.nativeTypes.contains(t.getTarget()) && !(t.getTarget() instanceof TupleType) && !(info.typeNames.get(t) != null && info.typeNames.get(t).startsWith("window."))) {
                 throw new RuntimeException(info.typeNames.get(t));
             }
-            return t.getTarget().accept(this, arg.withContext(arg.typeContext.append(new TypesUtil(info).generateParameterMap(t))));
+            return t.getTarget().accept(this, arg.withContext(arg.typeContext.append(info.typesUtil.generateParameterMap(t))));
         }
 
         private List<TypeCheck> checkArrayThinghy(Type indexType, String instance, Arg arg) {
@@ -719,7 +719,7 @@ public class TypeChecker {
 
         @Override
         public List<TypeCheck> visit(ClassInstanceType t, Arg arg) {
-            return ((ClassType) t.getClassType()).getInstanceType().accept(this, arg);
+            return info.typesUtil.createClassInstanceType(((ClassType) t.getClassType())).accept(this, arg);
         }
 
         @Override

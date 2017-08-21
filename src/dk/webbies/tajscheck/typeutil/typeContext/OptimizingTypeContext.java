@@ -64,7 +64,7 @@ public class OptimizingTypeContext implements TypeContext {
         if (thisType == null || this.thisType == null) {
             return new OptimizingTypeContext(this.map, thisType, info, cache, optimizationCache);
         }
-        Set<Type> baseTypes = TypesUtil.getAllBaseTypes(this.thisType, new HashSet<>());
+        Set<Type> baseTypes = info.typesUtil.getAllBaseTypes(this.thisType, new HashSet<>());
 
         if (baseTypes.contains(thisType)) {
             return this;
@@ -203,7 +203,7 @@ public class OptimizingTypeContext implements TypeContext {
             if (!info.freeGenericsFinder.isThisTypeVisible(baseType, clone.thisType) && clone.map.values().stream().noneMatch(value -> info.freeGenericsFinder.isThisTypeVisible(value, finalClone.thisType))) {
                 clone = clone.withThisType(null);
             } else if ((baseType instanceof InterfaceType || baseType instanceof GenericType || baseType instanceof ClassInstanceType) && !info.freeGenericsFinder.isThisTypeVisible(baseType, finalClone.thisType) && clone.map.values().stream().noneMatch(value -> info.freeGenericsFinder.isThisTypeVisible(value, finalClone.thisType))) {
-                Set<Type> allBaseTypes = TypesUtil.getAllBaseTypes(clone.thisType, new HashSet<>());
+                Set<Type> allBaseTypes = info.typesUtil.getAllBaseTypes(clone.thisType, new HashSet<>());
                 if (!allBaseTypes.contains(baseType)) {
                     clone = clone.withThisType(null);
                 }
