@@ -42,9 +42,6 @@ public class OptimizingTypeContext implements TypeContext {
     }
 
     private OptimizingTypeContext(Map<TypeParameterType, Type> map, Type thisType, BenchmarkInfo info, Map<OptimizingTypeContext, OptimizingTypeContext> cache, Map<Pair<Type, OptimizingTypeContext>, OptimizingTypeContext> optimizationCache) {
-        if (map == null) {
-            throw new RuntimeException();
-        }
         this.map = map;
         this.thisType = thisType;
         this.info = info;

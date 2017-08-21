@@ -44,9 +44,9 @@ public class SpecInstantiator {
     private final BenchmarkInfo info;
 
     // misc. paths that we choose to ignore
-    private Map<Type, Value> valueCache;
+    private Map<TypeWithContext, Value> valueCache;
 
-    private Map<Type, ObjectLabel> labelCache;
+    private Map<TypeWithContext, ObjectLabel> labelCache;
 
     public SpecInstantiator(SpecReader reader, Solver.SolverInterface c, BenchmarkInfo info) {
         this.global = reader.getGlobal();
@@ -82,7 +82,7 @@ public class SpecInstantiator {
                         return;
                     }
 
-                    Type type = resolveType(p);
+                    TypeWithContext type = resolveType(p);
                     if (type == null) {
                         return;
                     }
@@ -93,16 +93,18 @@ public class SpecInstantiator {
         );
     }
 
-    private Type resolveType(List<String> path) {
+    private TypeWithContext resolveType(List<String> path) {
+        TypeWithContext root = new TypeWithContext(global, TypeContext.create(info));
         if (singletonList(globalObjectPath).equals(path)) {
-            return global;
+            return root;
         }
-        if(path.size() > 0 && path.get(0).equals("Window"))
+        if(path.size() > 0 && path.get(0).equals("Window")) {
             path = path.subList(1, path.size());
-        return resolveType(global, path);
+        }
+        return resolveType(root, path);
     }
 
-    private Type resolveType(Type root, List<String> path) {
+    private TypeWithContext resolveType(TypeWithContext root, List<String> path) {
         if (path.isEmpty()) {
             return root;
         }
@@ -113,89 +115,89 @@ public class SpecInstantiator {
         if (root == null) {
             return null;
         }
-        Type newRoot = root.accept(new TypeVisitor<Type>() {
+        TypeWithContext newRoot = root.getType().accept(new TypeVisitor<TypeWithContext>() {
             @Override
-            public Type visit(AnonymousType anonymousType) {
+            public TypeWithContext visit(AnonymousType anonymousType) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(ClassType classType) {
-                return classType.getStaticProperties().get(step);
+            public TypeWithContext visit(ClassType classType) {
+                return new TypeWithContext(classType.getStaticProperties().get(step), root.getTypeContext());
             }
 
             @Override
-            public Type visit(GenericType genericType) {
-                return genericType.getDeclaredProperties().get(step);
+            public TypeWithContext visit(GenericType genericType) {
+                return new TypeWithContext(genericType.getDeclaredProperties().get(step), root.getTypeContext());
             }
 
             @Override
-            public Type visit(InterfaceType interfaceType) {
-                return interfaceType.getDeclaredProperties().get(step);
+            public TypeWithContext visit(InterfaceType interfaceType) {
+                return new TypeWithContext(interfaceType.getDeclaredProperties().get(step), root.getTypeContext());
             }
 
             @Override
-            public Type visit(ReferenceType referenceType) {
-                return referenceType.getTarget().accept(this);
+            public TypeWithContext visit(ReferenceType referenceType) {
+                return resolveType(new TypeWithContext(referenceType.getTarget(), info.typesUtil.generateParameterMap(referenceType, root.getTypeContext())), path);
             }
 
             @Override
-            public Type visit(SimpleType simpleType) {
+            public TypeWithContext visit(SimpleType simpleType) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(TupleType tupleType) {
+            public TypeWithContext visit(TupleType tupleType) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(UnionType unionType) {
+            public TypeWithContext visit(UnionType unionType) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(TypeParameterType typeParameterType) {
+            public TypeWithContext visit(TypeParameterType typeParameterType) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(StringLiteral t) {
+            public TypeWithContext visit(StringLiteral t) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(BooleanLiteral t) {
+            public TypeWithContext visit(BooleanLiteral t) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(NumberLiteral t) {
+            public TypeWithContext visit(NumberLiteral t) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(IntersectionType t) {
+            public TypeWithContext visit(IntersectionType t) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(ClassInstanceType t) {
+            public TypeWithContext visit(ClassInstanceType t) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(ThisType t) {
+            public TypeWithContext visit(ThisType t) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(IndexType t) {
+            public TypeWithContext visit(IndexType t) {
                 throw new RuntimeException();
             }
 
             @Override
-            public Type visit(IndexedAccessType t) {
+            public TypeWithContext visit(IndexedAccessType t) {
                 throw new RuntimeException();
             }
         });
@@ -224,7 +226,8 @@ public class SpecInstantiator {
     }
 
     private ObjectLabel getObjectLabel(Type type, MiscInfo info) {
-        if (!labelCache.containsKey(type)) {
+        TypeWithContext key = new TypeWithContext(type, info.context);
+        if (!labelCache.containsKey(key)) {
             // (this call should not lead to recursion)
             final ObjectLabel label;
             if (canonicalHostObjectLabelPaths.has(info.path)) {
@@ -232,9 +235,9 @@ public class SpecInstantiator {
             } else {
                 label = type.accept(objectLabelMaker, info);
             }
-            labelCache.put(type, label);
+            labelCache.put(key, label);
         }
-        return labelCache.get(type);
+        return labelCache.get(key);
     }
 
     private ObjectLabel.Kind getObjectLabelKind(Type type) {
@@ -245,7 +248,8 @@ public class SpecInstantiator {
         if (step != null) {
             info.path.push(step);
         }
-        if (!valueCache.containsKey(type)) {
+        TypeWithContext key = new TypeWithContext(type, info.context);
+        if (!valueCache.containsKey(key)) {
             Value value;
             if (processing.contains(type)) {
                 // trying to instantiate a (recursive) type that is already being instantiated
@@ -256,12 +260,14 @@ public class SpecInstantiator {
                 value = type.accept(visitor, info);
                 processing.remove(type);
             }
-            valueCache.put(type, value);
+            valueCache.put(key, value);
+        } else {
+            System.out.println();
         }
         if (step != null) {
             info.path.pop();
         }
-        return valueCache.get(type);
+        return valueCache.get(key);
     }
 
     public Value createValue(TypeWithContext type, String path) {
@@ -410,10 +416,10 @@ public class SpecInstantiator {
             if (SpecInstantiator.this.info.freeGenericsFinder.hasThisTypes(t)) {
                 info = info.withContext(info.context.withThisType(t));
             }
-            MiscInfo finalInfo = info;
             Pair<InterfaceType, Map<TypeParameterType, Type>> withBaseTypes = SpecInstantiator.this.info.typesUtil.constructSyntheticInterfaceWithBaseTypes(t);
             t = withBaseTypes.getLeft();
             info = info.withContext(info.context.append(withBaseTypes.getRight()));
+            MiscInfo finalInfo = info;
 
             InterfaceType finalT = t;
             return withNewObject(SpecInstantiator.this.getObjectLabel(t, info), label -> {
@@ -618,28 +624,14 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(GenericType t) {
-            ObjectLabel.Kind kind;
-            if (t.getDeclaredCallSignatures().isEmpty() && t.getDeclaredConstructSignatures().isEmpty()) {
-                if (t.getDeclaredProperties().keySet().containsAll(Arrays.asList("slice", "pop", "push", "forEach", "filter", "concat"))) {
-                    kind = ObjectLabel.Kind.ARRAY; // TODO make this less hacky
-                } else {
-                    kind = ObjectLabel.Kind.OBJECT;
-                }
-            } else {
-                kind = ObjectLabel.Kind.FUNCTION;
-            }
-            if (kind == ObjectLabel.Kind.OBJECT) {
-                for (ObjectLabel.Kind label : t.getBaseTypes().stream().map(subType -> subType.accept(this)).collect(Collectors.toList())) {
-                    if (label != ObjectLabel.Kind.OBJECT) {
-                        kind = label;
-                    }
-                }
-            }
-            return kind;
+            return t.toInterface().accept(this);
         }
 
         @Override
         public ObjectLabel.Kind visit(InterfaceType t) {
+            if ("Array".equals(info.typeNames.get(t))) {
+                return ObjectLabel.Kind.ARRAY;
+            }
             ObjectLabel.Kind kind;
             if (t.getDeclaredCallSignatures().isEmpty() && t.getDeclaredConstructSignatures().isEmpty()) {
                 kind = ObjectLabel.Kind.OBJECT;

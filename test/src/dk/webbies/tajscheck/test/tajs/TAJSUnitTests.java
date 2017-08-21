@@ -27,7 +27,7 @@ public class TAJSUnitTests {
     }
 
     private static TAJSUtil.TajsAnalysisResults run(Benchmark bench) throws Exception {
-        return TAJSUtil.runNoDriver(bench, 60);
+        return TAJSUtil.runNoDriver(bench, Integer.MAX_VALUE); // TODO:
     }
 
     static Benchmark benchFromFolder(String folderName) {
@@ -524,6 +524,15 @@ public class TAJSUnitTests {
     @Test
     public void createConstructor() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("createConstructor");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
+    public void canHaveDifferentGenerics() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("canHaveDifferentGenerics");
 
         expect(result)
                 .performedAllTests()
