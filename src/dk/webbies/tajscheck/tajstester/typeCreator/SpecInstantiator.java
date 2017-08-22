@@ -9,7 +9,6 @@ import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
@@ -32,9 +31,7 @@ public class SpecInstantiator {
 
     private final InstantiatorVisitor visitor;
 
-    private final Set<Type> processing;
-
-    private final ObjectLabelMakerVisitor objectLabelMaker;
+    private final Set<TypeWithContext> processing;
 
     private final ObjectLabelKindDecider objectLabelKindDecider;
 
@@ -51,7 +48,6 @@ public class SpecInstantiator {
     public SpecInstantiator(SpecReader reader, Solver.SolverInterface c, BenchmarkInfo info) {
         this.global = reader.getGlobal();
         this.visitor = new InstantiatorVisitor();
-        this.objectLabelMaker = new ObjectLabelMakerVisitor();
         this.objectLabelKindDecider = new ObjectLabelKindDecider();
         this.canonicalHostObjectLabelPaths = new CanonicalHostObjectLabelPaths(c.getState().getStore().keySet()); // TODO: See what is inside this thing.
         this.labelCache = newMap();
@@ -231,9 +227,12 @@ public class SpecInstantiator {
             // (this call should not lead to recursion)
             final ObjectLabel label;
             if (canonicalHostObjectLabelPaths.has(info.path)) {
+                if (true) {
+                    throw new RuntimeException("Does this ever happen");
+                }
                 label = canonicalHostObjectLabelPaths.get(info.path);
             } else {
-                label = type.accept(objectLabelMaker, info);
+                label = makeObjectLabel(type, info);
             }
             labelCache.put(key, label);
         }
@@ -248,17 +247,20 @@ public class SpecInstantiator {
         if (step != null) {
             info.path.push(step);
         }
+        info = info.withContext(info.context.optimizeTypeParameters(type));
         TypeWithContext key = new TypeWithContext(type, info.context);
         if (!valueCache.containsKey(key)) {
             Value value;
-            if (processing.contains(type)) {
+            ObjectLabel label = getObjectLabel(type, info);
+            if (processing.contains(key)) {
                 // trying to instantiate a (recursive) type that is already being instantiated
-                value = Value.makeObject(getObjectLabel(type, info));
+                assert labelCache.containsKey(new TypeWithContext(type, info.context));
+                value = Value.makeObject(label);
             } else {
-                processing.add(type);
+                processing.add(key);
                 log.debug("Visiting: " + info.path.toString());
-                value = type.accept(visitor, info);
-                processing.remove(type);
+                value = type.accept(visitor, info.withlabel(label));
+                processing.remove(key);
             }
             valueCache.put(key, value);
         } else {
@@ -271,127 +273,24 @@ public class SpecInstantiator {
     }
 
     public Value createValue(TypeWithContext type, String path) {
-        MiscInfo misc = new MiscInfo(Arrays.asList(path.split("\\.")), type.getTypeContext());
+        MiscInfo misc = new MiscInfo(Arrays.asList(path.split("\\.")), type.getTypeContext(), null);
         return instantiate(type.getType(), misc, null); // TODO: TypeContext is currently ignored.
     }
 
-    private class ObjectLabelMakerVisitor implements TypeVisitorWithArgument<ObjectLabel, MiscInfo> {
-
-        @Override
-        public ObjectLabel visit(AnonymousType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
+    private ObjectLabel makeObjectLabel(Type t, MiscInfo miscInfo) {
+        TypeWithContext key = new TypeWithContext(t, miscInfo.context);
+        if (labelCache.containsKey(key)) {
+            return labelCache.get(key);
         }
-
-        @Override
-        public ObjectLabel visit(ClassType t, MiscInfo miscInfo) {
-            if (info.freeGenericsFinder.hasThisTypes(t)) {
-                miscInfo = miscInfo.withContext(miscInfo.context.withThisType(t));
-            }
-            System.err.println("Inaccurate modelling of classType");
-            return info.typesUtil.classToInterface(t).accept(this, miscInfo);
+        ObjectLabel.Kind kind = getObjectLabelKind(t);
+        ObjectLabel label = null;
+        if (kind != null) {
+            label = ObjectLabel.mk(SpecObjects.getObjectAbstraction(miscInfo.path, key), kind);
         }
-
-        @Override
-        public ObjectLabel visit(GenericType t, MiscInfo miscInfo) {
-            return t.toInterface().accept(this, miscInfo);
-        }
-
-        @Override
-        public ObjectLabel visit(InterfaceType t, MiscInfo miscInfo) {
-            if (info.freeGenericsFinder.hasThisTypes(t)) {
-                miscInfo = miscInfo.withContext(miscInfo.context.withThisType(t));
-            }
-            return makeObjectLabel(t, miscInfo);
-        }
-
-        private Map<TypeWithContext, ObjectLabel> labelCache = new HashMap<>();
-        private ObjectLabel makeObjectLabel(Type t, MiscInfo miscInfo) {
-            TypeWithContext key = new TypeWithContext(t, miscInfo.context);
-            if (labelCache.containsKey(key)) {
-                return labelCache.get(key);
-            }
-            if (labelCache.size() > 0) {
-                labelCache.keySet().iterator().next().equals(key);
-            }
-            ObjectLabel label = ObjectLabel.mk(SpecObjects.getObjectAbstraction(miscInfo.path, key), getObjectLabelKind(t));
-            labelCache.put(key, label);
-            return label;
-        }
-
-        @Override
-        public ObjectLabel visit(ReferenceType t, MiscInfo miscInfo) {
-            return t.getTarget().accept(this, miscInfo);
-        }
-
-        @Override
-        public ObjectLabel visit(SimpleType t, MiscInfo miscInfo) {
-            switch (t.getKind()) {
-                case Null:
-                    return null;
-                default:
-                    throw new RuntimeException("Unknown case: " + t.getKind());
-            }
-        }
-
-        @Override
-        public ObjectLabel visit(TupleType t, MiscInfo miscInfo) {
-            return makeObjectLabel(t, miscInfo);
-        }
-
-        @Override
-        public ObjectLabel visit(UnionType t, MiscInfo miscInfo) {
-            List<ObjectLabel> labels = t.getElements().stream().map(elem -> elem.accept(this, miscInfo.apendPath("<union-member>"))).filter(Objects::nonNull).collect(Collectors.toList());
-            if (labels.size() == 1) {
-                return labels.iterator().next();
-            }
-            throw new RuntimeException("Not implemented...");
-        }
-
-        @Override
-        public ObjectLabel visit(TypeParameterType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
-        }
-
-        @Override
-        public ObjectLabel visit(StringLiteral t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
-        }
-
-        @Override
-        public ObjectLabel visit(BooleanLiteral t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
-        }
-
-        @Override
-        public ObjectLabel visit(NumberLiteral t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
-        }
-
-        @Override
-        public ObjectLabel visit(IntersectionType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
-        }
-
-        @Override
-        public ObjectLabel visit(ClassInstanceType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
-        }
-
-        @Override
-        public ObjectLabel visit(ThisType t, MiscInfo miscInfo) {
-            return miscInfo.context.getThisType().accept(this, miscInfo);
-        }
-
-        @Override
-        public ObjectLabel visit(IndexType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
-        }
-
-        @Override
-        public ObjectLabel visit(IndexedAccessType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
-        }
+        labelCache.put(key, label);
+        return label;
     }
+
 
     private class InstantiatorVisitor implements TypeVisitorWithArgument<Value, MiscInfo> {
 
@@ -417,21 +316,21 @@ public class SpecInstantiator {
                 info = info.withContext(info.context.withThisType(t));
             }
             Pair<InterfaceType, Map<TypeParameterType, Type>> withBaseTypes = SpecInstantiator.this.info.typesUtil.constructSyntheticInterfaceWithBaseTypes(t);
-            t = withBaseTypes.getLeft();
-            info = info.withContext(info.context.append(withBaseTypes.getRight()));
-            MiscInfo finalInfo = info;
 
-            InterfaceType finalT = t;
-            return withNewObject(SpecInstantiator.this.getObjectLabel(t, info), label -> {
-                Map<String, Type> declaredProperties = finalT.getDeclaredProperties();
+            return writePropertiesToInterface(withBaseTypes.getLeft(), info.withContext(info.context.append(withBaseTypes.getRight())));
+        }
 
-                if (finalT.getDeclaredNumberIndexType() != null) {
-                    effects.writeNumberIndexer(label, finalT.getDeclaredNumberIndexType().accept(this, finalInfo.apendPath("[numberIndexer]")));
+        private Value writePropertiesToInterface(InterfaceType type, MiscInfo info) {
+            return withNewObject(info.labelToUse, label -> {
+                Map<String, Type> declaredProperties = type.getDeclaredProperties();
+
+                if (type.getDeclaredNumberIndexType() != null) {
+                    effects.writeNumberIndexer(label, type.getDeclaredNumberIndexType().accept(this, info.apendPath("[numberIndexer]")));
                 }
-                writeProperties(label, declaredProperties, finalInfo);
+                writeProperties(label, declaredProperties, info);
 
-                if (finalT.getDeclaredStringIndexType() != null) {
-                    effects.writeStringIndexer(label, finalT.getDeclaredStringIndexType().accept(this, finalInfo.apendPath("[stringIndexer]")));
+                if (type.getDeclaredStringIndexType() != null) {
+                    effects.writeStringIndexer(label, type.getDeclaredStringIndexType().accept(this, info.apendPath("[stringIndexer]")));
                 }
             });
         }
@@ -503,7 +402,7 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(TupleType t, MiscInfo info) {
-            return withNewObject(getObjectLabel(t, info), label -> {
+            return withNewObject(info.labelToUse, label -> {
                 for (int i = 0; i < t.getElementTypes().size(); i++) {
                     Type componentType = t.getElementTypes().get(i);
                     String indexName = i + "";
@@ -528,7 +427,7 @@ public class SpecInstantiator {
         public Value visit(TypeParameterType t, MiscInfo info) {
             if (info.context.containsKey(t)) {
                 TypeWithContext lookup = info.context.get(t);
-                return lookup.getType().accept(this, info.withContext(lookup.getTypeContext()));
+                return instantiate(lookup.getType(), info.withContext(lookup.getTypeContext()), null);
             } else {
                 System.err.println("Just returning a dummy object for unbound type parameters.");
                 return unboundTypeParameter.accept(this, info);
@@ -590,19 +489,25 @@ public class SpecInstantiator {
 
         public final Stack<String> path;
         public final TypeContext context;
+        public final ObjectLabel labelToUse;
 
-        MiscInfo(Collection<String> initialPath, TypeContext context) {
+        MiscInfo(Collection<String> initialPath, TypeContext context, ObjectLabel labelToUse) {
             this.context = context;
+            this.labelToUse = labelToUse;
             path = new Stack<>();
             path.addAll(initialPath);
         }
 
         public MiscInfo withContext(TypeContext typeContext) {
-            return new MiscInfo(path, typeContext);
+            return new MiscInfo(path, typeContext, labelToUse);
         }
 
         public MiscInfo apendPath(String path) {
-            return new MiscInfo(Util.concat(this.path, Collections.singletonList(path)), context);
+            return new MiscInfo(Util.concat(this.path, Collections.singletonList(path)), context, labelToUse);
+        }
+
+        public MiscInfo withlabel(ObjectLabel label) {
+            return new MiscInfo(path, context, label);
         }
     }
 
@@ -651,7 +556,24 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(SimpleType t) {
-            throw new RuntimeException("Not implemented...");
+            switch (t.getKind()) {
+                case Undefined:
+                case Any:
+                case Void:
+                case Boolean:
+                case String:
+                case Never:
+                case Number:
+                case Null:
+                case Enum:
+                    return null;
+                case Symbol:
+                    return ObjectLabel.Kind.SYMBOL;
+                case Object:
+                    return ObjectLabel.Kind.OBJECT;
+                default:
+                    throw new RuntimeException("Not implemented: " + t.getKind());
+            }
         }
 
         @Override
@@ -661,27 +583,35 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(UnionType t) {
-            throw new RuntimeException("Not implemented...");
+            return t.getElements().stream().map(sub -> sub.accept(this)).reduce(null, (a, b) -> {
+                if (a == null || b == null) {
+                    return a != null ? a : b;
+                }
+                if (a == ObjectLabel.Kind.OBJECT || b == ObjectLabel.Kind.OBJECT) {
+                    return a != ObjectLabel.Kind.OBJECT ? a : b;
+                }
+                throw new RuntimeException("Dont know what to do about " + a + " and " + b);
+            });
         }
 
         @Override
         public ObjectLabel.Kind visit(TypeParameterType t) {
-            throw new RuntimeException("Not implemented...");
+            return null; // If the parameter points to some object, i get asked about that specific one.
         }
 
         @Override
         public ObjectLabel.Kind visit(StringLiteral t) {
-            throw new RuntimeException("Not implemented...");
+            return null;
         }
 
         @Override
         public ObjectLabel.Kind visit(BooleanLiteral t) {
-            throw new RuntimeException("Not implemented...");
+            return null;
         }
 
         @Override
         public ObjectLabel.Kind visit(NumberLiteral t) {
-            throw new RuntimeException("Not implemented...");
+            return null;
         }
 
         @Override
