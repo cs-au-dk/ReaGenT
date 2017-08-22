@@ -1161,8 +1161,7 @@ public class TypeCreator {
     }
 
     private int getTypeIndex(Type type, TypeContext typeContext) {
-        TypeWithContext key = new TypeWithContext(type, typeContext);
-        return getTypeIndex(key);
+        return getTypeIndex(new TypeWithContext(type, typeContext));
     }
 
     private int getTypeIndex(TypeWithContext key) {

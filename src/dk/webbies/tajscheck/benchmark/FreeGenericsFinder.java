@@ -52,7 +52,7 @@ public class FreeGenericsFinder {
             } else if (type instanceof ReferenceType) {
                 reverseBaseTypeMap.put(((ReferenceType) type).getTarget(), type);
             } else if (type instanceof ClassInstanceType) {
-                InterfaceType instanceType = info.typesUtil.createClassInstanceType(((ClassType) ((ClassInstanceType) type).getClassType()));
+                Type instanceType = info.typesUtil.createClassInstanceType(((ClassType) ((ClassInstanceType) type).getClassType()));
                 reverseBaseTypeMap.put(instanceType, type);
             }
         }
@@ -205,6 +205,8 @@ public class FreeGenericsFinder {
             }
             seen.add(t);
 
+            t.getTypeArguments().forEach(arg -> arg.accept(this, orgMapped));
+
             Set<TypeParameterType> mapped = Util.concatSet(orgMapped, Util.cast(TypeParameterType.class, TypesUtil.getTypeParameters(t.getTarget())));
 
             if (addExisting(t, mapped)) return null;
@@ -356,7 +358,7 @@ public class FreeGenericsFinder {
         }
         Set<Type> seen = Util.concatSet(orgSeen, Collections.singletonList(baseType));
 
-        if (baseType instanceof ReferenceType) {
+        while (baseType instanceof ReferenceType) {
             if (((ReferenceType) baseType).getTypeArguments().stream().anyMatch(arg -> isThisTypeVisible(arg, deep, thisType, seen))) {
                 return true;
             }

@@ -189,7 +189,7 @@ public class TestCreator {
 
 
         if (type instanceof ReferenceType) {
-            TypeContext newParameters = info.typesUtil.generateParameterMap((ReferenceType) type);
+            Map<TypeParameterType, Type> newParameters = info.typesUtil.generateParameterMap((ReferenceType) type);
             type = ((ReferenceType) type).getTarget();
             path = path + ".<>";
             typeContext = typeContext.append(newParameters);
@@ -316,6 +316,10 @@ public class TestCreator {
         }
 
         private Arg withParameters(TypeContext newParameters) {
+            return new Arg(this.path, this.typeContext.append(newParameters), depth);
+        }
+
+        private Arg withParameters(Map<TypeParameterType, Type> newParameters) {
             return new Arg(this.path, this.typeContext.append(newParameters), depth);
         }
 
@@ -578,7 +582,7 @@ public class TestCreator {
             }
 
             if (propertyType instanceof ReferenceType) {
-                TypeContext newParameters = info.typesUtil.generateParameterMap((ReferenceType) propertyType);
+                Map<TypeParameterType, Type> newParameters = info.typesUtil.generateParameterMap((ReferenceType) propertyType);
                 Type subType = ((ReferenceType) propertyType).getTarget();
                 Arg newArg = arg.append("<>").withParameters(newParameters);
                 addMethodCallTest(baseType, newArg, key, subType, seen);
@@ -619,7 +623,7 @@ public class TestCreator {
             }
             seen.add(withParameters);
 
-            TypeContext newParameters = info.typesUtil.generateParameterMap(t);
+            Map<TypeParameterType, Type> newParameters = info.typesUtil.generateParameterMap(t);
 
             recurse(t.getTarget(), arg.append("<>").withParameters(newParameters));
 
@@ -627,9 +631,6 @@ public class TestCreator {
         }
 
         private Void recurse(Type type, Arg arg) {
-            if (type instanceof ThisType && arg.getTypeContext().getThisType() == null) {
-                System.out.println();
-            }
             queue.add(new TestQueueElement(type, arg));
             return null;
         }
@@ -735,7 +736,7 @@ public class TestCreator {
 
         @Override
         public Void visit(ClassInstanceType t, Arg arg) {
-            InterfaceType instanceType = info.typesUtil.createClassInstanceType(((ClassType) t.getClassType()));
+            Type instanceType = info.typesUtil.createClassInstanceType(((ClassType) t.getClassType()));
             // tests.add(new FilterTest(t, instanceType, arg.path, arg.typeContext, Check.alwaysTrue())); // Not needed, the TypeCreator will make sure the actual InstanceType is found.
 
             recurse(instanceType, arg);
@@ -923,7 +924,7 @@ public class TestCreator {
                 return null;
             }
 
-            TypeContext newParameters = info.typesUtil.generateParameterMap(t);
+            Map<TypeParameterType, Type> newParameters = info.typesUtil.generateParameterMap(t);
 
             recurse(t.getTarget(), arg.append("<>").withParameters(newParameters));
 

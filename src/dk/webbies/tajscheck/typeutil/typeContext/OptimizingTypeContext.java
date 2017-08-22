@@ -5,8 +5,10 @@ import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.Pair;
+import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by erik1 on 12-01-2017.
@@ -51,6 +53,20 @@ public class OptimizingTypeContext implements TypeContext {
 
     @Override
     public OptimizingTypeContext append(Map<TypeParameterType, Type> newParameters) {
+        newParameters = newParameters.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> {
+            Type value = entry.getValue();
+            if (!this.map.containsKey(entry.getKey())) {
+                return value;
+            }
+            int counter = 0;
+            while (value instanceof TypeParameterType && this.map.containsKey(value)) {
+                if (counter++ > 10) {
+                    break;
+                }
+                value = this.map.get(value);
+            }
+            return value;
+        }));
         Map<TypeParameterType, Type> newMap = new HashMap<>(this.map);
         newMap.putAll(newParameters);
         return new OptimizingTypeContext(newMap, this.thisType, info, cache, optimizationCache).cannonicalize();
@@ -154,7 +170,7 @@ public class OptimizingTypeContext implements TypeContext {
 
         Set<TypeParameterType> reachable = new HashSet<>(info.freeGenericsFinder.findFreeGenerics(baseType));
 
-        clone.map.keySet().retainAll(reachable);
+        clone.map.keySet().retainAll(Util.concat(reachable, this.map.values()));
 
         boolean progress = true;
         while (progress) {
@@ -169,29 +185,6 @@ public class OptimizingTypeContext implements TypeContext {
                     clone.map.put(parameterType, this.map.get(parameterType));
                     progress = true;
                 }
-            }
-        }
-
-        if (info.bench.options.combineAllUnboundGenerics) {
-            boolean foundShortcut = false;
-            for (Map.Entry<TypeParameterType, Type> entry : new HashMap<>(clone.map).entrySet()) {
-                Type keyConstraint = entry.getKey().getConstraint();
-                if (keyConstraint != null && !TypesUtil.isEmptyInterface(keyConstraint)) {
-                    continue;
-                }
-                if (entry.getValue() instanceof TypeParameterType) {
-                    Type valueConstraint = ((TypeParameterType) entry.getValue()).getConstraint();
-                    if (valueConstraint != null && !TypesUtil.isEmptyInterface(valueConstraint)) {
-                        continue;
-                    }
-                    if (!reachable.contains(entry.getValue())) {
-                        foundShortcut = true;
-                        clone.map.remove(entry.getKey());
-                    }
-                }
-            }
-            if (foundShortcut) {
-                return clone.uncannocilizatingOptimizeTypeParameters(baseType);
             }
         }
 

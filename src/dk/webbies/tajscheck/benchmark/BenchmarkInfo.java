@@ -294,7 +294,10 @@ public class BenchmarkInfo {
                 } else if (type instanceof ClassInstanceType) {
                     parameters.addAll(Util.cast(TypeParameterType.class, ((ClassType) ((ClassInstanceType) type).getClassType()).getTypeParameters()));
                 } else if (type instanceof ClassType) {
-                    parameters.addAll(Util.cast(TypeParameterType.class, ((ClassType) type).getTypeParameters()));
+                    ClassType clazz = (ClassType) type;
+                    parameters.addAll(Util.cast(TypeParameterType.class, clazz.getTypeParameters()));
+                    List<TypeParameterType> typeArguments = clazz.getTypeArguments().stream().filter(TypeParameterType.class::isInstance).map(TypeParameterType.class::cast).collect(Collectors.toList());
+                    arguments.addAll(typeArguments);
                 } else if (type instanceof GenericType) {
                     parameters.addAll(Util.cast(TypeParameterType.class, ((GenericType) type).getTypeParameters()));
                 } else if (type instanceof ReferenceType) {
@@ -310,6 +313,11 @@ public class BenchmarkInfo {
                     map.put(parameterType.getConstraint(), parameterType);
                 }
             }
+            allTypes.stream().filter(ClassType.class::isInstance).map(ClassType.class::cast).map(ClassType::getTypeArguments).flatMap(Collection::stream).filter(TypeParameterType.class::isInstance).map(TypeParameterType.class::cast).forEach(parameterType -> {
+                if (!map.containsKey(parameterType.getConstraint())) {
+                    map.put(parameterType.getConstraint(), parameterType);
+                }
+            });
 
             for (Type type : allTypes) {
                 if (type instanceof ReferenceType) {
@@ -318,11 +326,19 @@ public class BenchmarkInfo {
                         //noinspection SuspiciousMethodCalls
                         if (typeArgument instanceof TypeParameterType && arguments.contains(typeArgument)) {
                             TypeParameterType parameter = (TypeParameterType) typeArgument;
-                            if (map.containsKey(parameter.getConstraint())) {
-                                return map.get(parameter.getConstraint());
-                            } else {
-                                throw new RuntimeException();
-                            }
+                            assert map.containsKey(parameter.getConstraint());
+                            return map.get(parameter.getConstraint());
+                        } else {
+                            return typeArgument;
+                        }
+                    }).collect(Collectors.toList()));
+                } else if (type instanceof ClassType) {
+                    ClassType clazz = (ClassType) type;
+                    clazz.setTypeArguments(clazz.getTypeArguments().stream().map(typeArgument -> {
+                        if (typeArgument instanceof TypeParameterType) { // <- same, but no check if argument, since classes are kinda special.
+                            TypeParameterType parameter = (TypeParameterType) typeArgument;
+                            assert map.containsKey(parameter.getConstraint());
+                            return map.get(parameter.getConstraint());
                         } else {
                             return typeArgument;
                         }
