@@ -76,10 +76,6 @@ public class TestCreator {
                 topLevelFunctionTests.addAll(addTopLevelFunctionTests(element.type, arg.path, arg.typeContext, visitor, negativeTypesSeen, info.nativeTypes, arg.depth, seenTopLevel));
             }
 
-            if (arg.path.equals("module.LayerGroup.new()")) {
-                System.out.println();
-            }
-
             element.type.accept(visitor, arg.noTopLevelFunctions());
         }
 
@@ -147,6 +143,19 @@ public class TestCreator {
         }
         seenTopLevel.add(key);
 
+        if (type instanceof TypeParameterType) {
+            List<Test> result = new ArrayList<>();
+            TypeParameterType typeParameterType = (TypeParameterType) type;
+            if (typeParameterType.getConstraint() != null) {
+                result.addAll(addTopLevelFunctionTests(((TypeParameterType) type).getConstraint(), path, typeContext, visitor, negativeTypesSeen, info.nativeTypes, depth, seenTopLevel));
+            }
+            if (typeContext.containsKey(typeParameterType)) {
+                TypeWithContext lookup = typeContext.get(typeParameterType);
+                result.addAll(addTopLevelFunctionTests(lookup.getType(), path, lookup.getTypeContext(), visitor, negativeTypesSeen, info.nativeTypes, depth, seenTopLevel));
+            }
+            return result;
+        }
+
         if (info.nativeTypes.contains(type)) {
             return new ArrayList<>();
         }
@@ -174,19 +183,6 @@ public class TestCreator {
             for (int i = 0; i < element.size(); i++) {
                 Type subType = element.get(i);
                 result.addAll(addTopLevelFunctionTests(subType, path + ".[union" + i + "]", typeContext, visitor, negativeTypesSeen, info.nativeTypes, depth, seenTopLevel));
-            }
-            return result;
-        }
-
-        if (type instanceof TypeParameterType) {
-            List<Test> result = new ArrayList<>();
-            TypeParameterType typeParameterType = (TypeParameterType) type;
-            if (typeParameterType.getConstraint() != null) {
-                result.addAll(addTopLevelFunctionTests(((TypeParameterType) type).getConstraint(), path, typeContext, visitor, negativeTypesSeen, info.nativeTypes, depth, seenTopLevel));
-            }
-            if (typeContext.containsKey(typeParameterType)) {
-                TypeWithContext lookup = typeContext.get(typeParameterType);
-                result.addAll(addTopLevelFunctionTests(lookup.getType(), path, lookup.getTypeContext(), visitor, negativeTypesSeen, info.nativeTypes, depth, seenTopLevel));
             }
             return result;
         }
@@ -447,15 +443,7 @@ public class TestCreator {
             TypeWithContext withParameters = new TypeWithContext(t, arg.getTypeContext());
             if (info.typeNames.get(t).equals("Array")) {
                 assert t.getTypeParameters().size() == 1;
-                TypeParameterType parameterType = (TypeParameterType) t.getTypeParameters().iterator().next();
-                Type arrayType;
-                if (arg.getTypeContext().containsKey(parameterType)) {
-                    TypeWithContext lookup = arg.typeContext.get(parameterType);
-                    arg = arg.withParameters(arg.getTypeContext());
-                    arrayType = lookup.getType();
-                } else {
-                    arrayType = parameterType;
-                }
+                Type arrayType = t.getDeclaredNumberIndexType();
                 tests.add(new NumberIndexTest(t, arrayType, arg.path, arg.typeContext));
                 recurse(arrayType, arg.append("[numberIndexer]").withTopLevelFunctions());
 
@@ -695,7 +683,7 @@ public class TestCreator {
         @Override
         public Void visit(TypeParameterType t, Arg arg) {
             TypeWithContext withParameters = new TypeWithContext(t, arg.getTypeContext());
-            if (seen.contains(withParameters) || info.nativeTypes.contains(t)) {
+            if (seen.contains(withParameters)) {
                 return null;
             }
             seen.add(withParameters);

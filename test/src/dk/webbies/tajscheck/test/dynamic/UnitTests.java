@@ -79,7 +79,7 @@ public class UnitTests {
 
     private String runDriver(Benchmark bench, String seed, boolean skipConsistencyCheck) throws Exception {
         if (!skipConsistencyCheck) {
-            sanityCheck(bench);
+//            sanityCheck(bench);
         }
 
         Main.writeFullDriver(bench, new ExecutionRecording(null, seed));
@@ -637,7 +637,7 @@ public class UnitTests {
         RunResult result = run("typeInArray");
 
         expect(result)
-                .forPath("module.foo().<>.[numberIndexer].bar.baz")
+                .forPath("module.foo().<>.[numberIndexer].[union0].bar.baz")
                 .expected("true")
                 .got(STRING, "false");
     }
@@ -1023,13 +1023,13 @@ public class UnitTests {
 
     @Test
     public void extendsArray3() throws Exception {
-        RunResult result = run("extendsArray3");
+        RunResult result = run("extendsArray3", options().setCheckDepthReport(0).setCheckDepthReport(0).build());
 
-        assertThat(result.typeErrors.size(), is(equalTo(3)));
+        assertThat(result.typeErrors.size(), is(equalTo(1)));
 
         expect(result)
-                .forPath("module.bar().<>.[numberIndexer].<>.[numberIndexer]")
-                .expected("string")
+                .forPath("module.bar().<>.[numberIndexer].[union0].<>.[numberIndexer]")
+                .expected("(string or undefined)")
                 .got(TYPEOF, "number");
     }
 
@@ -1324,22 +1324,14 @@ public class UnitTests {
     }
 
     @Test
-    public void canWriteComplex() throws Exception {
-        RunResult resultNoWrite = run("canWriteComplex");
+    public void canWriteComplex2() throws Exception {
+        RunResult resultDoWrite = run("canWriteComplex", options().setCheckDepthUseValue(2).setCheckDepthReport(2).setWriteAll(true).build());
 
-        assertThat(resultNoWrite.typeErrors, is(empty()));
+        assertThat(resultDoWrite.getTestsCalled(), is(hasSize(resultDoWrite.getTotalTests())));
 
-        boolean hadAnError = false;
-        for (int i = 0; i < 20; i++) {
-            System.out.println("Trying with seed: " + i);
-            RunResult resultWithWrite = run("canWriteComplex", options().setWriteAll(true).build(), i + "");
+        RunResult resultDontWrite = run("canWriteComplex", options().setCheckDepthUseValue(2).setCheckDepthReport(2).setWriteAll(false).build());
 
-            if (resultWithWrite.typeErrors.size() > 0) {
-                hadAnError = true;
-                break;
-            }
-        }
-        assertThat(hadAnError, is(true));
+        assertThat(resultDontWrite.getTestsCalled(), is(not(hasSize(resultDontWrite.getTotalTests()))));
     }
 
     @Test

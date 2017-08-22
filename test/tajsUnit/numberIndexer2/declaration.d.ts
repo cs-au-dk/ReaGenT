@@ -1,0 +1,1 @@
+declare function id(x: ((true)[])) : ((true)[]);

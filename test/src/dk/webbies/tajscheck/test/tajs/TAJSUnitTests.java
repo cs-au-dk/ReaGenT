@@ -538,4 +538,13 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations();
     }
+
+    @Test
+    public void numberIndexer2() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("numberIndexer2");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 }
