@@ -227,9 +227,6 @@ public class SpecInstantiator {
             // (this call should not lead to recursion)
             final ObjectLabel label;
             if (canonicalHostObjectLabelPaths.has(info.path)) {
-                if (true) {
-                    throw new RuntimeException("Does this ever happen");
-                }
                 label = canonicalHostObjectLabelPaths.get(info.path);
             } else {
                 label = makeObjectLabel(type, info);
@@ -252,9 +249,12 @@ public class SpecInstantiator {
         if (!valueCache.containsKey(key)) {
             Value value;
             ObjectLabel label = getObjectLabel(type, info);
-            if (processing.contains(key)) {
+            if (processing.contains(key) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
                 // trying to instantiate a (recursive) type that is already being instantiated
                 assert labelCache.containsKey(new TypeWithContext(type, info.context));
+                if (label == null) {
+                    throw new NullPointerException();
+                }
                 value = Value.makeObject(label);
             } else {
                 processing.add(key);
@@ -387,6 +387,9 @@ public class SpecInstantiator {
         }
 
         private Value withNewObject(ObjectLabel label, Consumer<ObjectLabel> initializer) {
+            if (label == null) {
+                throw new NullPointerException();
+            }
             if (label.getHostObject().getAPI() != HostAPIs.SPEC) {
                 initializer.accept(label);
                 return Value.makeObject(label);
@@ -430,7 +433,7 @@ public class SpecInstantiator {
                 return instantiate(lookup.getType(), info.withContext(lookup.getTypeContext()), null);
             } else {
                 System.err.println("Just returning a dummy object for unbound type parameters.");
-                return unboundTypeParameter.accept(this, info);
+                return instantiate(unboundTypeParameter, info, null);
             }
         }
 
@@ -470,7 +473,10 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(ThisType t, MiscInfo miscInfo) {
-            return miscInfo.context.getThisType().accept(this, miscInfo);
+            if (miscInfo.context.getThisType() == null) {
+                throw new NullPointerException();
+            }
+            return instantiate(miscInfo.context.getThisType(), miscInfo, null);
         }
 
         @Override
@@ -520,7 +526,7 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(ClassType t) {
-            throw new RuntimeException("Not implemented...");
+            return ObjectLabel.Kind.FUNCTION;
         }
 
         @Override
@@ -616,17 +622,20 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(IntersectionType t) {
-            throw new RuntimeException("Not implemented...");
+            // if you think about it, it acts the same way as a union-type.
+            UnionType union = new UnionType();
+            union.setElements(t.getElements());
+            return union.accept(this);
         }
 
         @Override
         public ObjectLabel.Kind visit(ClassInstanceType t) {
-            throw new RuntimeException("Not implemented...");
+            return info.typesUtil.createClassInstanceType(((ClassType) t.getClassType())).accept(this);
         }
 
         @Override
         public ObjectLabel.Kind visit(ThisType t) {
-            throw new RuntimeException("Not implemented...");
+            return null;  // If the thisType points to some object, i get asked about that specific one.
         }
 
         @Override

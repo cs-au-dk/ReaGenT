@@ -252,10 +252,10 @@ public class TypeChecker {
                         );
                     case "Array":
                         assert t.getTypeArguments().size() == 1;
-                        return checkArrayThinghy(t.getTypeArguments().get(0), "Array", arg);
+                        return checkArrayThinghy(t.getDeclaredNumberIndexType(), "Array", arg);
                     case "NodeListOf":
                         assert t.getTypeArguments().size() == 1;
-                        return checkArrayThinghy(t.getTypeArguments().get(0), "NodeList", arg.withDepth(0)); // NodeLists not checked.
+                        return checkArrayThinghy(t.getDeclaredNumberIndexType(), "NodeList", arg.withDepth(0)); // NodeLists not checked.
                     case "ArrayLike":
                     case "IterableIterator":
                     case "Iterator":
@@ -546,14 +546,6 @@ public class TypeChecker {
 
         @Override
         public List<TypeCheck> visit(ReferenceType t, Arg arg) {
-            if ("Array".equals(info.typeNames.get(t.getTarget()))) {
-                Type indexType = t.getTypeArguments().get(0);
-                return checkArrayThinghy(indexType, "Array", arg);
-            } else if ("ArrayLike".equals(info.typeNames.get(t.getTarget()))) {
-                Type indexType = t.getTypeArguments().get(0);
-                return checkArrayThinghy(indexType, null, arg);
-            }
-
             if (info.nativeTypes.contains(t) && !(info.typeNames.get(t) != null && info.typeNames.get(t).startsWith("window."))) {
                 throw new RuntimeException(info.typeNames.get(t));
             }

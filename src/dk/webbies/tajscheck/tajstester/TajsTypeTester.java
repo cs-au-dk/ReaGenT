@@ -16,8 +16,12 @@ import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.paser.AST.BooleanLiteral;
+import dk.webbies.tajscheck.paser.AST.Expression;
+import dk.webbies.tajscheck.paser.AST.NumberLiteral;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecObjects;
 import dk.webbies.tajscheck.testcreator.test.*;
+import dk.webbies.tajscheck.testcreator.test.check.ExpressionCheck;
 import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -215,10 +219,27 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             throw new RuntimeException("unknown args");
         }
 
-        if (typeWithContext.getType() instanceof InterfaceType) {
-            dk.webbies.tajscheck.util.Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes((InterfaceType) typeWithContext.getType());
+        Type type = typeWithContext.getType();
+        if (type instanceof ClassType) {
+            type = info.typesUtil.classToInterface((ClassType) type);
+        }
+        TypeContext context = typeWithContext.getTypeContext();
+        if (type instanceof ReferenceType) {
+            context = info.typesUtil.generateParameterMap((ReferenceType) type, context);
+            type = ((ReferenceType) type).getTarget();
+        }
+        if (type instanceof GenericType) {
+            type = ((GenericType) type).toInterface();
+        }
+
+        if (info.freeGenericsFinder.hasThisTypes(type)) {
+            context = context.withThisType(type);
+        }
+
+        if (type instanceof InterfaceType) {
+            dk.webbies.tajscheck.util.Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes((InterfaceType) type);
             InterfaceType inter = pair.getLeft();
-            TypeContext context = typeWithContext.getTypeContext().append(pair.getRight());
+            TypeContext finalContext = context.append(pair.getRight());
 
             List<Signature> signatures = call.isConstructorCall() ? inter.getDeclaredConstructSignatures() : inter.getDeclaredCallSignatures();
 
@@ -242,12 +263,12 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 }
 
                 for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
-                    attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), context), info.typeNames.get(inter) + ".[arg" + i + "]", c);
+                    attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), finalContext), info.typeNames.get(inter) + ".[arg" + i + "]", c);
                 }
                 assert signature.getResolvedReturnType() != null;
-                return valueHandler.createValue(signature.getResolvedReturnType(), context);
+                return valueHandler.createValue(signature.getResolvedReturnType(), finalContext);
             } else {
-                List<Signature> matchingSignatures = signatures.stream().filter(sig -> sigMatches(sig, context, call, c, path)).collect(Collectors.toList());
+                List<Signature> matchingSignatures = signatures.stream().filter(sig -> sigMatches(sig, finalContext, call, c, path)).collect(Collectors.toList());
 
                 if (matchingSignatures.isEmpty() && c.isScanning()) {
                     allViolations.add(new TypeViolation("None of the overloads matched how the callback was called" , path));
@@ -266,17 +287,17 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                         throw new RuntimeException();
                     }
                     for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
-                        attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), context), info.typeNames.get(inter) + ".[arg" + i + "]", c);
+                        attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), finalContext), info.typeNames.get(inter) + ".[arg" + i + "]", c);
                     }
                 }
 
                 assert matchingSignatures.stream().map(Signature::getResolvedReturnType).allMatch(Objects::nonNull);
-                return Value.join(matchingSignatures.stream().map(sig -> valueHandler.createValue(sig.getResolvedReturnType(), context)).collect(Collectors.toList()));
+                return Value.join(matchingSignatures.stream().map(sig -> valueHandler.createValue(sig.getResolvedReturnType(), finalContext)).collect(Collectors.toList()));
             }
 
 
         } else {
-            throw new RuntimeException(typeWithContext.getType().getClass().getSimpleName());
+            throw new RuntimeException(type.getClass().getSimpleName());
         }
     }
 
@@ -543,6 +564,17 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         @Override
         public Void visit(FilterTest test) {
+            if (test.getCheck() instanceof ExpressionCheck) {
+                Expression check = ((ExpressionCheck) test.getCheck()).getGenerator().apply(new NumberLiteral(null, 123));
+                if (check instanceof BooleanLiteral && ((BooleanLiteral) check).getBooleanValue()) {
+                    // is just a function from a type to another type.
+                    TypeWithContext typeWithContext = new TypeWithContext(test.getType(), test.getTypeContext());
+                    Value baseValue = attemptGetValue(typeWithContext);
+                    attemptAddValue(baseValue, typeWithContext, test.getPath(), c);
+                    return null;
+
+                }
+            }
             throw new RuntimeException();
         }
 
