@@ -547,4 +547,13 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations();
     }
+
+    @Test
+    public void indirectRecursiveObjects() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("indirectRecursiveObjects");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 }

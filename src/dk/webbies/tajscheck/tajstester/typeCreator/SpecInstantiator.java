@@ -433,10 +433,6 @@ public class SpecInstantiator {
                 if (finalT.getDeclaredStringIndexType() != null) {
                     effects.writeStringIndexer(label, finalT.getDeclaredStringIndexType().accept(this, finalInfo.apendPath("[stringIndexer]")));
                 }
-
-                if (label.getKind() == ObjectLabel.Kind.FUNCTION) {
-                    // TODO implement function stubs
-                }
             });
         }
 
