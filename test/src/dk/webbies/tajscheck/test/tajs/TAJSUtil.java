@@ -30,7 +30,6 @@ public class TAJSUtil {
     public static TajsAnalysisResults runNoDriverTAJS(String file, int secondsTimeout, BenchmarkInfo info, List<Test> tests) throws TimeoutException {
         dk.brics.tajs.Main.reset();
 
-        IAnalysisMonitoring baseMonitoring = new Monitoring();
         OptionValues additionalOpts = new OptionValues();
         CmdLineParser parser = new CmdLineParser(additionalOpts);
         TesterContextSensitivity contextStrategy = new TesterContextSensitivity();
@@ -78,7 +77,6 @@ public class TAJSUtil {
 
         Options.set(additionalOpts);
         List<IAnalysisMonitoring> optMonitors = new LinkedList<>();
-        optMonitors.add(baseMonitoring);
 
         if (secondsTimeout > 0) { // Timeout
             AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, true);
