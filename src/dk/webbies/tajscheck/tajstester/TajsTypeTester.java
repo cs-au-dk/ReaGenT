@@ -261,17 +261,31 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             if (signatures.size() == 1) {
                 Signature signature = signatures.get(0);
 
-                if (signature.isHasRestParameter()) {
+                Type restArgsType = null;
+                List<Signature.Parameter> parameters = signature.getParameters();
+                if (call.isUnknownNumberOfArgs()) {
                     throw new RuntimeException();
                 }
-                if (signature.getParameters().size() != call.getNumberOfArgs()) {
-                    if (c.isScanning()) {
-                        allViolations.add(new TypeViolation("Expected  " + signature.getParameters().size() + " args, got " + call.getNumberOfArgs(), path));
+                if (signature.isHasRestParameter()) {
+                    restArgsType = TypesUtil.extractRestArgsType(parameters.stream().map(Signature.Parameter::getType).collect(Collectors.toList()));
+                    parameters = parameters.subList(0, parameters.size() - 1);
+                    if (call.getNumberOfArgs() < parameters.size() && c.isScanning()) {
+                        allViolations.add(new TypeViolation("Expected a minimum of " + parameters.size() +" args, got " + call.getNumberOfArgs(), path));
+                    }
+                } else {
+                    if (parameters.size() != call.getNumberOfArgs() && c.isScanning()) {
+                        allViolations.add(new TypeViolation("Expected  " + parameters.size() + " args, got " + call.getNumberOfArgs(), path));
                     }
                 }
 
-                for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
-                    attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c);
+
+                for (int i = 0; i < Math.min(parameters.size(), call.getNumberOfArgs()); i++) {
+                    attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c);
+                }
+                if (signature.isHasRestParameter()) {
+                    for (int i = parameters.size(); i < call.getNumberOfArgs(); i++) {
+                        attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c);
+                    }
                 }
                 assert signature.getResolvedReturnType() != null;
                 return valueHandler.createValue(signature.getResolvedReturnType(), finalContext);

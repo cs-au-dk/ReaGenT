@@ -587,5 +587,18 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
+    @Test
+    public void createRestArgs() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("createRestArgs");
+
+        assertThat(result.detectedViolations.asMap().keySet(), hasSize(1));
+
+        expect(result)
+                .performedAllTests()
+                .forPath("Bar.[arg4]")
+                .hasViolations();
+
+    }
+
     // TODO: Test that it is not valid for rest-args to be have value undefined.
 }
