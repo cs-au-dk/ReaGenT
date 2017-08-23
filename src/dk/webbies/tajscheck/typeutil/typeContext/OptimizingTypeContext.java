@@ -53,6 +53,9 @@ public class OptimizingTypeContext implements TypeContext {
 
     @Override
     public OptimizingTypeContext append(Map<TypeParameterType, Type> newParameters) {
+        if (newParameters.isEmpty()) {
+            return this;
+        }
         newParameters = newParameters.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> {
             Type value = entry.getValue();
             if (!this.map.containsKey(entry.getKey())) {
