@@ -1699,4 +1699,16 @@ public class UnitTests {
     public void genericSignaturesSmokeTest2() throws Exception {
         Main.generateFullDriver(benchFromFolder("genericSignaturesSmokeTest2"));
     }
+
+    @Test
+    public void classInheritsConstructors() throws Exception {
+        RunResult result = run("classInheritsConstructors", options().setConstructAllTypes(true).build());
+
+        assertThat(result.typeErrors, is(hasSize(1)));
+
+        expect(result)
+                .forPath("module.Baz.[arg0]")
+                .expected("string")
+                .got(STRING, "123");
+    }
 }
