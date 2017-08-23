@@ -48,6 +48,7 @@ public class TAJSCheckerSoundness {
         return result.stream()
                 .filter(bench -> !bench.name.equals("unit-exponentialComplexity"))
                 .filter(bench -> !createsIntersection.contains(bench.name))
+                .filter(bench -> !intentionallyUnsound.contains(bench.name))
                 .filter(bench -> !blackList.contains(bench.name))
                 .collect(Collectors.toList());
 //        return result;
@@ -75,18 +76,18 @@ public class TAJSCheckerSoundness {
             "unit-valueCantBeTrueAndFalse"
     );
 
+    // demonstrations of unsound types in TypeScript
+    private static final List<String> intentionallyUnsound = Arrays.asList(
+            "unit-complexSanityCheck3",
+            "unit-complexSanityCheck9"
+    );
+
     // the ones that currently fails for various reasons.
     private static final List<String> blackList = Arrays.asList(
             "unit-complexSanityCheck14",
             "unit-complexSanityCheck18",
-            "unit-complexSanityCheck3",
-            "unit-complexSanityCheck9",
             "unit-complexThisTypes",
             "unit-exponentialComplexity",
-            "unit-extendsArray",
-            "unit-extendsArray2",
-            "unit-extendsArray3",
-            "unit-extendsArray4",
             "unit-firstMatchPolicy",
             "unit-genericClassFeedbackWithConstraint",
             "unit-genericIndexedAccess",

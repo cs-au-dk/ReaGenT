@@ -135,7 +135,17 @@ public class TajsTypeChecker {
             switch(check.getTypeString()) {
                 case "object":
                     if(o.getAllObjectLabels().isEmpty()) return false;
-                    return o.getAllObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.OBJECT;
+                    ObjectLabel.Kind kind = o.getAllObjectLabels().iterator().next().getKind();
+                    switch (kind) {
+                        case OBJECT:
+                        case ARRAY:
+                            return true;
+                        case FUNCTION:
+                        case SYMBOL:
+                            return false;
+                        default:
+                            throw new RuntimeException("Didn't consider: " + kind);
+                    }
                 case "string":
                     return !o.restrictToStr().isNone();
                 case "undefined":
