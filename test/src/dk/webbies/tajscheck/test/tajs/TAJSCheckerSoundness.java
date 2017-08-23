@@ -49,6 +49,7 @@ public class TAJSCheckerSoundness {
                 .filter(bench -> !bench.name.equals("unit-exponentialComplexity"))
                 .filter(bench -> !createsIntersection.contains(bench.name))
                 .filter(bench -> !intentionallyUnsound.contains(bench.name))
+                .filter(bench -> !unsupportedFeatures.contains(bench.name))
                 .filter(bench -> !blackList.contains(bench.name))
                 .collect(Collectors.toList());
 //        return result;
@@ -76,10 +77,16 @@ public class TAJSCheckerSoundness {
             "unit-valueCantBeTrueAndFalse"
     );
 
+    private static final List<String> unsupportedFeatures = Arrays.asList(
+            "unit-genericIndexedAccess", // creating a signature that returns an index-type is not supported.
+            "unit-mappedTypes" // I don't support mapped types in general.
+    );
+
     // demonstrations of unsound types in TypeScript
     private static final List<String> intentionallyUnsound = Arrays.asList(
             "unit-complexSanityCheck3",
-            "unit-complexSanityCheck9"
+            "unit-complexSanityCheck9",
+            "unit-unsoundSiblings"
     );
 
     // the ones that currently fails for various reasons.
@@ -88,15 +95,9 @@ public class TAJSCheckerSoundness {
             "unit-complexSanityCheck18",
             "unit-complexThisTypes",
             "unit-exponentialComplexity",
-            "unit-firstMatchPolicy",
+            "unit-firstMatchPolicy", // seems to be insufficient context-sensitivity.
             "unit-genericClassFeedbackWithConstraint",
-            "unit-genericIndexedAccess",
-            "unit-mappedTypes",
-            "unit-optionalDoesNotMeanUndefinedWithRestArg",
-            "unit-overrideNumberOfArguments",
-            "unit-testRestArgs",
-            "unit-unsoundSiblings",
-            "tajsunit-testRestArgs"
+            "unit-overrideNumberOfArguments"
     );
 }
 

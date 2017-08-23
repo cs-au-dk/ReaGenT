@@ -217,10 +217,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         String path = ((SpecObjects.FullPath) hostObject).asText();
         TypeContext context = typeWithContext.getTypeContext();
 
-        if (call.isUnknownNumberOfArgs()) {
-            throw new RuntimeException("unknown args");
-        }
-
         Type type = typeWithContext.getType();
         if (type instanceof ReferenceType) {
             context = info.typesUtil.generateParameterMap((ReferenceType) type, context);
@@ -263,9 +259,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                 Type restArgsType = null;
                 List<Signature.Parameter> parameters = signature.getParameters();
-                if (call.isUnknownNumberOfArgs()) {
-                    throw new RuntimeException();
-                }
                 if (signature.isHasRestParameter()) {
                     restArgsType = TypesUtil.extractRestArgsType(parameters.stream().map(Signature.Parameter::getType).collect(Collectors.toList()));
                     parameters = parameters.subList(0, parameters.size() - 1);
@@ -277,7 +270,15 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                         allViolations.add(new TypeViolation("Expected  " + parameters.size() + " args, got " + call.getNumberOfArgs(), path));
                     }
                 }
-
+                if (call.isUnknownNumberOfArgs()) {
+                    if (!signature.isHasRestParameter() && c.isScanning()) {
+                        allViolations.add(new TypeViolation("Function was called with an unknown number of args, but it doesn't have a restArgs parameter", path));
+                    }
+                    if (signature.isHasRestParameter()) {
+                        // restricting to not undef, because rest-args must be possibly undef.
+                        attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[argUnknown]", c);
+                    }
+                }
 
                 for (int i = 0; i < Math.min(parameters.size(), call.getNumberOfArgs()); i++) {
                     attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c);
@@ -305,11 +306,21 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 }
 
                 for (Signature signature : matchingSignatures) {
+                    List<Signature.Parameter> parameters = signature.getParameters();
                     if (signature.isHasRestParameter()) {
-                        throw new RuntimeException();
+                        Type restArgsType = TypesUtil.extractRestArgsType(parameters.stream().map(Signature.Parameter::getType).collect(Collectors.toList()));
+                        parameters = parameters.subList(0, parameters.size() - 1);
+
+                        for (int i = parameters.size(); i < call.getNumberOfArgs(); i++) {
+                            attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c);
+                        }
+
+                        if (call.isUnknownNumberOfArgs()) {
+                            attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[argUnknown]", c);
+                        }
                     }
-                    for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
-                        attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c);
+                    for (int i = 0; i < Math.min(parameters.size(), call.getNumberOfArgs()); i++) {
+                        attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c);
                     }
                 }
 
@@ -324,16 +335,31 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     }
 
     private boolean sigMatches(Signature signature, TypeContext context, CallInfo call, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c, String path) {
+        List<Signature.Parameter> parameters = signature.getParameters();
+        Type restArgsType = null;
         if (signature.isHasRestParameter()) {
-            throw new RuntimeException();
+            restArgsType = TypesUtil.extractRestArgsType(parameters.stream().map(Signature.Parameter::getType).collect(Collectors.toList()));
+            parameters = parameters.subList(0, parameters.size() - 1);
+            if (call.getNumberOfArgs() < parameters.size()) {
+                return false;
+            }
+        } else {
+            if (parameters.size() != call.getNumberOfArgs()) {
+                return false;
+            }
         }
-        if (signature.getParameters().size() != call.getNumberOfArgs()) {
-            return false;
-        }
-        for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
+        for (int i = 0; i < Math.min(parameters.size(), call.getNumberOfArgs()); i++) {
             Value argValue = call.getArg(i);
-            Type argType = signature.getParameters().get(i).getType();
+            Type argType = parameters.get(i).getType();
             if (argValue.isNone() || !getViolations(argValue, new TypeWithContext(argType, context), path, c).isEmpty()) {
+                return false;
+            }
+        }
+        if (call.isUnknownNumberOfArgs()) {
+            if (!signature.isHasRestParameter()) {
+                return false;
+            }
+            if (!getViolations(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, context), path, c).isEmpty()) {
                 return false;
             }
         }

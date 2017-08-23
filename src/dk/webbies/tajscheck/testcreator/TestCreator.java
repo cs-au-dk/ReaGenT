@@ -837,10 +837,7 @@ public class TestCreator {
             assert !signatures.isEmpty();
 
             for (Signature signature : signatures) {
-                for (int i = 0; i < signature.getParameters().size(); i++) {
-                    Signature.Parameter parameter = signature.getParameters().get(i);
-                    visitor.recurse(parameter.getType(), arg.append("[arg" + i + "]").withTopLevelFunctions());
-                }
+                visitSignature(signature, arg);
             }
 
             for (Type baseType : t.getBaseTypes()) {
@@ -903,11 +900,7 @@ public class TestCreator {
             }
 
             for (Signature signature : Util.concat(t.getDeclaredCallSignatures(), t.getDeclaredConstructSignatures())) {
-                for (int i = 0; i < signature.getParameters().size(); i++) {
-                    Signature.Parameter parameter = signature.getParameters().get(i);
-                    visitor.recurse(parameter.getType(), arg.append("[arg" + i + "]").withTopLevelFunctions());
-                }
-                recurse(signature.getResolvedReturnType(), arg.append("()"));
+                visitSignature(signature, arg);
             }
 
             for (Type baseType : t.getBaseTypes()) {
@@ -925,6 +918,20 @@ public class TestCreator {
             }
 
             return null;
+        }
+
+        private void visitSignature(Signature signature, Arg arg) {
+            List<Signature.Parameter> parameters = signature.getParameters();
+            if (signature.isHasRestParameter()) {
+                Type restArgType = TypesUtil.extractRestArgsType(parameters.stream().map(Signature.Parameter::getType).collect(Collectors.toList()));
+                parameters = parameters.subList(0, parameters.size() - 1);
+                visitor.recurse(restArgType, arg.append("[restArg]").withTopLevelFunctions());
+            }
+            for (int i = 0; i < parameters.size(); i++) {
+                Signature.Parameter parameter = parameters.get(i);
+                visitor.recurse(parameter.getType(), arg.append("[arg" + i + "]").withTopLevelFunctions());
+            }
+            recurse(signature.getResolvedReturnType(), arg.append("()"));
         }
 
         @Override
