@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.test.tajs;
 
+import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
@@ -14,6 +15,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.util.Util.mkString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 
 public class TAJSUnitTests {
     private static TAJSUtil.TajsAnalysisResults run(String folderName) throws Exception {
@@ -556,4 +560,32 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations();
     }
+
+    @Test
+    public void classInheritsConstructors() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("classInheritsConstructors", options().setConstructAllTypes(true));
+
+        assertThat(result.detectedViolations.asMap().keySet(), is(hasSize(2)));
+
+        expect(result)
+                .performedAllTests()
+                .forPath("module.Baz.[arg0]")
+                .hasViolations();
+
+        expect(result)
+                .performedAllTests()
+                .forPath("module, Bar")
+                .hasViolations();
+    }
+
+    @Test
+    public void classInheritance() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("classInheritance");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    // TODO: Test that it is not valid for rest-args to be have value undefined.
 }

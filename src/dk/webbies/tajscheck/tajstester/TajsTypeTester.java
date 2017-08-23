@@ -222,12 +222,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         Type type = typeWithContext.getType();
-        if (type instanceof ClassType) {
-            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.classToInterface((ClassType) type);
-            context = context.append(pair.getRight());
-            type = pair.getLeft();
-        }
-
         if (type instanceof ReferenceType) {
             context = info.typesUtil.generateParameterMap((ReferenceType) type, context);
             type = ((ReferenceType) type).getTarget();
@@ -240,12 +234,22 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             context = context.withThisType(type);
         }
 
-        if (type instanceof InterfaceType) {
-            dk.webbies.tajscheck.util.Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes((InterfaceType) type);
-            InterfaceType inter = pair.getLeft();
-            TypeContext finalContext = context.append(pair.getRight());
+        if (type instanceof InterfaceType || type instanceof ClassType) {
+            TypeContext finalContext;
+            List<Signature> signatures;
+            if (type instanceof InterfaceType) {
+                Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes((InterfaceType) type);
+                InterfaceType inter = pair.getLeft();
+                finalContext = context.append(pair.getRight());
 
-            List<Signature> signatures = call.isConstructorCall() ? inter.getDeclaredConstructSignatures() : inter.getDeclaredCallSignatures();
+                signatures = call.isConstructorCall() ? inter.getDeclaredConstructSignatures() : inter.getDeclaredCallSignatures();
+            } else {
+                ClassType clazz = (ClassType) type;
+
+                Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.classToInterface(clazz);
+                finalContext = context.append(pair.getRight());
+                signatures = pair.getLeft().getDeclaredConstructSignatures();
+            }
 
             if (signatures.size() == 0) {
                 if (c.isScanning()) {
@@ -267,7 +271,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 }
 
                 for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
-                    attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), finalContext), info.typeNames.get(inter) + ".[arg" + i + "]", c);
+                    attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c);
                 }
                 assert signature.getResolvedReturnType() != null;
                 return valueHandler.createValue(signature.getResolvedReturnType(), finalContext);
@@ -291,7 +295,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                         throw new RuntimeException();
                     }
                     for (int i = 0; i < Math.min(signature.getParameters().size(), call.getNumberOfArgs()); i++) {
-                        attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), finalContext), info.typeNames.get(inter) + ".[arg" + i + "]", c);
+                        attemptAddValue(call.getArg(i), new TypeWithContext(signature.getParameters().get(i).getType(), finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c);
                     }
                 }
 

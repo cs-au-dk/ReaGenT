@@ -41,9 +41,6 @@ public class TypeValuesHandler {
     }
 
     public Value createValue(TypeWithContext t) {
-        if (!info.shouldConstructType(t.getType())) {
-            return Value.makeNone();
-        }
         String name;
         if ((t.getType() instanceof SimpleType)) {
             name = ((SimpleType) t.getType()).getKind().toString() + ".instance";
