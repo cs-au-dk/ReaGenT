@@ -297,7 +297,8 @@ public class SpecInstantiator {
         @Override
         public Value visit(ClassType t, MiscInfo info) {
             System.err.println("Inaccurate modelling of classes");
-            return SpecInstantiator.this.info.typesUtil.classToInterface(t).accept(this, info);
+            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = SpecInstantiator.this.info.typesUtil.classToInterface(t);
+            return pair.getLeft().accept(this, info.withContext(info.context.append(pair.getRight())));
         }
 
         @Override

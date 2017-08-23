@@ -166,13 +166,16 @@ public class TypeCreator {
                 typeContext = typeContext.withThisType(info.typesUtil.createClassInstanceType(t));
             }
 
-            assert t.getSignatures().size() > 0;
-
             List<Statement> addProperties = new ArrayList<>();
 
-            List<Signature> signatures = t.getSignatures().stream().map(sig -> info.typesUtil.createConstructorSignature(t, sig)).collect(Collectors.toList());
+            Pair<InterfaceType, Map<TypeParameterType, Type>> classToInterfacePair = info.typesUtil.classToInterface(t);
+            typeContext = typeContext.append(classToInterfacePair.getRight());
 
-            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes(info.typesUtil.classToInterface(t));
+            List<Signature> signatures = classToInterfacePair.getLeft().getDeclaredConstructSignatures();
+
+            assert !signatures.isEmpty();
+
+            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.constructSyntheticInterfaceWithBaseTypes(classToInterfacePair.getLeft());
             InterfaceType inter = pair.getLeft();
             typeContext = typeContext.append(pair.getRight());
 

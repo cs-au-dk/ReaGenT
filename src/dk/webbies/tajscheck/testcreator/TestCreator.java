@@ -428,9 +428,13 @@ public class TestCreator {
                 recurse(baseType, arg.withThisType(null).addDepth());
             }
 
-            assert !t.getSignatures().isEmpty();
+            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.classToInterface(t);
+            InterfaceType inter = pair.getLeft();
+            arg = arg.withTypeContext(arg.getTypeContext().append(pair.getRight()));
+
+            assert !inter.getDeclaredConstructSignatures().isEmpty();
             ArrayList<Signature> precedingSignatures = new ArrayList<>();
-            for (Signature signature : t.getSignatures()) {
+            for (Signature signature : inter.getDeclaredConstructSignatures()) {
                 tests.add(new ConstructorCallTest(t, signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList()), t.getInstance(), arg.path, arg.typeContext, signature.isHasRestParameter(), new ArrayList<>(precedingSignatures)));
                 precedingSignatures.add(signature);
             }
@@ -825,9 +829,14 @@ public class TestCreator {
 
             recurse(info.typesUtil.createClassInstanceType(t), arg.append("new()"));
 
-            assert !t.getSignatures().isEmpty();
+            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.classToInterface(t);
+            arg = arg.withTypeContext(arg.getTypeContext().append(pair.getRight()));
 
-            for (Signature signature : t.getSignatures()) {
+            List<Signature> signatures = pair.getLeft().getDeclaredConstructSignatures();
+
+            assert !signatures.isEmpty();
+
+            for (Signature signature : signatures) {
                 for (int i = 0; i < signature.getParameters().size(); i++) {
                     Signature.Parameter parameter = signature.getParameters().get(i);
                     visitor.recurse(parameter.getType(), arg.append("[arg" + i + "]").withTopLevelFunctions());

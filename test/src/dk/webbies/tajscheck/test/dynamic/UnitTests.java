@@ -430,7 +430,7 @@ public class UnitTests {
 
         expect(result)
                 .forPath("module.foo()")
-                .expected("(arrayIndex: number)")
+                .expected("(arrayIndex: (number or undefined))")
                 .got(JSON, "[1,2,3,\"4\"]");
     }
 
@@ -1704,11 +1704,16 @@ public class UnitTests {
     public void classInheritsConstructors() throws Exception {
         RunResult result = run("classInheritsConstructors", options().setConstructAllTypes(true).build());
 
-        assertThat(result.typeErrors, is(hasSize(1)));
+        assertThat(result.typeErrors, is(hasSize(2)));
 
         expect(result)
                 .forPath("module.Baz.[arg0]")
                 .expected("string")
                 .got(STRING, "123");
+
+        expect(result)
+                .forPath("module.Bar.[arg0]")
+                .expected("number")
+                .got(STRING, "undefined");
     }
 }

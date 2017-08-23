@@ -26,6 +26,7 @@ import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
+import dk.webbies.tajscheck.util.Pair;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -214,6 +215,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     public Value evaluateCallToSymbolicFunction(HostObject hostObject, CallInfo call, Solver.SolverInterface c) {
         TypeWithContext typeWithContext = ((SpecObjects.FullPath) hostObject).getType();
         String path = ((SpecObjects.FullPath) hostObject).asText();
+        TypeContext context = typeWithContext.getTypeContext();
 
         if (call.isUnknownNumberOfArgs()) {
             throw new RuntimeException("unknown args");
@@ -221,9 +223,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         Type type = typeWithContext.getType();
         if (type instanceof ClassType) {
-            type = info.typesUtil.classToInterface((ClassType) type);
+            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.classToInterface((ClassType) type);
+            context = context.append(pair.getRight());
+            type = pair.getLeft();
         }
-        TypeContext context = typeWithContext.getTypeContext();
+
         if (type instanceof ReferenceType) {
             context = info.typesUtil.generateParameterMap((ReferenceType) type, context);
             type = ((ReferenceType) type).getTarget();
