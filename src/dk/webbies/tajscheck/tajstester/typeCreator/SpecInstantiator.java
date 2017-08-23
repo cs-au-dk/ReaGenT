@@ -241,10 +241,10 @@ public class SpecInstantiator {
     }
 
     private Value instantiate(Type type, MiscInfo info, String step) {
-        if (step != null) {
-            info.path.push(step);
-        }
         info = info.withContext(info.context.optimizeTypeParameters(type));
+        if (step != null) {
+            info = info.apendPath(step);
+        }
         TypeWithContext key = new TypeWithContext(type, info.context);
         if (!valueCache.containsKey(key)) {
             Value value;
@@ -263,17 +263,12 @@ public class SpecInstantiator {
                 processing.remove(key);
             }
             valueCache.put(key, value);
-        } else {
-            System.out.println();
-        }
-        if (step != null) {
-            info.path.pop();
         }
         return valueCache.get(key);
     }
 
     public Value createValue(TypeWithContext type, String path) {
-        MiscInfo misc = new MiscInfo(Arrays.asList(path.split("\\.")), type.getTypeContext(), null);
+        MiscInfo misc = new MiscInfo(path, type.getTypeContext(), null);
         return instantiate(type.getType(), misc, null); // TODO: TypeContext is currently ignored.
     }
 
@@ -493,15 +488,18 @@ public class SpecInstantiator {
 
     private class MiscInfo {
 
-        public final Stack<String> path;
+        public final List<String> path;
         public final TypeContext context;
         public final ObjectLabel labelToUse;
 
-        MiscInfo(Collection<String> initialPath, TypeContext context, ObjectLabel labelToUse) {
+        MiscInfo(String initialPath, TypeContext context, ObjectLabel labelToUse) {
+            this(Arrays.asList(initialPath.split("\\.")), context, labelToUse);
+        }
+
+        MiscInfo(List<String> path, TypeContext context, ObjectLabel labelToUse) {
             this.context = context;
             this.labelToUse = labelToUse;
-            path = new Stack<>();
-            path.addAll(initialPath);
+            this.path = path;
         }
 
         public MiscInfo withContext(TypeContext typeContext) {

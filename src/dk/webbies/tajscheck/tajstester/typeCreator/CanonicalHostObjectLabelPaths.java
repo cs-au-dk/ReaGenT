@@ -35,11 +35,11 @@ public class CanonicalHostObjectLabelPaths {
         }
     }
 
-    public boolean has(Stack<String> path) {
+    public boolean has(List<String> path) {
         return paths.containsKey(makeKey(path));
     }
 
-    private List<String> makeKey(Stack<String> path) {
+    private List<String> makeKey(List<String> path) {
         if (path.isEmpty()) {
             throw new IllegalArgumentException("Can not use empty path");
         }
@@ -51,7 +51,7 @@ public class CanonicalHostObjectLabelPaths {
         return key;
     }
 
-    public ObjectLabel get(Stack<String> path) {
+    public ObjectLabel get(List<String> path) {
         return paths.get(makeKey(path));
     }
 
