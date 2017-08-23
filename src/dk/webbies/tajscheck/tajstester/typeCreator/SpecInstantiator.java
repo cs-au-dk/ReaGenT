@@ -377,6 +377,10 @@ public class SpecInstantiator {
                     return Value.makeNull();
                 case Never:
                     return Value.makeNone();
+                case Symbol:
+                    System.err.println("Symbols should be inprecise, they are not."); // TODO:
+                    SpecObjects hostObject = SpecObjects.getObjectAbstraction(info.path, new TypeWithContext(t, info.context));
+                    return Value.makeObject(ObjectLabel.mk(hostObject, ObjectLabel.Kind.SYMBOL));
                 default:
                     throw new RuntimeException("Unhandled TypeKind: " + t);
             }

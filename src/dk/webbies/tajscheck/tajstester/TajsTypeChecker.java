@@ -147,6 +147,9 @@ public class TajsTypeChecker {
                     return !o.restrictToNum().isNone();
                 case "boolean":
                     return !o.restrictToBool().isNone();
+                case "symbol":
+                    if (o.getAllObjectLabels().isEmpty()) return false;
+                    return o.getAllObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.SYMBOL;
                 default:
                     throw new RuntimeException("Unexpected " + check.getTypeString());
             }
