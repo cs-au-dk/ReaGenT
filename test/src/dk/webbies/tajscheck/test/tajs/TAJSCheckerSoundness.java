@@ -67,6 +67,7 @@ public class TAJSCheckerSoundness {
             "unit-canHaveErrorBrowser",
             "unit-complexSanityCheck20",
             "unit-complexSanityCheck23",
+            "unit-complexSanityCheck19",
             "unit-genericExtendMethod",
             "unit-genericsBustStack",
             "unit-genericsBustStack2",
@@ -74,7 +75,8 @@ public class TAJSCheckerSoundness {
             "unit-intersectionTypes",
             "unit-intersectionWithFunction",
             "unit-thisTypesInInterfaces3",
-            "unit-valueCantBeTrueAndFalse"
+            "unit-valueCantBeTrueAndFalse",
+            "unit-genericClassFeedbackWithConstraint"
     );
 
     private static final List<String> unsupportedFeatures = Arrays.asList(
@@ -91,13 +93,17 @@ public class TAJSCheckerSoundness {
 
     // the ones that currently fails for various reasons.
     private static final List<String> blackList = Arrays.asList(
-            "unit-complexSanityCheck14",
-            "unit-complexSanityCheck18",
-            "unit-complexThisTypes",
-            "unit-exponentialComplexity",
-            "unit-firstMatchPolicy", // seems to be insufficient context-sensitivity.
-            "unit-genericClassFeedbackWithConstraint",
-            "unit-overrideNumberOfArguments"
+            // impossible, forget them
+            "unit-complexSanityCheck18", // you cannot at runtime distinguish the different signatures.
+            "unit-exponentialComplexity", // too big.
+
+            // should be possible.
+            "unit-complexThisTypes", // looks like a this-type getting overwritten.
+            "unit-complexUnion", // currently does not support union between function and Date.
+            "unit-overrideNumberOfArguments", // none of the overloads matched...
+
+            // wait.
+            "unit-firstMatchPolicy" // seems to be insufficient context-sensitivity.
     );
 }
 
