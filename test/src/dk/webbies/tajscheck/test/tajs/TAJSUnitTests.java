@@ -599,6 +599,4 @@ public class TAJSUnitTests {
                 .hasViolations();
 
     }
-
-    // TODO: Test that it is not valid for rest-args to be have value undefined.
 }
