@@ -125,11 +125,11 @@ public class TAJSUtil {
     public static class TajsAnalysisResults {
         public MultiMap<String, TypeViolation> detectedViolations;
         public MultiMap<String, TypeViolation> detectedWarnings;
-        public List<Test> testPerformed;
+        public Collection<Test> testPerformed;
         public List<Test> testNot;
 
         TajsAnalysisResults(MultiMap<String, TypeViolation> detectedViolations,
-                            MultiMap<String, TypeViolation> warnings, List<Test> testPerformed,
+                            MultiMap<String, TypeViolation> warnings, Collection<Test> testPerformed,
                             List<Test> testNot) {
 
             this.detectedViolations = detectedViolations;

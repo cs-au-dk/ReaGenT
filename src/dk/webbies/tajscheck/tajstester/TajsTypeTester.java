@@ -56,7 +56,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     final private List<TestCertificate> allCertificates = newList();
 
-    private final List<Test> performed = newList();
+    private final Set<Test> performed = new LinkedHashSet<>();
 
     private final ArrayListMultiMap<Test, Test> depends;
 
@@ -86,7 +86,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public List<Test> getAllTests() {return tests;}
 
-    public List<Test> getPerformedTests() {return performed;}
+    public Collection<Test> getPerformedTests() {return performed;}
 
     public List<TypeViolation> getAllViolations() {return allViolations;}
 
@@ -143,7 +143,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         // we propagate states for each depending states
         for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
             Test dependingTest = entry.getKey();
+            if (!performed.contains(dependingTest)) {
+                continue;
+            }
             for (Test on : entry.getValue()) {
+                if (!performed.contains(on)) {
+                    continue;
+                }
                 Context dependentContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, dependingTest);
                 Context onContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, on);
                 State source = c.getAnalysisLatticeElement().getState(allTestsBlock, onContext);
@@ -652,7 +658,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
             for (Type nonMatchedType : nonMatchedTypes) {
                 if(c.isScanning()) {
-                    allWarnings.addAll(Collections.singletonList(new TypeViolation("No value matches the type: " + nonMatchedType + " in from union " + test.getGetUnionType(), test.getPath())));
+                    allWarnings.addAll(Collections.singletonList(new TypeViolation("No value matches the type: " + nonMatchedType + " in union " + test.getGetUnionType(), test.getPath())));
                 }
             }
 
