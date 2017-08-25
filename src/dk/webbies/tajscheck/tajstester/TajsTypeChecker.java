@@ -139,6 +139,7 @@ public class TajsTypeChecker {
                     switch (kind) {
                         case OBJECT:
                         case ARRAY:
+                        case ERROR:
                             return true;
                         case FUNCTION:
                         case SYMBOL:
