@@ -9,6 +9,7 @@ import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
@@ -432,8 +433,15 @@ public class SpecInstantiator {
                 TypeWithContext lookup = info.context.get(t);
                 return instantiate(lookup.getType(), info.withContext(lookup.getTypeContext()), null);
             } else {
-                System.err.println("Just returning a dummy object for unbound type parameters.");
-                return instantiate(unboundTypeParameter, info, null);
+                if (t.getConstraint() == null && !TypesUtil.isEmptyInterface(t.getConstraint())) {
+                    System.err.println("Just returning a dummy object for unbound type parameters."); // TODO:
+                    return instantiate(unboundTypeParameter, info, null);
+                } else {
+                    System.err.println("Not returning anything that actually extends a typeParameter"); // TODO:
+                    IntersectionType intersection = new IntersectionType();
+                    intersection.setElements(Arrays.asList(unboundTypeParameter, t.getConstraint()));
+                    return instantiate(intersection, info, null);
+                }
             }
         }
 
@@ -459,7 +467,7 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(IntersectionType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Not implemented...");
+            throw new RuntimeException("Cannot construct IntersectionType");
         }
 
         @Override
@@ -539,8 +547,18 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(InterfaceType t) {
-            if ("Array".equals(info.typeNames.get(t))) {
-                return ObjectLabel.Kind.ARRAY;
+            if (info.typeNames.get(t) != null) {
+                switch (info.typeNames.get(t)) {
+                    case "Array": return ObjectLabel.Kind.ARRAY;
+                    case "Function": return ObjectLabel.Kind.FUNCTION;
+                    case "RegExp": return ObjectLabel.Kind.REGEXP;
+                    case "Date": return ObjectLabel.Kind.DATE;
+                    case "String": return ObjectLabel.Kind.STRING;
+                    case "Number": return ObjectLabel.Kind.NUMBER;
+                    case "Boolean": return ObjectLabel.Kind.BOOLEAN;
+                    case "Error": return ObjectLabel.Kind.ERROR;
+                    case "Math": return ObjectLabel.Kind.MATH;
+                }
             }
             ObjectLabel.Kind kind;
             if (t.getDeclaredCallSignatures().isEmpty() && t.getDeclaredConstructSignatures().isEmpty()) {
