@@ -45,6 +45,12 @@ public class Effects {
             case ARRAY:
                 prototype = InitialStateBuilder.ARRAY_PROTOTYPE;
                 break;
+            case BOOLEAN:
+                prototype = InitialStateBuilder.BOOLEAN_PROTOTYPE;
+                break;
+            case ERROR:
+                prototype = InitialStateBuilder.ERROR_PROTOTYPE;
+                break;
             default:
                 throw new AnalysisException("No support for guessing prototype of " + label.getKind());
         }
