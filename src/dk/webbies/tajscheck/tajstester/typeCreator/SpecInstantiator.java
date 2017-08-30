@@ -400,7 +400,7 @@ public class SpecInstantiator {
             effects.multiplyObject(label);
             initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
 
-            effects.writeStringIndexer(label, Value.makeUndef()); // otherwise everything crashes when reading an undefined property.
+            effects.writeStringIndexer(label, Value.makeUndef()); // TODO: Try to instead have an special (function) object-label, that summerizes "any". When called it returns itself (and throws exceptions). // TODO:
             return Value.makeObject(label);
         }
 
@@ -610,12 +610,16 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(UnionType t) {
+            // TODO: Handle union-types on a higher-level. Defer getting the object-label until later! Test with soundnessTest: pathjs
             return t.getElements().stream().map(sub -> sub.accept(this)).reduce(null, (a, b) -> {
                 if (a == null || b == null) {
                     return a != null ? a : b;
                 }
                 if (a == ObjectLabel.Kind.OBJECT || b == ObjectLabel.Kind.OBJECT) {
                     return a != ObjectLabel.Kind.OBJECT ? a : b;
+                }
+                if (a == b) {
+                    return a;
                 }
                 throw new RuntimeException("Dont know what to do about " + a + " and " + b);
             });
