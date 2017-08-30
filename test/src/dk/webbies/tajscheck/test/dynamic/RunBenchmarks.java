@@ -47,6 +47,7 @@ public class RunBenchmarks {
     static {
         CheckOptions options = CheckOptions.builder()
                 .setSplitUnions(false) // Because some of these benchmarks use an insane amount of overloads, so this can cause the size of the generated program to explode (about a factor 400x for moment).
+                .setCompactOutput(true)
                 .build();
 
         register(new Benchmark("Moment.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/moment/moment.js", "test/benchmarks/moment/moment.d.ts", BROWSER, options));
@@ -92,7 +93,9 @@ public class RunBenchmarks {
             .addDependencies(jQuery, handlebars)
         );
 
-        register(new Benchmark("D3.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", BROWSER, options));
+        register(new Benchmark("D3.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", BROWSER, options.getBuilder()
+                .setCheckDepthReport(0)
+                .build()));
 
         register(new Benchmark("MathJax", ParseDeclaration.Environment.ES5Core, "test/benchmarks/mathjax/mathjax.js", "test/benchmarks/mathjax/mathjax.d.ts", BROWSER, options));
 
@@ -204,8 +207,7 @@ public class RunBenchmarks {
         }
     }
 
-    @Test
-    @Ignore
+    @Test // TODO: Zepto never terminates.
     public void runFullDriver() throws Exception {
         // Write the driver
         Benchmark b = benchmark
@@ -244,7 +246,7 @@ public class RunBenchmarks {
 
     @Test
     public void soundnessTest() throws Exception {
-        Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP).withOptions(options -> options.setMaxIterationsToRun(100 * 1000).setConstructAllTypes(true).setCheckDepthReport(0));
+        Benchmark benchmark = this.benchmark.withRunMethod(BOOTSTRAP).withOptions(options -> options.setMaxIterationsToRun(100 * 1000).setConstructAllTypes(true).setCheckDepthReport(0).setCompactOutput(true));
         if (
                 benchmark.dTSFile.contains("box2dweb.d.ts") ||// box2dweb uses bivariant function arguments, which is unsound, and causes this soundness-test to fail. (demonstrated in complexSanityCheck3)
                 benchmark.dTSFile.contains("leaflet.d.ts") || // same unsoundness in leaflet. (Demonstrated in complexSanityCheck9)
@@ -281,7 +283,8 @@ public class RunBenchmarks {
     public void testParsing() throws Exception {
         // A sanitycheck that JavaScript parsing+printing is idempotent.
         System.out.println(benchmark.jsFile);
-        TestParsing.testFile(benchmark.jsFile);
+        TestParsing.testFile(benchmark.jsFile, true);
+        TestParsing.testFile(benchmark.jsFile, false);
     }
 
     public static void printErrors(Benchmark bench, OutputParser.RunResult result) {

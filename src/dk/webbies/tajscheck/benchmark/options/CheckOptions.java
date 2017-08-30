@@ -217,5 +217,9 @@ public final class CheckOptions {
             return this;
         }
 
+        public Builder setCompactOutput(boolean compactOutput) {
+            this.dynamicOptions.compactOutput = compactOutput;
+            return this;
+        }
     }
 }

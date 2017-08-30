@@ -119,7 +119,7 @@ public class AutomaticExperiments {
             @Override
             public Void visit(BinaryExpression expression) {
                 if (expression.getOperator() == Operator.INSTANCEOF) {
-                    String right = AstToStringVisitor.toString(expression.getRhs());
+                    String right = AstToStringVisitor.toString(expression.getRhs(), true);
                     if (blacklist.stream().anyMatch(right::contains)) {
                         return null;
                     }

@@ -549,9 +549,6 @@ public class TypeChecker {
             if (info.nativeTypes.contains(t) && !(info.typeNames.get(t) != null && info.typeNames.get(t).startsWith("window."))) {
                 throw new RuntimeException(info.typeNames.get(t));
             }
-            if (info.nativeTypes.contains(t.getTarget()) && !(t.getTarget() instanceof TupleType) && !(info.typeNames.get(t) != null && info.typeNames.get(t).startsWith("window."))) {
-                throw new RuntimeException(info.typeNames.get(t));
-            }
             return t.getTarget().accept(this, arg.withContext(arg.typeContext.append(info.typesUtil.generateParameterMap(t))));
         }
 

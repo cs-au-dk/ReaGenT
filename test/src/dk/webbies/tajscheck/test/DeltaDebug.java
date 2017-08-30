@@ -221,7 +221,7 @@ public class DeltaDebug {
 
     private static boolean testParsing(Benchmark bench) throws Exception {
         try {
-            TestParsing.testFile(bench.jsFile);
+            TestParsing.testFile(bench.jsFile, bench.options.dynamicOptions.compactOutput);
             return false;
         } catch (AssertionError e) {
             return true;

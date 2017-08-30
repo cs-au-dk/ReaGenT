@@ -17,6 +17,7 @@ public class DynamicOptions {
     public final boolean firstMatchSignaturePolicy;
     public final boolean monitorUnknownPropertyAccesses;
     public final boolean useAssertTypeFunctions;
+    public final boolean compactOutput;
 
     public DynamicOptions(Builder builder) {
         this.checkDepthForUnions = builder.checkDepthForUnions;
@@ -29,6 +30,7 @@ public class DynamicOptions {
         this.firstMatchSignaturePolicy = builder.firstMatchSignaturePolicy;
         this.monitorUnknownPropertyAccesses = builder.monitorUnknownPropertyAccesses;
         this.useAssertTypeFunctions = builder.useAssertTypeFunctions;
+        this.compactOutput = builder.compactOutput;
     }
 
     public boolean makeSeparateReportAssertions() {
@@ -47,6 +49,7 @@ public class DynamicOptions {
         public boolean firstMatchSignaturePolicy = true; // If the first-match-signature policy of TypeScript should be enforced.
         public boolean monitorUnknownPropertyAccesses = false;
         public boolean useAssertTypeFunctions = true; // Whether or not to combine type-cheks into assertType functions, if not they are inlined (slightly bigger, easier to read).
+        public boolean compactOutput = false;
 
 
         public Builder(CheckOptions.Builder outerBuilder) {
