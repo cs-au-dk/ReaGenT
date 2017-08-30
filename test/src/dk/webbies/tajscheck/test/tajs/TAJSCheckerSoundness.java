@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.test.tajs;
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
+import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -45,6 +46,9 @@ public class TAJSCheckerSoundness {
                 )
                 .forEach(result::add);
 
+//        result.addAll(AnalyzeBenchmarks.getBenchmarks()); // TODO: Add these.
+//        TODO: "Zepto.js", "pathjs", "PDF.js", "box2dweb", "Foundation", "Materialize", "PhotoSwipe", "accounting.js", "highlight.js", "PleaseJS", "CodeMirror", "lunr.js"", "Jasmine", "reveal.js", "Leaflet", "Backbone.js", "async", "q", "Swiper"
+
         return result.stream()
                 .filter(bench -> !bench.name.equals("unit-exponentialComplexity"))
                 .filter(bench -> !createsIntersection.contains(bench.name))
@@ -59,7 +63,8 @@ public class TAJSCheckerSoundness {
     public void testSoundness() throws Exception {
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true)), 60);
         System.out.println(result);
-        expect(result).hasNoViolations();
+        expect(result)
+                .hasNoViolations(); // TODO: Add performedAllTests (some fail on that).
     }
 
     private static final List<String> createsIntersection = Arrays.asList(
