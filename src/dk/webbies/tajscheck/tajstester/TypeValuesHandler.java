@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TypeValuesHandler {
 
     private final Map<Type, String> typeNames;
-    private final GenericSolver.SolverInterface c;
     private BenchmarkInfo info;
     private final Map<TypeWithContext, Value> savedValues = new HashMap<>();
     private final SpecInstantiator instantiator;
@@ -25,7 +24,6 @@ public class TypeValuesHandler {
     TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, BenchmarkInfo info) {
         this.typeNames = typeNames;
         this.info = info;
-        this.c = c;
         this.instantiator = new SpecInstantiator(info.getSpec(), c, info);
     }
 
