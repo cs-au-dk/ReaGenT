@@ -94,6 +94,16 @@ test_static_soundness:
     paths:
     - builds/TSTAJS/TajsCheck/build/reports
 
+test_static_consistency:
+  stage: unit_tests
+  script:
+  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.TSTestConsistency"
+  - mv build/reports/tests build/reports/test_static_soundness
+  artifacts:
+    expire_in: 4 week
+    paths:
+    - builds/TSTAJS/TajsCheck/build/reports
+
 test_tajs:unit:
   stage: unit_tests
   script:
