@@ -44,7 +44,7 @@ public class CountUniques {
 
     private static String removeArguments(String path) {
         int index = 0;
-        while ((index = path.indexOf("(", index + 1)) != -1) {
+        while (((index = path.indexOf("(", index + 1)) != -1) && path.indexOf(")", index + 1) != -1) {
             try {
                 path = path.substring(0, index) + "()" + path.substring(path.indexOf(")", index + 1) + 1, path.length());
             } catch (StringIndexOutOfBoundsException e) {
@@ -281,7 +281,7 @@ public class CountUniques {
                 return null;
             }
             if (firstPath(arg.path).contains("(") || firstPath(arg.path).contains("<") || firstPath(arg.path).contains("[")) {
-                throw new RuntimeException();
+                return null;
             }
             return recurse(t.getDeclaredProperties().get(firstPath(arg.path)), arg.rest());
         }
