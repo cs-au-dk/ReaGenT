@@ -143,6 +143,7 @@ public class TajsTypeChecker {
                             return true;
                         case FUNCTION:
                         case SYMBOL:
+                        case BOOLEAN:
                             return false;
                         default:
                             throw new RuntimeException("Didn't consider: " + kind);
