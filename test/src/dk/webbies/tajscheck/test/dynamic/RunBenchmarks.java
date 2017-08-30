@@ -207,7 +207,7 @@ public class RunBenchmarks {
         }
     }
 
-    @Test // TODO: Zepto never terminates.
+    @Test
     public void runFullDriver() throws Exception {
         // Write the driver
         Benchmark b = benchmark
@@ -232,8 +232,7 @@ public class RunBenchmarks {
         assert !out.trim().isEmpty();
     }
 
-    @Test
-    @Ignore
+    @Test // TODO: No coverage on anything, including pathjs.
     public void coverage() throws Exception {
         if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts", "backbone.d.ts", "three.d.ts").anyMatch(benchmark.dTSFile::contains)) {
             return; // Too big, node runs out of memory generating the instrumented version.
@@ -291,9 +290,7 @@ public class RunBenchmarks {
         MultiMap<Pair<Type, String>, OutputParser.TypeError> groups = CountUniques.groupWarnings(result.typeErrors, bench);
 
         for (Map.Entry<Pair<Type, String>, Collection<OutputParser.TypeError>> entry : groups.asMap().entrySet()) {
-            Pair<Type, String> key = entry.getKey();
             Collection<OutputParser.TypeError> errors = entry.getValue();
-            assert !errors.isEmpty();
 
             if (errors.size() == 1) {
                 System.out.println(errors.iterator().next());
