@@ -51,6 +51,9 @@ public class Effects {
             case ERROR:
                 prototype = InitialStateBuilder.ERROR_PROTOTYPE;
                 break;
+            case REGEXP:
+                prototype = InitialStateBuilder.REGEXP_PROTOTYPE;
+                break;
             default:
                 throw new AnalysisException("No support for guessing prototype of " + label.getKind());
         }
