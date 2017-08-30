@@ -1,8 +1,5 @@
-TODO:
-TODO: - Få line-analysis2 til at virke.
-TODO: - Få kigget på resterende kald til assert når vi kører under TAJS.
-TODO: - Få testet TypeScript 2.3 features.
-TODO: - Support Symbol (see IterableIterator)
+TODO: Polymer tries to instantiate "Element constructor"
+TODO: Many benchmarks relies on Object.freeze.
 
 Tracifier benchs:
 http://bench.casadev.cs.au.dk/master/
@@ -19,7 +16,3 @@ To run TAJS on the generated program simply issue the following command
 
 Future work:
     - Symbolic execution could be used to get the under-approximation to be less of an under-approximation (speculation: It can help a lot to get methods, that otherwise crash, to return normally).
-
-If static analysis:
-    // Static analysis can actually give spurious warnings, with un-reachable unions.
-    // Find 5 small node-applications, that has TypeScript declarations, as analysis-targets.
