@@ -313,6 +313,7 @@ public class AutomaticExperiments {
             if (uniquePaths == null) {
                 return Arrays.asList(null, null, null, null, null, null, null);
             }
+            bench = bench.withOptions(options -> options.setCompactOutput(false));
 
             Map<String, CoverageResult> out = new HashMap<>();
 

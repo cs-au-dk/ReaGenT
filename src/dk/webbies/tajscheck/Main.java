@@ -178,6 +178,7 @@ public class Main {
     }
 
     public static Map<String, CoverageResult> genCoverage(Benchmark bench, String testFileName, boolean writeDriver) throws IOException {
+        bench = bench.withOptions(options -> options.setCompactOutput(false));
         if (writeDriver) {
             try {
                 writeFullDriver(bench.withOptions(options -> options.dynamicOptions.setCheckDepthReport(options.dynamicOptions.checkDepthUseValue).getOuterBuilder()));

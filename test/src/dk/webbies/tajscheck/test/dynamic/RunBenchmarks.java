@@ -232,7 +232,7 @@ public class RunBenchmarks {
         assert !out.trim().isEmpty();
     }
 
-    @Test // TODO: No coverage on anything, including pathjs.
+    @Test
     public void coverage() throws Exception {
         if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts", "backbone.d.ts", "three.d.ts").anyMatch(benchmark.dTSFile::contains)) {
             return; // Too big, node runs out of memory generating the instrumented version.
