@@ -65,6 +65,7 @@ public class TypesUtil {
                     interfaceType.setDeclaredConstructSignatures(signatures.stream().map(sig -> createConstructorSignature(t, sig)).collect(Collectors.toList()));
                     break;
                 }
+                baseTypes = baseTypes.stream().filter(base -> base instanceof ClassType || (base instanceof ReferenceType && ((ReferenceType) base).getTarget() instanceof ClassType)).collect(Collectors.toList());
                 if (baseTypes.isEmpty()) {
                     interfaceType.getDeclaredConstructSignatures().add(createConstructorSignature(t, emptySignature()));
                     break;
