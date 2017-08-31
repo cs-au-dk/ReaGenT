@@ -1565,7 +1565,7 @@ public class UnitTests {
         RunResult result = run("ambient");
 
         expect(result)
-                .forPath("\"foo\".add(1, 2)")
+                .forPath("\"foo\".add(1,2)")
                 .expected("3.0")
                 .got(STRING, "4");
     }

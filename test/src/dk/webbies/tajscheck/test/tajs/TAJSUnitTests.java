@@ -611,7 +611,7 @@ public class TAJSUnitTests {
     public void motivating2() throws Exception {
         expect(run("motivating2"))
                 .performedAllTests()
-                .forPath("sum(, ...string)")
+                .forPath("sum(,...string)")
                 .hasViolations();
     }
 
