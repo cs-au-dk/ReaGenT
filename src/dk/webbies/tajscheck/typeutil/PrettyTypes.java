@@ -25,12 +25,12 @@ public class PrettyTypes {
             builder.append(type(type));
 
             if (i != parameters.size() - 1) {
-                builder.append(", ");
+                builder.append(",");
             }
         }
 
         if (isRestArgs) {
-            builder.append(", ...").append(type(restArgsType));
+            builder.append(",...").append(type(restArgsType));
         }
 
         builder.append(")");

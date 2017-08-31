@@ -197,7 +197,7 @@ public class CountUniques {
 
             }
             if (firstPath(arg.path).contains("(") || firstPath(arg.path).contains("[") || firstPath(arg.path).contains("<")) {
-                throw new RuntimeException();
+                return null;
             }
             Type result = recurse(t.getStaticProperties().get(firstPath(arg.path)), arg.rest());
             if (result != null) {

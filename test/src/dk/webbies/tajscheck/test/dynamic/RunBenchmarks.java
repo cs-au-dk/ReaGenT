@@ -94,7 +94,7 @@ public class RunBenchmarks {
         );
 
         register(new Benchmark("D3.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", BROWSER, options.getBuilder()
-                .setCheckDepthReport(0)
+                .setDisableGenerics(true)
                 .build()));
 
         register(new Benchmark("MathJax", ParseDeclaration.Environment.ES5Core, "test/benchmarks/mathjax/mathjax.js", "test/benchmarks/mathjax/mathjax.d.ts", BROWSER, options));
