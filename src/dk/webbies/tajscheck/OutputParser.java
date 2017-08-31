@@ -113,6 +113,9 @@ public class OutputParser {
 
         for (int i = 0; i < split.size(); i++) {
             String line = split.get(i);
+            if (line.startsWith(" ") && line.trim().startsWith("at ")) {
+                continue; // Is likely a stacktrace thing.
+            }
 
             if (line.startsWith("Test called: ")) {
                 int testCalled = Integer.parseInt(Util.removePrefix(line, "Test called: ").trim());
@@ -140,7 +143,6 @@ public class OutputParser {
     }
 
     private static TypeError parseSingleResult(List<String> lines, Set<Integer> testsCalled, boolean collectCalledTests, String filterPath) {
-        lines = lines.stream().filter(line -> !(line.startsWith(" ") && line.trim().startsWith("at "))).collect(Collectors.toList()); // remove the lines that comes from some stack-trace (which contains lines).
         if (!(lines.size() == 6 || lines.size() == 5)) {
             System.out.println();
         }
