@@ -31,7 +31,7 @@ public class TAJSUnitTests {
     }
 
     private static TAJSUtil.TajsAnalysisResults run(Benchmark bench) throws Exception {
-        return TAJSUtil.runNoDriver(bench, Integer.MAX_VALUE); // TODO:
+        return TAJSUtil.runNoDriver(bench, 60);
     }
 
     static Benchmark benchFromFolder(String folderName) {
@@ -632,5 +632,29 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .forPath("module.consume(obj)")
                 .hasViolations();
+    }
+
+    @Test
+    public void any() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("any");
+
+        expect(result)
+                .performedAllTests();
+
+        expect(result)
+                .forPath("module.aliasing(any)")
+                .hasViolations();
+
+        expect(result)
+                .forPath("module.coerceToBool(any)")
+                .hasViolations();
+
+        expect(result)
+                .forPath("module.throws(any)")
+                .hasViolations();
+
+        /*expect(result)
+                .forPath("module.nestedProps(any)")
+                .hasNoViolations();*/ // TODO: It shouldn't always crash, no idea why it does that.
     }
 }

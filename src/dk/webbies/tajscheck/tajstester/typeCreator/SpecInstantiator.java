@@ -46,6 +46,8 @@ public class SpecInstantiator {
 
     private Map<TypeWithContext, ObjectLabel> labelCache;
 
+    private final Value ANY;
+
     public SpecInstantiator(SpecReader reader, Solver.SolverInterface c, BenchmarkInfo info) {
         this.global = reader.getGlobal();
         this.visitor = new InstantiatorVisitor();
@@ -58,6 +60,24 @@ public class SpecInstantiator {
         this.info = info;
 
         initializeLabelsCacheWithCanonicals();
+
+        this.ANY = createAny(info);
+    }
+
+    private Value createAny(BenchmarkInfo info) {
+        ObjectLabel label1 = ObjectLabel.mk(SpecObjects.getObjectAbstraction(Collections.singletonList("<any1>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.FUNCTION);
+        ObjectLabel label2 = ObjectLabel.mk(SpecObjects.getObjectAbstraction(Collections.singletonList("<any2>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.OBJECT);
+
+        effects.newObject(label1);
+        effects.multiplyObject(label1);
+        effects.newObject(label2);
+        effects.multiplyObject(label2);
+
+        Value any = Value.makeObject(label1, label2).joinUndef().joinNull().joinAnyBool().joinAnyStr().joinAnyNum();
+
+        effects.writeStringIndexer(label1, any);
+        effects.writeStringIndexer(label2, any);
+        return any;
     }
 
     /**
@@ -270,7 +290,7 @@ public class SpecInstantiator {
 
     public Value createValue(TypeWithContext type, String path) {
         MiscInfo misc = new MiscInfo(path, type.getTypeContext(), null);
-        return instantiate(type.getType(), misc, null); // TODO: TypeContext is currently ignored.
+        return instantiate(type.getType(), misc, null);
     }
 
     private ObjectLabel makeObjectLabel(Type t, MiscInfo miscInfo) {
@@ -287,6 +307,26 @@ public class SpecInstantiator {
         return label;
     }
 
+    private Value withNewObject(ObjectLabel label, Consumer<ObjectLabel> initializer) {
+        if (label == null) {
+            throw new NullPointerException();
+        }
+        if (label.getHostObject().getAPI() != HostAPIs.SPEC) {
+            initializer.accept(label);
+            return Value.makeObject(label);
+        }
+        // make the object a singleton to get the instantiation writes strongly
+        effects.newObject(label);
+        effects.multiplyObject(label);
+        initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
+
+        effects.writeStringIndexer(label, Value.makeUndef()); // TODO: Try to instead have an special (function) object-label, that summerizes "any". When called it returns itself (and throws exceptions). // TODO:
+        return Value.makeObject(label);
+    }
+
+    public Value getTheAny() {
+        return ANY;
+    }
 
     private class InstantiatorVisitor implements TypeVisitorWithArgument<Value, MiscInfo> {
 
@@ -362,8 +402,7 @@ public class SpecInstantiator {
         public Value visit(SimpleType t, MiscInfo info) {
             switch (t.getKind()) {
                 case Any:
-                    // FIXME warn about underapproximated value
-                    return Value.makeStr("THIS-SHOULD-BE-TOP-VALUE");
+                    return ANY;
                 case String:
                     return Value.makeAnyStr();
                 case Enum:
@@ -385,23 +424,6 @@ public class SpecInstantiator {
                 default:
                     throw new RuntimeException("Unhandled TypeKind: " + t);
             }
-        }
-
-        private Value withNewObject(ObjectLabel label, Consumer<ObjectLabel> initializer) {
-            if (label == null) {
-                throw new NullPointerException();
-            }
-            if (label.getHostObject().getAPI() != HostAPIs.SPEC) {
-                initializer.accept(label);
-                return Value.makeObject(label);
-            }
-            // make the object a singleton to get the instantiation writes strongly
-            effects.newObject(label);
-            effects.multiplyObject(label);
-            initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
-
-            effects.writeStringIndexer(label, Value.makeUndef()); // TODO: Try to instead have an special (function) object-label, that summerizes "any". When called it returns itself (and throws exceptions). // TODO:
-            return Value.makeObject(label);
         }
 
         @Override

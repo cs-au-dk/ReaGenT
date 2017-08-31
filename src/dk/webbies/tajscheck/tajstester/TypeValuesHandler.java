@@ -27,6 +27,10 @@ public class TypeValuesHandler {
         this.instantiator = new SpecInstantiator(info.getSpec(), c, info);
     }
 
+    public Value getTheAny() {
+        return instantiator.getTheAny();
+    }
+
     public Value findFeedbackValue(TypeWithContext t) {
         if (savedValues.containsKey(t)) {
             return savedValues.get(t);

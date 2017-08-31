@@ -71,6 +71,6 @@ public class TSTestConsistency {
             assertThat(testsCalledByTsTest, hasItem(testPerformed));
         });
 
-        // TODO: All the found errors from TSTest appear is TAHSChecker.
+        // TODO: All the found errors from TSTest appear is TAJSChecker.
     }
 }

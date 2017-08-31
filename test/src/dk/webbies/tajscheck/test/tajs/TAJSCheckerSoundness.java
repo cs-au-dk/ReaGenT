@@ -60,11 +60,19 @@ public class TAJSCheckerSoundness {
     }
 
     @Test
-    public void testSoundness() throws Exception {
+    public void hasNoViolations() throws Exception {
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true)), 60);
         System.out.println(result);
         expect(result)
-                .hasNoViolations(); // TODO: Add performedAllTests (some fail on that).
+                .hasNoViolations();
+    }
+
+    @Test
+    public void performsAllTests() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true)), 60);
+        System.out.println(result);
+        expect(result)
+                .performedAllTests();
     }
 
     private static final List<String> createsIntersection = Arrays.asList(

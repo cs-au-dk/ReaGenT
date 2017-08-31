@@ -269,7 +269,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     restArgsType = TypesUtil.extractRestArgsType(parameters.stream().map(Signature.Parameter::getType).collect(Collectors.toList()));
                     parameters = parameters.subList(0, parameters.size() - 1);
                     if (call.getNumberOfArgs() < parameters.size() && c.isScanning()) {
-                        allViolations.add(new TypeViolation("Expected a minimum of " + parameters.size() +" args, got " + call.getNumberOfArgs(), path));
+                        allViolations.add(new TypeViolation("Expected a minimum of " + parameters.size() + " args, got " + call.getNumberOfArgs(), path));
                     }
                 } else {
                     if (parameters.size() != call.getNumberOfArgs() && c.isScanning()) {
@@ -300,7 +300,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 List<Signature> matchingSignatures = signatures.stream().filter(sig -> sigMatches(sig, finalContext, call, c, path)).collect(Collectors.toList());
 
                 if (matchingSignatures.isEmpty() && c.isScanning()) {
-                    allViolations.add(new TypeViolation("None of the overloads matched how the callback was called" , path));
+                    allViolations.add(new TypeViolation("None of the overloads matched how the callback was called", path));
                 }
 
                 if (matchingSignatures.size() < signatures.size() && c.isScanning()) {
@@ -333,8 +333,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 assert matchingSignatures.stream().map(Signature::getResolvedReturnType).allMatch(Objects::nonNull);
                 return Value.join(matchingSignatures.stream().map(sig -> valueHandler.createValue(sig.getResolvedReturnType(), finalContext)).collect(Collectors.toList()));
             }
-
-
+        } else if (type instanceof SimpleType && ((SimpleType) type).getKind() == SimpleTypeKind.Any) {
+//            Exceptions.throwException(c.getState().clone(), valueHandler.getTheAny(), c, c.getNode());
+            return valueHandler.getTheAny();
         } else {
             throw new RuntimeException(type.getClass().getSimpleName());
         }
@@ -491,7 +492,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             //TODO: Filter this value ! ::  propertyValue = new TypeValuesFilter(propertyValue, propertyType)
             //Value function = receiver.getAllObjectLabels().stream().map(l -> UnknownValueResolver.getProperty(l, PKey.mk(test.getPropertyName()), c.getState(), false)).reduce(Value.makeNone(), (x,y) -> UnknownValueResolver.join(x, y, c.getState()));
             Value function = UnknownValueResolver.getRealValue(pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName()))), c.getState());
-            return functionTest(test, receiver, function, false);
+            Value constructedReceiver = typeValuesHandler.createValue(test.getObject(), test.getTypeContext());
+            return functionTest(test, constructedReceiver, function, false);
         }
 
         private Void functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
@@ -533,7 +535,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                     @Override
                     public Value getThis(State caller_state, State callee_state) {
-                        return receiver; // TODO: synthesize the receiver?
+                        return receiver;
                     }
 
                     @Override

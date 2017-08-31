@@ -174,7 +174,7 @@ public class DeltaDebug {
         Util.writeFile(filePath, file);
     }
 
-    public static void main(String[] args) throws IOException { // TODO: Run
+    public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
         Util.alwaysRecreate = false;
         Benchmark bench = RunBenchmarks.benchmarks.get("Sugar");
