@@ -655,6 +655,16 @@ public class TAJSUnitTests {
 
         /*expect(result)
                 .forPath("module.nestedProps(any)")
-                .hasNoViolations();*/ // TODO: It shouldn't always crash, no idea why it does that.
+                .hasNoViolations();*/ // TODO: It shouldn't always crash, no idea why it does that. TODO: After below is fixed.
+    }
+
+    @Test
+    @Ignore // when this works, any-type should come for free.
+    public void createRecursiveObject2() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("createRecursiveObject2");
+
+        expect(result)
+                .performedAllTests()
+                .hasViolations();
     }
 }
