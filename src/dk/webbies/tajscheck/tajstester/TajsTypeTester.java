@@ -489,11 +489,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         @Override
         public Void visit(MethodCallTest test) {
             final Value receiver = attemptGetValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
-            //TODO: Filter this value ! ::  propertyValue = new TypeValuesFilter(propertyValue, propertyType)
-            //Value function = receiver.getAllObjectLabels().stream().map(l -> UnknownValueResolver.getProperty(l, PKey.mk(test.getPropertyName()), c.getState(), false)).reduce(Value.makeNone(), (x,y) -> UnknownValueResolver.join(x, y, c.getState()));
             Value function = UnknownValueResolver.getRealValue(pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName()))), c.getState());
-            Value constructedReceiver = typeValuesHandler.createValue(test.getObject(), test.getTypeContext());
-            return functionTest(test, constructedReceiver, function, false);
+            Value constructedReceiver = typeValuesHandler.createValue(test.getObject(), test.getTypeContext()); // TODO: Using this causes things to crash, because when the analysis reads the value there are no properties on the object....
+            return functionTest(test, receiver, function, false);
         }
 
         private Void functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
