@@ -2,8 +2,10 @@ package dk.webbies.tajscheck.test.tajs;
 
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
 import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -60,7 +62,13 @@ public class TAJSCheckerSoundness {
     }
 
     @Test
-    public void hasNoViolations() throws Exception {
+    @Ignore
+    public void fillCache() throws Exception {
+        BenchmarkInfo info = BenchmarkInfo.create(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP));
+    }
+
+    @Test
+    public void hasNoViolations() throws Exception { // TODO: complexGenerics2
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true)), 60);
         System.out.println(result);
         expect(result)
