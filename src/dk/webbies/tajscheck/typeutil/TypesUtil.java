@@ -111,6 +111,19 @@ public class TypesUtil {
         return result;
     }
 
+    public Map<TypeParameterType, Type> baseTypeParameters(Type t) {
+        Map<TypeParameterType, Type> result = new HashMap<>();
+
+        getAllBaseTypes(t).stream().filter(ReferenceType.class::isInstance).map(ReferenceType.class::cast).map(this::generateParameterMap).forEach(map -> {
+            for (Map.Entry<TypeParameterType, Type> entry : map.entrySet()) {
+                assert !result.containsKey(entry.getKey());
+                result.put(entry.getKey(), entry.getValue());
+            }
+        });
+
+        return result;
+    }
+
     private final Map<ClassType, InterfaceType> classInstanceCache;
     public InterfaceType createClassInstanceType(ClassType type) {
         if (classInstanceCache.containsKey(type)) {
@@ -782,6 +795,9 @@ public class TypesUtil {
             }
         }
 
+
+        forAllSubTypes(type, typeContext.append(baseTypeParameters(type)), seen, callback);
+
         if (type instanceof InterfaceType) {
             List<Type> baseTypes = ((InterfaceType) type).getBaseTypes();
             baseTypes.forEach(baseType -> forAllSubTypes(baseType, typeContext, seen, callback));
@@ -793,11 +809,25 @@ public class TypesUtil {
         } else if (type instanceof GenericType) {
             forAllSubTypes(((GenericType) type).toInterface(), typeContext, seen, callback);
         } else if (type instanceof ClassType) {
-            forAllSubTypes(type, typeContext.withThisType(this.createClassInstanceType(((ClassType) type))), seen, callback);
+            ClassType classType = (ClassType) type;
+            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.classToInterface(classType);
+            TypeContext newContext = typeContext.withThisType(this.createClassInstanceType(classType));
+
+            forAllSubTypes(pair.getLeft(), newContext, seen, callback);
+            forAllSubTypes(type, newContext, seen, callback);
+
+            newContext = newContext.append(pair.getRight());
+
+            forAllSubTypes(pair.getLeft(), newContext, seen, callback);
+            forAllSubTypes(type, newContext, seen, callback);
         } else if (type instanceof ClassInstanceType) {
             ClassInstanceType instanceType = (ClassInstanceType) type;
 
             ClassType classType = (ClassType) instanceType.getClassType();
+
+            Map<TypeParameterType, Type> extraParams = info.typesUtil.classToInterface(classType).getRight();
+            forAllSubTypes(type, typeContext.append(extraParams), seen, callback);
+
             if (instanceType != classType.getInstance()) {
                 if (true) {
                     throw new RuntimeException("Is this ever called?");
@@ -819,7 +849,8 @@ public class TypesUtil {
 
             forAllSubTypes(this.createClassInstanceType(classType), typeContext, seen, callback);
             if (info.freeGenericsFinder.hasThisTypes(instanceType.getClassType())) {
-                forAllSubTypes(this.createClassInstanceType(classType), typeContext.withThisType(instanceType), seen, callback);
+                forAllSubTypes(type, typeContext.withThisType(instanceType), seen, callback);
+                forAllSubTypes(type, typeContext.withThisType(this.createClassInstanceType(classType)), seen, callback);
             }
 
             for (Type baseClass : classType.getBaseTypes()) {
