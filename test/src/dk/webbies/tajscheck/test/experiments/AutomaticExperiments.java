@@ -6,7 +6,6 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
-import dk.webbies.tajscheck.buildprogram.ProxyBuilder;
 import dk.webbies.tajscheck.paser.AST.BinaryExpression;
 import dk.webbies.tajscheck.paser.AST.BlockStatement;
 import dk.webbies.tajscheck.paser.AST.NodeTransverse;
@@ -172,30 +171,6 @@ public class AutomaticExperiments {
             }
         });
     }
-
-    private static Pair<List<String>, Experiment.ExperimentMultiRunner> measureUndeclaredAccess = new Pair<>(Arrays.asList("good", "bad", "uniqueBad", "fields"), (bench) -> {
-        bench = bench.withOptions(options -> options.setMonitorUnkownPropertyAccesses(true).setConstructClassInstances(true));
-        Main.writeFullDriver(bench);
-
-        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
-
-        List<String> errors = ProxyBuilder.filterErrors(result.errors);
-
-        if (errors.isEmpty()) {
-            return Arrays.asList("-", "-", "-", "-");
-        }
-
-        List<String> fields = ProxyBuilder.extractFields(ProxyBuilder.filterErrors(result.errors)).stream().filter(Util.not(Util::isDouble)).distinct().collect(Collectors.toList());
-
-        String lastError = errors.get(errors.size() - 1);
-
-        int bad = ProxyBuilder.getBadCount(lastError);
-        int good = ProxyBuilder.getGoodCount(lastError);
-
-
-        return Arrays.asList(Integer.toString(good), Integer.toString(bad), Integer.toString(fields.size()), String.join(", ", fields));
-    });
-
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> soundnessTest = new Pair<>("sound", (bench) -> {
         Benchmark.RUN_METHOD runMethod = bench.run_method;
@@ -413,8 +388,6 @@ public class AutomaticExperiments {
         Experiment experiment = new Experiment();
 
         experiment.addSingleExperiment(type);
-
-        experiment.addMultiExperiment(measureUndeclaredAccess);
 
         String result = experiment.calculate(THREADS).toCSV();
         System.out.println("\n\n\nResult: \n");

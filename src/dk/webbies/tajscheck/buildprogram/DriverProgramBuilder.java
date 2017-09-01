@@ -44,7 +44,6 @@ public class DriverProgramBuilder {
     private final List<Test> tests;
     private final BenchmarkInfo info;
     private final TypeChecker typeChecker;
-    private ValueTransformer transformer;
 
     private TypeCreator typeCreator;
 
@@ -58,8 +57,6 @@ public class DriverProgramBuilder {
     public Statement buildDriver(ExecutionRecording recording) throws IOException {
         List<Statement> program = new ArrayList<>();
         this.typeCreator = new TypeCreator(tests, info, typeChecker);
-
-        this.transformer = (info.options.dynamicOptions.monitorUnknownPropertyAccesses ? new ProxyBuilder(program, info).transformer() : ValueTransformer.identityTransformer);
 
         // var initialRandomness = Math.random()
         if (recording == null || recording.seed == null) {
@@ -371,8 +368,7 @@ public class DriverProgramBuilder {
                 return Collections.singletonList(throwStatement(newCall(identifier("Error"))));
             } else {
                 return callFunction(test, test.getObject(), test.getParameters(), test.isRestArgs(), (base, parameters) ->
-                        methodCall(identifier("base"), test.getPropertyName(), parameters.stream().map(
-                                pair -> transformer.transform(pair.getLeft(), pair.getRight())).collect(Collectors.toList()))
+                        methodCall(identifier("base"), test.getPropertyName(),  parameters.stream().map(Pair::getLeft).collect(Collectors.toList()))
                 );
             }
         }
