@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.testcreator;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.TypeWithContext;
+import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
@@ -238,7 +239,7 @@ public class TestCreator {
     private void findPositiveTypesInParameters(CreateTestVisitor visitor, Arg arg, List<Type> parameters) {
         for (int i = 0; i < parameters.size(); i++) {
             Type parameter = parameters.get(i);
-            findPositiveTypes(visitor, parameter, arg.append("[arg" + i + "]"));
+            findPositiveTypes(visitor, parameter, arg.append("[arg" + i + "]").withTopLevelFunctions());
         }
     }
 
@@ -789,6 +790,10 @@ public class TestCreator {
             visitor.negativeTypesSeen.add(new TypeWithContext(element.type, arg.typeContext));
 
             element.type.accept(findPositiveVisitor, arg);
+
+            if (info.bench.run_method == Benchmark.RUN_METHOD.BOOTSTRAP) {
+                visitor.recurse(element.type, arg);
+            }
         }
     }
 
