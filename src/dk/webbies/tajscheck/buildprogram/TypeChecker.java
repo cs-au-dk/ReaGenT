@@ -332,7 +332,6 @@ public class TypeChecker {
                     case "Console":
                         return Collections.singletonList(new SimpleTypeCheck(Check.equalTo(identifier("console")), "console"));
                     case "Date":
-                    case "Error":
                     case "ImageData":
                     case "WebGLBuffer":
                     case "WebGLContextEvent":
@@ -422,6 +421,8 @@ public class TypeChecker {
                     case "Performance":
                     case "SVGImageElement":
                     case "URLSearchParams":
+                    case "CustomEvent":
+                    case "HTMLLinkElement":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "WebGLRenderingContext":
                         return Collections.singletonList(new SimpleTypeCheck(Check.or(Check.instanceOf(identifier(name)), Check.equalTo(nullLiteral())), name)); // TODO: Headless chrome doesn't have WebGL context.
@@ -477,6 +478,7 @@ public class TypeChecker {
                     case "EventListenerOptions":
                     case "ImageBitmap":
                     case "ImageBitmapOptions":
+                    case "Error":
                         arg = arg.withDepth(1);
                         break; // Testing manually.
                     default:
