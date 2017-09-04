@@ -11,6 +11,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,6 +45,12 @@ public class TAJSUnitTests {
 
     static Benchmark benchFromFolder(String folderName, CheckOptions.Builder options, Benchmark.RUN_METHOD run_method) {
         return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", run_method, options.build());
+    }
+
+    static Benchmark benchFromFolderTSFile(String folderName, CheckOptions.Builder options, Benchmark.RUN_METHOD run_method) throws IOException {
+        String tsFile = "test/tajsUnit/" + folderName + "/implementation.ts";
+        String name = "tajsunit-" + folderName;
+        return Benchmark.fromTSFile(tsFile, name, ParseDeclaration.Environment.ES5Core, run_method, options.build());
     }
 
     private static CheckOptions.Builder options() {
@@ -666,5 +673,14 @@ public class TAJSUnitTests {
         expect(result)
                 .performedAllTests()
                 .hasViolations();
+    }
+
+    @Test
+    public void fromTSFile() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run(benchFromFolderTSFile("fromTSFile", options(), Benchmark.RUN_METHOD.BROWSER));
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
     }
 }

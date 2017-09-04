@@ -6,6 +6,7 @@ import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -139,6 +140,13 @@ public class Benchmark {
                 this.dependencies,
                 this.exportName
         );
+    }
+
+    public static Benchmark fromTSFile(String tsFile, String name, ParseDeclaration.Environment environment, RUN_METHOD run_method, CheckOptions options) throws IOException {
+        Util.runNodeScript(" ts-spec-reader/node_modules/typescript/lib/tsc.js " + tsFile, 60 * 1000);
+        Util.runNodeScript(" ts-spec-reader/node_modules/typescript/lib/tsc.js -d " + tsFile, 60 * 1000);
+        String baseFileName = Util.removeSuffix(tsFile, ".ts");
+        return new Benchmark(name, environment, baseFileName + ".js", baseFileName + ".d.ts", run_method, options);
     }
 
     public enum RUN_METHOD {
