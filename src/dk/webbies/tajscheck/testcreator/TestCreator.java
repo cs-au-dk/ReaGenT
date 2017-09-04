@@ -699,7 +699,7 @@ public class TestCreator {
                 arg = arg.withParameters(lookup.getTypeContext());
                 recurse(lookup.getType(), arg);
             } else if (t.getConstraint() != null) {
-                tests.add(new FilterTest(t, t.getConstraint(), arg.path, arg.getTypeContext(), Check.alwaysTrue()));
+//                tests.add(new FilterTest(t, t.getConstraint(), arg.path, arg.getTypeContext(), Check.alwaysTrue()));
                 recurse(t.getConstraint(), arg.append("[constraint]"));
             }
 
@@ -732,7 +732,7 @@ public class TestCreator {
 
             for (int i = 0; i < t.getElements().size(); i++) {
                 Type subType = t.getElements().get(i);
-                tests.add(new FilterTest(t, subType, arg.path, arg.getTypeContext(), Check.alwaysTrue()));
+//                tests.add(new FilterTest(t, subType, arg.path, arg.getTypeContext(), Check.alwaysTrue()));
                 recurse(subType, arg.append("[intersection" + i + "]"));
             }
 

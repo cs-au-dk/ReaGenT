@@ -15,8 +15,6 @@ public interface TestVisitor<T> {
 
     T visit(FunctionCallTest test);
 
-    T visit(FilterTest test);
-
     T visit(UnionTypeTest test);
 
     T visit(NumberIndexTest test);

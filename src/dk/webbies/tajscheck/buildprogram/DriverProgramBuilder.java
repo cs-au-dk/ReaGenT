@@ -475,17 +475,6 @@ public class DriverProgramBuilder {
         }
 
         @Override
-        public List<Statement> visit(FilterTest test) {
-            return Arrays.asList(
-                    variable("result", getTypeExpression(test.getType(), test.getTypeContext())),
-                    ifThen(
-                            CheckToExpression.generate(Check.not(test.getCheck()), identifier("result")),
-                            Return()
-                    )
-            );
-        }
-
-        @Override
         public List<Statement> visit(UnionTypeTest test) {
             // Looks trivial, but that is because everything complicated is handled by the method calling this visitor.
             return Collections.singletonList(

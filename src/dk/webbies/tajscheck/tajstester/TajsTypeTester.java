@@ -617,22 +617,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         @Override
-        public Void visit(FilterTest test) {
-            if (test.getCheck() instanceof ExpressionCheck) {
-                Expression check = ((ExpressionCheck) test.getCheck()).getGenerator().apply(new NumberLiteral(null, 123));
-                if (check instanceof BooleanLiteral && ((BooleanLiteral) check).getBooleanValue()) {
-                    // is just a function from a type to another type.
-                    TypeWithContext typeWithContext = new TypeWithContext(test.getType(), test.getTypeContext());
-                    Value baseValue = attemptGetValue(typeWithContext);
-                    attemptAddValue(baseValue, typeWithContext, test.getPath(), c);
-                    return null;
-
-                }
-            }
-            throw new RuntimeException();
-        }
-
-        @Override
         public Void visit(UnionTypeTest test) {
             Value value = attemptGetValue(test.getGetUnionType(), test.getTypeContext());
 
