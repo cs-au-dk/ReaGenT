@@ -322,8 +322,8 @@ public class TypesUtil {
                 inter.getDeclaredNumberIndexType() == null;
     }
 
-    public static List<Signature> splitOptionalSignatures(List<Signature> signatures) {
-        return signatures.stream().map(TypesUtil::makeSureOptionalArgumentsHaveUnionUndef).map(TypesUtil::splitOptionalSignature).reduce(new ArrayList<>(), Util::reduceList);
+    public List<Signature> splitOptionalSignatures(List<Signature> signatures) {
+        return signatures.stream().map(TypesUtil::makeSureOptionalArgumentsHaveUnionUndef).map(this::splitOptionalSignature).reduce(new ArrayList<>(), Util::reduceList);
     }
 
     private static Signature makeSureOptionalArgumentsHaveUnionUndef(Signature signature) {
@@ -352,7 +352,7 @@ public class TypesUtil {
         return signature;
     }
 
-    private static List<Signature> splitOptionalSignature(Signature signature) {
+    private List<Signature> splitOptionalSignature(Signature signature) {
         if (signature.getMinArgumentCount() == signature.getParameters().size()) {
             return Collections.singletonList(signature);
         }
@@ -385,9 +385,11 @@ public class TypesUtil {
         return result;
     }
 
-    private static Type removeUndef(UnionType union) {
+    private Type removeUndef(UnionType union) {
         ArrayList<Type> elements = new ArrayList<>(union.getElements());
+        String name = info.typeNames.get(union);
         union = new UnionType();
+        info.typeNames.put(union, name);
         union.setElements(elements);
 
         assert union.getElements().stream().anyMatch(sub -> sub instanceof SimpleType && ((SimpleType) sub).getKind() == SimpleTypeKind.Undefined);

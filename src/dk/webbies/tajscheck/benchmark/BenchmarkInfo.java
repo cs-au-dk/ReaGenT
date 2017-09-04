@@ -179,12 +179,12 @@ public class BenchmarkInfo {
             // Splitting optional arguments in signature
             if (type instanceof InterfaceType) {
                 InterfaceType inter = (InterfaceType) type;
-                inter.setDeclaredCallSignatures(TypesUtil.splitOptionalSignatures(inter.getDeclaredCallSignatures()));
-                inter.setDeclaredConstructSignatures(TypesUtil.splitOptionalSignatures(inter.getDeclaredConstructSignatures()));
+                inter.setDeclaredCallSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredCallSignatures()));
+                inter.setDeclaredConstructSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredConstructSignatures()));
             } else if (type instanceof GenericType) {
                 GenericType inter = (GenericType) type;
-                inter.setDeclaredCallSignatures(TypesUtil.splitOptionalSignatures(inter.getDeclaredCallSignatures()));
-                inter.setDeclaredConstructSignatures(TypesUtil.splitOptionalSignatures(inter.getDeclaredConstructSignatures()));
+                inter.setDeclaredCallSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredCallSignatures()));
+                inter.setDeclaredConstructSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredConstructSignatures()));
             }
 
             // splitting unions
