@@ -20,6 +20,8 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
 
     public static final String TEST_IDENTIFIER = "$_$test";
 
+    public static final String WIDEN_IDENTIFIER = "$_$widen";
+
     private BiMap<String, Test> contextTest = HashBiMap.create();
 
     private int testIds = 0;
@@ -91,6 +93,18 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
         Context newContext = Context.mk(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(),
                 testPerformed, from.getLocalContextAtEntry());
         contextTest.putIfAbsent(testId, test);
+        return newContext;
+    }
+
+    public Context makeWideningLocalTestContext(Context from) {
+        Map<String, Value> testPerformed = newMap();
+        if (from.getLocalContext() != null) {
+            testPerformed.putAll(from.getLocalContext());
+        }
+        testPerformed.put(TesterContextSensitivity.WIDEN_IDENTIFIER, Value.makeSpecialStrings(singleton("yes")));
+
+        Context newContext = Context.mk(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(),
+                testPerformed, from.getLocalContextAtEntry());
         return newContext;
     }
 

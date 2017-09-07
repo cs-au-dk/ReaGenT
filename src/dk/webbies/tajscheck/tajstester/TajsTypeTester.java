@@ -96,6 +96,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public List<TestCertificate> getAllCertificates() {return allCertificates;}
 
+    private static long totalPropagationTime = 0;
+
     public void triggerTypeTests(Solver.SolverInterface c) {
 
         if(allTestsBlock == null) {
@@ -141,21 +143,29 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         // we propagate states for each depending states
+        long start = System.currentTimeMillis();
+        int count = 0;
+        Context widenContext = testerContextSensitivity.makeWideningLocalTestContext(allTestsContext);
+
         for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
-            Test dependingTest = entry.getKey();
-            if (!performed.contains(dependingTest)) {
+            Test test = entry.getKey();
+            if (!performed.contains(test)) {
                 continue;
             }
-            for (Test on : entry.getValue()) {
-                if (!performed.contains(on)) {
-                    continue;
-                }
-                Context dependentContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, dependingTest);
-                Context onContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, on);
-                State source = c.getAnalysisLatticeElement().getState(allTestsBlock, onContext);
-                c.propagateToBasicBlock(source.clone(), allTestsBlock, dependentContext);
-            }
+            Context testContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, test);
+            State source = c.getAnalysisLatticeElement().getState(allTestsBlock, testContext);
+            c.propagateToBasicBlock(source, allTestsBlock, widenContext);
         }
+        State widenState = c.getAnalysisLatticeElement().getState(allTestsBlock, widenContext);
+        for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
+            Context testContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, entry.getKey());
+            c.propagateToBasicBlock(widenState, allTestsBlock, testContext);
+            if(count++ % 100 == 0)
+                System.out.println(count + ": " + entry.getKey());
+        }
+        totalPropagationTime += System.currentTimeMillis() - start;
+
+        System.out.println("Elapsed: " + totalPropagationTime/1000.0 + " s");
 
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
 
