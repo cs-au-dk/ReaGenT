@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.test.tajs;
 
 import dk.brics.tajs.analysis.Analysis;
+import dk.brics.tajs.flowgraph.FlowGraph;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
 import dk.brics.tajs.options.Options;
@@ -14,6 +15,7 @@ import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
+import dk.webbies.tajscheck.util.TajsMisc;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
@@ -32,8 +34,8 @@ public class TAJSUtil {
 
         OptionValues additionalOpts = new OptionValues();
         CmdLineParser parser = new CmdLineParser(additionalOpts);
-        TesterContextSensitivity contextStrategy = new TesterContextSensitivity();
-        TajsTypeTester typeTester = new TajsTypeTester(tests, info, contextStrategy);
+        OptionValues.ContextStrategyConstructor contextStrategy = (FlowGraph fg) -> new TesterContextSensitivity(fg.getSyntacticInformation());
+        TajsTypeTester typeTester = new TajsTypeTester(tests, info);
 
         if (info.bench.run_method == Benchmark.RUN_METHOD.BOOTSTRAP) {
             try {
@@ -55,41 +57,33 @@ public class TAJSUtil {
         additionalOpts.enablePolyfillMDN();
         additionalOpts.enablePolyfillTypedArrays();
         additionalOpts.enablePolyfillES6Collections();
-        additionalOpts.enablePolyfillES6Promise();
+        additionalOpts.enablePolyfillES6Promises();
         additionalOpts.enableConsoleModel();
         additionalOpts.enableNoHybridCollections();
-        additionalOpts.enableAbortGracefullyOnAssertions();
-        additionalOpts.enableUseStrict();
-        additionalOpts.enableEs6MiscPolyfill();
         additionalOpts.enableIncludeDom();
 
-        additionalOpts.enableTypeChecks(typeTester);
-        additionalOpts.setContextSensitivityStrategy(contextStrategy);
+        additionalOpts.setTypeTestRunner(typeTester);
+        additionalOpts.setCustomContextSensitivityStrategy(contextStrategy);
+
+        additionalOpts.getSoundnessTesterOptions().setTest(false);
 
 
         additionalOpts.enableUnevalizer();
 
-        if (info.bench.options.useTracified) {
-            additionalOpts.setTracifierContextSensitivity(true);
-            additionalOpts.setTracifierMessagePriorities(true);
-        }
-
-
-        Options.set(additionalOpts);
         List<IAnalysisMonitoring> optMonitors = new LinkedList<>();
 
         if (secondsTimeout > 0) { // Timeout
-            AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, true);
+            AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, -1, true);
             optMonitors.add(timeLimiter);
         }
 
         IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(optMonitors);
         initLogging();
 
-        Analysis a = dk.brics.tajs.Main.init(new String[0], monitoring, null);
+        Analysis a = dk.brics.tajs.Main.init(additionalOpts, monitoring, null);
         try {
             dk.brics.tajs.Main.run(a);
-            MiscTajsUtils.captureSystemOutput();
+            TajsMisc.captureSystemOutput();
         } catch (AnalysisLimitationException.AnalysisTimeException e) {
             throw new TimeoutException(e.toString());
         }

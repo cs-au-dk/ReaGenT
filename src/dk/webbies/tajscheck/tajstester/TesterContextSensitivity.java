@@ -5,7 +5,10 @@ import com.google.common.collect.HashBiMap;
 import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.FunctionCalls;
 import dk.brics.tajs.analysis.Solver;
-import dk.brics.tajs.analysis.TracifierBasicContextSensitivity;
+import dk.brics.tajs.analysis.StaticDeterminacyContextSensitivityStrategy;
+import dk.brics.tajs.flowgraph.AbstractNode;
+import dk.brics.tajs.flowgraph.jsnodes.BeginLoopNode;
+import dk.brics.tajs.flowgraph.syntaticinfo.SyntacticQueries;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
 import dk.brics.tajs.solver.GenericSolver;
@@ -16,7 +19,7 @@ import java.util.Map;
 import static dk.brics.tajs.util.Collections.newMap;
 import static dk.brics.tajs.util.Collections.singleton;
 
-public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
+public class TesterContextSensitivity extends StaticDeterminacyContextSensitivityStrategy {
 
     public static final String TEST_IDENTIFIER = "$_$test";
 
@@ -26,8 +29,11 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
 
     private int testIds = 0;
 
-    private final PKey.StringPKey testSpecialLocation = PKey.StringPKey.mk(TEST_IDENTIFIER);
+    private final String testSpecialLocation = TEST_IDENTIFIER;
 
+    public TesterContextSensitivity(SyntacticQueries syntacticInformation) {
+        super(syntacticInformation);
+    }
 
 
     @Override
@@ -36,10 +42,8 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
     }
 
     private Context tagTestContext(Context sourceContext, Context destinationContext) {
-        if ((sourceContext.getLocalContext() != null && sourceContext.getLocalContext().containsKey(TEST_IDENTIFIER))
-                || (sourceContext.getFunArgs() != null && sourceContext.getFunArgs().getSelectedClosureVariables() != null && sourceContext.getFunArgs().getSelectedClosureVariables().containsKey(PKey.StringPKey.mk(TEST_IDENTIFIER)))) {
-
-            Value t1 = sourceContext.getLocalContext() == null ? null : sourceContext.getLocalContext().getOrDefault(TEST_IDENTIFIER, null);
+        if (isLocalTestContext(sourceContext) || isFunctionTestContext(sourceContext)) {
+            Value t1 = sourceContext.getLocalContext() == null ? null : sourceContext.getLocalContext().getQualifiers().getOrDefault(TestQualifier.instance, null);
             Value t2 = sourceContext.getFunArgs() == null ? null : sourceContext.getFunArgs().getSelectedClosureVariables().getOrDefault(testSpecialLocation, null);
 
             // if both locations contains test information they must be equal
@@ -48,32 +52,30 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
             Value picked = t1 == null ? t2 : t1;
 
             // test context is not present or equal to the one we want to insert
-            assert (destinationContext.getLocalContext() == null || !destinationContext.getLocalContext().containsKey(TEST_IDENTIFIER) || destinationContext.getLocalContext().get(TEST_IDENTIFIER).equals(picked));
+            assert (destinationContext.getLocalContext() == null || !destinationContext.getLocalContext().getQualifiers().containsKey(TestQualifier.instance) || destinationContext.getLocalContext().getQualifiers().get(TestQualifier.instance).equals(picked));
             assert (destinationContext.getFunArgs() == null || destinationContext.getFunArgs().getSelectedClosureVariables() == null || !destinationContext.getFunArgs().getSelectedClosureVariables().containsKey(testSpecialLocation) || destinationContext.getFunArgs().getSelectedClosureVariables().get(testSpecialLocation).equals(picked));
 
             ContextArguments cargs = tagContextArguments(sourceContext.getFunArgs(), destinationContext.getFunArgs(), picked);
 
-            Context modified = Context.mk(destinationContext.getThisVal(), cargs, destinationContext.getSpecialRegisters(), destinationContext.getLocalContext(), destinationContext.getLocalContextAtEntry());
-            return modified;
+            return Context.make(destinationContext.getThisVal(), cargs, destinationContext.getSpecialRegisters(), destinationContext.getLocalContext(), destinationContext.getLocalContextAtEntry());
         }
         return destinationContext;
     }
 
     private ContextArguments tagContextArguments(ContextArguments sourceArgs, ContextArguments args, Value tag) {
-        Map<PKey.StringPKey, Value> newCVars = args == null || args.getSelectedClosureVariables() == null ? newMap() : args.getSelectedClosureVariables();
+        Map<String, Value> newCVars = args == null || args.getSelectedClosureVariables() == null ? newMap() : args.getSelectedClosureVariables();
         newCVars.putIfAbsent(testSpecialLocation, tag);
-        ContextArguments cargs = sourceArgs == null ?
+        return sourceArgs == null ?
                 new ContextArguments(null, null, newCVars)
                 : sourceArgs.copyWith(null, newCVars, null, null);
-        return cargs;
     }
 
     @Override
-    protected HeapContext makeHeapContext(ContextArguments funargs, Solver.SolverInterface c) {
-        HeapContext hc = super.makeHeapContext(funargs, c);
+    public HeapContext makeHeapContext(AbstractNode location, ContextArguments arguments, Solver.SolverInterface c) {
+        HeapContext hc = super.makeHeapContext(location, arguments, c);
         if(isFunctionTestContext(c.getState().getContext())) {
             String tag = getTag(c.getState().getContext());
-            return hc.copyWith(tagContextArguments(funargs, hc.getFunctionArguments(), Value.makeSpecialStrings(singleton(tag))), null);
+            return hc.copyWith(tagContextArguments(arguments, hc.getFunctionArguments(), Value.makeSpecialStrings(singleton(tag))), null);
         }
         return hc;
     }
@@ -84,49 +86,48 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
         }
         String testId = contextTest.inverse().get(test);
 
-        Map<String, Value> testPerformed = newMap();
+        Map<LocalContext.Qualifier, Value> testPerformed = newMap();
         if (from.getLocalContext() != null) {
-            testPerformed.putAll(from.getLocalContext());
+            testPerformed.putAll(from.getLocalContext().getQualifiers());
         }
-        testPerformed.put(TesterContextSensitivity.TEST_IDENTIFIER, Value.makeSpecialStrings(singleton(testId)));
+        testPerformed.put(TestQualifier.instance, Value.makeSpecialStrings(singleton(testId)));
 
-        Context newContext = Context.mk(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(),
-                testPerformed, from.getLocalContextAtEntry());
+        Context newContext = Context.make(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(), LocalContext.make(testPerformed), from.getLocalContextAtEntry());
         contextTest.putIfAbsent(testId, test);
         return newContext;
     }
 
     public Context makeWideningLocalTestContext(Context from) {
-        Map<String, Value> testPerformed = newMap();
-        if (from.getLocalContext() != null) {
-            testPerformed.putAll(from.getLocalContext());
-        }
-        testPerformed.put(TesterContextSensitivity.WIDEN_IDENTIFIER, Value.makeSpecialStrings(singleton("yes")));
 
-        Context newContext = Context.mk(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(),
-                testPerformed, from.getLocalContextAtEntry());
+        Map<LocalContext.Qualifier, Value> testPerformed = newMap();
+        if (from.getLocalContext() != null) {
+            testPerformed.putAll(from.getLocalContext().getQualifiers());
+        }
+        testPerformed.put(WidenQualifier.instance, Value.makeSpecialStrings(singleton("yes")));
+
+        Context newContext = Context.make(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(), LocalContext.make(testPerformed), from.getLocalContextAtEntry());
         return newContext;
     }
 
     public boolean isLocalTestContext(Context c) {
         return c.getLocalContext() != null
-                && c.getLocalContext().keySet().contains(TEST_IDENTIFIER);
+                && c.getLocalContext().getQualifiers().containsKey(TestQualifier.instance);
     }
 
     public boolean isFunctionTestContext(Context c) {
         return c.getFunArgs() != null
                 && c.getFunArgs().getSelectedClosureVariables() != null
-                && c.getFunArgs().getSelectedClosureVariables().containsKey(PKey.StringPKey.mk(TEST_IDENTIFIER));
+                && c.getFunArgs().getSelectedClosureVariables().containsKey(TEST_IDENTIFIER);
     }
 
     public boolean isTestContext(Context c) { return isFunctionTestContext(c) || isLocalTestContext(c); }
 
     public String getTag(Context c) {
         if(isLocalTestContext(c)) {
-            return c.getLocalContext().get(TEST_IDENTIFIER).getSpecialStrings().iterator().next();
+            return c.getLocalContext().getQualifiers().get(TestQualifier.instance).getSpecialStrings().iterator().next();
         }
         else if(isFunctionTestContext(c)) {
-            return c.getFunArgs().getSelectedClosureVariables().get(PKey.StringPKey.mk(TEST_IDENTIFIER)).getSpecialStrings().iterator().next();
+            return c.getFunArgs().getSelectedClosureVariables().get(TEST_IDENTIFIER).getSpecialStrings().iterator().next();
         }
 
         throw new RuntimeException("Unable to get a test from context " + c);
@@ -134,6 +135,38 @@ public class TesterContextSensitivity extends TracifierBasicContextSensitivity {
 
     public Test getTest(Context c) {
         return contextTest.get(getTag(c));
+    }
+
+    /**
+     * Qualifier for tests.
+     */
+    public static class TestQualifier implements LocalContext.Qualifier {
+
+        private static TestQualifier instance = new TestQualifier();
+
+        private TestQualifier() {
+        }
+
+        @Override
+        public String toString() {
+            return "test-local-context";
+        }
+    }
+
+    /**
+     * Qualifier for widened tests.
+     */
+    public static class WidenQualifier implements LocalContext.Qualifier {
+
+        private static WidenQualifier instance = new WidenQualifier();
+
+        private WidenQualifier() {
+        }
+
+        @Override
+        public String toString() {
+            return "test-local-context";
+        }
     }
 
 }

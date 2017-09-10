@@ -65,8 +65,8 @@ public class SpecInstantiator {
     }
 
     private Value createAny(BenchmarkInfo info) {
-        ObjectLabel label1 = ObjectLabel.mk(SpecObjects.getObjectAbstraction(Collections.singletonList("<any1>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.FUNCTION);
-        ObjectLabel label2 = ObjectLabel.mk(SpecObjects.getObjectAbstraction(Collections.singletonList("<any2>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.OBJECT);
+        ObjectLabel label1 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any1>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.FUNCTION);
+        ObjectLabel label2 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any2>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.OBJECT);
 
         effects.newObject(label1);
         effects.multiplyObject(label1);
@@ -301,7 +301,7 @@ public class SpecInstantiator {
         ObjectLabel.Kind kind = getObjectLabelKind(t);
         ObjectLabel label = null;
         if (kind != null) {
-            label = ObjectLabel.mk(SpecObjects.getObjectAbstraction(miscInfo.path, key), kind);
+            label = ObjectLabel.make(SpecObjects.getObjectAbstraction(miscInfo.path, key), kind);
         }
         labelCache.put(key, label);
         return label;
@@ -420,7 +420,7 @@ public class SpecInstantiator {
                 case Symbol:
                     System.err.println("Symbols should be inprecise, they are not."); // TODO:
                     SpecObjects hostObject = SpecObjects.getObjectAbstraction(info.path, new TypeWithContext(t, info.context));
-                    return Value.makeObject(ObjectLabel.mk(hostObject, ObjectLabel.Kind.SYMBOL));
+                    return Value.makeObject(ObjectLabel.make(hostObject, ObjectLabel.Kind.SYMBOL));
                 default:
                     throw new RuntimeException("Unhandled TypeKind: " + t);
             }
