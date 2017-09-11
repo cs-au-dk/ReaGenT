@@ -683,4 +683,22 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations();
     }
+
+    @Test
+    @Ignore // TODO: Fails because the keys of constructed objects aren't iterated when doing a for-in loop.
+    public void copiesFunctions() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run(benchFromFolderTSFile("copiesFunctions", options(), Benchmark.RUN_METHOD.BROWSER));
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
+    public void readProperty() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("readProperty");
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 }
