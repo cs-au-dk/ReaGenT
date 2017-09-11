@@ -48,8 +48,8 @@ public class SpecInstantiator {
 
     private final Value ANY;
 
-    public SpecInstantiator(SpecReader reader, Solver.SolverInterface c, BenchmarkInfo info) {
-        this.global = reader.getGlobal();
+    public SpecInstantiator(Solver.SolverInterface c, BenchmarkInfo info) {
+        this.global = info.getSpec().getGlobal();
         this.visitor = new InstantiatorVisitor();
         this.objectLabelKindDecider = new ObjectLabelKindDecider();
         this.canonicalHostObjectLabelPaths = new CanonicalHostObjectLabelPaths(c.getState().getStore().keySet()); // TODO: See what is inside this thing.
@@ -266,6 +266,12 @@ public class SpecInstantiator {
         if (step != null) {
             info = info.apendPath(step);
         }
+
+        if (type instanceof UnionType) {
+            MiscInfo finalInfo = info;
+            return Value.join(Util.withIndex(((UnionType) type).getElements()).map(subType -> instantiate(subType.getLeft(), finalInfo, "[union" + subType.getRight() + "]")).collect(Collectors.toList()));
+        }
+
         TypeWithContext key = new TypeWithContext(type, info.context);
         if (!valueCache.containsKey(key)) {
             Value value;
@@ -318,6 +324,7 @@ public class SpecInstantiator {
         // make the object a singleton to get the instantiation writes strongly
         effects.newObject(label);
         effects.multiplyObject(label);
+//        label = label.makeSummary(); // TODO: dangling pointer...
         initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
 
         effects.writeStringIndexer(label, Value.makeUndef()); // TODO: Try to instead have an special (function) object-label, that summerizes "any". When called it returns itself (and throws exceptions). // TODO:
@@ -632,19 +639,7 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(UnionType t) {
-            // TODO: Handle union-types on a higher-level. Defer getting the object-label until later! Test with soundnessTest: pathjs
-            return t.getElements().stream().map(sub -> sub.accept(this)).reduce(null, (a, b) -> {
-                if (a == null || b == null) {
-                    return a != null ? a : b;
-                }
-                if (a == ObjectLabel.Kind.OBJECT || b == ObjectLabel.Kind.OBJECT) {
-                    return a != ObjectLabel.Kind.OBJECT ? a : b;
-                }
-                if (a == b) {
-                    return a;
-                }
-                throw new RuntimeException("Dont know what to do about " + a + " and " + b);
-            });
+            throw new RuntimeException("No unions should appear here!");
         }
 
         @Override

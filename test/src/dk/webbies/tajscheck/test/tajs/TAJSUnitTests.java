@@ -2,9 +2,11 @@ package dk.webbies.tajscheck.test.tajs;
 
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.TypeViolation;
+import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import org.hamcrest.MatcherAssert;
@@ -677,7 +679,7 @@ public class TAJSUnitTests {
 
     @Test
     public void fromTSFile() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run(benchFromFolderTSFile("fromTSFile", options(), Benchmark.RUN_METHOD.BROWSER));
+        TAJSUtil.TajsAnalysisResults result = run(benchFromFolderTSFile("fromTSFile", options().staticOptions.setLimitSideEffects(true).getOuterBuilder(), Benchmark.RUN_METHOD.BROWSER));
 
         expect(result)
                 .performedAllTests()
@@ -701,4 +703,18 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations();
     }
+
+    @Test
+    public void createUnionsOfDateAndFunction() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("createUnionsOfDateAndFunction", options().setSplitUnions(false).staticOptions.setLimitSideEffects(true).getOuterBuilder());
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    // TODO: for now only limited side-effects work.
+    // TODO: union-type of different object labels.
+    // TODO: Deep checking test
+    // TODO: Side-effects test, should be possible if i keep track of labels.
 }
