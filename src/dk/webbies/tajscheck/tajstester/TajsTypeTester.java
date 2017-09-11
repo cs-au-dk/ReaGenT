@@ -142,10 +142,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         // we propagate states for each depending states
-        long start = System.currentTimeMillis();
-        int count = 0;
         Context widenContext = sensitivity.makeWideningLocalTestContext(allTestsContext);
 
+        // propagate to a widening state
         for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
             Test test = entry.getKey();
             if (!performed.contains(test)) {
@@ -153,18 +152,15 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
             Context testContext = sensitivity.makeLocalTestContext(allTestsContext, test);
             State source = c.getAnalysisLatticeElement().getState(allTestsBlock, testContext);
-            c.propagateToBasicBlock(source, allTestsBlock, widenContext);
+            c.propagateToBasicBlock(source.clone(), allTestsBlock, widenContext);
         }
+
+        // propagate from the widen state back to the nodes
         State widenState = c.getAnalysisLatticeElement().getState(allTestsBlock, widenContext);
         for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
             Context testContext = sensitivity.makeLocalTestContext(allTestsContext, entry.getKey());
             c.propagateToBasicBlock(widenState, allTestsBlock, testContext);
-            if(count++ % 100 == 0)
-                System.out.println(count + ": " + entry.getKey());
         }
-        totalPropagationTime += System.currentTimeMillis() - start;
-
-        System.out.println("Elapsed: " + totalPropagationTime/1000.0 + " s");
 
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
 

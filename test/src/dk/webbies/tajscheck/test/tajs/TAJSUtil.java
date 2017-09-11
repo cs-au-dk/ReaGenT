@@ -4,7 +4,6 @@ import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.flowgraph.FlowGraph;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
-import dk.brics.tajs.options.Options;
 import dk.brics.tajs.util.AnalysisLimitationException;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -64,6 +63,7 @@ public class TAJSUtil {
 
         additionalOpts.setTypeTestRunner(typeTester);
         additionalOpts.setCustomContextSensitivityStrategy(contextStrategy);
+        additionalOpts.enableTypeChecks();
 
         additionalOpts.getSoundnessTesterOptions().setTest(false);
 
