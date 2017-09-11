@@ -721,6 +721,15 @@ public class TAJSUnitTests {
         assertTrue(result.testNot.stream().map(dk.webbies.tajscheck.testcreator.test.Test::getPath).anyMatch("foo().foo"::equals));
     }
 
+    @Test
+    public void checkRecursiveObject() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("checkRecursiveObject", options().staticOptions.setLimitSideEffects(true).getOuterBuilder());
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
     // TODO: for now only limited side-effects work.
     // TODO: Side-effects test, should be possible if i keep track of labels.
 }
