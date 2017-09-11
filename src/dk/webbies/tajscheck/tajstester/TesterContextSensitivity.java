@@ -7,7 +7,10 @@ import dk.brics.tajs.analysis.FunctionCalls;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.StaticDeterminacyContextSensitivityStrategy;
 import dk.brics.tajs.flowgraph.AbstractNode;
+import dk.brics.tajs.flowgraph.Function;
+import dk.brics.tajs.flowgraph.jsnodes.BeginForInNode;
 import dk.brics.tajs.flowgraph.jsnodes.BeginLoopNode;
+import dk.brics.tajs.flowgraph.jsnodes.EndLoopNode;
 import dk.brics.tajs.flowgraph.syntaticinfo.SyntacticQueries;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
@@ -31,6 +34,31 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
 
     private final String testSpecialLocation = TEST_IDENTIFIER;
 
+    @Override
+    public Context makeForInEntryContext(Context currentContext, BeginForInNode n, Value v) {
+        return tagTestContext(currentContext, super.makeForInEntryContext(currentContext, n, v), false);
+    }
+
+    @Override
+    public Context makeNextLoopUnrollingContext(Context currentContext, BeginLoopNode node) {
+        return tagTestContext(currentContext, super.makeNextLoopUnrollingContext(currentContext, node), false);
+    }
+
+    @Override
+    public Context makeLoopExitContext(Context currentContext, EndLoopNode node) {
+        return tagTestContext(currentContext, super.makeLoopExitContext(currentContext, node), false);
+    }
+
+    @Override
+    public Context makeSplitExitContext(Context context, String id) {
+        return tagTestContext(context, super.makeSplitExitContext(context, id), false);
+    }
+
+    @Override
+    public Context makeSplitContext(Context context, String id, Value qualifier) {
+        return tagTestContext(context, super.makeSplitContext(context, id, qualifier), false);
+    }
+
     public TesterContextSensitivity(SyntacticQueries syntacticInformation) {
         super(syntacticInformation);
     }
@@ -38,10 +66,10 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
 
     @Override
     public Context makeFunctionEntryContext(State state, ObjectLabel function, FunctionCalls.CallInfo callInfo, Value this_objs, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
-        return tagTestContext(c.getState().getContext(), super.makeFunctionEntryContext(state, function, callInfo, this_objs, c));
+        return tagTestContext(state.getContext(), super.makeFunctionEntryContext(state, function, callInfo, this_objs, c), true);
     }
 
-    private Context tagTestContext(Context sourceContext, Context destinationContext) {
+    private Context tagTestContext(Context sourceContext, Context destinationContext, boolean overwrite) {
         if (isLocalTestContext(sourceContext) || isFunctionTestContext(sourceContext)) {
             Value t1 = sourceContext.getLocalContext() == null ? null : sourceContext.getLocalContext().getQualifiers().getOrDefault(TestQualifier.instance, null);
             Value t2 = sourceContext.getFunArgs() == null ? null : sourceContext.getFunArgs().getSelectedClosureVariables().getOrDefault(testSpecialLocation, null);
@@ -52,8 +80,16 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
             Value picked = t1 == null ? t2 : t1;
 
             // test context is not present or equal to the one we want to insert
-            assert (destinationContext.getLocalContext() == null || !destinationContext.getLocalContext().getQualifiers().containsKey(TestQualifier.instance) || destinationContext.getLocalContext().getQualifiers().get(TestQualifier.instance).equals(picked));
-            assert (destinationContext.getFunArgs() == null || destinationContext.getFunArgs().getSelectedClosureVariables() == null || !destinationContext.getFunArgs().getSelectedClosureVariables().containsKey(testSpecialLocation) || destinationContext.getFunArgs().getSelectedClosureVariables().get(testSpecialLocation).equals(picked));
+            boolean condition1 = destinationContext.getFunArgs() == null || destinationContext.getFunArgs().getSelectedClosureVariables() == null || !destinationContext.getFunArgs().getSelectedClosureVariables().containsKey(testSpecialLocation) || destinationContext.getFunArgs().getSelectedClosureVariables().get(testSpecialLocation).equals(picked);
+
+            /*
+             * there might be cases where we need to override.
+             * For example, determinacy inherit closure variables from the function heap context, since the function might have been allocated
+             * in a different context we might end-up here trying to tag a context that is already tagged as the function heap context
+             */
+            assert (overwrite || condition1);
+            boolean condition2 = destinationContext.getFunArgs() == null || destinationContext.getFunArgs().getSelectedClosureVariables() == null || !destinationContext.getFunArgs().getSelectedClosureVariables().containsKey(testSpecialLocation) || destinationContext.getFunArgs().getSelectedClosureVariables().get(testSpecialLocation).equals(picked);
+            assert (overwrite || condition2);
 
             ContextArguments cargs = tagContextArguments(sourceContext.getFunArgs(), destinationContext.getFunArgs(), picked);
 
@@ -165,7 +201,7 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
 
         @Override
         public String toString() {
-            return "test-local-context";
+            return "test-widen-context";
         }
     }
 
