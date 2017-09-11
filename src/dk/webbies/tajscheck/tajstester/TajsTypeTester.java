@@ -144,23 +144,41 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         // we propagate states for each depending states
         long start = System.currentTimeMillis();
         int count = 0;
-        Context widenContext = sensitivity.makeWideningLocalTestContext(allTestsContext);
+        if (!info.options.staticOptions.limitSideEffects) {
+            Context widenContext = sensitivity.makeWideningLocalTestContext(allTestsContext);
 
-        for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
-            Test test = entry.getKey();
-            if (!performed.contains(test)) {
-                continue;
+            for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
+                Test test = entry.getKey();
+                if (!performed.contains(test)) {
+                    continue;
+                }
+                Context testContext = sensitivity.makeLocalTestContext(allTestsContext, test);
+                State source = c.getAnalysisLatticeElement().getState(allTestsBlock, testContext);
+                c.propagateToBasicBlock(source, allTestsBlock, widenContext);
             }
-            Context testContext = sensitivity.makeLocalTestContext(allTestsContext, test);
-            State source = c.getAnalysisLatticeElement().getState(allTestsBlock, testContext);
-            c.propagateToBasicBlock(source, allTestsBlock, widenContext);
-        }
-        State widenState = c.getAnalysisLatticeElement().getState(allTestsBlock, widenContext);
-        for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
-            Context testContext = sensitivity.makeLocalTestContext(allTestsContext, entry.getKey());
-            c.propagateToBasicBlock(widenState, allTestsBlock, testContext);
-            if(count++ % 100 == 0)
-                System.out.println(count + ": " + entry.getKey());
+            State widenState = c.getAnalysisLatticeElement().getState(allTestsBlock, widenContext);
+            for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
+                Context testContext = sensitivity.makeLocalTestContext(allTestsContext, entry.getKey());
+                c.propagateToBasicBlock(widenState, allTestsBlock, testContext);
+                if(count++ % 100 == 0)
+                    System.out.println(count + ": " + entry.getKey());
+            }
+        } else {
+            for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
+                Test dependingTest = entry.getKey();
+                if (!performed.contains(dependingTest)) {
+                    continue;
+                }
+                for (Test on : entry.getValue()) {
+                    if (!performed.contains(on)) {
+                        continue;
+                    }
+                    Context dependentContext = sensitivity.makeLocalTestContext(allTestsContext, dependingTest);
+                    Context onContext = sensitivity.makeLocalTestContext(allTestsContext, on);
+                    State source = c.getAnalysisLatticeElement().getState(allTestsBlock, onContext);
+                    c.propagateToBasicBlock(source.clone(), allTestsBlock, dependentContext);
+                }
+            }
         }
         totalPropagationTime += System.currentTimeMillis() - start;
 
