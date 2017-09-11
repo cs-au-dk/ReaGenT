@@ -63,8 +63,8 @@ public interface Check {
         return new FieldCheck(subChecks, field, subType);
     }
 
-    static NumberIndexCheck numberIndex(Check subCheck) {
-        return new NumberIndexCheck(subCheck);
+    static NumberIndexCheck numberIndex(Check subCheck, TypeWithContext subType) {
+        return new NumberIndexCheck(subCheck, subType);
     }
 
     static StringIndexCheck stringIndex(Check subCheck) {

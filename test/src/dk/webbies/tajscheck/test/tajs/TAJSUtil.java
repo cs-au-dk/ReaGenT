@@ -53,6 +53,7 @@ public class TAJSUtil {
         additionalOpts.enableTest();
         additionalOpts.enableDeterminacy();
 
+//        additionalOpts.enableInspector();
         additionalOpts.enablePolyfillMDN();
         additionalOpts.enablePolyfillTypedArrays();
         additionalOpts.enablePolyfillES6Collections();

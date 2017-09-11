@@ -532,7 +532,7 @@ public class TypeChecker {
 
                     TypeCheck indexCheck = createIntersection(indexType.accept(this, subArg));
 
-                    result.add(new SimpleTypeCheck(Check.numberIndex(indexCheck.getCheck()), "(numberIndexer: " + indexCheck.getExpected() + ")"));
+                    result.add(new SimpleTypeCheck(Check.numberIndex(indexCheck.getCheck(), new TypeWithContext(indexType, arg.typeContext)), "(numberIndexer: " + indexCheck.getExpected() + ")"));
                 }
                 if (t.getDeclaredStringIndexType() != null) {
                     Type indexType = t.getDeclaredStringIndexType();
@@ -566,7 +566,7 @@ public class TypeChecker {
                 TypeCheck indexCheck = createIntersection(indexType.accept(this, arg));
 
                 result.add(
-                        new SimpleTypeCheck(Check.numberIndex(indexCheck.getCheck()), "(arrayIndex: " + indexCheck.getExpected() + ")")
+                        new SimpleTypeCheck(Check.numberIndex(indexCheck.getCheck(), new TypeWithContext(indexType, arg.typeContext)), "(arrayIndex: " + indexCheck.getExpected() + ")")
                 );
             }
 

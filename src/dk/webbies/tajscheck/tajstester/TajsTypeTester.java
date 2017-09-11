@@ -12,6 +12,7 @@ import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
 import dk.brics.tajs.solver.BlockAndContext;
 import dk.brics.tajs.solver.GenericSolver;
+import dk.brics.tajs.solver.ICallEdge;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -601,6 +602,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     @Override
                     public ExecutionContext getExecutionContext() {
                         throw new AnalysisException();
+                    }
+
+                    @Override
+                    public ICallEdge.Info toEdgeInfo() {
+                        return isConstructorCall ? ICallEdge.Info.makeImplicitConstructorCall() : ICallEdge.Info.makeImplicitCall();
                     }
 
                 };
