@@ -54,6 +54,9 @@ public class Effects {
             case REGEXP:
                 prototype = InitialStateBuilder.REGEXP_PROTOTYPE;
                 break;
+            case DATE:
+                prototype = InitialStateBuilder.DATE_PROTOTYPE;
+                break;
             default:
                 throw new AnalysisException("No support for guessing prototype of " + label.getKind());
         }
