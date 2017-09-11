@@ -3,15 +3,14 @@ package dk.webbies.tajscheck.paser;
 
 import com.google.javascript.jscomp.parsing.Config;
 import com.google.javascript.jscomp.parsing.Config.LanguageMode;
-import com.google.javascript.jscomp.parsing.ConfigExposer;
 import com.google.javascript.jscomp.parsing.ParserRunner;
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import com.google.javascript.jscomp.parsing.parser.Parser.Config.Mode;
 import com.google.javascript.jscomp.parsing.parser.SourceFile;
 import com.google.javascript.jscomp.parsing.parser.trees.ProgramTree;
+import com.google.javascript.jscomp.parsing.parser.util.ErrorReporter;
 import com.google.javascript.jscomp.parsing.parser.util.SourcePosition;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
-import com.google.javascript.rhino.ErrorReporter;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.*;
 
@@ -26,7 +25,6 @@ import java.util.stream.Collectors;
  */
 public class JavaScriptParser {
     private final Mode mode;
-    private final Config config;
     private final ParseDeclaration.Environment environment;
 
     /**
@@ -35,22 +33,18 @@ public class JavaScriptParser {
      */
     public JavaScriptParser(ParseDeclaration.Environment environment) {
         this.environment = environment;
-        LanguageMode m;
         switch (environment) {
             case ES5Core:
             case ES5DOM:
                 this.mode = Mode.ES5;
-                m = LanguageMode.ECMASCRIPT5;
                 break;
             case ES6Core:
             case ES6DOM:
                 this.mode = Mode.ES6;
-                m = LanguageMode.ECMASCRIPT6;
                 break;
             default:
                 throw new RuntimeException("Unexpected enum: " + environment);
         }
-        config = ConfigExposer.createConfig(new HashSet<>(), new HashSet<>(), m);
     }
 
     /**
@@ -63,22 +57,27 @@ public class JavaScriptParser {
      *                 new ErrorReporter() {
      */
     public ParseResult parse(String name, String contents) {
+
         final List<SyntaxMesssage> warnings = new ArrayList<>();
         final List<SyntaxMesssage> errors = new ArrayList<>();
-        ParserRunner.parse(new com.google.javascript.jscomp.SourceFile(name), contents, config, new ErrorReporter() {
+
+        ErrorReporter errorReporter = new ErrorReporter() {
             @Override
-            public void warning(String message, String name2, int lineNumber, int columnNumber) {
-                warnings.add(new SyntaxMesssage(message, new SourceLocation(lineNumber, columnNumber + 1, name2)));
+            protected void reportError(SourcePosition sourcePosition, String message) {
+                errors.add(new SyntaxMesssage(message, new SourceLocation(sourcePosition.line, sourcePosition.column + 1, name)));
             }
 
             @Override
-            public void error(String message, String name2, int lineNumber, int columnNumber) {
-                errors.add(new SyntaxMesssage(message, new SourceLocation(lineNumber, columnNumber + 1, name2)));
+            protected void reportWarning(SourcePosition sourcePosition, String message) {
+                warnings.add(new SyntaxMesssage(message, new SourceLocation(sourcePosition.line, sourcePosition.column + 1, name)));
             }
-        });
+        };
+
         ProgramTree programAST = null;
-        if (errors.isEmpty()) {
-            programAST = new Parser(new Parser.Config(mode), new MutedErrorReporter(), new SourceFile(name, contents)).parseProgram();
+        try {
+            programAST = new Parser(new Parser.Config(mode), errorReporter, new SourceFile(name, contents)).parseProgram();
+        } catch (Exception e) {
+            errors.add(new SyntaxMesssage(String.format("%s: %s", e.getClass(), e.getMessage()), new SourceLocation(0, 0, name)));
         }
         return new ParseResult(programAST, errors, warnings, environment);
     }

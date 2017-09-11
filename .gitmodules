@@ -2,7 +2,6 @@
 	path = ts-spec-reader
 	branch = v2
 	url = https://github.com/cs-au-dk/ts-spec-reader.git
-[submodule "TAJS-meta"]
-	path = TAJS-meta
-	branch = tajs-type-checker
-	url = ../../JSRACES/TAJS-meta.git
+[submodule "tajs"]
+	path = tajs
+	url = git@github.com:cs-au-dk/TAJS-private.git

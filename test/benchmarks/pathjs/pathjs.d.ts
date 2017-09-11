@@ -19,10 +19,10 @@ interface IPathRoute{
 }
 
 interface IPathRoutes{
-	current: IPathRoute,
-    root: IPathRoute,
-	rescue: Function,
-	previous: IPathRoute,
+	current?: IPathRoute,
+    root?: IPathRoute,
+	rescue?: Function,
+	previous?: IPathRoute,
 	defined: {}
 }
 

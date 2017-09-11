@@ -1,15 +1,12 @@
 rootProject.name = "tajscheck"
 include "jalangilogger",
- "ts-spec-reader",
- "tajs",
- "TAJS-meta",
- "components:meta-core",
- "components:simple-monitors"
-
+    "ts-spec-reader",
+    "tajs",
+    "jalangilogger",
+    "inspector"
  
 
 // Make TAJS and META use the right projects folders
-project(':jalangilogger').projectDir = new File('./TAJS-meta/jalangilogger')
-project(':tajs').projectDir = new File('./TAJS-meta/tajs')
-project(':components:meta-core').projectDir = new File('./TAJS-meta/components/meta-core')
-project(':components:simple-monitors').projectDir = new File('./TAJS-meta/components/simple-monitors')
+project(':jalangilogger').projectDir = new File('./tajs/extras/jalangilogger')
+project(':inspector').projectDir = new File('./tajs/extras/inspector')
+project(':tajs').projectDir = new File('./tajs')

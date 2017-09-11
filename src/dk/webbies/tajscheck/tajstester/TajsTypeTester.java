@@ -44,8 +44,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private static final boolean DEBUG_VALUES = false;
 
-    private final TesterContextSensitivity testerContextSensitivity;
-
     private final List<Test> tests;
 
     private final BenchmarkInfo info;
@@ -68,10 +66,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private Set<Test> retractedTests = newSet();
 
-    public TajsTypeTester(List<Test> tests, BenchmarkInfo info, TesterContextSensitivity testerContextSensitivity) {
+    private TesterContextSensitivity sensitivity;
+
+    public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
         this.tests = tests;
         this.info = info;
-        this.testerContextSensitivity = testerContextSensitivity;
         this.depends = new ArrayListMultiMap<>();
         for (Test dependsTest : tests) {
             for (Test onTest : tests) {
@@ -96,13 +95,15 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public List<TestCertificate> getAllCertificates() {return allCertificates;}
 
+    private static long totalPropagationTime = 0;
+
     public void triggerTypeTests(Solver.SolverInterface c) {
 
         if(allTestsBlock == null) {
             init(c);
         }
 
-        if(testerContextSensitivity.isLocalTestContext(c.getState().getContext())) {
+        if(sensitivity.isLocalTestContext(c.getState().getContext())) {
             if(!c.isScanning()) {
                 if(DEBUG_VALUES) System.out.println("New flow for " + c.getState().getBasicBlock().getIndex() + ", " + c.getState().getContext());
                 // Then we can re-run the tests to see if more can be performed
@@ -116,7 +117,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         performed.clear();
         for (Test test : tests) {
             // Generating one local context per test
-            Context newc = testerContextSensitivity.makeLocalTestContext(allTestsContext, test);
+            Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
@@ -141,21 +142,29 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         // we propagate states for each depending states
+        long start = System.currentTimeMillis();
+        int count = 0;
+        Context widenContext = sensitivity.makeWideningLocalTestContext(allTestsContext);
+
         for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
-            Test dependingTest = entry.getKey();
-            if (!performed.contains(dependingTest)) {
+            Test test = entry.getKey();
+            if (!performed.contains(test)) {
                 continue;
             }
-            for (Test on : entry.getValue()) {
-                if (!performed.contains(on)) {
-                    continue;
-                }
-                Context dependentContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, dependingTest);
-                Context onContext = testerContextSensitivity.makeLocalTestContext(allTestsContext, on);
-                State source = c.getAnalysisLatticeElement().getState(allTestsBlock, onContext);
-                c.propagateToBasicBlock(source.clone(), allTestsBlock, dependentContext);
-            }
+            Context testContext = sensitivity.makeLocalTestContext(allTestsContext, test);
+            State source = c.getAnalysisLatticeElement().getState(allTestsBlock, testContext);
+            c.propagateToBasicBlock(source, allTestsBlock, widenContext);
         }
+        State widenState = c.getAnalysisLatticeElement().getState(allTestsBlock, widenContext);
+        for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
+            Context testContext = sensitivity.makeLocalTestContext(allTestsContext, entry.getKey());
+            c.propagateToBasicBlock(widenState, allTestsBlock, testContext);
+            if(count++ % 100 == 0)
+                System.out.println(count + ": " + entry.getKey());
+        }
+        totalPropagationTime += System.currentTimeMillis() - start;
+
+        System.out.println("Elapsed: " + totalPropagationTime/1000.0 + " s");
 
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
 
@@ -173,11 +182,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private void init(Solver.SolverInterface c) {
         allTestsBlock = c.getState().getBasicBlock();
         allTestsContext = c.getState().getContext();
+        sensitivity = (TesterContextSensitivity) c.getAnalysis().getContextSensitivityStrategy().getDefaultContextSensitivity();
+
 
         State originalState = c.getState().clone();
         for (Test test : tests) {
             // Generating one local context per test
-            Context newc = testerContextSensitivity.makeLocalTestContext(allTestsContext, test);
+            Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
             // and propagating to them the after-load state
             if (c.getAnalysisLatticeElement().getState(allTestsBlock, newc) == null) {
@@ -375,10 +386,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
 
     @Override
-    public void visitBlockTransfer(BasicBlock b, State s) {
-        super.visitBlockTransfer(b, s);
-        if(testerContextSensitivity.isTestContext(s.getContext())) {
-            Test t = testerContextSensitivity.getTest(s.getContext());
+    public void visitBlockTransferPost(BasicBlock b, State s) {
+        super.visitBlockTransferPost(b, s);
+        if(sensitivity.isTestContext(s.getContext())) {
+            Test t = sensitivity.getTest(s.getContext());
             if(retractedTests.contains(t)) {
                 s.setToNone();
             }
@@ -464,7 +475,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             Value v;
             switch (info.bench.run_method) {
                 case NODE:
-                    ObjectLabel moduleObject = ObjectLabel.mk(ECMAScriptObjects.OBJECT_MODULE, ObjectLabel.Kind.OBJECT);
+                    ObjectLabel moduleObject = ObjectLabel.make(ECMAScriptObjects.OBJECT_MODULE, ObjectLabel.Kind.OBJECT);
                     v = UnknownValueResolver.getProperty(moduleObject, PKey.mk("exports"), c.getState(), false);
                     break;
                 case BROWSER:
@@ -532,7 +543,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     }
 
                     @Override
-                    public Value getThis(State caller_state, State callee_state) {
+                    public Value getThis() {
                         return receiver;
                     }
 
