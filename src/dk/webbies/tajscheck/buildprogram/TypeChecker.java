@@ -214,7 +214,7 @@ public class TypeChecker {
                 for (Map.Entry<String, Type> entry : t.getStaticProperties().entrySet()) {
                     List<TypeCheck> fieldChecks = entry.getValue().accept(this, subArg);
                     if (!fieldChecks.isEmpty()) {
-                        result.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
+                        result.add(new FieldTypeCheck(entry.getKey(), fieldChecks, new TypeWithContext(entry.getValue(), arg.typeContext)));
                     }
                 }
             }
@@ -441,7 +441,7 @@ public class TypeChecker {
                         for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
                             List<TypeCheck> fieldChecks = entry.getValue().accept(this, arg);
                             if (!fieldChecks.isEmpty()) {
-                                structuralCheckList.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
+                                structuralCheckList.add(new FieldTypeCheck(entry.getKey(), fieldChecks, new TypeWithContext(entry.getValue(), arg.typeContext)));
                             }
                         }
 
@@ -523,7 +523,7 @@ public class TypeChecker {
                 for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
                     List<TypeCheck> fieldChecks = entry.getValue().accept(this, subArg);
                     if (!fieldChecks.isEmpty()) {
-                        result.add(new FieldTypeCheck(entry.getKey(), fieldChecks));
+                        result.add(new FieldTypeCheck(entry.getKey(), fieldChecks, new TypeWithContext(entry.getValue(), subArg.typeContext)));
                     }
                 }
 
@@ -624,7 +624,7 @@ public class TypeChecker {
             List<TypeCheck> result = new ArrayList<>(Arrays.asList(
                     expectNotNull(),
                     new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "tuple"),
-                    new SimpleTypeCheck(Check.field("length", Check.expression((actualSize) ->
+                    new SimpleTypeCheck(Check.field("length", null, Check.expression((actualSize) ->
                             binary(actualSize, Operator.GREATER_THAN_EQUAL, number(size))
                     )), "tuple of " + size + " elements")
             ));
@@ -632,9 +632,10 @@ public class TypeChecker {
             if (arg.depthRemaining > 0) {
                 arg = arg.decreaseDepth();
                 for (int i = 0; i < size; i++) {
-                    List<TypeCheck> subCheck = tuple.getElementTypes().get(i).accept(this, arg);
+                    Type subType = tuple.getElementTypes().get(i);
+                    List<TypeCheck> subCheck = subType.accept(this, arg);
                     if (!subCheck.isEmpty()) {
-                        result.add(new FieldTypeCheck(Integer.toString(i), subCheck));
+                        result.add(new FieldTypeCheck(Integer.toString(i), subCheck, new TypeWithContext(subType, arg.typeContext)));
                     }
                 }
             }
@@ -670,7 +671,7 @@ public class TypeChecker {
 
             if (parameter.getConstraint() == null || !(parameter.getConstraint() instanceof InterfaceType) || ((InterfaceType) parameter.getConstraint()).getDeclaredStringIndexType() == null) {
                 checks.add(new SimpleTypeCheck(
-                        Check.field(markerField, Check.equalTo(bool(true))),
+                        Check.field(markerField, null, Check.equalTo(bool(true))),
                         "a generic type marker (." + markerField + ")"
                 ));
             }

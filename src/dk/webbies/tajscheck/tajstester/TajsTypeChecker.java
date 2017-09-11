@@ -21,11 +21,9 @@ import dk.webbies.tajscheck.paser.ExpressionVisitor;
 import dk.webbies.tajscheck.testcreator.test.check.*;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Tuple3;
-import dk.webbies.tajscheck.util.Util;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,6 +37,8 @@ public class TajsTypeChecker {
     private final BenchmarkInfo info;
 
     private final CheckChecker cc = new CheckChecker();
+
+    private final Map<Tuple3<Check, TypeWithContext, Value>, List<Tuple3<String, Value, TypeCheck>>> cache = new HashMap<>();
 
     public TajsTypeChecker(Solver.SolverInterface c, BenchmarkInfo info) {
         this.c = c;
@@ -71,14 +71,14 @@ public class TajsTypeChecker {
     }
 
 
-    List<TypeViolation> typeCheckAndFilter(Value v, Type type, TypeContext context, BenchmarkInfo info, String path) {
-        List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, info.options.staticOptions.checkDepth);
+    List<TypeViolation> typeCheck(Value v, Type type, TypeContext context, BenchmarkInfo info, String path) {
+        List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, 1);
 
         List<Value> split = split(v);
         if (split.isEmpty()) {
             return Collections.singletonList(new TypeViolation("No value found", path));
         }
-        List<Tuple3<String, Value, TypeCheck>> violations = split.stream().flatMap(splittenValue -> getTypeViolations(splittenValue, typeChecks, path).stream()).collect(Collectors.toList());
+        List<Tuple3<String, Value, TypeCheck>> violations = split.stream().flatMap(splittenValue -> getTypeViolations(new TypeWithContext(type, context), splittenValue, typeChecks, path).stream()).collect(Collectors.toList());
 
         return violations.stream().map(tuple -> {
             String violationPath = tuple.getA();
@@ -88,33 +88,55 @@ public class TajsTypeChecker {
         }).collect(Collectors.toList());
     }
 
-    private List<Tuple3<String, Value, TypeCheck>> getTypeViolations(Value v, List<TypeCheck> typeChecks, String path) {
+    private List<Tuple3<String, Value, TypeCheck>> getTypeViolations(TypeWithContext typeWithContext, Value v, List<TypeCheck> typeChecks, String path) {
         return typeChecks.stream().flatMap(typeCheck -> {
+            Check check = typeCheck.getCheck();
+            Supplier<List<Tuple3<String, Value, TypeCheck>>> getForCache = () -> {
+                if (check instanceof CanHaveSubTypeCheck) {
+                    if (check instanceof FieldCheck) {
+                        FieldCheck fieldCheck = (FieldCheck) check;
+                        String field = fieldCheck.getField();
 
-            if(typeCheck instanceof FieldTypeCheck) {
-                FieldTypeCheck fieldTypeCheck = (FieldTypeCheck)typeCheck;
-                String field = fieldTypeCheck.getField();
-                Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(v.getAllObjectLabels(), Value.makeStr(field), info.options.staticOptions.killGetters), c.getState());
-                if(propertyValue.isMaybeAbsent()) {
-                    propertyValue = Value.join(propertyValue, Value.makeUndef());
-                }
+                        Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(v.getAllObjectLabels(), Value.makeStr(field), info.options.staticOptions.killGetters), c.getState());
+                        if(propertyValue.isMaybeAbsent()) {
+                            propertyValue = Value.join(propertyValue, Value.makeUndef());
+                        }
 
-                List<Value> split = split(propertyValue);
-                if (split.isEmpty()) {
-                    return Collections.singletonList(new Tuple3<>(path + "." + field, Value.makeNone(), TypeChecker.createIntersection(fieldTypeCheck.getFieldChecks()))).stream();
-                }
+                        List<Value> split = split(propertyValue);
+                        if (split.isEmpty()) {
+                            List<TypeCheck> fieldChecks = ((FieldTypeCheck) typeCheck).getFieldChecks();
+                            return Collections.singletonList(new Tuple3<>(path + "." + field, Value.makeNone(), TypeChecker.createIntersection(fieldChecks)));
+                        }
 
-                return split.stream().flatMap(splittenValue -> getTypeViolations(splittenValue, fieldTypeCheck.getFieldChecks(), path + "." + field).stream());
-            }
-            else if(typeCheck instanceof SimpleTypeCheck) {
-                SimpleTypeCheck simpleTypeCheck = (SimpleTypeCheck)typeCheck;
-                if(!simpleTypeCheck.getCheck().accept(cc, v)) {
-                    return Collections.singletonList(new Tuple3<>(path, v, typeCheck)).stream();
+                        List<TypeCheck> subChecks;
+                        if (fieldCheck.getSubType() != null) {
+                            subChecks = TypeChecker.getTypeChecks(fieldCheck.getSubType().getType(), fieldCheck.getSubType().getTypeContext(), info, 1);
+                        } else {
+                            subChecks = ((FieldTypeCheck) typeCheck).getFieldChecks();
+                        }
+
+                        return split.stream().flatMap(splittenValue -> getTypeViolations(fieldCheck.getSubType(), splittenValue, subChecks, path + "." + field).stream()).collect(Collectors.toList());
+                    } else {
+                        throw new RuntimeException(check.getClass().getSimpleName());
+                    }
                 } else {
-                    return Stream.empty();
+                    if (!check.accept(cc, v)) {
+                        return Collections.singletonList(new Tuple3<>(path, v, typeCheck));
+                    } else {
+                        return java.util.Collections.emptyList();
+                    }
                 }
+            };
+
+            Tuple3<Check, TypeWithContext, Value> key = new Tuple3<>(check, typeWithContext, v);
+            if (cache.containsKey(key)) {
+                return cache.get(key).stream();
+            } else {
+                cache.put(key, java.util.Collections.emptyList()); // coinductive assumption, if we hit the same check, it must be true.
+                List<Tuple3<String, Value, TypeCheck>> result = getForCache.get();
+                cache.put(key, result);
+                return result.stream();
             }
-            else throw new RuntimeException("Unexpected");
         }).collect(Collectors.toList());
     }
 

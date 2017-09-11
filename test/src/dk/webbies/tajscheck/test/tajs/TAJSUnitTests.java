@@ -21,6 +21,7 @@ import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertTrue;
 
 public class TAJSUnitTests {
     private static TAJSUtil.TajsAnalysisResults run(String folderName) throws Exception {
@@ -713,8 +714,13 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
+    @Test
+    public void deepChecking() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("deepChecking", options().staticOptions.setLimitSideEffects(true).getOuterBuilder());
+
+        assertTrue(result.testNot.stream().map(dk.webbies.tajscheck.testcreator.test.Test::getPath).anyMatch("foo().foo"::equals));
+    }
+
     // TODO: for now only limited side-effects work.
-    // TODO: union-type of different object labels.
-    // TODO: Deep checking test
     // TODO: Side-effects test, should be possible if i keep track of labels.
 }

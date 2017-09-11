@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.buildprogram.typechecks;
 
+import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.buildprogram.TypeChecker;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
 
@@ -12,10 +13,12 @@ import java.util.stream.Collectors;
 public class FieldTypeCheck implements TypeCheck {
     private final String field;
     private final List<TypeCheck> fieldChecks;
+    private TypeWithContext subType;
 
-    public FieldTypeCheck(String field, List<TypeCheck> fieldChecks) {
+    public FieldTypeCheck(String field, List<TypeCheck> fieldChecks, TypeWithContext subType) {
         this.field = field;
         this.fieldChecks = fieldChecks;
+        this.subType = subType;
     }
 
     public String getField() {
@@ -33,7 +36,7 @@ public class FieldTypeCheck implements TypeCheck {
 
     @Override
     public Check getCheck() {
-        return Check.field(this.field, fieldChecks.stream().map(TypeCheck::getCheck).collect(Collectors.toList()));
+        return Check.field(this.field, subType, fieldChecks.stream().map(TypeCheck::getCheck).collect(Collectors.toList()));
     }
 
     @Override

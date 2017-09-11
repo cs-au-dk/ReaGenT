@@ -1,6 +1,8 @@
 package dk.webbies.tajscheck.testcreator.test.check;
 
-public class StringIndexCheck implements Check {
+import dk.webbies.tajscheck.TypeWithContext;
+
+public class StringIndexCheck implements Check, CanHaveSubTypeCheck  {
     private Check subCheck;
 
     public StringIndexCheck(Check subCheck) {
@@ -34,5 +36,10 @@ public class StringIndexCheck implements Check {
     @Override
     public String toString() {
         return "stringIndex(" + subCheck +")";
+    }
+
+    @Override
+    public TypeWithContext getSubType() {
+        throw new RuntimeException();
     }
 }

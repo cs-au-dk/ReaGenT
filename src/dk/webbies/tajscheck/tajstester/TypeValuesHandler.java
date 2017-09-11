@@ -3,11 +3,9 @@ package dk.webbies.tajscheck.tajstester;
 import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.Value;
-import dk.brics.tajs.solver.GenericSolver;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
-import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
 import java.util.HashMap;
@@ -24,7 +22,7 @@ public class TypeValuesHandler {
     TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, BenchmarkInfo info) {
         this.typeNames = typeNames;
         this.info = info;
-        this.instantiator = new SpecInstantiator(info.getSpec(), c, info);
+        this.instantiator = new SpecInstantiator(c, info);
     }
 
     public Value getTheAny() {

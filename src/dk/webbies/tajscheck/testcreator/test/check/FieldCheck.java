@@ -1,16 +1,20 @@
 package dk.webbies.tajscheck.testcreator.test.check;
 
+import dk.webbies.tajscheck.TypeWithContext;
+
 import java.util.List;
 
 import static dk.webbies.tajscheck.util.Util.mkString;
 
-public class FieldCheck implements Check {
+public class FieldCheck implements Check, CanHaveSubTypeCheck {
     private final List<Check> checks;
     private final String field;
+    private TypeWithContext subType;
 
-    public FieldCheck(List<Check> checks, String field) {
+    public FieldCheck(List<Check> checks, String field, TypeWithContext subType) {
         this.checks = checks;
         this.field = field;
+        this.subType = subType;
     }
 
     public List<Check> getChecks() {
@@ -47,5 +51,10 @@ public class FieldCheck implements Check {
     @Override
     public String toString() {
         return "field(" + field +", " + mkString(checks.stream(), ", ") +")";
+    }
+
+    @Override
+    public TypeWithContext getSubType() {
+        return subType;
     }
 }

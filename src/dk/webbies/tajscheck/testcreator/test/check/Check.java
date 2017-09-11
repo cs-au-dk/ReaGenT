@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.testcreator.test.check;
 
+import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.paser.AST.Expression;
 import dk.webbies.tajscheck.paser.AstBuilder;
 
@@ -7,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-public abstract interface Check {
+public interface Check {
     <T, A> T accept(CheckVisitorWithArgument<T, A> visitor, A a);
 
     static TypeOfCheck typeOf(String type) {
@@ -54,12 +55,12 @@ public abstract interface Check {
         return new InstanceOfCheck(exp);
     }
 
-    static FieldCheck field(String field, Check... subChecks) {
-        return field(field, Arrays.asList(subChecks));
+    static FieldCheck field(String field, TypeWithContext subType, Check... subChecks) {
+        return field(field, subType, Arrays.asList(subChecks));
     }
 
-    static FieldCheck field(String field, List<Check> subChecks) {
-        return new FieldCheck(subChecks, field);
+    static FieldCheck field(String field, TypeWithContext subType, List<Check> subChecks) {
+        return new FieldCheck(subChecks, field, subType);
     }
 
     static NumberIndexCheck numberIndex(Check subCheck) {
