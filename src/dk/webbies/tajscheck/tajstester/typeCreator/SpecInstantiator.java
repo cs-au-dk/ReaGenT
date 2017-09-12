@@ -402,7 +402,7 @@ public class SpecInstantiator {
         @Override
         public Value visit(ReferenceType t, MiscInfo info) {
             info = info.withContext(SpecInstantiator.this.info.typesUtil.generateParameterMap(t, info.context));
-            return SpecInstantiator.this.instantiate(t.getTarget(), info, null);
+            return t.getTarget().accept(this, info);
         }
 
         @Override

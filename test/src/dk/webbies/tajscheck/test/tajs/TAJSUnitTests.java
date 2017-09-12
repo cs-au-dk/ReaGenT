@@ -749,6 +749,11 @@ public class TAJSUnitTests {
         soundness("soundness1");
     }
 
+    @Test
+    public void soundness2() throws Exception {
+        soundness("soundness2");
+    }
+
     // TODO: for now only limited side-effects work.
     // TODO: Side-effects test, should be possible if i keep track of labels.
     // TODO: Test string-indexers somehow.
