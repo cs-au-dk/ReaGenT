@@ -136,6 +136,14 @@ public class AnalyzeBenchmarks extends TestCase {
                 .collect(Collectors.toList());
     }
 
+    private Function<CheckOptions.Builder, CheckOptions.Builder> options() {
+        return options -> options
+                .setCombineNullAndUndefined(true) // because no-one cares.
+                .staticOptions
+                    .setKillGetters(true) // because getters currently causes the analysis to loop.
+                .getOuterBuilder();
+    }
+
     @Test
     public void analyzeBenchmark() throws Exception {
         Benchmark benchmark = this.benchmark.withOptions(options());
@@ -144,14 +152,6 @@ public class AnalyzeBenchmarks extends TestCase {
         } catch (TimeoutException ignored) {
             System.err.println("Timeout");
         }
-    }
-
-    private Function<CheckOptions.Builder, CheckOptions.Builder> options() {
-        return options -> options
-                .setCombineNullAndUndefined(true) // because no-one cares.
-                .staticOptions
-                    .setKillGetters(true) // because getters currently causes the analysis to loop.
-                .getOuterBuilder();
     }
 
     @Test
