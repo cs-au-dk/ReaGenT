@@ -746,8 +746,7 @@ public class TAJSUnitTests {
 
     @Test
     public void soundness1() throws Exception {
-        soundness("soundness1", options -> options.staticOptions.setLimitSideEffects(true).getOuterBuilder());
-//        soundness("soundness1");
+        soundness("soundness1");
     }
 
     // TODO: for now only limited side-effects work.
