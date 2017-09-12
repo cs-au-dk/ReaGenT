@@ -245,8 +245,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     @Override
     public Value evaluateCallToSymbolicFunction(HostObject hostObject, CallInfo call, Solver.SolverInterface c) {
-        TypeWithContext typeWithContext = ((SpecObjects.FullPath) hostObject).getType();
-        String path = ((SpecObjects.FullPath) hostObject).asText();
+        TypeWithContext typeWithContext = ((SpecObjects.TypedObject) hostObject).getType();
+        String path = ((SpecObjects.TypedObject) hostObject).asText();
         TypeContext context = typeWithContext.getTypeContext();
 
         TajsTypeChecker tajsTypeChecker = new TajsTypeChecker(c, info);
