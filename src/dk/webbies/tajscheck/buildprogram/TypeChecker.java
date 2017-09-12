@@ -539,7 +539,7 @@ public class TypeChecker {
 
                     TypeCheck indexCheck = createIntersection(indexType.accept(this, subArg));
 
-                    result.add(new SimpleTypeCheck(Check.stringIndex(indexCheck.getCheck()), "(stringIndexer: " + indexCheck.getExpected() + ")"));
+                    result.add(new SimpleTypeCheck(Check.stringIndex(indexCheck.getCheck(), new TypeWithContext(indexType, arg.typeContext)), "(stringIndexer: " + indexCheck.getExpected() + ")"));
                 }
             }
 

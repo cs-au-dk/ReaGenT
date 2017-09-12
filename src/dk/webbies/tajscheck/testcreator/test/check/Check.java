@@ -67,8 +67,8 @@ public interface Check {
         return new NumberIndexCheck(subCheck, subType);
     }
 
-    static StringIndexCheck stringIndex(Check subCheck) {
-        return new StringIndexCheck(subCheck);
+    static StringIndexCheck stringIndex(Check subCheck, TypeWithContext subType) {
+        return new StringIndexCheck(subCheck, subType);
     }
 
     static ExpressionCheck expression(Expression expression) {

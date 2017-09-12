@@ -4,9 +4,11 @@ import dk.webbies.tajscheck.TypeWithContext;
 
 public class StringIndexCheck implements Check, CanHaveSubTypeCheck  {
     private Check subCheck;
+    private TypeWithContext subType;
 
-    public StringIndexCheck(Check subCheck) {
+    public StringIndexCheck(Check subCheck, TypeWithContext subType) {
         this.subCheck = subCheck;
+        this.subType = subType;
     }
 
     public Check getSubCheck() {
@@ -40,6 +42,6 @@ public class StringIndexCheck implements Check, CanHaveSubTypeCheck  {
 
     @Override
     public TypeWithContext getSubType() {
-        throw new RuntimeException();
+        return subType;
     }
 }
