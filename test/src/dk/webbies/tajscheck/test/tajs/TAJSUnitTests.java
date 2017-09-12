@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.util.Util.mkString;
@@ -36,6 +37,18 @@ public class TAJSUnitTests {
 
     private static TAJSUtil.TajsAnalysisResults run(Benchmark bench) throws Exception {
         return TAJSUtil.runNoDriver(bench, 60);
+    }
+
+    private TAJSUtil.TajsAnalysisResults soundness(String folder) throws Exception {
+        return soundness(folder, Function.identity());
+    }
+
+    private TAJSUtil.TajsAnalysisResults soundness(String folder, Function<CheckOptions.Builder, CheckOptions.Builder> transformer) throws Exception {
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchFromFolder(folder).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(transformer).withOptions(options -> options.setConstructAllTypes(true)), Integer.MAX_VALUE);
+        System.out.println(result);
+        expect(result)
+                .hasNoViolations();
+        return result;
     }
 
     static Benchmark benchFromFolder(String folderName) {
@@ -729,6 +742,12 @@ public class TAJSUnitTests {
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
+    }
+
+    @Test
+    public void soundness1() throws Exception {
+        soundness("soundness1", options -> options.staticOptions.setLimitSideEffects(true).getOuterBuilder());
+//        soundness("soundness1");
     }
 
     // TODO: for now only limited side-effects work.
