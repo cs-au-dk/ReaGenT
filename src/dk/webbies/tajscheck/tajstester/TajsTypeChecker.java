@@ -1,8 +1,10 @@
 package dk.webbies.tajscheck.tajstester;
 
 import dk.au.cs.casa.typescript.types.Type;
+import dk.brics.tajs.analysis.HostAPIs;
 import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
+import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
 import dk.brics.tajs.lattice.ObjectLabel;
 import dk.brics.tajs.lattice.State;
 import dk.brics.tajs.lattice.UnknownValueResolver;
@@ -98,7 +100,13 @@ public class TajsTypeChecker {
 
                         String newPath = path + "." + field;
 
-                        List<TypeCheck> subTypeChecks = ((FieldTypeCheck) typeCheck).getFieldChecks();
+                        List<TypeCheck> subTypeChecks;
+                        if (typeCheck instanceof FieldTypeCheck) {
+                            subTypeChecks = ((FieldTypeCheck) typeCheck).getFieldChecks();
+                        } else {
+                            AndCheck andSubChecks = Check.and(fieldCheck.getChecks());
+                            subTypeChecks = Collections.singletonList(new SimpleTypeCheck(andSubChecks, andSubChecks.toString()));
+                        }
 
                         return performSubTypeCheck(v, fieldCheck, newPath, subTypeChecks, Value.makeStr(field));
                     } else if (check instanceof NumberIndexCheck) {
@@ -348,7 +356,21 @@ public class TajsTypeChecker {
 
         @Override
         public Boolean visit(Identifier identifier) {
-            throw new RuntimeException();
+            switch (identifier.getName()) {
+                case "Array":
+                case "String": {
+                    if (!o.isMaybeObject()) {
+                        return false;
+                    }
+                    ObjectLabel label = o.getObjectLabels().iterator().next();
+                    if (label.getHostObject().getAPI() != HostAPIs.ECMASCRIPT_NATIVE) {
+                        return false;
+                    }
+                    ECMAScriptObjects nativeObj = (ECMAScriptObjects) label.getHostObject();
+                    return nativeObj.toString().equals(identifier.getName());
+                }
+            }
+            throw new RuntimeException("Identifier: " + identifier.getName());
         }
 
         @Override
