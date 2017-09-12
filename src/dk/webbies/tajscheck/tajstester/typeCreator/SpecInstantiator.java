@@ -639,7 +639,18 @@ public class SpecInstantiator {
 
         @Override
         public ObjectLabel.Kind visit(UnionType t) {
-            throw new RuntimeException("No unions should appear here!");
+            return t.getElements().stream().map(sub -> sub.accept(this)).reduce(null, (a, b) -> {
+                if (a == null || b == null) {
+                    return a != null ? a : b;
+                }
+                if (a == ObjectLabel.Kind.OBJECT || b == ObjectLabel.Kind.OBJECT) {
+                    return a != ObjectLabel.Kind.OBJECT ? a : b;
+                }
+                if (a == b) {
+                    return a;
+                }
+                throw new RuntimeException("Dont know what to do about " + a + " and " + b);
+            });
         }
 
         @Override
