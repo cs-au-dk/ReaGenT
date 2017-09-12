@@ -57,6 +57,9 @@ public class Effects {
             case DATE:
                 prototype = InitialStateBuilder.DATE_PROTOTYPE;
                 break;
+            case STRING:
+                prototype = InitialStateBuilder.STRING_PROTOTYPE;
+                break;
             default:
                 throw new AnalysisException("No support for guessing prototype of " + label.getKind());
         }
