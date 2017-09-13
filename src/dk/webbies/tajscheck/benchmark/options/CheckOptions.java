@@ -18,6 +18,7 @@ public final class CheckOptions implements OptionsI {
     public final boolean writeAll;
     public final boolean onlyInitialize;
     public final boolean useTracified;
+    public final boolean betterAnyString;
 
     public final DynamicOptions dynamicOptions;
     public final StaticOptions staticOptions;
@@ -38,6 +39,7 @@ public final class CheckOptions implements OptionsI {
         this.constructOnlyPrimitives = builder.constructOnlyPrimitives;
         this.onlyInitialize = builder.onlyInitialize;
         this.useTracified = builder.useTracified;
+        this.betterAnyString = builder.betterAnyString;
         this.builder = builder;
     }
 
@@ -85,6 +87,8 @@ public final class CheckOptions implements OptionsI {
         public boolean onlyInitialize = false; // If true, all tests except the initializing test is removed.
 
         public boolean useTracified = false;
+
+        public boolean betterAnyString = true; // if true all string types are *not* well-known strings in Object or Function prototypes
 
         public final DynamicOptions.Builder dynamicOptions = new DynamicOptions.Builder(this);
         public final StaticOptions.Builder staticOptions = new StaticOptions.Builder(this);
