@@ -694,7 +694,7 @@ public class TAJSUnitTests {
 
     @Test
     public void fromTSFile() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run(benchFromFolderTSFile("fromTSFile", options().staticOptions.setLimitSideEffects(true).getOuterBuilder(), Benchmark.RUN_METHOD.BROWSER));
+        TAJSUtil.TajsAnalysisResults result = run(benchFromFolderTSFile("fromTSFile", options(), Benchmark.RUN_METHOD.BROWSER));
 
         expect(result)
                 .performedAllTests()
