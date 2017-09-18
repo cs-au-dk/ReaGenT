@@ -181,7 +181,7 @@ public class Main {
         bench = bench.withOptions(options -> options.setCompactOutput(false));
         if (writeDriver) {
             try {
-                writeFullDriver(bench.withOptions(options -> options.dynamicOptions.setCheckDepthReport(options.dynamicOptions.checkDepthUseValue).getOuterBuilder()));
+                writeFullDriver(bench.withOptions(options -> options.dynamicOptions.setCheckDepthReport(options.dynamicOptions.checkDepthUseValue)));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

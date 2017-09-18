@@ -3,7 +3,7 @@ package dk.webbies.tajscheck.benchmark.options;
 import dk.webbies.tajscheck.util.Util;
 
 @SuppressWarnings("WeakerAccess")
-public final class CheckOptions {
+public final class CheckOptions implements OptionsI {
     private Builder builder;
     public final boolean splitUnions; // Can make things blow up if first-match-policy is also used.
     public final boolean disableSizeOptimization;
@@ -23,8 +23,8 @@ public final class CheckOptions {
     public final StaticOptions staticOptions;
 
     private CheckOptions(Builder builder) {
-        this.dynamicOptions = builder.dynamicOptions.build();
-        this.staticOptions = builder.staticOptions.build();
+        this.dynamicOptions = builder.dynamicOptions.buildInner();
+        this.staticOptions = builder.staticOptions.buildInner();
         this.splitUnions = builder.splitUnions;
         this.disableSizeOptimization = builder.disableSizeOptimization;
         this.combineAllUnboundGenerics = builder.combineAllUnboundGenerics;
@@ -69,7 +69,7 @@ public final class CheckOptions {
     }
 
     @SuppressWarnings("SameParameterValue")
-    public static final class Builder {
+    public static final class Builder implements OptionsI.Builder {
         public boolean splitUnions = true; // Split function-signatures, such that no function-signature has a union-type as parameter, they are instead distinct signatures (explodes size of some larger benchmarks, but can be useful for more precise warnings).
         public boolean disableSizeOptimization = false; // Disable optimizations for generics (don't do this)
         public boolean combineAllUnboundGenerics = true; // Instead of having distinct values for each unbound generic, combine them all into 1. (If disabled, there is a small unsoundness if a generic method extends another generic method).
@@ -91,7 +91,7 @@ public final class CheckOptions {
 
         private Builder() {}
 
-        private Builder(Builder builder) {
+        Builder(Builder builder) {
             Util.copyPrimitives(this, builder);
             Util.copyPrimitives(this.dynamicOptions, builder.dynamicOptions);
             Util.copyPrimitives(this.staticOptions, builder.staticOptions);

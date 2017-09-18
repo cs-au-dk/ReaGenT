@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.benchmark;
 
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
+import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.util.Util;
@@ -128,7 +129,7 @@ public class Benchmark {
         return withOptions(options.build());
     }
 
-    public Benchmark withOptions(Function<CheckOptions.Builder, CheckOptions.Builder> transformer) {
+    public Benchmark withOptions(Function<CheckOptions.Builder, ? extends OptionsI.Builder> transformer) {
         return new Benchmark(
                 this.name,
                 this.environment,

@@ -141,7 +141,7 @@ public class AnalyzeBenchmarks extends TestCase {
                 .setCombineNullAndUndefined(true) // because no-one cares.
                 .staticOptions
                     .setKillGetters(true) // because getters currently causes the analysis to loop.
-                .getOuterBuilder();
+                .build().getBuilder();
     }
 
     @Test
@@ -156,7 +156,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
     @Test
     public void analyzeBenchmarkLimitedSideEffects() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).staticOptions.setLimitSideEffects(true).getOuterBuilder());
+        Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).staticOptions.setLimitSideEffects(true));
         try {
             System.out.println(TAJSUtil.runNoDriver(benchmark, 90));
 

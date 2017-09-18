@@ -6,6 +6,7 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
+import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.paser.AST.BinaryExpression;
 import dk.webbies.tajscheck.paser.AST.BlockStatement;
 import dk.webbies.tajscheck.paser.AST.NodeTransverse;
@@ -136,9 +137,9 @@ public class AutomaticExperiments {
     });
 
 
-    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePaths = uniquePathsWithOptions("", 1, false, Function.identity());
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePaths = uniquePathsWithOptions("", 1, false, opt -> opt);
 
-    private static Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsWithOptions(String suffix, int repetitions, boolean reportTime, Function<CheckOptions.Builder, CheckOptions.Builder> func) {
+    private static Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsWithOptions(String suffix, int repetitions, boolean reportTime, Function<CheckOptions.Builder, OptionsI.Builder> func) {
         List<String> names;
         if (reportTime) {
             names = Arrays.asList("uniquePaths" + suffix, "time" + suffix);
@@ -252,9 +253,9 @@ public class AutomaticExperiments {
         return Arrays.asList(Long.toString(firstPathCount), Long.toString(count), Integer.toString(runs));
     });
 
-    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> coverage = coverage("", Function.identity());
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> coverage = coverage("", opt -> opt);
 
-    private static Pair<List<String>, Experiment.ExperimentMultiRunner> coverage(String suffix, Function<CheckOptions.Builder, CheckOptions.Builder> transformer) {
+    private static Pair<List<String>, Experiment.ExperimentMultiRunner> coverage(String suffix, Function<CheckOptions.Builder, OptionsI.Builder> transformer) {
         return new Pair<>(Arrays.asList("coverage(stmt)" + suffix, "coverage(functions)" + suffix, "coverage(branches)" + suffix), (bench) -> {
             bench = bench.withOptions(transformer);
 
@@ -340,7 +341,7 @@ public class AutomaticExperiments {
         });
     }
 
-    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> driverSizes(String suffix, Function<CheckOptions.Builder, CheckOptions.Builder> transformer) {
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> driverSizes(String suffix, Function<CheckOptions.Builder, OptionsI.Builder> transformer) {
         return new Pair<>(Arrays.asList("size" + suffix, "size-no-generics" + suffix), (bench) -> {
             bench = bench.withOptions(transformer);
             double DIVIDE_BY = 1000 * 1000;
@@ -355,7 +356,7 @@ public class AutomaticExperiments {
         });
     }
 
-    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> driverSizes = driverSizes("", Function.identity());
+    private static final Pair<List<String>, Experiment.ExperimentMultiRunner> driverSizes = driverSizes("", opt -> opt);
 
 
     private static final Pair<String, Experiment.ExperimentSingleRunner> jsFileSize = new Pair<>("jsFileSize", (bench) -> {

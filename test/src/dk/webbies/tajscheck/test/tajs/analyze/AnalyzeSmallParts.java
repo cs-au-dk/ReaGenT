@@ -63,7 +63,7 @@ public class AnalyzeSmallParts extends TestCase {
 
     @Test
     public void analyzeWithLimitedSideEffects() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options -> options.staticOptions.setLimitSideEffects(true).getOuterBuilder());
+        Benchmark benchmark = this.benchmark.withOptions(options -> options.staticOptions.setLimitSideEffects(true));
         doAnalysis(benchmark);
     }
 

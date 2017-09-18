@@ -1,12 +1,14 @@
 package dk.webbies.tajscheck.benchmark.options;
 
+import dk.webbies.tajscheck.util.Util;
+
 /**
  * Created by erik1 on 31-07-2017.
  *
  * Options that only work for dynamic testing (TSTest)
  */
 @SuppressWarnings("WeakerAccess")
-public class DynamicOptions {
+public class DynamicOptions implements OptionsI {
     public final int checkDepthUseValue;
     public final int checkDepthReport;
     public final int checkDepthForUnions;
@@ -18,8 +20,10 @@ public class DynamicOptions {
     public final boolean monitorUnknownPropertyAccesses;
     public final boolean useAssertTypeFunctions;
     public final boolean compactOutput;
+    private final Builder builder;
 
     public DynamicOptions(Builder builder) {
+        this.builder = builder;
         this.checkDepthForUnions = builder.checkDepthForUnions;
         this.checkDepthUseValue = builder.checkDepthUseValue;
         this.checkDepthReport = builder.checkDepthReport;
@@ -37,7 +41,12 @@ public class DynamicOptions {
         return this.checkDepthReport == this.checkDepthUseValue;
     }
 
-    public static final class Builder {
+    @Override
+    public OptionsI.Builder getBuilder() {
+        return new Builder(builder);
+    }
+
+    public static final class Builder implements OptionsI.Builder {
         private final CheckOptions.Builder outerBuilder;
         public int checkDepthUseValue = 0; // How deeply should objects be checked, when seeing if the value should be used.
         public int checkDepthReport = 2; // How deeply should objects be checked when seeing if an error should be reported. (The above will also report warnings).
@@ -56,8 +65,9 @@ public class DynamicOptions {
             this.outerBuilder = outerBuilder;
         }
 
-        public CheckOptions.Builder getOuterBuilder() {
-            return outerBuilder;
+        public Builder(Builder builder) {
+            this.outerBuilder = builder.outerBuilder;
+            Util.copyPrimitives(this, builder);
         }
 
         public Builder setCheckDepthReport(int checkDepthReport) {
@@ -75,12 +85,13 @@ public class DynamicOptions {
             return this;
         }
 
-        public DynamicOptions build() {
+        public DynamicOptions buildInner() {
             return new DynamicOptions(this);
         }
 
-        public CheckOptions buildOuter() {
-            return getOuterBuilder().build();
+        @Override
+        public CheckOptions build() {
+            return outerBuilder.build();
         }
     }
 }

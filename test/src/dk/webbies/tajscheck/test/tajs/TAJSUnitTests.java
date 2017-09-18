@@ -4,6 +4,7 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
+import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.TypeViolation;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
@@ -31,7 +32,7 @@ public class TAJSUnitTests {
         return result;
     }
 
-    private static TAJSUtil.TajsAnalysisResults run(String folderName, CheckOptions.Builder options) throws Exception {
+    private static TAJSUtil.TajsAnalysisResults run(String folderName, OptionsI.Builder options) throws Exception {
         return run(benchFromFolder(folderName, options));
     }
 
@@ -40,10 +41,10 @@ public class TAJSUnitTests {
     }
 
     private TAJSUtil.TajsAnalysisResults soundness(String folder) throws Exception {
-        return soundness(folder, Function.identity());
+        return soundness(folder, opt -> opt);
     }
 
-    private TAJSUtil.TajsAnalysisResults soundness(String folder, Function<CheckOptions.Builder, CheckOptions.Builder> transformer) throws Exception {
+    private TAJSUtil.TajsAnalysisResults soundness(String folder, Function<CheckOptions.Builder, OptionsI.Builder> transformer) throws Exception {
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchFromFolder(folder).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(transformer).withOptions(options -> options.setConstructAllTypes(true)), Integer.MAX_VALUE);
         System.out.println(result);
         expect(result)
@@ -55,11 +56,11 @@ public class TAJSUnitTests {
         return benchFromFolder(folderName, options());
     }
 
-    static Benchmark benchFromFolder(String folderName, CheckOptions.Builder options) {
+    static Benchmark benchFromFolder(String folderName, OptionsI.Builder options) {
         return benchFromFolder(folderName, options, Benchmark.RUN_METHOD.NODE);
     }
 
-    static Benchmark benchFromFolder(String folderName, CheckOptions.Builder options, Benchmark.RUN_METHOD run_method) {
+    static Benchmark benchFromFolder(String folderName, OptionsI.Builder options, Benchmark.RUN_METHOD run_method) {
         return new Benchmark("tajsunit-" + folderName, ParseDeclaration.Environment.ES5Core, "test/tajsUnit/" + folderName + "/implementation.js", "test/tajsUnit/" + folderName + "/declaration.d.ts", run_method, options.build());
     }
 
@@ -178,7 +179,7 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasViolations();
 
-        TAJSUtil.TajsAnalysisResults noSideEffects = run("sideEffects", options().staticOptions.setLimitSideEffects(true).getOuterBuilder());
+        TAJSUtil.TajsAnalysisResults noSideEffects = run("sideEffects", options().staticOptions.setLimitSideEffects(true));
 
         expect(noSideEffects)
                 .performedAllTests()
@@ -494,7 +495,7 @@ public class TAJSUnitTests {
 
     @Test
     public void primitives() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("primitives", options().staticOptions.setLimitSideEffects(true).getOuterBuilder());
+        TAJSUtil.TajsAnalysisResults result = run("primitives", options().staticOptions.setLimitSideEffects(true));
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
@@ -502,7 +503,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createRecursiveObject() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createRecursiveObject", options().staticOptions.setCreateSingletonObjects(true).getOuterBuilder());
+        TAJSUtil.TajsAnalysisResults result = run("createRecursiveObject", options().staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -576,7 +577,7 @@ public class TAJSUnitTests {
 
     @Test
     public void indirectRecursiveObjects() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("indirectRecursiveObjects", options().staticOptions.setCreateSingletonObjects(true).getOuterBuilder());
+        TAJSUtil.TajsAnalysisResults result = run("indirectRecursiveObjects", options().staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -643,7 +644,7 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasViolations();
 
-        expect(run("motivating3", options().staticOptions.setLimitSideEffects(true).getOuterBuilder()))
+        expect(run("motivating3", options().staticOptions.setLimitSideEffects(true)))
                 .performedAllTests()
                 .hasNoViolations();
     }
@@ -720,7 +721,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createUnionsOfDateAndFunction() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createUnionsOfDateAndFunction", options().setSplitUnions(false).staticOptions.setCreateSingletonObjects(true).getOuterBuilder());
+        TAJSUtil.TajsAnalysisResults result = run("createUnionsOfDateAndFunction", options().setSplitUnions(false).staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -729,14 +730,14 @@ public class TAJSUnitTests {
 
     @Test
     public void deepChecking() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("deepChecking", options().staticOptions.setLimitSideEffects(true).getOuterBuilder());
+        TAJSUtil.TajsAnalysisResults result = run("deepChecking", options().staticOptions.setLimitSideEffects(true));
 
         assertTrue(result.testNot.stream().map(dk.webbies.tajscheck.testcreator.test.Test::getPath).anyMatch("foo().foo"::equals));
     }
 
     @Test
     public void checkRecursiveObject() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("checkRecursiveObject", options().staticOptions.setLimitSideEffects(true).getOuterBuilder());
+        TAJSUtil.TajsAnalysisResults result = run("checkRecursiveObject", options().staticOptions.setLimitSideEffects(true));
 
         expect(result)
                 .performedAllTests()
