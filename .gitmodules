@@ -4,4 +4,5 @@
 	url = https://github.com/cs-au-dk/ts-spec-reader.git
 [submodule "tajs"]
 	path = tajs
-	url = git@github.com:cs-au-dk/TAJS-private.git
+	url = ..//TAJS-private.git
+	branch = ts-checker
