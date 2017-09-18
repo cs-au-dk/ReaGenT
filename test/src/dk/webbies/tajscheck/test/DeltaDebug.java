@@ -1,16 +1,19 @@
 package dk.webbies.tajscheck.test;
 
+import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
+import dk.webbies.tajscheck.test.tajs.TAJSUtil;
 import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -177,13 +180,17 @@ public class DeltaDebug {
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
         Util.alwaysRecreate = false;
-        Benchmark bench = RunBenchmarks.benchmarks.get("Sugar");
+        Benchmark bench = RunBenchmarks.benchmarks.get("lunr.js");
         String file = bench.dTSFile;
         debug(file, () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                return testSoundness(bench);
-            } catch (IllegalArgumentException e) {
+                return testTajsSoundness(bench);
+            } catch (AnalysisException e) {
+                return true;
+            } catch (TimeoutException e) {
+                return false;
+            } catch (AssertionError e) {
                 return false;
             } catch (NullPointerException e) {
                 return false;
@@ -228,6 +235,11 @@ public class DeltaDebug {
         }
     }
 
+    private static boolean testTajsSoundness(Benchmark bench) throws Exception {
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true)), 60);
+
+        return result.detectedViolations.size() > 0;
+    }
 
     private static boolean testSoundness(Benchmark bench) throws Exception {
         bench = bench.withRunMethod(BOOTSTRAP).withOptions(options -> options.setMaxIterationsToRun(5 * 1000).setConstructAllTypes(true).setCheckDepthReport(0));
