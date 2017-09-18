@@ -9,19 +9,27 @@ package dk.webbies.tajscheck.benchmark.options;
 public class StaticOptions {
     public final boolean limitSideEffects;
     public final boolean killGetters;
+    public final boolean createSingletonObjects;
 
 
     public StaticOptions(StaticOptions.Builder builder) {
         this.limitSideEffects = builder.limitSideEffects;
         this.killGetters = builder.killGetters;
+        this.createSingletonObjects = builder.createSingletonObjects;
     }
 
     public static final class Builder {
         private boolean limitSideEffects = false; // Make data-flow only happen between tests that are strictly dependent on each other.
-        public boolean killGetters = false;
+        private boolean killGetters = false;
+        private boolean createSingletonObjects = false;
 
         public Builder setLimitSideEffects(boolean limitSideEffects) {
             this.limitSideEffects = limitSideEffects;
+            return this;
+        }
+
+        public Builder setCreateSingletonObjects(boolean createSingletonObjects) {
+            this.createSingletonObjects = createSingletonObjects;
             return this;
         }
 

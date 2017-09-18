@@ -502,7 +502,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createRecursiveObject() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createRecursiveObject");
+        TAJSUtil.TajsAnalysisResults result = run("createRecursiveObject", options().staticOptions.setCreateSingletonObjects(true).getOuterBuilder());
 
         expect(result)
                 .performedAllTests()
@@ -528,7 +528,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: this test fails because you can write strongly to everything of the same type.
     public void weakWrites() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("weakWrites");
 
@@ -577,7 +576,7 @@ public class TAJSUnitTests {
 
     @Test
     public void indirectRecursiveObjects() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("indirectRecursiveObjects");
+        TAJSUtil.TajsAnalysisResults result = run("indirectRecursiveObjects", options().staticOptions.setCreateSingletonObjects(true).getOuterBuilder());
 
         expect(result)
                 .performedAllTests()
@@ -721,7 +720,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createUnionsOfDateAndFunction() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createUnionsOfDateAndFunction", options().setSplitUnions(false).staticOptions.setLimitSideEffects(true).getOuterBuilder());
+        TAJSUtil.TajsAnalysisResults result = run("createUnionsOfDateAndFunction", options().setSplitUnions(false).staticOptions.setCreateSingletonObjects(true).getOuterBuilder());
 
         expect(result)
                 .performedAllTests()
@@ -754,7 +753,6 @@ public class TAJSUnitTests {
         soundness("soundness2");
     }
 
-    // TODO: for now only limited side-effects work.
     // TODO: Side-effects test, should be possible if i keep track of labels.
     // TODO: Test string-indexers somehow.
 }

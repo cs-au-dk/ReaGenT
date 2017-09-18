@@ -97,6 +97,11 @@ public class Effects {
         object.setDefaultNonArrayProperty(value.join(Value.makeAbsent()));
     }
 
+    public ObjectLabel summeraize(ObjectLabel objectLabel) {
+        c.getState().multiplyObject(objectLabel);
+        return objectLabel.makeSingleton().makeSummary();
+    }
+
     public static class Stats {
 
         private Set<ObjectLabel> newObjects = newSet();

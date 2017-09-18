@@ -65,6 +65,7 @@ public class SpecInstantiator {
     }
 
     private Value createAny(BenchmarkInfo info) {
+        // TODO: Rewrite this.
         ObjectLabel label1 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any1>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.FUNCTION);
         ObjectLabel label2 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any2>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.OBJECT);
 
@@ -289,6 +290,11 @@ public class SpecInstantiator {
                 value = type.accept(visitor, info.withlabel(label));
                 processing.remove(key);
             }
+
+            if (value.isMaybeObject() && !SpecInstantiator.this.info.options.staticOptions.createSingletonObjects) {
+                value = value.restrictToNotObject().join(Value.makeObject(value.getObjectLabels().stream().map(effects::summeraize).collect(Collectors.toSet())));
+            }
+
             valueCache.put(key, value);
         }
         return valueCache.get(key);
@@ -321,10 +327,12 @@ public class SpecInstantiator {
             initializer.accept(label);
             return Value.makeObject(label);
         }
-        // make the object a singleton to get the instantiation writes strongly
+        // keep the object a singleton during instantiation, we create a summary later.
+
         effects.newObject(label);
-        effects.multiplyObject(label);
-//        label = label.makeSummary(); // TODO: dangling pointer...
+        if (info.options.staticOptions.createSingletonObjects) {// if we keep it as singleton, create summary now.
+            effects.summeraize(label);
+        }
         initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
 
         effects.writeStringIndexer(label, Value.makeUndef()); // TODO: Try to instead have an special (function) object-label, that summerizes "any". When called it returns itself (and throws exceptions). // TODO:
