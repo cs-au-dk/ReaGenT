@@ -25,10 +25,7 @@ import dk.au.cs.casa.typescript.types.UnionType;
 import dk.brics.tajs.analysis.HostAPIs;
 import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
-import dk.brics.tajs.lattice.ObjectLabel;
-import dk.brics.tajs.lattice.PKey;
-import dk.brics.tajs.lattice.State;
-import dk.brics.tajs.lattice.Value;
+import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -493,15 +490,14 @@ public class SpecInstantiator {
                     //lbs.add(InitialStateBuilder.GLOBAL);
                     lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
 
-                    Set<String> forbidden = initial.getProperties(lbs, false, false, false, false)
+                    Set<PKey> forbidden = initial.getProperties(lbs, ObjProperties.PropertyQuery.makeQuery().includeSymbols().withoutProto())
                             .getMaybe()
                             .stream()
-                            .map(k -> k.asStringKey().asString())
                             .collect(Collectors.toSet());
-                    forbidden.add("prototype");
-                    forbidden.add(PKey.__PROTO__.asString());
+                    forbidden.add(PKey.mk("prototype"));
+                    forbidden.add(PKey.__PROTO__);
 
-                    defaultAnyString = Value.makeAnyStrNotUInt().removeStrings(forbidden);
+                    defaultAnyString = Value.makeAnyStrNotUInt().removePKeys(forbidden);
                 }
                 return defaultAnyString;
             }

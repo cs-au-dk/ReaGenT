@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.test.tajs.analyze;
 
+import dk.brics.tajs.options.Options;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
@@ -162,7 +163,7 @@ public class AnalyzeBenchmarks extends TestCase {
         String patched = dtspath.getParent().resolve("patched." + dtspath.getFileName()).toString();
         Benchmark benchmark = this.benchmark.withOptions(options()).withDecl(patched);
         try {
-            System.out.println(TAJSUtil.runNoDriver(benchmark,180));
+            System.out.println(TAJSUtil.runNoDriver(benchmark,180, true));
         } catch (TimeoutException ignored) {
             System.err.println("Timeout");
         }
