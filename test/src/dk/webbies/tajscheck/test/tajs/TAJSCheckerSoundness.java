@@ -48,8 +48,9 @@ public class TAJSCheckerSoundness {
                 )
                 .forEach(result::add);
 
-//        result.addAll(AnalyzeBenchmarks.getBenchmarks()); // TODO: Add these.
-//        TODO: "Zepto.js", "pathjs", "PDF.js", "box2dweb", "Foundation", "Materialize", "PhotoSwipe", "accounting.js", "highlight.js", "PleaseJS", "CodeMirror", "lunr.js"", "Jasmine", "reveal.js", "Leaflet", "Backbone.js", "async", "q", "Swiper"
+        result.addAll(AnalyzeBenchmarks.getBenchmarks()); // TODO: Add these.
+//        TODO: (typeNames): Foundation, Materialize, highlight.js, Jasmine, reveal.js, Leaflet
+        // TODO: Soundness: PleaseJS
 
         return result.stream()
                 .filter(bench -> !bench.name.equals("unit-exponentialComplexity"))
@@ -67,7 +68,7 @@ public class TAJSCheckerSoundness {
         BenchmarkInfo info = BenchmarkInfo.create(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP));
     }
 
-    @Test
+    @Test(timeout = 70 * 1000)
     public void hasNoViolations() throws Exception { // TODO: complexGenerics2
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true)), 60);
         System.out.println(result);
@@ -75,7 +76,7 @@ public class TAJSCheckerSoundness {
                 .hasNoViolations();
     }
 
-    @Test
+    @Test(timeout = 70 * 1000)
     public void performsAllTests() throws Exception {
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true)), 60);
         System.out.println(result);
@@ -89,6 +90,7 @@ public class TAJSCheckerSoundness {
             "unit-complexSanityCheck20",
             "unit-complexSanityCheck23",
             "unit-complexSanityCheck19",
+            "unit-findSimpleErrorChromeWithErrors",
             "unit-genericExtendMethod",
             "unit-genericsBustStack",
             "unit-genericsBustStack2",
@@ -97,7 +99,8 @@ public class TAJSCheckerSoundness {
             "unit-intersectionWithFunction",
             "unit-thisTypesInInterfaces3",
             "unit-valueCantBeTrueAndFalse",
-            "unit-genericClassFeedbackWithConstraint"
+            "unit-genericClassFeedbackWithConstraint",
+            "PhotoSwipe"
     );
 
     private static final List<String> unsupportedFeatures = Arrays.asList(
@@ -109,7 +112,12 @@ public class TAJSCheckerSoundness {
     private static final List<String> intentionallyUnsound = Arrays.asList(
             "unit-complexSanityCheck3",
             "unit-complexSanityCheck9",
-            "unit-unsoundSiblings"
+            "unit-unsoundSiblings",
+            "PleaseJS", // multiple signatures with same parameters returns different types.
+            "Zepto.js", // really a failure of enforcing first-match-policy on ZeptoStatic#each.
+            "accounting.js", // also first-match-policy.
+            "async", // more first match policy
+            "Jasmine" // more first match policy
     );
 
     // the ones that currently fails for various reasons.
