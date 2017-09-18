@@ -7,5 +7,5 @@ module.exports = function (x) {
     if (x instanceof Date) {
         return true;
     }
-    return false;
+    return x;
 };
