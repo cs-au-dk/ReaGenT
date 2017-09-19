@@ -73,8 +73,6 @@ public class SpecInstantiator {
 
     private Map<TypeWithContext, ObjectLabel> labelCache;
 
-    private final Value ANY;
-
     private final Solver.SolverInterface c;
 
     private Value defaultAnyString;
@@ -92,14 +90,14 @@ public class SpecInstantiator {
         this.c = c;
 
         initializeLabelsCacheWithCanonicals();
-
-        this.ANY = createAny(info);
     }
 
-    private Value createAny(BenchmarkInfo info) {
+    private Value createAny() {
         // TODO: Rewrite this.
         ObjectLabel label1 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any1>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.FUNCTION);
+        c.getState().newObject(label1);
         ObjectLabel label2 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any2>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.OBJECT);
+        c.getState().newObject(label2);
 
         effects.newObject(label1);
         effects.multiplyObject(label1);
@@ -324,7 +322,7 @@ public class SpecInstantiator {
             }
 
             if (value.isMaybeObject() && !SpecInstantiator.this.info.options.staticOptions.createSingletonObjects) {
-                value = value.restrictToNotObject().join(Value.makeObject(value.getObjectLabels().stream().map(effects::summeraize).collect(Collectors.toSet())));
+                value = value.restrictToNotObject().join(Value.makeObject(value.getObjectLabels().stream().map(effects::summarize).collect(Collectors.toSet())));
             }
 
             valueCache.put(key, value);
@@ -340,12 +338,15 @@ public class SpecInstantiator {
     private ObjectLabel makeObjectLabel(Type t, MiscInfo miscInfo) {
         TypeWithContext key = new TypeWithContext(t, miscInfo.context);
         if (labelCache.containsKey(key)) {
-            return labelCache.get(key);
+            ObjectLabel l = labelCache.get(key);
+            c.getState().newObject(l);
+            return l;
         }
         ObjectLabel.Kind kind = getObjectLabelKind(t);
         ObjectLabel label = null;
         if (kind != null) {
             label = ObjectLabel.make(SpecObjects.getObjectAbstraction(miscInfo.path, key), kind);
+            c.getState().newObject(label);
         }
         labelCache.put(key, label);
         return label;
@@ -363,7 +364,7 @@ public class SpecInstantiator {
 
         effects.newObject(label);
         if (info.options.staticOptions.createSingletonObjects) {// if we keep it as singleton, create summary now.
-            effects.summeraize(label);
+            effects.summarize(label);
         }
         initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
 
@@ -372,7 +373,7 @@ public class SpecInstantiator {
     }
 
     public Value getTheAny() {
-        return ANY;
+        return createAny();
     }
 
     private class InstantiatorVisitor implements TypeVisitorWithArgument<Value, MiscInfo> {
@@ -449,7 +450,7 @@ public class SpecInstantiator {
         public Value visit(SimpleType t, MiscInfo info) {
             switch (t.getKind()) {
                 case Any:
-                    return ANY;
+                    return createAny();
                 case String:
                     return makeString();
                 case Enum:
@@ -467,7 +468,9 @@ public class SpecInstantiator {
                 case Symbol:
                     System.err.println("Symbols should be inprecise, they are not."); // TODO:
                     SpecObjects hostObject = SpecObjects.getObjectAbstraction(info.path, new TypeWithContext(t, info.context));
-                    return Value.makeObject(ObjectLabel.make(hostObject, ObjectLabel.Kind.SYMBOL));
+                    ObjectLabel l = ObjectLabel.make(hostObject, ObjectLabel.Kind.SYMBOL);
+                    c.getState().newObject(l);
+                    return Value.makeObject(l);
                 default:
                     throw new RuntimeException("Unhandled TypeKind: " + t);
             }

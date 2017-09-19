@@ -97,7 +97,7 @@ public class Effects {
         object.setDefaultNonArrayProperty(value.join(Value.makeAbsent()));
     }
 
-    public ObjectLabel summeraize(ObjectLabel objectLabel) {
+    public ObjectLabel summarize(ObjectLabel objectLabel) {
         c.getState().multiplyObject(objectLabel);
         return objectLabel.makeSingleton().makeSummary();
     }
