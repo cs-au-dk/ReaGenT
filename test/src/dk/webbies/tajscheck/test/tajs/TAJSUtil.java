@@ -80,8 +80,7 @@ public class TAJSUtil {
         additionalOpts.setCustomContextSensitivityStrategy(contextStrategy);
         additionalOpts.enableTypeChecks();
 
-        additionalOpts.getSoundnessTesterOptions().setTest(false);
-        additionalOpts.enableInspector();
+        additionalOpts.getSoundnessTesterOptions().setTest(true);
 
         additionalOpts.enableUnevalizer();
         if(useInspector) additionalOpts.enableInspector();

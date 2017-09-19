@@ -163,7 +163,7 @@ public class AnalyzeBenchmarks extends TestCase {
         String patched = dtspath.getParent().resolve("patched." + dtspath.getFileName()).toString();
         Benchmark benchmark = this.benchmark.withOptions(options()).withDecl(patched);
         try {
-            System.out.println(TAJSUtil.runNoDriver(benchmark,180, true));
+            System.out.println(TAJSUtil.runNoDriver(benchmark,180, false));
         } catch (TimeoutException ignored) {
             System.err.println("Timeout");
         }
