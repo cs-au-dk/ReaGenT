@@ -81,7 +81,7 @@ public class TAJSUtil {
         additionalOpts.enableTypeChecks();
 
         additionalOpts.getSoundnessTesterOptions().setTest(false);
-        additionalOpts.enableTypeFilters();
+        //additionalOpts.enableTypeFilters();
 
         additionalOpts.enableUnevalizer();
         if(useInspector) additionalOpts.enableInspector();
