@@ -160,8 +160,13 @@ public class AnalyzeBenchmarks extends TestCase {
     @Test
     public void analyzeBenchmarkPatched() throws Exception {
         Path dtspath = Paths.get(this.benchmark.dTSFile);
+        Path entryPath = Paths.get(this.benchmark.jsFile);
         String patched = dtspath.getParent().resolve("patched." + dtspath.getFileName()).toString();
-        Benchmark benchmark = this.benchmark.withOptions(options()).withDecl(patched);
+        String patchedEnty = entryPath.getParent().resolve("patched." + entryPath.getFileName()).toString();
+        Benchmark benchmark = this.benchmark.withOptions(options())
+                .withDecl(patched)
+                .withJsFile(patchedEnty)
+                ;
         try {
             System.out.println(TAJSUtil.runNoDriver(benchmark,180, true));
         } catch (TimeoutException ignored) {

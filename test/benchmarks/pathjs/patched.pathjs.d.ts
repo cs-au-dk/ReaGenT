@@ -25,7 +25,7 @@ interface IPathRoute{
 
 interface IPathRoutes{
 	current?: IPathRoute,
-    root?: IPathRoute,
+    root?: string,
 	rescue?: Function,
 	previous?: IPathRoute,
 	defined: IDictionary<IPathRoute>

@@ -1,7 +1,7 @@
 var Path = {
     'version': "0.8.4",
     'map': function (path) {
-        if (Object.prototype.hasOwnProperty.call(Path.routes.defined,path)) {
+        if (Path.routes.defined.hasOwnProperty(path)) {
             return Path.routes.defined[path];
         } else {
             return new Path.core.route(path);
@@ -53,7 +53,7 @@ var Path = {
         }
     },
     'match': function (path, parameterize) {
-        var params = {}, route = null, possible_routes, slice, i, j, compare;
+        var params = Object.create(null), route = null, possible_routes, slice, i, j, compare;
         for (route in Path.routes.defined) {
             if (route !== null && route !== undefined) {
                 route = Path.routes.defined[route];
@@ -131,7 +131,7 @@ var Path = {
             this.action = null;
             this.do_enter = [];
             this.do_exit = null;
-            this.params = {};
+            this.params = Object.create(null);
             Path.routes.defined[path] = this;
         }
     },
@@ -140,7 +140,7 @@ var Path = {
         'root': null,
         'rescue': null,
         'previous': null,
-        'defined': {}
+        'defined': Object.create(null)
     }
 };
 Path.core.route.prototype = {

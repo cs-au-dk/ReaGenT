@@ -157,6 +157,19 @@ public class Benchmark {
         );
     }
 
+    public Benchmark withJsFile(String jsFile) {
+        return new Benchmark(
+                this.name,
+                this.environment,
+                jsFile,
+                this.dTSFile,
+                this.run_method,
+                this.pathsToTest,
+                this.options,
+                this.dependencies,
+                this.exportName
+        );
+    }
 
     public static Benchmark fromTSFile(String tsFile, String name, ParseDeclaration.Environment environment, RUN_METHOD run_method, CheckOptions options) throws IOException {
         Util.runNodeScript(" ts-spec-reader/node_modules/typescript/lib/tsc.js " + tsFile, 60 * 1000);
