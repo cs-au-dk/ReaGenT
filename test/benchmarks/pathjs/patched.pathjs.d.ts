@@ -3,6 +3,11 @@
 // Definitions by: Lokesh Peta <https://github.com/lokeshpeta/>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
+export interface IDictionary<T> {
+    [id: string]: T;
+}
+
+
 interface IPathHistory{
 	initial: any;
 	pushState(state: any, title: string, path: string):void;
@@ -23,7 +28,7 @@ interface IPathRoutes{
     root?: IPathRoute,
 	rescue?: Function,
 	previous?: IPathRoute,
-	defined: {}
+	defined: IDictionary<IPathRoute>
 }
 
 interface IPathCore{
