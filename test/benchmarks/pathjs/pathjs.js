@@ -1,7 +1,7 @@
 var Path = {
     'version': "0.8.4",
     'map': function (path) {
-        if (Object.prototype.hasOwnProperty.call(Path.routes.defined,path)) {
+        if (Path.routes.defined.hasOwnProperty(path)) {
             return Path.routes.defined[path];
         } else {
             return new Path.core.route(path);

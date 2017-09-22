@@ -83,6 +83,10 @@ public class TAJSUtil {
         additionalOpts.getSoundnessTesterOptions().setTest(false);
         //additionalOpts.enableTypeFilters();
 
+        additionalOpts.getUnsoundness().setIgnoreSomePrototypesDuringDynamicPropertyReads(true);
+        additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyReads(true);
+        additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyWrites(true);
+
         additionalOpts.enableUnevalizer();
         if(useInspector) additionalOpts.enableInspector();
 

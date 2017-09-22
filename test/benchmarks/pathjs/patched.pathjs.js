@@ -53,7 +53,7 @@ var Path = {
         }
     },
     'match': function (path, parameterize) {
-        var params = Object.create(null), route = null, possible_routes, slice, i, j, compare;
+        var params = {}, route = null, possible_routes, slice, i, j, compare;
         for (route in Path.routes.defined) {
             if (route !== null && route !== undefined) {
                 route = Path.routes.defined[route];
@@ -131,7 +131,7 @@ var Path = {
             this.action = null;
             this.do_enter = [];
             this.do_exit = null;
-            this.params = Object.create(null);
+            this.params = {};
             Path.routes.defined[path] = this;
         }
     },
@@ -140,7 +140,7 @@ var Path = {
         'root': null,
         'rescue': null,
         'previous': null,
-        'defined': Object.create(null)
+        'defined': {}
     }
 };
 Path.core.route.prototype = {
