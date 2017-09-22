@@ -105,7 +105,8 @@ public class TAJSCheckerSoundness {
 
     private static final List<String> unsupportedFeatures = Arrays.asList(
             "unit-genericIndexedAccess", // creating a signature that returns an index-type is not supported.
-            "unit-mappedTypes" // I don't support mapped types in general.
+            "unit-mappedTypes", // I don't support mapped types in general.
+            "unit-asyncGenerator"
     );
 
     // demonstrations of unsound types in TypeScript
