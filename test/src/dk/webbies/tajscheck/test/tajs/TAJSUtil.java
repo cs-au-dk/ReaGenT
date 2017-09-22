@@ -20,6 +20,7 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import java.util.*;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import static dk.brics.tajs.Main.initLogging;
 import static org.hamcrest.CoreMatchers.anyOf;
@@ -28,7 +29,7 @@ import static org.junit.Assert.assertThat;
 
 public class TAJSUtil {
 
-    public static TajsAnalysisResults runNoDriverTAJS(String file, int secondsTimeout, BenchmarkInfo info, List<Test> tests) throws TimeoutException {
+    public static TajsAnalysisResults runNoDriverTAJS(Benchmark bench, int secondsTimeout, BenchmarkInfo info, List<Test> tests) throws TimeoutException {
         dk.brics.tajs.Main.reset();
 
         OptionValues additionalOpts = new OptionValues();
@@ -44,7 +45,9 @@ public class TAJSUtil {
             }
         } else {
             try {
-                parser.parseArgument(file);
+                List<String> jsFiles = bench.getDependencies().stream().map(dependency -> dependency.jsFile).collect(Collectors.toList());
+                jsFiles.add(bench.jsFile);
+                parser.parseArgument(jsFiles.toArray(new String[jsFiles.size()]));
             } catch (CmdLineException e) {
                 throw new RuntimeException(e);
             }
@@ -78,6 +81,8 @@ public class TAJSUtil {
             optMonitors.add(timeLimiter);
         }
 
+        optMonitors.add(Monitoring.make());
+
         IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(optMonitors);
         initLogging();
 
@@ -110,7 +115,7 @@ public class TAJSUtil {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
         List<Test> tests = new TestCreator(info).createTests();
 
-        TajsAnalysisResults result = runNoDriverTAJS(bench.jsFile, secondsTimeout, info, tests);
+        TajsAnalysisResults result = runNoDriverTAJS(bench, secondsTimeout, info, tests);
 
         //System.out.println(prettyResult(result, assertionResult -> assertionResult.result.isSometimesFalse()));
 

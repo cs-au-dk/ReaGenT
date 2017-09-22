@@ -55,7 +55,7 @@ public class TSTestConsistency {
 
         List<dk.webbies.tajscheck.testcreator.test.Test> tests = new TestCreator(info).createTests();
 
-        TAJSUtil.TajsAnalysisResults tajsResult = TAJSUtil.runNoDriverTAJS(bench.jsFile, 60, info, tests);
+        TAJSUtil.TajsAnalysisResults tajsResult = TAJSUtil.runNoDriverTAJS(bench, 60, info, tests);
 
 
         {
