@@ -3,7 +3,7 @@
 // Definitions by: Toshiya Nakakura <https://github.com/nakakura>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
-/// <reference types="webrtc" />
+/// <reference path="webrtc/index.d.ts" />
 
 declare namespace PeerJs{
     interface PeerJSOption{
