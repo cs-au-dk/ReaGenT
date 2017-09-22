@@ -85,7 +85,7 @@ public class Util {
 
         if (error != null && !error.isEmpty()) {
             System.err.println("Error running node script: " + error);
-            if (isDeltaDebugging && args.contains("ts-spec-reader")) {
+            if (isDeltaDebugging && args.contains("ts-spec-reader") && !(!error.contains("\n") && error.contains("Statements are not allowed in ambient contexts."))) {
                 throw new RuntimeException("Got an error running a node script: " + error);
             }
         }
