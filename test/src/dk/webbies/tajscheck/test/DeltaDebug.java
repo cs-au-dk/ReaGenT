@@ -7,6 +7,7 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.tajs.TAJSUtil;
+import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks;
 import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Util;
 
@@ -180,19 +181,22 @@ public class DeltaDebug {
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
         Util.alwaysRecreate = false;
-        Benchmark bench = RunBenchmarks.benchmarks.get("lunr.js");
-        String file = bench.dTSFile;
-        debug(file, () -> {
+        // TODO: analyzeBenchmarks: PeerJS, accounting.js, async
+        Benchmark bench = RunBenchmarks.benchmarks.get("async");
+        BooleanSupplier predicate = () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                return testTajsSoundness(bench);
+                AnalyzeBenchmarks analyzer = new AnalyzeBenchmarks();
+                analyzer.benchmark = bench;
+                analyzer.analyzeBenchmark();
+                return false;
+            } catch (NullPointerException e) {
+                return true;
             } catch (AnalysisException e) {
                 return true;
             } catch (TimeoutException e) {
                 return false;
             } catch (AssertionError e) {
-                return false;
-            } catch (NullPointerException e) {
                 return false;
             } catch (RuntimeException e) {
                 return false;
@@ -200,7 +204,11 @@ public class DeltaDebug {
                 e.printStackTrace();
                 return false;
             }
-        });
+        };
+        debug(bench.jsFile, predicate);
+        debug(bench.dTSFile, predicate);
+        debug(bench.jsFile, predicate);
+        debug(bench.dTSFile, predicate);
         System.exit(0);
     }
 
