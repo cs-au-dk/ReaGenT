@@ -754,6 +754,11 @@ public class TAJSUnitTests {
         soundness("soundness2");
     }
 
+    @Test
+    public void smokeTest1() throws Exception {
+        run(benchFromFolder("smokeTest1", options(), Benchmark.RUN_METHOD.BROWSER));
+    }
+
     // TODO: Side-effects test, should be possible if i keep track of labels.
     // TODO: Test string-indexers somehow.
 }
