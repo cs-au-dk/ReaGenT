@@ -1129,6 +1129,15 @@ public class TypeCreator {
             case "IterableIterator":
             case "IteratorResult":
             case "Iterator":
+            case "MediaStreamConstraints":
+            case "ArrayBufferView":
+            case "MediaTrackConstraints":
+            case "RTCConfiguration":
+            case "ConstrainBooleanParameters":
+            case "ConstrainDOMStringParameters":
+            case "ConstrainDoubleRange":
+            case "ConstrainLongRange":
+            case "MediaTrackConstraintSet":
                 throw new ProduceManuallyException();
             default:
                 throw new RuntimeException("Unknown: " + name);
