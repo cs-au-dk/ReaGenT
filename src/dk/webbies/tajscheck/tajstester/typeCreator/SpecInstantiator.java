@@ -1,11 +1,31 @@
 package dk.webbies.tajscheck.tajstester.typeCreator;
 
 import dk.au.cs.casa.typescript.SpecReader;
-import dk.au.cs.casa.typescript.types.*;
+import dk.au.cs.casa.typescript.types.AnonymousType;
+import dk.au.cs.casa.typescript.types.BooleanLiteral;
+import dk.au.cs.casa.typescript.types.ClassInstanceType;
+import dk.au.cs.casa.typescript.types.ClassType;
+import dk.au.cs.casa.typescript.types.GenericType;
+import dk.au.cs.casa.typescript.types.IndexType;
+import dk.au.cs.casa.typescript.types.IndexedAccessType;
+import dk.au.cs.casa.typescript.types.InterfaceType;
+import dk.au.cs.casa.typescript.types.IntersectionType;
+import dk.au.cs.casa.typescript.types.NumberLiteral;
+import dk.au.cs.casa.typescript.types.ReferenceType;
+import dk.au.cs.casa.typescript.types.SimpleType;
+import dk.au.cs.casa.typescript.types.SimpleTypeKind;
+import dk.au.cs.casa.typescript.types.StringLiteral;
+import dk.au.cs.casa.typescript.types.ThisType;
+import dk.au.cs.casa.typescript.types.TupleType;
+import dk.au.cs.casa.typescript.types.Type;
+import dk.au.cs.casa.typescript.types.TypeParameterType;
+import dk.au.cs.casa.typescript.types.TypeVisitor;
+import dk.au.cs.casa.typescript.types.TypeVisitorWithArgument;
+import dk.au.cs.casa.typescript.types.UnionType;
 import dk.brics.tajs.analysis.HostAPIs;
+import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
-import dk.brics.tajs.lattice.ObjectLabel;
-import dk.brics.tajs.lattice.Value;
+import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -15,11 +35,18 @@ import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static dk.brics.tajs.util.Collections.*;
+import static dk.brics.tajs.util.Collections.newList;
+import static dk.brics.tajs.util.Collections.newMap;
+import static dk.brics.tajs.util.Collections.newSet;
 import static java.util.Collections.singletonList;
 
 public class SpecInstantiator {
@@ -46,7 +73,9 @@ public class SpecInstantiator {
 
     private Map<TypeWithContext, ObjectLabel> labelCache;
 
-    private final Value ANY;
+    private final Solver.SolverInterface c;
+
+    private Value defaultAnyString;
 
     public SpecInstantiator(Solver.SolverInterface c, BenchmarkInfo info) {
         this.global = info.getSpec().getGlobal();
@@ -58,16 +87,17 @@ public class SpecInstantiator {
         this.processing = newSet();
         this.effects = new Effects(c);
         this.info = info;
+        this.c = c;
 
         initializeLabelsCacheWithCanonicals();
-
-        this.ANY = createAny(info);
     }
 
-    private Value createAny(BenchmarkInfo info) {
+    private Value createAny() {
         // TODO: Rewrite this.
         ObjectLabel label1 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any1>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.FUNCTION);
+        c.getState().newObject(label1);
         ObjectLabel label2 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any2>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.OBJECT);
+        c.getState().newObject(label2);
 
         effects.newObject(label1);
         effects.multiplyObject(label1);
@@ -292,7 +322,7 @@ public class SpecInstantiator {
             }
 
             if (value.isMaybeObject() && !SpecInstantiator.this.info.options.staticOptions.createSingletonObjects) {
-                value = value.restrictToNotObject().join(Value.makeObject(value.getObjectLabels().stream().map(effects::summeraize).collect(Collectors.toSet())));
+                value = value.restrictToNotObject().join(Value.makeObject(value.getObjectLabels().stream().map(effects::summarize).collect(Collectors.toSet())));
             }
 
             valueCache.put(key, value);
@@ -308,12 +338,15 @@ public class SpecInstantiator {
     private ObjectLabel makeObjectLabel(Type t, MiscInfo miscInfo) {
         TypeWithContext key = new TypeWithContext(t, miscInfo.context);
         if (labelCache.containsKey(key)) {
-            return labelCache.get(key);
+            ObjectLabel l = labelCache.get(key);
+            c.getState().newObject(l);
+            return l;
         }
         ObjectLabel.Kind kind = getObjectLabelKind(t);
         ObjectLabel label = null;
         if (kind != null) {
             label = ObjectLabel.make(SpecObjects.getObjectAbstraction(miscInfo.path, key), kind);
+            c.getState().newObject(label);
         }
         labelCache.put(key, label);
         return label;
@@ -331,7 +364,7 @@ public class SpecInstantiator {
 
         effects.newObject(label);
         if (info.options.staticOptions.createSingletonObjects) {// if we keep it as singleton, create summary now.
-            effects.summeraize(label);
+            effects.summarize(label);
         }
         initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
 
@@ -340,7 +373,7 @@ public class SpecInstantiator {
     }
 
     public Value getTheAny() {
-        return ANY;
+        return createAny();
     }
 
     private class InstantiatorVisitor implements TypeVisitorWithArgument<Value, MiscInfo> {
@@ -417,9 +450,9 @@ public class SpecInstantiator {
         public Value visit(SimpleType t, MiscInfo info) {
             switch (t.getKind()) {
                 case Any:
-                    return ANY;
+                    return createAny();
                 case String:
-                    return Value.makeAnyStr();
+                    return makeString();
                 case Enum:
                 case Number:
                     return Value.makeAnyNum();
@@ -435,10 +468,43 @@ public class SpecInstantiator {
                 case Symbol:
                     System.err.println("Symbols should be inprecise, they are not."); // TODO:
                     SpecObjects hostObject = SpecObjects.getObjectAbstraction(info.path, new TypeWithContext(t, info.context));
-                    return Value.makeObject(ObjectLabel.make(hostObject, ObjectLabel.Kind.SYMBOL));
+                    ObjectLabel l = ObjectLabel.make(hostObject, ObjectLabel.Kind.SYMBOL);
+                    c.getState().newObject(l);
+                    return Value.makeObject(l);
                 default:
                     throw new RuntimeException("Unhandled TypeKind: " + t);
             }
+        }
+
+        private Value makeString() {
+            if (info.options.betterAnyString) {
+                if(defaultAnyString == null) {
+                    State initial = c.getAnalysisLatticeElement().getState(c.getAnalysis().getInitialStateBuilder().initialBlockAndContext);
+                    List<ObjectLabel> lbs = newList();
+                    lbs.add(InitialStateBuilder.OBJECT_PROTOTYPE);
+                    lbs.add(InitialStateBuilder.FUNCTION_PROTOTYPE);
+                    lbs.add(InitialStateBuilder.ARRAY_PROTOTYPE);
+                    lbs.add(InitialStateBuilder.STRING_PROTOTYPE);
+                    lbs.add(InitialStateBuilder.BOOLEAN_PROTOTYPE);
+                    lbs.add(InitialStateBuilder.NUMBER_PROTOTYPE);
+                    lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
+                    lbs.add(InitialStateBuilder.PROXY_PROTOTYPE);
+                    lbs.add(InitialStateBuilder.REGEXP_PROTOTYPE);
+                    //lbs.add(InitialStateBuilder.GLOBAL);
+                    lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
+
+                    Set<PKey> forbidden = initial.getProperties(lbs, ObjProperties.PropertyQuery.makeQuery().includeSymbols().withoutProto())
+                            .getMaybe()
+                            .stream()
+                            .collect(Collectors.toSet());
+                    forbidden.add(PKey.mk("prototype"));
+                    forbidden.add(PKey.__PROTO__);
+
+                    defaultAnyString = Value.makeAnyStrNotUInt().removePKeys(forbidden);
+                }
+                return defaultAnyString;
+            }
+            return Value.makeAnyStr();
         }
 
         @Override

@@ -1,5 +1,7 @@
 package dk.webbies.tajscheck.parsespec;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -65,7 +67,7 @@ public class ParseDeclaration {
     }
 
     public static Map<Type, String> getTypeNamesMap(SpecReader spec) {
-        Map<Type, String> typeNames = new HashMap<>();
+        HashMap<Type, String> typeNames = new HashMap<>();
         markNamedTypes(spec.getNamedTypes(), typeNames);
 
         PriorityQueue<Arg> queue = new PriorityQueue<>(Comparator.comparingInt(Arg::getDepth));

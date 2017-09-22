@@ -30,6 +30,15 @@ import static org.junit.Assert.assertThat;
 public class TAJSUtil {
 
     public static TajsAnalysisResults runNoDriverTAJS(Benchmark bench, int secondsTimeout, BenchmarkInfo info, List<Test> tests) throws TimeoutException {
+        return runNoDriverTAJS(file, secondsTimeout, info, tests);
+    }
+
+    public static TajsAnalysisResults runNoDriverTAJS(
+            String file,
+            int secondsTimeout,
+            BenchmarkInfo info,
+            List<Test> tests,
+            boolean useInspector) throws TimeoutException {
         dk.brics.tajs.Main.reset();
 
         OptionValues additionalOpts = new OptionValues();
@@ -56,7 +65,6 @@ public class TAJSUtil {
         additionalOpts.enableTest();
         additionalOpts.enableDeterminacy();
 
-//        additionalOpts.enableInspector();
         additionalOpts.enablePolyfillMDN();
         additionalOpts.enablePolyfillTypedArrays();
         additionalOpts.enablePolyfillES6Collections();
@@ -70,14 +78,19 @@ public class TAJSUtil {
         additionalOpts.enableTypeChecks();
 
         additionalOpts.getSoundnessTesterOptions().setTest(false);
+        //additionalOpts.enableTypeFilters();
 
+        additionalOpts.getUnsoundness().setIgnoreSomePrototypesDuringDynamicPropertyReads(true);
+        additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyReads(true);
+        additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyWrites(true);
 
         additionalOpts.enableUnevalizer();
+        if(useInspector) additionalOpts.enableInspector();
 
         List<IAnalysisMonitoring> optMonitors = new LinkedList<>();
 
         if (secondsTimeout > 0) { // Timeout
-            AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, -1, true);
+            AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, -1, !useInspector);
             optMonitors.add(timeLimiter);
         }
 
@@ -111,15 +124,19 @@ public class TAJSUtil {
         return new TajsAnalysisResults(violations, warnings, typeTester.getPerformedTests(), notPerformed);
     }
 
-    public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout) throws Exception {
+    public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout, boolean useInspector) throws Exception {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
         List<Test> tests = new TestCreator(info).createTests();
 
-        TajsAnalysisResults result = runNoDriverTAJS(bench, secondsTimeout, info, tests);
+        TajsAnalysisResults result = runNoDriverTAJS(bench, secondsTimeout, info, tests, useInspector);
 
         //System.out.println(prettyResult(result, assertionResult -> assertionResult.result.isSometimesFalse()));
 
         return result;
+    }
+
+    public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout) throws Exception {
+        return runNoDriver(bench, secondsTimeout, false);
     }
 
     public static class TajsAnalysisResults {

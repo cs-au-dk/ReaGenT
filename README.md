@@ -14,6 +14,12 @@ A sound dynamic/static check of TypeScript declaration files.
     - `cd ts-spec-reader`
     - `npm install`
     - `tsc --module commonjs src/*.ts`
+ - Set up TAJS:
+    - Create a .tajsconfig file in the project root with the following informations:
+    ```
+    tajs = <absolute path to tajs>
+    ts-spec-reader = <absolute path to ts-spec-reader>
+    ```
     
 ## Tests
 To get a feeling of what TAJSCheck does, run the `UnitTests` class. 

@@ -10,3 +10,4 @@ include "jalangilogger",
 project(':jalangilogger').projectDir = new File('./tajs/extras/jalangilogger')
 project(':inspector').projectDir = new File('./tajs/extras/inspector')
 project(':tajs').projectDir = new File('./tajs')
+project(':ts-spec-reader').projectDir = new File('./ts-spec-reader')

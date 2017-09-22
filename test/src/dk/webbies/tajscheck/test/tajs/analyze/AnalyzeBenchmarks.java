@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.test.tajs.analyze;
 
+import dk.brics.tajs.options.Options;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
@@ -13,6 +14,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -123,7 +126,24 @@ public class AnalyzeBenchmarks extends TestCase {
     public void analyzeBenchmark() throws Exception {
         Benchmark benchmark = this.benchmark.withOptions(options());
         try {
-            System.out.println(TAJSUtil.runNoDriver(benchmark, 90));
+            System.out.println(TAJSUtil.runNoDriver(benchmark, 180));
+        } catch (TimeoutException ignored) {
+            System.err.println("Timeout");
+        }
+    }
+
+    @Test
+    public void analyzeBenchmarkPatched() throws Exception {
+        Path dtspath = Paths.get(this.benchmark.dTSFile);
+        Path entryPath = Paths.get(this.benchmark.jsFile);
+        String patched = dtspath.getParent().resolve("patched." + dtspath.getFileName()).toString();
+        String patchedEnty = entryPath.getParent().resolve("patched." + entryPath.getFileName()).toString();
+        Benchmark benchmark = this.benchmark.withOptions(options())
+                .withDecl(patched)
+                .withJsFile(patchedEnty)
+                ;
+        try {
+            System.out.println(TAJSUtil.runNoDriver(benchmark,180, true));
         } catch (TimeoutException ignored) {
             System.err.println("Timeout");
         }
