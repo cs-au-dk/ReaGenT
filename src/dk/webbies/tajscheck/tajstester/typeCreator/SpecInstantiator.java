@@ -477,7 +477,7 @@ public class SpecInstantiator {
         }
 
         private Value makeString() {
-            if (info.options.betterAnyString) {
+            if (info.options.staticOptions.betterAnyString) {
                 if(defaultAnyString == null) {
                     State initial = c.getAnalysisLatticeElement().getState(c.getAnalysis().getInitialStateBuilder().initialBlockAndContext);
                     List<ObjectLabel> lbs = newList();

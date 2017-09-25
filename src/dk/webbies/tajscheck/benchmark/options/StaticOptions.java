@@ -12,6 +12,7 @@ public class StaticOptions implements OptionsI {
     public final boolean limitSideEffects;
     public final boolean killGetters;
     public final boolean createSingletonObjects;
+    public final boolean betterAnyString;
     private final Builder builder;
 
 
@@ -19,6 +20,7 @@ public class StaticOptions implements OptionsI {
         this.limitSideEffects = builder.limitSideEffects;
         this.killGetters = builder.killGetters;
         this.createSingletonObjects = builder.createSingletonObjects;
+        this.betterAnyString = builder.betterAnyString;
         this.builder = builder;
     }
 
@@ -31,6 +33,7 @@ public class StaticOptions implements OptionsI {
         private boolean limitSideEffects = false; // Make data-flow only happen between tests that are strictly dependent on each other.
         private boolean killGetters = false;
         private boolean createSingletonObjects = false;
+        public boolean betterAnyString = true; // if true all string types are *not* well-known strings in Object or Function prototypes
         private final CheckOptions.Builder outerBuilder;
 
         public Builder(CheckOptions.Builder outerBuilder) {

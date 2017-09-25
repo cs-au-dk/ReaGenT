@@ -30,11 +30,11 @@ import static org.junit.Assert.assertThat;
 public class TAJSUtil {
 
     public static TajsAnalysisResults runNoDriverTAJS(Benchmark bench, int secondsTimeout, BenchmarkInfo info, List<Test> tests) throws TimeoutException {
-        return runNoDriverTAJS(file, secondsTimeout, info, tests);
+        return runNoDriverTAJS(bench, secondsTimeout, info, tests);
     }
 
     public static TajsAnalysisResults runNoDriverTAJS(
-            String file,
+            Benchmark bench,
             int secondsTimeout,
             BenchmarkInfo info,
             List<Test> tests,
