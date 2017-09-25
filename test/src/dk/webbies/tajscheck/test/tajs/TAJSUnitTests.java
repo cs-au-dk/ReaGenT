@@ -512,7 +512,7 @@ public class TAJSUnitTests {
 
     @Test
     public void extendsInterface() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("extendsInterface");
+        TAJSUtil.TajsAnalysisResults result = run("extendsInterface", options().staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -550,7 +550,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createConstructor() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createConstructor");
+        TAJSUtil.TajsAnalysisResults result = run("createConstructor", options().staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -559,7 +559,7 @@ public class TAJSUnitTests {
 
     @Test
     public void canHaveDifferentGenerics() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("canHaveDifferentGenerics");
+        TAJSUtil.TajsAnalysisResults result = run("canHaveDifferentGenerics", options().staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -603,7 +603,7 @@ public class TAJSUnitTests {
 
     @Test
     public void classInheritance() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("classInheritance");
+        TAJSUtil.TajsAnalysisResults result = run("classInheritance", options().staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -713,7 +713,7 @@ public class TAJSUnitTests {
 
     @Test
     public void readProperty() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("readProperty");
+        TAJSUtil.TajsAnalysisResults result = run("readProperty", options().staticOptions.setCreateSingletonObjects(true));
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
@@ -746,17 +746,17 @@ public class TAJSUnitTests {
 
     @Test
     public void soundness1() throws Exception {
-        soundness("soundness1");
+        soundness("soundness1", options -> options.staticOptions.setCreateSingletonObjects(true));
     }
 
     @Test
     public void soundness2() throws Exception {
-        soundness("soundness2");
+        soundness("soundness2", options -> options.staticOptions.setCreateSingletonObjects(true));
     }
 
     @Test
     public void smokeTest1() throws Exception {
-        run(benchFromFolder("smokeTest1", options(), Benchmark.RUN_METHOD.BROWSER));
+        run(benchFromFolder("smokeTest1", options().staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
     }
 
     // TODO: Side-effects test, should be possible if i keep track of labels.
