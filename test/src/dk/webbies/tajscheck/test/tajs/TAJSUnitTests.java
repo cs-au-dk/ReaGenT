@@ -770,5 +770,21 @@ public class TAJSUnitTests {
         run(benchFromFolder("smokeTest1", options(), Benchmark.RUN_METHOD.BROWSER));
     }
 
+    @Test
+    @Ignore // TODO: Fails because the instanceof checks always spuriously throws at runtime.
+    public void instanceOfSmokeTest() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("instanceOfSmokeTest", options().setSplitUnions(false).staticOptions.setCreateSingletonObjects(true));
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
+    @Ignore // TODO: Fails because Function is created for one signature, and that object is then not available when creating values for the other signature.
+    public void createWeakObjects() throws Exception {
+        run("createWeakObjects");
+    }
+
     // TODO: Test string-indexers somehow.
 }
