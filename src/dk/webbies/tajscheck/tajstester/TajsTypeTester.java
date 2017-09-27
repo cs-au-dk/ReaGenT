@@ -264,6 +264,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             context = context.withThisType(type);
         }
 
+        if ("Function".equals(info.typeNames.get(type))) {
+            return valueHandler.createValue(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info));
+        }
+
         if (type instanceof InterfaceType || type instanceof ClassType) {
             TypeContext finalContext;
             List<Signature> signatures;
