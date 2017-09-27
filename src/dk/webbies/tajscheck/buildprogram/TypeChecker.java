@@ -662,7 +662,7 @@ public class TypeChecker {
                 if (arg.depthRemaining <= -1) { // One level deeper than normal property-accesses, on purpose.
                     return Collections.emptyList();
                 }
-                arg = arg.decreaseDepth();
+//                arg = arg.decreaseDepth();
                 TypeWithContext lookup = typeContext.get(parameter);
                 return lookup.getType().accept(this, arg.withContext(lookup.getTypeContext()));
             }
