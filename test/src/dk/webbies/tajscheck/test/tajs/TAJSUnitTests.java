@@ -797,5 +797,15 @@ public class TAJSUnitTests {
                 .hasViolations();
     }
 
+    @Test
+    public void motivatingPath() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run(benchFromFolder("motivatingPath", options(), Benchmark.RUN_METHOD.BROWSER));
+
+        expect(result)
+                .performedAllTests()
+                .forPath("window, Path, map, (), exit, [arg0]")
+                .hasViolations();
+    }
+
     // TODO: Test string-indexers somehow.
 }
