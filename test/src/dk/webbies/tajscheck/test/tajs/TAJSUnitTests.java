@@ -8,6 +8,7 @@ import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.TypeViolation;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
+import dk.webbies.tajscheck.test.dynamic.UnitTests;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import org.hamcrest.MatcherAssert;
@@ -19,6 +20,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
+import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.TYPEOF;
 import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -799,12 +802,20 @@ public class TAJSUnitTests {
 
     @Test
     public void motivatingPath() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run(benchFromFolder("motivatingPath", options(), Benchmark.RUN_METHOD.BROWSER));
+        Benchmark bench = benchFromFolder("motivatingPath", options(), Benchmark.RUN_METHOD.BROWSER);
 
+        TAJSUtil.TajsAnalysisResults result = run(bench);
         expect(result)
                 .performedAllTests()
                 .forPath("window, Path, map, (), exit, [arg0]")
                 .hasViolations();
+
+        // the dynamic testing can also find the error.
+        OutputParser.RunResult dynamicResult = UnitTests.run(bench, "foo");
+        UnitTests.expect(dynamicResult)
+                .forPath("window.Path.map.().exit.[arg0]")
+                .expected("1 parameters")
+                .got(STRING, "0 parameters");
     }
 
     // TODO: Test string-indexers somehow.

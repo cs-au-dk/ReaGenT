@@ -73,11 +73,11 @@ public class UnitTests {
         return runDriver(bench, seed);
     }
 
-    private String runDriver(Benchmark bench, String seed) throws Exception {
+    private static String runDriver(Benchmark bench, String seed) throws Exception {
         return runDriver(bench, seed, false);
     }
 
-    private String runDriver(Benchmark bench, String seed, boolean skipConsistencyCheck) throws Exception {
+    private static String runDriver(Benchmark bench, String seed, boolean skipConsistencyCheck) throws Exception {
         if (!skipConsistencyCheck) {
 //            sanityCheck(bench);
         }
@@ -108,50 +108,50 @@ public class UnitTests {
         assertThat(result.typeErrors, is(empty()));
     }
 
-    private static ParseResultTester expect(RunResult result) {
+    public static ParseResultTester expect(RunResult result) {
         return new ParseResultTester(result.typeErrors);
     }
 
-    static final class ParseResultTester {
+    public static final class ParseResultTester {
         private List<TypeError> results;
 
         private ParseResultTester(List<TypeError> result) {
             this.results = result;
         }
 
-        ParseResultTester forPath(String path) {
+        public ParseResultTester forPath(String path) {
             return forPath(is(path));
         }
 
-        ParseResultTester forPath(Matcher<String> path) {
+        public ParseResultTester forPath(Matcher<String> path) {
             return forPath(Collections.singletonList(path));
         }
 
-        ParseResultTester forPath(String... paths) {
+        public ParseResultTester forPath(String... paths) {
             return forPath(Arrays.stream(paths).map(CoreMatchers::containsString).collect(Collectors.toList()));
         }
 
-        ParseResultTester forPath(List<Matcher<String>> paths) {
+        public ParseResultTester forPath(List<Matcher<String>> paths) {
             results = results.stream().filter(candidate -> paths.stream().anyMatch(matcher -> matcher.matches(candidate.path))).collect(Collectors.toList());
 
             return this;
         }
 
-        private ParseResultTester got(ExpectType type, String str) {
+        public  ParseResultTester got(ExpectType type, String str) {
             return got(type, is(str));
         }
 
-        private ParseResultTester toPass() {
+        public  ParseResultTester toPass() {
             assertThat(results, is(empty()));
             return this;
         }
 
-        private ParseResultTester toFail() {
+        public  ParseResultTester toFail() {
             assertThat(results, is(not(empty())));
             return this;
         }
 
-        private ParseResultTester got(ExpectType type, Matcher<String> matcher) {
+        public ParseResultTester got(ExpectType type, Matcher<String> matcher) {
             for (TypeError result : results) {
                 if (type == ExpectType.JSON) {
                     assertThat(result.JSON, matcher);
@@ -166,11 +166,11 @@ public class UnitTests {
             return this;
         }
 
-        ParseResultTester expected(String type) {
+        public ParseResultTester expected(String type) {
             return expected(is(type));
         }
 
-        ParseResultTester expected(Matcher<String> type) {
+        public ParseResultTester expected(Matcher<String> type) {
             boolean matched = false;
             for (TypeError result : results) {
                 matched |= type.matches(result.expected);
@@ -184,7 +184,7 @@ public class UnitTests {
             return this;
         }
 
-        ParseResultTester type(String type) {
+        public ParseResultTester type(String type) {
             results = results.stream().filter(candidate -> type.equals(candidate.type)).collect(Collectors.toList());
 
             assertThat("expected something with type: " + type, results.size(),is(not(equalTo(0))));
@@ -192,7 +192,7 @@ public class UnitTests {
             return this;
         }
 
-        enum ExpectType {
+        public enum ExpectType {
             TYPEOF,
             STRING,
             JSON
@@ -211,7 +211,7 @@ public class UnitTests {
         return run(benchFromFolder(name, options));
     }
 
-    private RunResult run(Benchmark benchmark) throws Exception {
+    public static RunResult run(Benchmark benchmark) throws Exception {
         return run(benchmark, "foo");
     }
 
@@ -219,7 +219,7 @@ public class UnitTests {
         return run(benchFromFolder(name, options), seed);
     }
 
-    private RunResult run(Benchmark benchmark, String seed) throws Exception {
+    public static RunResult run(Benchmark benchmark, String seed) throws Exception {
         return parseDriverResult(runDriver(benchmark, seed));
     }
 
@@ -1021,7 +1021,7 @@ public class UnitTests {
         assertThat(result.errors, everyItem(is(equalTo("RuntimeError: Cannot construct this IntersectionType")))); // <- this happens, it is ok, i cannot at runtime construct a type which is the intersection of two types.
     }
 
-    @Test
+    @Test // TODO: Seems that numberIndexChecks happen too deeply.
     public void extendsArray3() throws Exception {
         RunResult result = run("extendsArray3", options().setCheckDepthReport(0).setCheckDepthReport(0).build());
 
@@ -1081,7 +1081,7 @@ public class UnitTests {
 
     }
 
-    @Test
+    @Test // TODO: StackOverflow
     public void exponentialComplexity() throws Exception {
         Main.writeFullDriver(benchFromFolder("exponentialComplexity"));
     }
@@ -1718,8 +1718,8 @@ public class UnitTests {
                 .got(STRING, "123");
 
         expect(result)
-                .forPath("module.Bar.[arg0]")
-                .expected("number")
-                .got(STRING, "undefined");
+                .forPath("module.Bar")
+                .expected("1 parameters")
+                .got(STRING, "0 parameters");
     }
 }

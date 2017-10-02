@@ -571,6 +571,8 @@ public class TypeCreator {
 
             List<Statement> typeChecks = new ArrayList<>();
 
+            typeChecks.add(checkNumberOfArgs(signature, path));
+
             if (signature.isHasRestParameter() && parameters.size() > 0) {
                 Type restType = getArrayType(parameters.get(parameters.size() - 1).getType());
 
@@ -623,8 +625,6 @@ public class TypeCreator {
                     )
             ).forEach(typeChecks::add);
 
-            typeChecks.add(checkNumberOfArgs(signature));
-
             BlockStatement functionBody = block(
                     variable(identifier("args"), identifier("arguments")),
                     // Currently not using the information whether or not the signature was correct. The assertion-errors has already been reported anyway.
@@ -675,7 +675,11 @@ public class TypeCreator {
 
                         return block(
                                 variable("signatureCorrect" + signatureIndex, call(function(block(
-                                        checkNumberOfArgs(signature),
+                                        statement(function("assert", block(
+                                                comment("Overriding assert, i'm only interested in IF the type check passes. "),
+                                                Return(identifier("cond"))
+                                        ), "cond")),
+                                        checkNumberOfArgs(signature, path),
                                         checkRestArgs,
                                         block(Util.withIndex(parameters).map(parameterPair -> {
                                             Integer argIndex = parameterPair.getRight();
@@ -753,7 +757,7 @@ public class TypeCreator {
         }
     }
 
-    private Statement checkNumberOfArgs(Signature signature) {
+    private Statement checkNumberOfArgs(Signature signature, String path) {
         BinaryExpression condition = binary(
                 member(identifier("args"), "length"),
                 Operator.GREATER_THAN_EQUAL,
@@ -771,9 +775,23 @@ public class TypeCreator {
         }
         return block(
                 ifThen(
-                        unary(Operator.NOT, condition
+                        unary(Operator.NOT, call(
+                                identifier("assert"),
+                                condition,
+                                string(path),
+                                signature.isHasRestParameter() ?
+                                        string("At least " + signature.getMinArgumentCount() + " parameters") :
+                                        signature.getMinArgumentCount() == signature.getParameters().size() ?
+                                                string(signature.getMinArgumentCount() + " parameters") :
+                                                string("Between " + signature.getMinArgumentCount() + " and " + signature.getParameters().size() + " parameters"),
+                                binary(member(identifier("args"), "length"), Operator.PLUS, string(" parameters")),
+                                identifier("i"),
+                                string("number of args")
+                                )
                         ),
-                        Return(bool(false))
+                        block(
+                                Return(bool(false))
+                        )
                 )
         );
     }
