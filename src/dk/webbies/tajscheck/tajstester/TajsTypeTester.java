@@ -53,8 +53,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private final Set<Test> performed = new LinkedHashSet<>();
 
-    private final ArrayListMultiMap<Test, Test> depends;
-
     private TypeValuesHandler valueHandler = null;
 
     private BasicBlock allTestsBlock;
@@ -68,14 +66,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
         this.tests = tests;
         this.info = info;
-        this.depends = new ArrayListMultiMap<>();
-        for (Test dependsTest : tests) {
-            for (Test onTest : tests) {
-                if (depends(dependsTest, onTest)) {
-                    depends.put(dependsTest, onTest);
-                }
-            }
-        }
     }
 
     public int getTotalTests() {return tests.size();}
@@ -140,31 +130,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             });
         }
 
-        long start = System.currentTimeMillis();
-        int count = 0;
-        if (!info.options.staticOptions.limitSideEffects) {
-            // we propagate states for each depending states
-            Context widenContext = sensitivity.makeWideningLocalTestContext(allTestsContext);
 
-            // propagate to a widening state
-            for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
-                Test test = entry.getKey();
-                if (!performed.contains(test)) {
-                    continue;
-                }
-                Context testContext = sensitivity.makeLocalTestContext(allTestsContext, test);
-                State source = c.getAnalysisLatticeElement().getState(allTestsBlock, testContext);
-                c.propagateToBasicBlock(source.clone(), allTestsBlock, widenContext);
-            }
-
-            // propagate from the widen state back to the nodes
-            State widenState = c.getAnalysisLatticeElement().getState(allTestsBlock, widenContext);
-            for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
-                Context testContext = sensitivity.makeLocalTestContext(allTestsContext, entry.getKey());
-                c.propagateToBasicBlock(widenState, allTestsBlock, testContext);
-            }
-        } else {
-            for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
                 Test dependingTest = entry.getKey();
                 if (!performed.contains(dependingTest)) {
                     continue;
@@ -178,8 +144,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     State source = c.getAnalysisLatticeElement().getState(allTestsBlock, onContext);
                     c.propagateToBasicBlock(source.clone(), allTestsBlock, dependentContext);
                 }
-            }
-        }
+
+
 
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
 
@@ -217,9 +183,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     // returns true if "dependent" depends on "on".
     private boolean depends(Test dependent, Test on) {
-        if (!info.options.staticOptions.limitSideEffects) {
-            return true;
-        }
         AtomicBoolean result = new AtomicBoolean(false);
 
         Set<TypeWithContext> consumes = new HashSet<>();
