@@ -627,40 +627,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    public void motivating1() throws Exception {
-        expect(run("motivating1"))
-                .performedAllTests()
-                .hasNoViolations();
-    }
-
-    @Test
-    public void motivating2() throws Exception {
-        expect(run("motivating2"))
-                .performedAllTests()
-                .forPath("sum(,...string)")
-                .hasViolations();
-    }
-
-    @Test
-    public void motivating3() throws Exception {
-        expect(run("motivating3"))
-                .performedAllTests()
-                .hasViolations();
-
-        expect(run("motivating3", options().staticOptions.setLimitSideEffects(true)))
-                .performedAllTests()
-                .hasNoViolations();
-    }
-
-    @Test
-    public void motivating4() throws Exception {
-        expect(run("motivating4"))
-                .performedAllTests()
-                .forPath("module.consume(obj)")
-                .hasViolations();
-    }
-
-    @Test
     @Ignore // TODO: Look at any later.
     public void any() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("any");
