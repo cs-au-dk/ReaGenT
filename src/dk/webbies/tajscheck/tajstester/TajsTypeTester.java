@@ -104,15 +104,18 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker);
 
         performed.clear();
+        State current_state = null;
         for (Test test : tests) {
             // Generating one local context per test
             Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
+            if(current_state != null) {
+                c.propagateToBasicBlock(current_state.clone(), allTestsBlock, newc);
+            }
 
             // attempting to perform the test in the local context
             c.withState(testState, () -> {
-
                 if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
                     if (DEBUG && !c.isScanning()) {
                         System.out.println("Skipped test " + test);
@@ -128,24 +131,17 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                 test.accept(visitor);
             });
+
+            if(performed.contains(test)) {
+                // then we propagate the state to the current "next" state
+                State source = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
+                if (current_state == null) {
+                    current_state = source;
+                } else {
+                    current_state.propagate(source.clone(), false);
+                }
+            }
         }
-
-
-                Test dependingTest = entry.getKey();
-                if (!performed.contains(dependingTest)) {
-                    continue;
-                }
-                for (Test on : entry.getValue()) {
-                    if (!performed.contains(on)) {
-                        continue;
-                    }
-                    Context dependentContext = sensitivity.makeLocalTestContext(allTestsContext, dependingTest);
-                    Context onContext = sensitivity.makeLocalTestContext(allTestsContext, on);
-                    State source = c.getAnalysisLatticeElement().getState(allTestsBlock, onContext);
-                    c.propagateToBasicBlock(source.clone(), allTestsBlock, dependentContext);
-                }
-
-
 
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
 

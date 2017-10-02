@@ -149,17 +149,6 @@ public class AnalyzeBenchmarks extends TestCase {
         }
     }
 
-    @Test(timeout = 120 * 1000)
-    public void analyzeBenchmarkLimitedSideEffects() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).staticOptions.setLimitSideEffects(true));
-        try {
-            System.out.println(TAJSUtil.runNoDriver(benchmark, 90));
-
-        } catch (TimeoutException ignored) {
-            System.err.println("Timeout");
-        }
-    }
-
     @Test(timeout = 90 * 1000)
     public void initialize() throws Exception {
         Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).setOnlyInitialize(true));

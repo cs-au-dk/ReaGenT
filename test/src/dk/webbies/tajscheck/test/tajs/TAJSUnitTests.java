@@ -171,21 +171,6 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
-    @Test
-    public void sideEffects() throws Exception {
-        TAJSUtil.TajsAnalysisResults withSideEffects = run("sideEffects");
-
-        expect(withSideEffects)
-                .performedAllTests()
-                .hasViolations();
-
-        TAJSUtil.TajsAnalysisResults noSideEffects = run("sideEffects", options().staticOptions.setLimitSideEffects(true));
-
-        expect(noSideEffects)
-                .performedAllTests()
-                .hasNoViolations();
-
-    }
 
     @Test
     public void simpleUnion() throws Exception {
@@ -495,7 +480,7 @@ public class TAJSUnitTests {
 
     @Test
     public void primitives() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("primitives", options().staticOptions.setLimitSideEffects(true));
+        TAJSUtil.TajsAnalysisResults result = run("primitives", options().staticOptions);
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
@@ -644,7 +629,7 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasViolations();
 
-        expect(run("motivating3", options().staticOptions.setLimitSideEffects(true)))
+        expect(run("motivating3", options().staticOptions))
                 .performedAllTests()
                 .hasNoViolations();
     }
@@ -740,14 +725,14 @@ public class TAJSUnitTests {
 
     @Test
     public void deepChecking() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("deepChecking", options().staticOptions.setLimitSideEffects(true));
+        TAJSUtil.TajsAnalysisResults result = run("deepChecking", options().staticOptions);
 
         assertTrue(result.testNot.stream().map(dk.webbies.tajscheck.testcreator.test.Test::getPath).anyMatch("foo().foo"::equals));
     }
 
     @Test
     public void checkRecursiveObject() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("checkRecursiveObject", options().staticOptions.setLimitSideEffects(true));
+        TAJSUtil.TajsAnalysisResults result = run("checkRecursiveObject", options().staticOptions);
 
         expect(result)
                 .performedAllTests()
