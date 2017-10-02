@@ -771,5 +771,16 @@ public class TAJSUnitTests {
         run("createWeakObjects");
     }
 
+    @Test
+    @Ignore // TODO: Fails because we never generate an object that has the same identity as an object created internally by the library.
+    public void objectIdentity() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("objectIdentity");
+
+        expect(result)
+                .performedAllTests()
+                .forPath("module.test(obj)")
+                .hasViolations();
+    }
+
     // TODO: Test string-indexers somehow.
 }
