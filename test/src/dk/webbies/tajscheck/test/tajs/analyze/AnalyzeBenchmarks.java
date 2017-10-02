@@ -143,7 +143,7 @@ public class AnalyzeBenchmarks extends TestCase {
                 .withJsFile(patchedEnty)
                 ;
         try {
-            System.out.println(TAJSUtil.runNoDriver(benchmark,180, true));
+            System.out.println(TAJSUtil.runNoDriver(benchmark,400, true));
         } catch (TimeoutException ignored) {
             System.err.println("Timeout");
         }

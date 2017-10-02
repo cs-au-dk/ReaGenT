@@ -138,7 +138,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 if (current_state == null) {
                     current_state = source;
                 } else {
-                    current_state.propagate(source.clone(), false);
+                    current_state.propagate(source, false);
                 }
             }
         }
