@@ -114,7 +114,7 @@ public class AnalyzeBenchmarks extends TestCase {
                 .collect(Collectors.toList());
     }
 
-    private Function<CheckOptions.Builder, CheckOptions.Builder> options() {
+    public static Function<CheckOptions.Builder, CheckOptions.Builder> options() {
         return options -> options
                 .setCombineNullAndUndefined(true) // because no-one cares.
                 .staticOptions
@@ -143,18 +143,7 @@ public class AnalyzeBenchmarks extends TestCase {
                 .withJsFile(patchedEnty)
                 ;
         try {
-            System.out.println(TAJSUtil.runNoDriver(benchmark,180, true));
-        } catch (TimeoutException ignored) {
-            System.err.println("Timeout");
-        }
-    }
-
-    @Test(timeout = 120 * 1000)
-    public void analyzeBenchmarkLimitedSideEffects() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).staticOptions.setLimitSideEffects(true));
-        try {
-            System.out.println(TAJSUtil.runNoDriver(benchmark, 90));
-
+            System.out.println(TAJSUtil.runNoDriver(benchmark,400, true));
         } catch (TimeoutException ignored) {
             System.err.println("Timeout");
         }

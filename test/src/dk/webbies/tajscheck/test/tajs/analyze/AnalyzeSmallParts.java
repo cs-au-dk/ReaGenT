@@ -61,12 +61,6 @@ public class AnalyzeSmallParts extends TestCase {
         doAnalysis(this.benchmark);
     }
 
-    @Test
-    public void analyzeWithLimitedSideEffects() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options -> options.staticOptions.setLimitSideEffects(true));
-        doAnalysis(benchmark);
-    }
-
     private void doAnalysis(Benchmark benchmark) throws Exception {
         if (failedBenchmarks.contains(benchmark.name)) {
             System.err.println("This benchmark has either timed out, or failed initialization before, I'm skipping it.");

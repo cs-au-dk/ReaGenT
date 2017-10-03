@@ -19,10 +19,11 @@ public class TypeValuesHandler {
     private final Map<TypeWithContext, Value> savedValues = new HashMap<>();
     private final SpecInstantiator instantiator;
 
-    TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, BenchmarkInfo info) {
+    TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, TajsTypeTester tester, BenchmarkInfo info) {
         this.typeNames = typeNames;
         this.info = info;
         this.instantiator = new SpecInstantiator(c, info);
+        tester.registerTestEntryObserver(this.instantiator);
     }
 
     public Value getTheAny() {

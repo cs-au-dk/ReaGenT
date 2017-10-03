@@ -53,8 +53,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private final Set<Test> performed = new LinkedHashSet<>();
 
-    private final ArrayListMultiMap<Test, Test> depends;
-
     private TypeValuesHandler valueHandler = null;
 
     private BasicBlock allTestsBlock;
@@ -65,17 +63,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private TesterContextSensitivity sensitivity;
 
+    private Set<TestBlockEntryObserver> observers = newSet();
+
     public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
         this.tests = tests;
         this.info = info;
-        this.depends = new ArrayListMultiMap<>();
-        for (Test dependsTest : tests) {
-            for (Test onTest : tests) {
-                if (depends(dependsTest, onTest)) {
-                    depends.put(dependsTest, onTest);
-                }
-            }
-        }
     }
 
     public int getTotalTests() {return tests.size();}
@@ -109,20 +101,27 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             return;
         }
 
+        for(TestBlockEntryObserver obs : observers) {
+            obs.onTestBlockEntry(c);
+        }
+
         TajsTypeChecker typeChecker = new TajsTypeChecker(c, info);
 
         TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker);
 
         performed.clear();
+        State previousState = null;
         for (Test test : tests) {
             // Generating one local context per test
             Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
+            if(previousState != null) {
+                c.propagateToBasicBlock(previousState.clone(), allTestsBlock, newc);
+            }
 
             // attempting to perform the test in the local context
             c.withState(testState, () -> {
-
                 if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
                     if (DEBUG && !c.isScanning()) {
                         System.out.println("Skipped test " + test);
@@ -138,45 +137,14 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                 test.accept(visitor);
             });
-        }
 
-        long start = System.currentTimeMillis();
-        int count = 0;
-        if (!info.options.staticOptions.limitSideEffects) {
-            // we propagate states for each depending states
-            Context widenContext = sensitivity.makeWideningLocalTestContext(allTestsContext);
-
-            // propagate to a widening state
-            for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
-                Test test = entry.getKey();
-                if (!performed.contains(test)) {
-                    continue;
-                }
-                Context testContext = sensitivity.makeLocalTestContext(allTestsContext, test);
-                State source = c.getAnalysisLatticeElement().getState(allTestsBlock, testContext);
-                c.propagateToBasicBlock(source.clone(), allTestsBlock, widenContext);
-            }
-
-            // propagate from the widen state back to the nodes
-            State widenState = c.getAnalysisLatticeElement().getState(allTestsBlock, widenContext);
-            for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
-                Context testContext = sensitivity.makeLocalTestContext(allTestsContext, entry.getKey());
-                c.propagateToBasicBlock(widenState, allTestsBlock, testContext);
-            }
-        } else {
-            for (Map.Entry<Test, Collection<Test>> entry : depends.asMap().entrySet()) {
-                Test dependingTest = entry.getKey();
-                if (!performed.contains(dependingTest)) {
-                    continue;
-                }
-                for (Test on : entry.getValue()) {
-                    if (!performed.contains(on)) {
-                        continue;
-                    }
-                    Context dependentContext = sensitivity.makeLocalTestContext(allTestsContext, dependingTest);
-                    Context onContext = sensitivity.makeLocalTestContext(allTestsContext, on);
-                    State source = c.getAnalysisLatticeElement().getState(allTestsBlock, onContext);
-                    c.propagateToBasicBlock(source.clone(), allTestsBlock, dependentContext);
+            if(performed.contains(test)) {
+                // then we propagate the state to the current "next" state
+                State source = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
+                if (previousState == null) {
+                    previousState = source;
+                } else {
+                    previousState.propagate(source, false);
                 }
             }
         }
@@ -211,15 +179,16 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
         }
         if(valueHandler == null) {
-            valueHandler = new TypeValuesHandler(info.typeNames, c, info);
+            valueHandler = new TypeValuesHandler(info.typeNames, c, this, info);
         }
+    }
+
+    public void registerTestEntryObserver(TestBlockEntryObserver obs) {
+        observers.add(obs);
     }
 
     // returns true if "dependent" depends on "on".
     private boolean depends(Test dependent, Test on) {
-        if (!info.options.staticOptions.limitSideEffects) {
-            return true;
-        }
         AtomicBoolean result = new AtomicBoolean(false);
 
         Set<TypeWithContext> consumes = new HashSet<>();

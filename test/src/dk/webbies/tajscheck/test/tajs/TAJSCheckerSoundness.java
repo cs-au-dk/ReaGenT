@@ -13,6 +13,7 @@ import org.junit.runners.Parameterized;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,13 +53,15 @@ public class TAJSCheckerSoundness {
 //        TODO: (typeNames): Foundation, Materialize, highlight.js, Jasmine, reveal.js, Leaflet
         // TODO: Soundness: PleaseJS
 
-        return result.stream()
+        result = result.stream()
                 .filter(bench -> !bench.name.equals("unit-exponentialComplexity"))
                 .filter(bench -> !createsIntersection.contains(bench.name))
                 .filter(bench -> !intentionallyUnsound.contains(bench.name))
                 .filter(bench -> !unsupportedFeatures.contains(bench.name))
                 .filter(bench -> !blackList.contains(bench.name))
                 .collect(Collectors.toList());
+        Collections.shuffle(result);
+        return result;
 //        return result;
     }
 
