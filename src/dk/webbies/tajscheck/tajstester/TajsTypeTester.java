@@ -10,6 +10,7 @@ import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
+import dk.brics.tajs.options.Options;
 import dk.brics.tajs.solver.BlockAndContext;
 import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.solver.ICallEdge;
@@ -115,16 +116,24 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker);
 
         performed.clear();
-        State previousState = null;
+        Context previousTestContext = null;
         for (Test test : tests) {
             // Generating one local context per test
             Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
-            State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
-            if(previousState != null) {
-                c.propagateToBasicBlock(previousState.clone(), allTestsBlock, newc);
+            // Propagate previous state into this, chaining the flow
+            if(previousTestContext != null) {
+                State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext);
+                if(Options.get().isNewFlowEnabled()) {
+                    System.out.println("Propagating to this test context");
+                }
+                c.propagateToBasicBlock(preState.clone(), allTestsBlock, newc);
+                if(Options.get().isNewFlowEnabled()) {
+                    System.out.println("Done propagating to this test context");
+                }
             }
 
+            State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
             // attempting to perform the test in the local context
             c.withState(testState, () -> {
                 if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
@@ -144,13 +153,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             });
 
             if(performed.contains(test)) {
-                // then we propagate the state to the current "next" state
-                State source = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
-                if (previousState == null) {
-                    previousState = source;
-                } else {
-                    previousState.propagate(source, false);
-                }
+                previousTestContext = newc;
             }
         }
 
