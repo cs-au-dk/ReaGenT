@@ -187,31 +187,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         observers.add(obs);
     }
 
-    // returns true if "dependent" depends on "on".
-    private boolean depends(Test dependent, Test on) {
-        AtomicBoolean result = new AtomicBoolean(false);
-
-        Set<TypeWithContext> consumes = new HashSet<>();
-        for (Type toTest : dependent.getTypeToTest()) {
-            consumes.add(new TypeWithContext(toTest, dependent.getTypeContext()));
-        }
-
-        for (Type produces : on.getProduces()) {
-            info.typesUtil.forAllSubTypes(produces, on.getTypeContext(), produce -> {
-                if (consumes.contains(produce)) {
-                    result.set(true);
-                }
-            });
-        }
-
-        if (result.get() && DEBUG) {
-            System.out.println(on.getPath() + " -> " + dependent.getPath());
-        }
-
-        return result.get();
-    }
-
-
     @Override
     public Value evaluateCallToSymbolicFunction(HostObject hostObject, CallInfo call, Solver.SolverInterface c) {
         TypeWithContext typeWithContext = ((SpecObjects.TypedObject) hostObject).getType();
