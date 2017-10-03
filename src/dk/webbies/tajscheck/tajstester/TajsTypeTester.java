@@ -86,8 +86,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private static long totalPropagationTime = 0;
 
-    public void triggerTypeTests(Solver.SolverInterface c) {
+    int count = 0;
 
+    public void triggerTypeTests(Solver.SolverInterface c) {
         if(allTestsBlock == null) {
             init(c);
         }
@@ -99,6 +100,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 c.addToWorklist(allTestsBlock, allTestsContext);
             }
             return;
+        }
+
+        if (count++ > 60) {
+            throw new IllegalArgumentException(); // TODO: Remove me!
         }
 
         for(TestBlockEntryObserver obs : observers) {

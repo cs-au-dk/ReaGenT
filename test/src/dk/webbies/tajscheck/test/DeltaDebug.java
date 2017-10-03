@@ -12,6 +12,8 @@ import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -182,20 +184,22 @@ public class DeltaDebug {
         Util.isDeltaDebugging = true;
         Util.alwaysRecreate = false;
         // TODO: analyzeBenchmarks: PeerJS, accounting.js, async
-        Benchmark bench = RunBenchmarks.benchmarks.get("async");
+        Benchmark bench = RunBenchmarks.benchmarks.get("PleaseJS");
+        bench = bench.withOptions(AnalyzeBenchmarks.options())
+                .withOptions(options -> options.staticOptions.setCreateSingletonObjects(true))
+                ;
+        Benchmark finalBench = bench;
         BooleanSupplier predicate = () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                AnalyzeBenchmarks analyzer = new AnalyzeBenchmarks();
-                analyzer.benchmark = bench;
-                analyzer.analyzeBenchmark();
+                TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(finalBench, 180);
                 return false;
             } catch (NullPointerException e) {
-                return true;
-            } catch (AnalysisException e) {
-                return true;
-            } catch (TimeoutException e) {
                 return false;
+            } catch (AnalysisException e) {
+                return false;
+            } catch (IllegalArgumentException e) {
+                return true;
             } catch (AssertionError e) {
                 return false;
             } catch (RuntimeException e) {
