@@ -63,6 +63,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private TesterContextSensitivity sensitivity;
 
+    private Set<TestBlockEntryObserver> observers = newSet();
+
     public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
         this.tests = tests;
         this.info = info;
@@ -99,19 +101,23 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             return;
         }
 
+        for(TestBlockEntryObserver obs : observers) {
+            obs.onTestBlockEntry(c);
+        }
+
         TajsTypeChecker typeChecker = new TajsTypeChecker(c, info);
 
         TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker);
 
         performed.clear();
-        State current_state = null;
+        State previousState = null;
         for (Test test : tests) {
             // Generating one local context per test
             Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
-            if(current_state != null) {
-                c.propagateToBasicBlock(current_state.clone(), allTestsBlock, newc);
+            if(previousState != null) {
+                c.propagateToBasicBlock(previousState.clone(), allTestsBlock, newc);
             }
 
             // attempting to perform the test in the local context
@@ -135,10 +141,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             if(performed.contains(test)) {
                 // then we propagate the state to the current "next" state
                 State source = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
-                if (current_state == null) {
-                    current_state = source;
+                if (previousState == null) {
+                    previousState = source;
                 } else {
-                    current_state.propagate(source, false);
+                    previousState.propagate(source, false);
                 }
             }
         }
@@ -173,8 +179,12 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
         }
         if(valueHandler == null) {
-            valueHandler = new TypeValuesHandler(info.typeNames, c, info);
+            valueHandler = new TypeValuesHandler(info.typeNames, c, this, info);
         }
+    }
+
+    public void registerTestEntryObserver(TestBlockEntryObserver obs) {
+        observers.add(obs);
     }
 
     // returns true if "dependent" depends on "on".

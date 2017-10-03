@@ -26,9 +26,11 @@ import dk.brics.tajs.analysis.HostAPIs;
 import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.*;
+import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.tajstester.TestBlockEntryObserver;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
@@ -37,6 +39,7 @@ import org.apache.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,8 +52,7 @@ import static dk.brics.tajs.util.Collections.newMap;
 import static dk.brics.tajs.util.Collections.newSet;
 import static java.util.Collections.singletonList;
 
-public class SpecInstantiator {
-
+public class SpecInstantiator implements TestBlockEntryObserver {
     private static final Logger log = Logger.getLogger(SpecInstantiator.class);
 
     private static final String globalObjectPath = "<the global object>";
@@ -90,6 +92,38 @@ public class SpecInstantiator {
         this.c = c;
 
         initializeLabelsCacheWithCanonicals();
+    }
+
+    @Override
+    public void onTestBlockEntry(GenericSolver.SolverInterface c) {
+        initAnyStr();
+    }
+
+
+
+    private void initAnyStr() {
+        if (info.options.staticOptions.betterAnyString && defaultAnyString == null) {
+            State initial = c.getState();
+            List<ObjectLabel> lbs = newList();
+            lbs.add(InitialStateBuilder.OBJECT_PROTOTYPE);
+            lbs.add(InitialStateBuilder.FUNCTION_PROTOTYPE);
+            lbs.add(InitialStateBuilder.ARRAY_PROTOTYPE);
+            lbs.add(InitialStateBuilder.STRING_PROTOTYPE);
+            lbs.add(InitialStateBuilder.BOOLEAN_PROTOTYPE);
+            lbs.add(InitialStateBuilder.NUMBER_PROTOTYPE);
+            lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
+            lbs.add(InitialStateBuilder.PROXY_PROTOTYPE);
+            lbs.add(InitialStateBuilder.REGEXP_PROTOTYPE);
+            //lbs.add(InitialStateBuilder.GLOBAL);
+            lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
+
+            Set<PKey> forbidden = new HashSet<>(initial.getProperties(lbs, ObjProperties.PropertyQuery.makeQuery().includeSymbols().withoutProto())
+                    .getMaybe());
+            forbidden.add(PKey.mk("prototype"));
+            forbidden.add(PKey.__PROTO__);
+
+            defaultAnyString = Value.makeAnyStrNotUInt().removePKeys(forbidden);
+        }
     }
 
     private Value createAny() {
@@ -478,30 +512,6 @@ public class SpecInstantiator {
 
         private Value makeString() {
             if (info.options.staticOptions.betterAnyString) {
-                if(defaultAnyString == null) {
-                    State initial = c.getAnalysisLatticeElement().getState(c.getAnalysis().getInitialStateBuilder().initialBlockAndContext);
-                    List<ObjectLabel> lbs = newList();
-                    lbs.add(InitialStateBuilder.OBJECT_PROTOTYPE);
-                    lbs.add(InitialStateBuilder.FUNCTION_PROTOTYPE);
-                    lbs.add(InitialStateBuilder.ARRAY_PROTOTYPE);
-                    lbs.add(InitialStateBuilder.STRING_PROTOTYPE);
-                    lbs.add(InitialStateBuilder.BOOLEAN_PROTOTYPE);
-                    lbs.add(InitialStateBuilder.NUMBER_PROTOTYPE);
-                    lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
-                    lbs.add(InitialStateBuilder.PROXY_PROTOTYPE);
-                    lbs.add(InitialStateBuilder.REGEXP_PROTOTYPE);
-                    //lbs.add(InitialStateBuilder.GLOBAL);
-                    lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
-
-                    Set<PKey> forbidden = initial.getProperties(lbs, ObjProperties.PropertyQuery.makeQuery().includeSymbols().withoutProto())
-                            .getMaybe()
-                            .stream()
-                            .collect(Collectors.toSet());
-                    forbidden.add(PKey.mk("prototype"));
-                    forbidden.add(PKey.__PROTO__);
-
-                    defaultAnyString = Value.makeAnyStrNotUInt().removePKeys(forbidden);
-                }
                 return defaultAnyString;
             }
             return Value.makeAnyStr();
