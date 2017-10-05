@@ -87,6 +87,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private static long totalPropagationTime = 0;
 
+    Context previousTestContext = null;
+
     int count = 0;
 
     public void triggerTypeTests(Solver.SolverInterface c) {
@@ -116,18 +118,19 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker);
 
         performed.clear();
-        Context previousTestContext = null;
         for (Test test : tests) {
             // Generating one local context per test
             Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
             // Propagate previous state into this, chaining the flow
             if(previousTestContext != null) {
-                State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext);
+                State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
+                State ongoingState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc).clone();
+                preState.localize(ongoingState); // magic
                 if(Options.get().isNewFlowEnabled()) {
                     System.out.println("Propagating to this test context");
                 }
-                c.propagateToBasicBlock(preState.clone(), allTestsBlock, newc);
+                c.propagateToBasicBlock(preState, allTestsBlock, newc);
                 if(Options.get().isNewFlowEnabled()) {
                     System.out.println("Done propagating to this test context");
                 }
