@@ -125,8 +125,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             // Propagate previous state into this, chaining the flow
             if(previousTestContext != null) {
                 State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
-                State ongoingState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc).clone();
-                preState.localize(ongoingState); // magic
                 if(Options.get().isNewFlowEnabled()) {
                     System.out.println("Propagating to this test context");
                 }
@@ -148,7 +146,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     }
                     return;
                 }
-                if (DEBUG && !c.isScanning()) System.out.println("Performing test " + test);
+                if (DEBUG && !c.isScanning()){
+                    System.out.println("Performing test " + test);
+                }
 
                 performed.add(test);
 
