@@ -114,7 +114,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
             lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
             lbs.add(InitialStateBuilder.PROXY_PROTOTYPE);
             lbs.add(InitialStateBuilder.REGEXP_PROTOTYPE);
-            //lbs.add(InitialStateBuilder.GLOBAL);
+            //lbs.add(InitialStateBuilder.GLOBAL); //TODO: Add this ?
             lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
 
             Set<PKey> forbidden = new HashSet<>(initial.getProperties(lbs, ObjProperties.PropertyQuery.makeQuery().includeSymbols().withoutProto())
@@ -129,9 +129,9 @@ public class SpecInstantiator implements TestBlockEntryObserver {
     private Value createAny() {
         // TODO: Rewrite this.
         ObjectLabel label1 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any1>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.FUNCTION);
-        c.getState().newObject(label1);
+        effects.newObject(label1);
         ObjectLabel label2 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any2>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.OBJECT);
-        c.getState().newObject(label2);
+        effects.newObject(label2);
 
         effects.newObject(label1);
         effects.multiplyObject(label1);
@@ -373,14 +373,14 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         TypeWithContext key = new TypeWithContext(t, miscInfo.context);
         if (labelCache.containsKey(key)) {
             ObjectLabel l = labelCache.get(key);
-            c.getState().newObject(l);
+            effects.newObject(l);
             return l;
         }
         ObjectLabel.Kind kind = getObjectLabelKind(t);
         ObjectLabel label = null;
         if (kind != null) {
             label = ObjectLabel.make(SpecObjects.getObjectAbstraction(miscInfo.path, key), kind);
-            c.getState().newObject(label);
+            effects.newObject(label);
         }
         labelCache.put(key, label);
         return label;
@@ -503,7 +503,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                     System.err.println("Symbols should be inprecise, they are not."); // TODO:
                     SpecObjects hostObject = SpecObjects.getObjectAbstraction(info.path, new TypeWithContext(t, info.context));
                     ObjectLabel l = ObjectLabel.make(hostObject, ObjectLabel.Kind.SYMBOL);
-                    c.getState().newObject(l);
+                    effects.newObject(l);
                     return Value.makeObject(l);
                 default:
                     throw new RuntimeException("Unhandled TypeKind: " + t);
