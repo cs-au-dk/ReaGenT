@@ -1679,7 +1679,6 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore // TODO: No idea why the fuck this fails.
     public void complexSanityCheck25() throws Exception {
         sanityCheck(benchFromFolder("complexSanityCheck25"), BROWSER);
     }
