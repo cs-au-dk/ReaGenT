@@ -367,9 +367,12 @@ public class DriverProgramBuilder {
             if (info.options.dynamicOptions.makeTSInferLike) {
                 return Collections.singletonList(throwStatement(newCall(identifier("Error"))));
             } else {
-                return callFunction(test, test.getObject(), test.getParameters(), test.isRestArgs(), (base, parameters) ->
-                        methodCall(identifier("base"), test.getPropertyName(),  parameters.stream().map(Pair::getLeft).collect(Collectors.toList()))
-                );
+                return Collections.singletonList(block(
+                        variable("method", getTypeExpression(test.getFunction(), test.getTypeContext())),
+                        block(callFunction(test, test.getObject(), test.getParameters(), test.isRestArgs(), (base, parameters) ->
+                            methodCall(identifier("method"), "call", Util.concat(Collections.singletonList(identifier("base")), parameters.stream().map(Pair::getLeft).collect(Collectors.toList())))
+                        ))
+                ));
             }
         }
 

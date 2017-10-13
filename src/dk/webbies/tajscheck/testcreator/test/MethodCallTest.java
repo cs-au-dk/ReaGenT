@@ -12,12 +12,18 @@ import java.util.List;
  */
 public class MethodCallTest extends FunctionTest {
     private Type object;
+    private Type function;
     private final String propertyName;
 
     public MethodCallTest(Type object, Type function, String propertyName, List<Type> parameters, Type returnType, String path, TypeContext typeContext, boolean restArgs, List<Signature> precedingSignatures) {
         super(Arrays.asList(object, function), parameters, returnType, path, typeContext, precedingSignatures, restArgs);
         this.object = object;
+        this.function = function;
         this.propertyName = propertyName;
+    }
+
+    public Type getFunction() {
+        return function;
     }
 
     public Type getObject() {
