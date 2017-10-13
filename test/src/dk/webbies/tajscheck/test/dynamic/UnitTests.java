@@ -1022,9 +1022,8 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore // TODO: Seems that numberIndexChecks happen too deeply.
     public void extendsArray3() throws Exception {
-        RunResult result = run("extendsArray3", options().setCheckDepthReport(0).setCheckDepthReport(0).build());
+        RunResult result = run("extendsArray3", options().setCheckDepthReport(0).setCheckDepthForUnions(0).build());
 
         assertThat(result.typeErrors.size(), is(equalTo(1)));
 
