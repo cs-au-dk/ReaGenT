@@ -1092,6 +1092,8 @@ public class TypeCreator {
                 return AstBuilder.stmtFromString("return new Request(1);");
             case "URLSearchParams":
                 return AstBuilder.stmtFromString("return new URLSearchParams();");
+            case "MediaStream":
+                return AstBuilder.stmtFromString("return new new MediaStream();");
             case "Int8Array":
             case "Uint8Array":
             case "Uint32Array":
