@@ -483,6 +483,15 @@ public class TypeChecker {
                     case "RTCConfiguration":
                     case "ArrayBufferView":
                     case "AddEventListenerOptions":
+                    case "MediaStreamConstraints":
+                    case "MediaTrackConstraints":
+                    case "MediaTrackConstraintSet":
+                    case "ConstrainDoubleRange":
+                    case "DoubleRange":
+                    case "ConstrainBooleanParameters":
+                    case "ConstrainDOMStringParameters":
+                    case "ConstrainLongRange":
+                    case "LongRange":
                         arg = arg.withDepth(1);
                         break; // Testing manually.
                     default:
