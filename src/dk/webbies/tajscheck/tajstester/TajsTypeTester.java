@@ -160,6 +160,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
         }
 
+        State finalChainingState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
+        c.propagateToBasicBlock(finalChainingState, allTestsBlock, allTestsContext);
+
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
 
         if (DEBUG && c.isScanning()) {
