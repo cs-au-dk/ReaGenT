@@ -169,22 +169,32 @@ public class TypeChecker {
     static final class Arg {
         final TypeContext typeContext;
         final int depthRemaining;
+        final Set<TypeWithContext> seenTypeParameters;
 
         Arg(TypeContext typeContext, int depthRemaining) {
+            this(typeContext, depthRemaining, new HashSet<>());
+        }
+
+        private Arg(TypeContext typeContext, int depthRemaining, Set<TypeWithContext> seenTypeParameters) {
             this.typeContext = typeContext;
             this.depthRemaining = depthRemaining;
+            this.seenTypeParameters = seenTypeParameters;
         }
 
         public Arg withContext(TypeContext map) {
-            return new Arg(map, this.depthRemaining);
+            return new Arg(map, this.depthRemaining, seenTypeParameters);
         }
 
         public Arg decreaseDepth() {
-            return new Arg(this.typeContext, this.depthRemaining - 1);
+            return new Arg(this.typeContext, this.depthRemaining - 1, seenTypeParameters);
         }
 
         public Arg withDepth(int depth) {
-            return new Arg(typeContext, depth);
+            return new Arg(typeContext, depth, seenTypeParameters);
+        }
+
+        public Arg addSeenTypeParameter(TypeWithContext typeParameter) {
+            return new Arg(typeContext, depthRemaining, Util.concatSet(seenTypeParameters, Collections.singletonList(typeParameter)));
         }
     }
 
@@ -673,6 +683,14 @@ public class TypeChecker {
                 }
 //                arg = arg.decreaseDepth();
                 TypeWithContext lookup = typeContext.get(parameter);
+
+                TypeWithContext typeParameterKey = new TypeWithContext(parameter, arg.typeContext);
+                if (arg.seenTypeParameters.contains(typeParameterKey)) {
+                    arg = arg.decreaseDepth();
+                } else {
+                    arg = arg.addSeenTypeParameter(typeParameterKey);
+                }
+
                 return lookup.getType().accept(this, arg.withContext(lookup.getTypeContext()));
             }
 

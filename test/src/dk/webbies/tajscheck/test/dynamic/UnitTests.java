@@ -1083,9 +1083,13 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore
     public void exponentialComplexity() throws Exception {
         Main.writeFullDriver(benchFromFolder("exponentialComplexity"));
+    }
+
+    @Test
+    public void loopingType() throws Exception {
+        Main.writeFullDriver(benchFromFolder("loopingType"));
     }
 
     @Test
