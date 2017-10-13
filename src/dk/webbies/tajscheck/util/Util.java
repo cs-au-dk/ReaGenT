@@ -80,7 +80,11 @@ public class Util {
         String error = errGobbler.getResult();
 
         if (Util.isDeltaDebugging) {
-            error = String.join("\n", Arrays.stream(error.split("\n")).filter(str -> !str.contains("Initializers are not allowed in ambient contexts")).collect(Collectors.toList()));
+            error = String.join("\n", Arrays.stream(error.split("\n"))
+                    .filter(str -> !str.contains("Initializers are not allowed in ambient contexts"))
+                    .filter(str -> !str.contains("Subsequent variable declarations must have the same type.  Variable 'shadowRoot' must be of type 'ShadowRoot"))
+                    .filter(str -> !str.contains("declarations of 'shadowRoot' must have identical modifiers"))
+                    .collect(Collectors.toList()));
         }
 
         if (error != null && !error.isEmpty()) {
