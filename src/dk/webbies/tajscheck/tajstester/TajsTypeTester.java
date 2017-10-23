@@ -370,7 +370,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         if(sensitivity.isTestContext(s.getContext())) {
             Test t = sensitivity.getTest(s.getContext());
             if(retractedTests.contains(t)) {
-                s.setToNone();
+                s.setToBottom();
             }
         }
     }
