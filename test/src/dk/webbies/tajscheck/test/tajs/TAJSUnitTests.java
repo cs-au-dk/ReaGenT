@@ -719,7 +719,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: this fails.
     public void smokeTest1() throws Exception {
         run(benchFromFolder("smokeTest1", options(), Benchmark.RUN_METHOD.BROWSER));
     }
@@ -735,7 +734,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: Fails because Function is created for one signature, and that object is then not available when creating values for the other signature.
     public void createWeakObjects() throws Exception {
         run("createWeakObjects");
     }
