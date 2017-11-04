@@ -7,7 +7,6 @@ import dk.brics.tajs.analysis.FunctionCalls;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.StaticDeterminacyContextSensitivityStrategy;
 import dk.brics.tajs.flowgraph.AbstractNode;
-import dk.brics.tajs.flowgraph.Function;
 import dk.brics.tajs.flowgraph.jsnodes.BeginForInNode;
 import dk.brics.tajs.flowgraph.jsnodes.BeginLoopNode;
 import dk.brics.tajs.flowgraph.jsnodes.EndLoopNode;
@@ -156,7 +155,7 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
                 && c.getFunArgs().getSelectedClosureVariables().containsKey(TEST_IDENTIFIER);
     }
 
-    public boolean isTestContext(Context c) { return isFunctionTestContext(c) || isLocalTestContext(c); }
+    public boolean isTestContext(Context c) { return c != null && (isFunctionTestContext(c) || isLocalTestContext(c)); }
 
     public String getTag(Context c) {
         if(isLocalTestContext(c)) {

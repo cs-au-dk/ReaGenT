@@ -14,6 +14,7 @@ import dk.brics.tajs.options.Options;
 import dk.brics.tajs.solver.BlockAndContext;
 import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.solver.ICallEdge;
+import dk.brics.tajs.solver.WorkList;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -23,18 +24,15 @@ import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
-import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.Pair;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.newList;
 import static dk.brics.tajs.util.Collections.newSet;
-import static dk.webbies.tajscheck.util.Util.mkString;
 import static dk.webbies.tajscheck.util.Util.prettyValue;
 
 public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTestRunner {
@@ -66,7 +64,12 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private Set<TestBlockEntryObserver> observers = newSet();
 
-    public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
+    private SuspiciousnessMonitor suspiciousMonitor = new SuspiciousnessMonitor(this);
+
+    private TestTransfersMonitor transferMonitor = new TestTransfersMonitor(this);
+
+    public TajsTypeTester(List<Test> tests,
+                          BenchmarkInfo info) {
         this.tests = tests;
         this.info = info;
     }
@@ -85,7 +88,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public List<TestCertificate> getAllCertificates() {return allCertificates;}
 
-    private static long totalPropagationTime = 0;
+    public TesterContextSensitivity getSensitivity() {return sensitivity; }
+
+    public SuspiciousnessMonitor getSuspiciousMonitor() {return suspiciousMonitor; }
+
+    public TestTransfersMonitor getTransferMonitor() {return transferMonitor; }
 
     Context previousTestContext = null;
 
@@ -164,16 +171,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         c.propagateToBasicBlock(finalChainingState, allTestsBlock, allTestsContext);
 
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
-
-        if (DEBUG && c.isScanning()) {
-            System.out.println("Performed " + performed.size() + "/" + tests.size() + " tests, detected " + allViolations.size() + " violations");
-            List<Test> notPerformed = new LinkedList<>();
-            notPerformed.addAll(tests);
-            notPerformed.removeAll(performed);
-            System.out.println("Tests not performed:\n   " + mkString(notPerformed, "\n   "));
-            System.out.println("Test details:\n   " + mkString(allCertificates, "\n   "));
-            System.out.println("Violations:\n   " + mkString(allViolations, "\n   "));
-        }
     }
 
     private void init(Solver.SolverInterface c) {
@@ -363,18 +360,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         return true;
     }
 
-
-    @Override
-    public void visitBlockTransferPost(BasicBlock b, State s) {
-        super.visitBlockTransferPost(b, s);
-        if(sensitivity.isTestContext(s.getContext())) {
-            Test t = sensitivity.getTest(s.getContext());
-            if(retractedTests.contains(t)) {
-                s.setToBottom();
-            }
-        }
-    }
-
     /**
      *
      * @param tajsTypeChecker
@@ -412,6 +397,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public void retractTest(Test t) {
         retractedTests.add(t);
+    }
+
+    @Override
+    public boolean shouldSkipEntry(WorkList<Context>.Entry e) {
+        return sensitivity != null &&
+                sensitivity.isTestContext(e.getContext()) &&
+                retractedTests.contains(sensitivity.getTest(e.getContext()));
     }
 
     public class TajsTestVisitor implements TestVisitor<Void> {

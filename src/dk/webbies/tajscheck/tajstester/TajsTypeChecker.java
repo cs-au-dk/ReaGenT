@@ -24,11 +24,13 @@ import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Tuple3;
 import dk.webbies.tajscheck.util.Util;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tajscheck.util.Util.*;
+import static dk.webbies.tajscheck.util.Util.prettyValue;
 
 public class TajsTypeChecker {
     private final Solver.SolverInterface c;

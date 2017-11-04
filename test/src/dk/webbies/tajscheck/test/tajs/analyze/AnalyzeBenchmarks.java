@@ -36,6 +36,9 @@ import static org.hamcrest.core.Is.is;
 @RunWith(Parameterized.class)
 public class AnalyzeBenchmarks extends TestCase {
 
+    private final static int BENCHMARK_TIMEOUT = 2 * 60;
+    private final static int INIT_TIMEOUT = 2 * 60;
+
     @SuppressWarnings("WeakerAccess")
     @Parameterized.Parameter
     public Benchmark benchmark = null;
@@ -122,17 +125,15 @@ public class AnalyzeBenchmarks extends TestCase {
                 .build().getBuilder();
     }
 
-    @Test(timeout = 120 * 1000)
+    @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.2))
     public void analyzeBenchmark() throws Exception {
         Benchmark benchmark = this.benchmark.withOptions(options());
-        try {
-            System.out.println(TAJSUtil.runNoDriver(benchmark, 180));
-        } catch (TimeoutException ignored) {
-            System.err.println("Timeout");
-        }
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
+        System.out.println(result);
+        assert(!result.timedout);
     }
 
-    @Test
+    @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.2))
     public void analyzeBenchmarkPatched() throws Exception {
         Path dtspath = Paths.get(this.benchmark.dTSFile);
         Path entryPath = Paths.get(this.benchmark.jsFile);
@@ -140,22 +141,17 @@ public class AnalyzeBenchmarks extends TestCase {
         String patchedEnty = entryPath.getParent().resolve("patched." + entryPath.getFileName()).toString();
         Benchmark benchmark = this.benchmark.withOptions(options())
                 .withDecl(patched)
-                .withJsFile(patchedEnty)
-                ;
-        try {
-            System.out.println(TAJSUtil.runNoDriver(benchmark,400, true));
-        } catch (TimeoutException ignored) {
-            System.err.println("Timeout");
-        }
+                .withJsFile(patchedEnty);
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
+        System.out.println(result);
+        assert(!result.timedout);
     }
 
-    @Test(timeout = 90 * 1000)
+    @Test(timeout = (int)(INIT_TIMEOUT * 1000 * 1.2))
     public void initialize() throws Exception {
         Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).setOnlyInitialize(true));
-        try {
-            System.out.println(TAJSUtil.runNoDriver(benchmark, 91));
-        } catch (TimeoutException ignored) {
-            System.err.println("Timeout");
-        }
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, INIT_TIMEOUT);
+        System.out.println(result);
+        assert(!result.timedout);
     }
 }

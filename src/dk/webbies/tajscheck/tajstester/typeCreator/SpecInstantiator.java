@@ -1,27 +1,7 @@
 package dk.webbies.tajscheck.tajstester.typeCreator;
 
 import dk.au.cs.casa.typescript.SpecReader;
-import dk.au.cs.casa.typescript.types.AnonymousType;
-import dk.au.cs.casa.typescript.types.BooleanLiteral;
-import dk.au.cs.casa.typescript.types.ClassInstanceType;
-import dk.au.cs.casa.typescript.types.ClassType;
-import dk.au.cs.casa.typescript.types.GenericType;
-import dk.au.cs.casa.typescript.types.IndexType;
-import dk.au.cs.casa.typescript.types.IndexedAccessType;
-import dk.au.cs.casa.typescript.types.InterfaceType;
-import dk.au.cs.casa.typescript.types.IntersectionType;
-import dk.au.cs.casa.typescript.types.NumberLiteral;
-import dk.au.cs.casa.typescript.types.ReferenceType;
-import dk.au.cs.casa.typescript.types.SimpleType;
-import dk.au.cs.casa.typescript.types.SimpleTypeKind;
-import dk.au.cs.casa.typescript.types.StringLiteral;
-import dk.au.cs.casa.typescript.types.ThisType;
-import dk.au.cs.casa.typescript.types.TupleType;
-import dk.au.cs.casa.typescript.types.Type;
-import dk.au.cs.casa.typescript.types.TypeParameterType;
-import dk.au.cs.casa.typescript.types.TypeVisitor;
-import dk.au.cs.casa.typescript.types.TypeVisitorWithArgument;
-import dk.au.cs.casa.typescript.types.UnionType;
+import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.HostAPIs;
 import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
@@ -37,19 +17,11 @@ import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.apache.log4j.Logger;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static dk.brics.tajs.util.Collections.newList;
-import static dk.brics.tajs.util.Collections.newMap;
-import static dk.brics.tajs.util.Collections.newSet;
+import static dk.brics.tajs.util.Collections.*;
 import static java.util.Collections.singletonList;
 
 public class SpecInstantiator implements TestBlockEntryObserver {
