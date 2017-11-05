@@ -174,6 +174,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     }
 
     private void init(Solver.SolverInterface c) {
+        System.out.println("...library is loaded, type-checking begins now");
         allTestsBlock = c.getState().getBasicBlock();
         allTestsContext = c.getState().getContext();
         sensitivity = (TesterContextSensitivity) c.getAnalysis().getContextSensitivityStrategy().getDefaultContextSensitivity();
