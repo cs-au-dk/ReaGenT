@@ -305,6 +305,18 @@ public class TypesUtil {
         if (nativeType instanceof IntersectionType) {
             return ((IntersectionType) nativeType).getElements().size() == ((IntersectionType) type).getElements().size();
         }
+        if (nativeType instanceof ClassType) {
+            Map<String, Type> nativeStatic = ((ClassType) nativeType).getStaticProperties();
+            Map<String, Type> typeStatic = ((ClassType) type).getStaticProperties();
+
+            Map<String, Type> nativeInstance = ((ClassType) nativeType).getInstanceProperties();
+            Map<String, Type> typeInstance = ((ClassType) type).getInstanceProperties();
+            return Util.intersection(nativeStatic.keySet(), typeStatic.keySet()).size() == Math.min(nativeStatic.size(), typeStatic.size()) &&
+                    Util.intersection(nativeInstance.keySet(), typeInstance.keySet()).size() == Math.min(nativeInstance.size(), typeInstance.size());
+        }
+        if (nativeType instanceof ClassInstanceType) {
+            return pseudoEquals(((ClassInstanceType) nativeType).getClassType(), ((ClassInstanceType) type).getClassType());
+        }
         throw new RuntimeException(type.getClass().getSimpleName());
     }
 
