@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -138,6 +139,9 @@ public class AnalyzeBenchmarks extends TestCase {
         Path dtspath = Paths.get(this.benchmark.dTSFile);
         Path entryPath = Paths.get(this.benchmark.jsFile);
         String patched = dtspath.getParent().resolve("patched." + dtspath.getFileName()).toString();
+        if (!new File(patched).exists()) {
+            return;
+        }
         String patchedEnty = entryPath.getParent().resolve("patched." + entryPath.getFileName()).toString();
         Benchmark benchmark = this.benchmark.withOptions(options())
                 .withDecl(patched)
