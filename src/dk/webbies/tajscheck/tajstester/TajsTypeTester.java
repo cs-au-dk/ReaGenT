@@ -56,6 +56,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private TestTransfersMonitor transferMonitor = new TestTransfersMonitor(this);
 
+    private Timers timers = new Timers();
+
     public TajsTypeTester(List<Test> tests,
                           BenchmarkInfo info) {
         this.tests = tests;
@@ -81,6 +83,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     public SuspiciousnessMonitor getSuspiciousMonitor() {return suspiciousMonitor; }
 
     public TestTransfersMonitor getTransferMonitor() {return transferMonitor; }
+
+    public Timers getTimers() {return timers; }
 
     Context previousTestContext = null;
 
@@ -119,6 +123,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
             // Propagate previous state into this, chaining the flow
             if(previousTestContext != null) {
+                timers.start(Timers.Tags.PROPAGATING_TO_THIS_CONTEXT);
                 State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
                 if(Options.get().isNewFlowEnabled()) {
                     System.out.println("Propagating to this test context");
@@ -127,10 +132,12 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 if(Options.get().isNewFlowEnabled()) {
                     System.out.println("Done propagating to this test context");
                 }
+                timers.stop(Timers.Tags.PROPAGATING_TO_THIS_CONTEXT);
             }
 
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
             // attempting to perform the test in the local context
+            timers.start(Timers.Tags.TEST_TRANSFER);
             c.withState(testState, () -> {
                 if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
                     if (DEBUG && !c.isScanning()) {
@@ -149,14 +156,17 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                 test.accept(visitor);
             });
+            timers.stop(Timers.Tags.TEST_TRANSFER);
 
             if(performed.contains(test)) {
                 previousTestContext = newc;
             }
         }
 
+        timers.start(Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
         State finalChainingState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
         c.propagateToBasicBlock(finalChainingState, allTestsBlock, allTestsContext);
+        timers.stop(Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
 
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
     }
@@ -168,6 +178,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         sensitivity = (TesterContextSensitivity) c.getAnalysis().getContextSensitivityStrategy().getDefaultContextSensitivity();
 
 
+        timers.start(Timers.Tags.INITIAL_STATE_PROPAGATION_TO_TEST_ENTRY);
         State originalState = c.getState().clone();
         for (Test test : tests) {
             // Generating one local context per test
@@ -178,6 +189,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 c.propagate(originalState.clone(), new BlockAndContext<>(allTestsBlock, newc), false);
             }
         }
+        timers.stop(Timers.Tags.INITIAL_STATE_PROPAGATION_TO_TEST_ENTRY);
         if(valueHandler == null) {
             valueHandler = new TypeValuesHandler(info.typeNames, c, this, info);
         }

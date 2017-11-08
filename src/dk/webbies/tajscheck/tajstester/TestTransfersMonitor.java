@@ -10,6 +10,7 @@ import java.util.Map;
 import static dk.brics.tajs.util.Collections.newMap;
 
 public class TestTransfersMonitor extends DefaultAnalysisMonitoring {
+    private boolean DEBUG = true;
 
     private Map<Test, Integer> testsTransfer = newMap();
 

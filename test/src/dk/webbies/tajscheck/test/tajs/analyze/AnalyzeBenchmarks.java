@@ -36,7 +36,7 @@ import static org.hamcrest.core.Is.is;
 @RunWith(Parameterized.class)
 public class AnalyzeBenchmarks extends TestCase {
 
-    private final static int BENCHMARK_TIMEOUT = 2 * 60;
+    private final static int BENCHMARK_TIMEOUT = 4 * 60;
     private final static int INIT_TIMEOUT = 2 * 60;
 
     @SuppressWarnings("WeakerAccess")
@@ -125,7 +125,7 @@ public class AnalyzeBenchmarks extends TestCase {
                 .build().getBuilder();
     }
 
-    @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.2))
+    @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
     public void analyzeBenchmark() throws Exception {
         Benchmark benchmark = this.benchmark.withOptions(options());
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
@@ -133,7 +133,7 @@ public class AnalyzeBenchmarks extends TestCase {
         assert(!result.timedout);
     }
 
-    @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.2))
+    @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
     public void analyzeBenchmarkPatched() throws Exception {
         Path dtspath = Paths.get(this.benchmark.dTSFile);
         Path entryPath = Paths.get(this.benchmark.jsFile);
@@ -147,7 +147,7 @@ public class AnalyzeBenchmarks extends TestCase {
         assert(!result.timedout);
     }
 
-    @Test(timeout = (int)(INIT_TIMEOUT * 1000 * 1.2))
+    @Test(timeout = (int)(INIT_TIMEOUT * 1000 * 1.3))
     public void initialize() throws Exception {
         Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).setOnlyInitialize(true));
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, INIT_TIMEOUT);

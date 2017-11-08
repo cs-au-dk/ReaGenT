@@ -128,7 +128,7 @@ public class TAJSUtil {
         notPerformed.addAll(typeTester.getAllTests());
         notPerformed.removeAll(typeTester.getPerformedTests());
 
-        return new TajsAnalysisResults(violations, warnings, typeTester.getPerformedTests(), notPerformed, typeTester.getAllCertificates(), typeTester.getTransferMonitor().getTestTransfers(), typeTester.getSuspiciousMonitor().getSuspiciousLocations(), timedout);
+        return new TajsAnalysisResults(violations, warnings, typeTester.getPerformedTests(), notPerformed, typeTester.getAllCertificates(), typeTester.getTransferMonitor().getTestTransfers(), typeTester.getSuspiciousMonitor().getSuspiciousLocations(), typeTester.getTimers(), timedout);
     }
 
     public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout, boolean useInspector) throws Exception {
@@ -155,6 +155,7 @@ public class TAJSUtil {
         public final Map<Test, Integer> testTranfers;
         public final Map<Test, Set<NodeAndContext<Context>>> suspiciousLocations;
         public final List<TajsTypeTester.TestCertificate> certificates;
+        public final Timers timers;
 
         private boolean VERBOSE = true;
 
@@ -164,6 +165,7 @@ public class TAJSUtil {
                             List<TajsTypeTester.TestCertificate> certificates,
                             Map<Test, Integer> testTranfers,
                             Map<Test, Set<NodeAndContext<Context>>> suspiciousLocations,
+                            Timers timers,
                             boolean timedout) {
 
             this.detectedViolations = detectedViolations;
@@ -173,6 +175,7 @@ public class TAJSUtil {
             this.testTranfers = testTranfers;
             this.suspiciousLocations = suspiciousLocations;
             this.certificates = certificates;
+            this.timers = timers;
             this.timedout = timedout;
         }
 
@@ -198,10 +201,14 @@ public class TAJSUtil {
             if (VERBOSE) {
                 builder.append("Test details:\n   ")
                         .append(mkString(certificates, "\n   "));
+                builder.append("\n");
                 builder.append("Transfers per test:\n   ")
                         .append(mkString(testTranfers.entrySet().stream().map(e -> e.getKey() + ": " + e.getValue()), "\n   "));
+                builder.append("\n");
                 builder.append("Suspicious locations per test:\n   ")
                         .append(mkString(suspiciousLocations.entrySet().stream().map(e -> e.getKey() + ": " + e.getValue()), "\n   "));
+                builder.append("\n");
+                builder.append(timers.toString());
             }
             return builder.toString();
         }
