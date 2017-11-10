@@ -13,6 +13,7 @@ import dk.brics.tajs.solver.WorkList;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.RetractionPolicy;
 import dk.webbies.tajscheck.testcreator.test.*;
 
 import java.util.*;
@@ -25,73 +26,47 @@ import static dk.webbies.tajscheck.util.Util.prettyValue;
 
 public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTestRunner {
     private static final boolean DEBUG = true;
-
     private static final boolean DEBUG_VALUES = false;
 
     private final List<Test> tests;
-
     private final BenchmarkInfo info;
+    private TypeValuesHandler valueHandler = null;
 
     final private List<TypeViolation> allViolations = newList();
-
     final private List<TypeViolation> allWarnings = newList();
-
     final private List<TestCertificate> allCertificates = newList();
 
     private final Set<Test> performed = new LinkedHashSet<>();
 
-    private TypeValuesHandler valueHandler = null;
+    private final RetractionPolicy retractionPolicy;
 
     private BasicBlock allTestsBlock;
-
     private Context allTestsContext;
-
-    private Set<Test> retractedTests = newSet();
-
     private TesterContextSensitivity sensitivity;
 
     private Set<TestBlockEntryObserver> observers = newSet();
 
-    private SuspiciousnessMonitor suspiciousMonitor = new SuspiciousnessMonitor(this);
-
-    private TestTransfersMonitor transferMonitor = new TestTransfersMonitor(this);
+    private SuspiciousnessMonitor suspiciousMonitor;
+    private TestTransfersMonitor transferMonitor;
 
     private Timers timers = new Timers();
 
-    public TajsTypeTester(List<Test> tests,
-                          BenchmarkInfo info) {
+    public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
         this.tests = tests;
         this.info = info;
+        this.retractionPolicy = this.info.options.staticOptions.retractionPolicy;
+        this.transferMonitor = new TestTransfersMonitor(this, retractionPolicy::notifyTestTransfer);
+        this.suspiciousMonitor = new SuspiciousnessMonitor(this, retractionPolicy::notifySuspiciousLocation);
     }
-
-    public int getTotalTests() {return tests.size();}
-
-    public List<Test> getAllTests() {return tests;}
-
-    public Collection<Test> getPerformedTests() {return performed;}
-
-    public List<TypeViolation> getAllViolations() {return allViolations;}
-
-    public List<TypeViolation> getAllWarnings() {
-        return allWarnings;
-    }
-
-    public List<TestCertificate> getAllCertificates() {return allCertificates;}
-
-    public TesterContextSensitivity getSensitivity() {return sensitivity; }
-
-    public SuspiciousnessMonitor getSuspiciousMonitor() {return suspiciousMonitor; }
-
-    public TestTransfersMonitor getTransferMonitor() {return transferMonitor; }
 
     public Timers getTimers() {return timers; }
 
-    Context previousTestContext = null;
+    private Context previousTestContext = null;
 
-    int count = 0;
-
+    public Solver.SolverInterface c;
     public void triggerTypeTests(Solver.SolverInterface c) {
         if(allTestsBlock == null) {
+            this.c = c;
             init(c);
         }
 
@@ -102,10 +77,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 c.addToWorklist(allTestsBlock, allTestsContext);
             }
             return;
-        }
-
-        if (count++ > 60) {
-            throw new IllegalArgumentException(); // TODO: Remove me!
         }
 
         for(TestBlockEntryObserver obs : observers) {
@@ -120,6 +91,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         for (Test test : tests) {
             // Generating one local context per test
             Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
+
+            if (retractionPolicy.isRetracted(test)) {
+                continue;
+            }
 
             // Propagate previous state into this, chaining the flow
             if(previousTestContext != null) {
@@ -239,17 +214,25 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         return tajsTypeChecker.typeCheck(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), info, path);
     }
 
+    // TODO: Create a retraction-policy
     // TODO: Test that we can retract a test, and that side-effects from such a test are ignored.
-    public void retractTest(Test t) {
-        retractedTests.add(t);
-    }
+    // TODO: Make an expansion-policy, to add only one method to the universe at a time. Test it on moment.
+    // TODo: Overhaul the result toString.
+    // TODO: Figure out why all the not-executed tests seemingly have some transfers.
+
+    // TODO: Make sure all violations, warning and certificates are always saved (even if not scanning), and then the latest set of results are reported back in case of a timeout.
+    // TODO: Write the latest set of results to a file.
 
     @Override
     public boolean shouldSkipEntry(WorkList<Context>.Entry e) {
         return sensitivity != null &&
                 sensitivity.isTestContext(e.getContext()) &&
-                retractedTests.contains(sensitivity.getTest(e.getContext()));
+                retractionPolicy.isRetracted(sensitivity.getTest(e.getContext()));
     }
+
+    /*
+     * Getters, setters, and adders.
+     */
 
     public void addViolation(TypeViolation violation) {
         allViolations.add(violation);
@@ -262,6 +245,26 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     void addCertificate(TestCertificate testCertificate) {
         allCertificates.add(testCertificate);
     }
+
+    public int getTotalTests() {return tests.size();}
+
+    public List<Test> getAllTests() {return tests;}
+
+    public Collection<Test> getPerformedTests() {return performed;}
+
+    public List<TypeViolation> getAllViolations() {return allViolations;}
+
+    public List<TypeViolation> getAllWarnings() {
+        return allWarnings;
+    }
+
+    public List<TestCertificate> getAllCertificates() {return allCertificates;}
+
+    public TesterContextSensitivity getSensitivity() {return sensitivity; }
+
+    public SuspiciousnessMonitor getSuspiciousMonitor() {return suspiciousMonitor; }
+
+    public TestTransfersMonitor getTransferMonitor() {return transferMonitor; }
 
     public static class TestCertificate {
         final String message;

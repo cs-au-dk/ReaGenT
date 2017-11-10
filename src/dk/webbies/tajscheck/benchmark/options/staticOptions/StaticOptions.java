@@ -1,5 +1,7 @@
-package dk.webbies.tajscheck.benchmark.options;
+package dk.webbies.tajscheck.benchmark.options.staticOptions;
 
+import dk.webbies.tajscheck.benchmark.options.CheckOptions;
+import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.util.Util;
 
 /**
@@ -12,13 +14,15 @@ public class StaticOptions implements OptionsI {
     public final boolean killGetters;
     public final boolean createSingletonObjects;
     public final boolean betterAnyString;
-    private final Builder builder;
+    public final RetractionPolicy retractionPolicy;
 
+    private final Builder builder;
 
     public StaticOptions(StaticOptions.Builder builder) {
         this.killGetters = builder.killGetters;
         this.createSingletonObjects = builder.createSingletonObjects;
         this.betterAnyString = builder.betterAnyString;
+        this.retractionPolicy = builder.retractionPolicy;
         this.builder = builder;
     }
 
@@ -31,6 +35,8 @@ public class StaticOptions implements OptionsI {
         private boolean killGetters = false;
         private boolean createSingletonObjects = false;
         public boolean betterAnyString = true; // if true all string types are *not* well-known strings in Object or Function prototypes
+        public RetractionPolicy retractionPolicy = new NoRetractPolicy();
+
         private final CheckOptions.Builder outerBuilder;
 
         public Builder(CheckOptions.Builder outerBuilder) {
@@ -49,6 +55,11 @@ public class StaticOptions implements OptionsI {
 
         public Builder setKillGetters(boolean killGetters) {
             this.killGetters = killGetters;
+            return this;
+        }
+
+        public Builder setRetractionPolicy(RetractionPolicy retractionPolicy) {
+            this.retractionPolicy = retractionPolicy;
             return this;
         }
 

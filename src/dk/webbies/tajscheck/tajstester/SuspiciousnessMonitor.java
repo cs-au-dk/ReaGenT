@@ -9,6 +9,7 @@ import dk.webbies.tajscheck.testcreator.test.Test;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import static dk.brics.tajs.util.Collections.newMap;
 import static dk.brics.tajs.util.Collections.newSet;
@@ -18,11 +19,13 @@ public class SuspiciousnessMonitor extends DefaultAnalysisMonitoring {
     private Map<Test, Set<NodeAndContext<Context>>> suspiciousLocations = newMap();
 
     private TajsTypeTester tester;
+    private BiConsumer<Test, Set<NodeAndContext<Context>>> notify;
 
     private NodeAndContext<Context> currentBc;
 
-    public SuspiciousnessMonitor(TajsTypeTester tester) {
+    public SuspiciousnessMonitor(TajsTypeTester tester, BiConsumer<Test, Set<NodeAndContext<Context>>> notify) {
         this.tester = tester;
+        this.notify = notify;
     }
 
     public Map<Test, Set<NodeAndContext<Context>>> getSuspiciousLocations() {
@@ -63,6 +66,7 @@ public class SuspiciousnessMonitor extends DefaultAnalysisMonitoring {
             suspiciousLocations.putIfAbsent(t, newSet());
             Set<NodeAndContext<Context>> snc = suspiciousLocations.get(t);
             snc.add(nc);
+            notify.accept(t, snc);
         }
     }
 

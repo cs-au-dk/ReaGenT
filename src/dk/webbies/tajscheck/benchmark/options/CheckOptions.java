@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.benchmark.options;
 
+import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.util.Util;
 
 @SuppressWarnings("WeakerAccess")

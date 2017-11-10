@@ -5,6 +5,8 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.TypeViolation;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
@@ -765,6 +767,18 @@ public class TAJSUnitTests {
                 .forPath("window.Path.map.().exit.[arg0]")
                 .expected("1 parameters")
                 .got(STRING, "0 parameters");
+    }
+
+    @Test
+    public void retract() throws Exception {
+        StaticOptions.Builder options = options().staticOptions.setRetractionPolicy(new LimitTransfersRetractionPolicy(100));
+
+        TAJSUtil.TajsAnalysisResults result = run("retract", options);
+
+        System.out.println(result);
+
+        expect(result)
+                .hasNoViolations();
     }
 
     // TODO: Test string-indexers somehow.
