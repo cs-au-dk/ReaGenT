@@ -203,7 +203,7 @@ public class TAJSUtil {
                         .append(mkString(certificates, "\n   "));
                 builder.append("\n");
                 builder.append("Transfers per test:\n   ")
-                        .append(mkString(testTranfers.entrySet().stream().map(e -> e.getKey() + ": " + e.getValue()), "\n   "));
+                        .append(mkString(testTranfers.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getValue)).map(e -> e.getKey() + ": " + e.getValue()), "\n   "));
                 builder.append("\n");
                 builder.append("Suspicious locations per test:\n   ")
                         .append(mkString(suspiciousLocations.entrySet().stream().map(e -> e.getKey() + ": " + e.getValue()), "\n   "));
