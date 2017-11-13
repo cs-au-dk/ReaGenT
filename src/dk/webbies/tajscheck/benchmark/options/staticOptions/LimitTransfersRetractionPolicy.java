@@ -9,10 +9,12 @@ import java.util.Set;
 
 public class LimitTransfersRetractionPolicy implements RetractionPolicy {
     private final int maxTransfers;
+    private int maxSuspiciousLocations;
     private final Set<Test> retracted = new HashSet<>();
 
-    public LimitTransfersRetractionPolicy(int maxTransfers) {
+    public LimitTransfersRetractionPolicy(int maxTransfers, int maxSuspiciousLocations) {
         this.maxTransfers = maxTransfers;
+        this.maxSuspiciousLocations = maxSuspiciousLocations;
     }
 
     @Override
@@ -24,7 +26,9 @@ public class LimitTransfersRetractionPolicy implements RetractionPolicy {
 
     @Override
     public void notifySuspiciousLocation(Test test, Set<NodeAndContext<Context>> location) {
-
+        if (location.size() > maxSuspiciousLocations) {
+            retracted.add(test);
+        }
     }
 
     @Override

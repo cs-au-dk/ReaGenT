@@ -2,12 +2,11 @@ package dk.webbies.tajscheck.test.tajs.analyze;
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
-import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.ExpandOneAtATimePolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
-import dk.webbies.tajscheck.test.tajs.TAJSUtil;
+import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -119,7 +118,7 @@ public class AnalyzeBenchmarks extends TestCase {
                 .setCombineNullAndUndefined(true) // because no-one cares.
                 .staticOptions
                     .setKillGetters(true) // because getters currently causes the analysis to loop.
-//                    .setRetractionPolicy(new LimitTransfersRetractionPolicy(1000))
+                    .setRetractionPolicy(new LimitTransfersRetractionPolicy(10000, 0))
                     .setExpansionPolicy(new ExpandOneAtATimePolicy());
     }
 

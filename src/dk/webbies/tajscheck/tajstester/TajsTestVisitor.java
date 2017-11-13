@@ -9,11 +9,12 @@ import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.lattice.*;
-import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.solver.ICallEdge;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.tajstester.data.TestCertificate;
+import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -61,9 +62,7 @@ public class TajsTestVisitor implements TestVisitor<Void> {
         baseValue.getObjectLabels().forEach(label -> {
             Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(Collections.singletonList(label), Value.makeStr(test.getProperty()), info.options.staticOptions.killGetters), c.getState());
             TypeWithContext closedType = new TypeWithContext(test.getPropertyType(), test.getTypeContext());
-            if(c.isScanning()) {
-                tajsTypeTester.addCertificate(new TajsTypeTester.TestCertificate(test, "Property " + test.getProperty() + " accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s));
-            }
+            tajsTypeTester.addCertificate(new TestCertificate(test, "Property " + test.getProperty() + " accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s), c);
             tajsTypeTester.attemptAddValue(propertyValue, closedType, test.getPath(), c, typeChecker);
         });
         return null;
@@ -88,9 +87,7 @@ public class TajsTestVisitor implements TestVisitor<Void> {
             default:
                 throw new RuntimeException("Unknown");
         }
-        if (c.isScanning()) {
-            tajsTypeTester.addCertificate(new TajsTypeTester.TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()));
-        }
+        tajsTypeTester.addCertificate(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()), c);
 
         tajsTypeTester.attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test.getPath(), c, typeChecker);
         return null;
@@ -201,15 +198,18 @@ public class TajsTestVisitor implements TestVisitor<Void> {
                 returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), true, implicitAfterCall, c);
             }
 
-            if (c.isScanning()) {
-                if (isConstructorCall) {
-                    tajsTypeTester.addCertificate(new TajsTypeTester.TestCertificate(test, "Function [0] has been called as constructor and returned [1]", new Value[]{function, returnedValue}, c.getState()));
-                } else {
-                    tajsTypeTester.addCertificate(new TajsTypeTester.TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{function, receiver, returnedValue}, c.getState()));
-                }
+            if (isConstructorCall) {
+                tajsTypeTester.addCertificate(new TestCertificate(test, "Function [0] has been called as constructor and returned [1]", new Value[]{function, returnedValue}, c.getState()), c);
+            } else {
+                tajsTypeTester.addCertificate(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{function, receiver, returnedValue}, c.getState()), c);
+            }
 
-                if (returnedValue.isNone() && !(test.getReturnType() instanceof SimpleType && ((SimpleType) test.getReturnType()).getKind() == SimpleTypeKind.Never)) {
-                    tajsTypeTester.addViolation(new TypeViolation("Function " + function + " always returns exceptionally", test.getPath()));
+            if (returnedValue.isNone() && !(test.getReturnType() instanceof SimpleType && ((SimpleType) test.getReturnType()).getKind() == SimpleTypeKind.Never)) {
+                TypeViolation violation = new TypeViolation("Function " + function + " always returns exceptionally", test.getPath());
+                if (c.isScanning()) {
+                    tajsTypeTester.addViolation(violation, c); // only a violation if we are sure.
+                } else {
+                    tajsTypeTester.addWarning(violation, c);
                 }
             }
             tajsTypeTester.attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test.getPath(), c, typeChecker);
@@ -247,18 +247,14 @@ public class TajsTestVisitor implements TestVisitor<Void> {
             }).collect(Collectors.toList());
 
             if (matchingTypes.isEmpty()) {
-                if(c.isScanning()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Values matched none of the unions", test.getPath()));
-                }
+                tajsTypeTester.addViolation(new TypeViolation("Values matched none of the unions", test.getPath()), c);
             }
 
             matchingTypes.forEach(subType -> tajsTypeTester.attemptAddValue(splitValue, new TypeWithContext(subType, test.getTypeContext()), test.getPath(), c, typeChecker));
         }
 
         for (Type nonMatchedType : nonMatchedTypes) {
-            if(c.isScanning()) {
-                tajsTypeTester.addWarning(new TypeViolation("No value matches the type: " + nonMatchedType + " in union " + test.getGetUnionType(), test.getPath()));
-            }
+            tajsTypeTester.addWarning(new TypeViolation("No value matches the type: " + nonMatchedType + " in union " + test.getGetUnionType(), test.getPath()), c);
         }
 
         return null;
@@ -269,9 +265,7 @@ public class TajsTestVisitor implements TestVisitor<Void> {
         State s = c.getState();
         Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(),test.getTypeContext()));
         Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(baseValue.getAllObjectLabels(), Value.makeAnyStrUInt()), c.getState());
-        if(c.isScanning()) {
-            tajsTypeTester.addCertificate(new TajsTypeTester.TestCertificate(test, "numberIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s));
-        }
+        tajsTypeTester.addCertificate(new TestCertificate(test, "numberIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s), c);
         TypeWithContext resultType = new TypeWithContext(test.getReturnType(), test.getTypeContext());
         tajsTypeTester.attemptAddValue(propertyValue, resultType, test.getPath(), c, typeChecker);
         return null;
@@ -282,9 +276,7 @@ public class TajsTestVisitor implements TestVisitor<Void> {
         State s = c.getState();
         Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(),test.getTypeContext()));
         Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(baseValue.getAllObjectLabels(), Value.makeAnyStr()), c.getState());
-        if(c.isScanning()) {
-            tajsTypeTester.addCertificate(new TajsTypeTester.TestCertificate(test, "stringIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s));
-        }
+        tajsTypeTester.addCertificate(new TestCertificate(test, "stringIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s), c);
         TypeWithContext resultType = new TypeWithContext(test.getReturnType(), test.getTypeContext());
         tajsTypeTester.attemptAddValue(propertyValue, resultType, test.getPath(), c, typeChecker);
         return null;

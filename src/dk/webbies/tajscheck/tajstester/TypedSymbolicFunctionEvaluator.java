@@ -9,6 +9,7 @@ import dk.brics.tajs.monitoring.IAnalysisMonitoring;
 import dk.brics.tajs.solver.GenericSolver;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecObjects;
 import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
@@ -74,9 +75,7 @@ public class TypedSymbolicFunctionEvaluator {
             }
 
             if (signatures.size() == 0) {
-                if (c.isScanning()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Called a non function", path));
-                }
+                tajsTypeTester.addViolation(new TypeViolation("Called a non function", path), c);
                 return Value.makeNone();
             }
 
@@ -88,17 +87,17 @@ public class TypedSymbolicFunctionEvaluator {
                 if (signature.isHasRestParameter()) {
                     restArgsType = TypesUtil.extractRestArgsType(parameters.stream().map(Signature.Parameter::getType).collect(Collectors.toList()));
                     parameters = parameters.subList(0, parameters.size() - 1);
-                    if (call.getNumberOfArgs() < parameters.size() && c.isScanning()) {
-                        tajsTypeTester.addViolation(new TypeViolation("Expected a minimum of " + parameters.size() + " args, got " + call.getNumberOfArgs(), path));
+                    if (call.getNumberOfArgs() < parameters.size()) {
+                        tajsTypeTester.addViolation(new TypeViolation("Expected a minimum of " + parameters.size() + " args, got " + call.getNumberOfArgs(), path), c);
                     }
                 } else {
-                    if (parameters.size() != call.getNumberOfArgs() && c.isScanning()) {
-                        tajsTypeTester.addViolation(new TypeViolation("Expected  " + parameters.size() + " args, got " + call.getNumberOfArgs(), path));
+                    if (parameters.size() != call.getNumberOfArgs()) {
+                        tajsTypeTester.addViolation(new TypeViolation("Expected  " + parameters.size() + " args, got " + call.getNumberOfArgs(), path), c);
                     }
                 }
                 if (call.isUnknownNumberOfArgs()) {
-                    if (!signature.isHasRestParameter() && c.isScanning()) {
-                        tajsTypeTester.addViolation(new TypeViolation("Function was called with an unknown number of args, but it doesn't have a restArgs parameter", path));
+                    if (!signature.isHasRestParameter()) {
+                        tajsTypeTester.addViolation(new TypeViolation("Function was called with an unknown number of args, but it doesn't have a restArgs parameter", path), c);
                     }
                     if (signature.isHasRestParameter()) {
                         // restricting to not undef, because rest-args must be possibly undef.
@@ -119,15 +118,15 @@ public class TypedSymbolicFunctionEvaluator {
             } else {
                 List<Signature> matchingSignatures = signatures.stream().filter(sig -> sigMatches(sig, finalContext, call, c, path, tajsTypeChecker)).collect(Collectors.toList());
 
-                if (matchingSignatures.isEmpty() && c.isScanning()) {
-                    tajsTypeTester.addViolation(new TypeViolation("None of the overloads matched how the callback was called", path));
+                if (matchingSignatures.isEmpty()) {
+                    tajsTypeTester.addViolation(new TypeViolation("None of the overloads matched how the callback was called", path), c);
                 }
 
-                if (matchingSignatures.size() < signatures.size() && c.isScanning()) {
+                if (matchingSignatures.size() < signatures.size()) {
                     ArrayList<Signature> nonMatchingSignatures = new ArrayList<>(signatures);
                     nonMatchingSignatures.removeAll(matchingSignatures);
                     for (Signature nonMatchingSignature : nonMatchingSignatures) {
-                        tajsTypeTester.addWarning(new TypeViolation("Signatures with args " + PrettyTypes.parameters(nonMatchingSignature.getParameters()) + " was never called", path));
+                        tajsTypeTester.addWarning(new TypeViolation("Signatures with args " + PrettyTypes.parameters(nonMatchingSignature.getParameters()) + " was never called", path), c);
                     }
                 }
 

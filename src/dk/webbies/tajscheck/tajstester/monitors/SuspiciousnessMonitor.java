@@ -1,10 +1,11 @@
-package dk.webbies.tajscheck.tajstester;
+package dk.webbies.tajscheck.tajstester.monitors;
 
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.jsnodes.Node;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
 import dk.brics.tajs.solver.NodeAndContext;
+import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.testcreator.test.Test;
 
 import java.util.Map;

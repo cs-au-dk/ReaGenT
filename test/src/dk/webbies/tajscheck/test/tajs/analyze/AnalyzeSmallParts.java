@@ -3,7 +3,7 @@ package dk.webbies.tajscheck.test.tajs.analyze;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
-import dk.webbies.tajscheck.test.tajs.TAJSUtil;
+import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.testcreator.test.LoadModuleTest;
 import junit.framework.TestCase;
 import org.junit.Test;

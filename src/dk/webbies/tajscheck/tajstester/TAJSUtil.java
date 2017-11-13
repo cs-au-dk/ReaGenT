@@ -1,16 +1,15 @@
-package dk.webbies.tajscheck.test.tajs;
+package dk.webbies.tajscheck.tajstester;
 
 import dk.brics.tajs.analysis.Analysis;
-import dk.brics.tajs.analysis.WorkListStrategy;
 import dk.brics.tajs.flowgraph.FlowGraph;
-import dk.brics.tajs.lattice.Context;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
-import dk.brics.tajs.solver.NodeAndContext;
 import dk.brics.tajs.util.AnalysisLimitationException;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.tajstester.*;
+import dk.webbies.tajscheck.tajstester.data.TestCertificate;
+import dk.webbies.tajscheck.tajstester.data.Timers;
+import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
@@ -114,21 +113,7 @@ public class TAJSUtil {
             timedout = true;
         }
 
-        MultiMap<String, TypeViolation> violations = new ArrayListMultiMap<>();
-        typeTester.getAllViolations().stream().distinct().forEach(vio -> {
-            violations.put(vio.path, vio);
-        });
-
-        MultiMap<String, TypeViolation> warnings = new ArrayListMultiMap<>();
-        typeTester.getAllWarnings().stream().distinct().forEach(vio -> {
-            warnings.put(vio.path, vio);
-        });
-
-        List<Test> notPerformed = new LinkedList<>();
-        notPerformed.addAll(typeTester.getAllTests());
-        notPerformed.removeAll(typeTester.getPerformedTests());
-
-        return new TajsAnalysisResults(violations, warnings, typeTester.getPerformedTests(), notPerformed, typeTester.getAllCertificates(), typeTester.getTransferMonitor().getTestTransfers(), typeTester.getSuspiciousMonitor().getSuspiciousLocations(), typeTester.getTimers(), timedout);
+        return new TajsAnalysisResults(typeTester, timedout);
     }
 
     public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout, boolean useInspector) throws Exception {
@@ -152,31 +137,59 @@ public class TAJSUtil {
         public final Collection<Test> testPerformed;
         public final List<Test> testNot;
         public final boolean timedout;
+        public Set<Test> retractedTests;
         public final Map<Test, Integer> testTranfers;
-        public final Map<Test, Set<NodeAndContext<Context>>> suspiciousLocations;
-        public final List<TajsTypeTester.TestCertificate> certificates;
+        public final List<TestCertificate> certificates;
         public final Timers timers;
 
         private boolean VERBOSE = true;
 
-        TajsAnalysisResults(MultiMap<String, TypeViolation> detectedViolations,
-                            MultiMap<String, TypeViolation> warnings, Collection<Test> testPerformed,
+        public TajsAnalysisResults(MultiMap<String, TypeViolation> detectedViolations,
+                            MultiMap<String, TypeViolation> warnings,
+                            Collection<Test> testPerformed,
                             List<Test> testNot,
-                            List<TajsTypeTester.TestCertificate> certificates,
+                            List<TestCertificate> certificates,
                             Map<Test, Integer> testTranfers,
-                            Map<Test, Set<NodeAndContext<Context>>> suspiciousLocations,
                             Timers timers,
-                            boolean timedout) {
+                            boolean timedout,
+                            Set<Test> retractedTests) {
 
             this.detectedViolations = detectedViolations;
             this.detectedWarnings = warnings;
             this.testPerformed = testPerformed;
             this.testNot = testNot;
             this.testTranfers = testTranfers;
-            this.suspiciousLocations = suspiciousLocations;
             this.certificates = certificates;
             this.timers = timers;
             this.timedout = timedout;
+            this.retractedTests = retractedTests;
+        }
+
+        public TajsAnalysisResults(TajsTypeTester typeTester, boolean timedout) {
+            this.timedout = timedout;
+
+            this.detectedViolations = new ArrayListMultiMap<>();
+            typeTester.getViolations(timedout).stream().distinct().forEach(vio -> {
+                this.detectedViolations.put(vio.path, vio);
+            });
+
+            this.detectedWarnings = new ArrayListMultiMap<>();
+            typeTester.getWarnings(timedout).stream().distinct().forEach(vio -> {
+                this.detectedWarnings.put(vio.path, vio);
+            });
+
+            testPerformed = typeTester.getPerformedTests();
+
+            this.testNot = new ArrayList<>(typeTester.getAllTests());
+            this.testNot.removeAll(typeTester.getPerformedTests());
+
+            this.retractedTests = typeTester.getRetractedTests();
+
+            this.certificates = typeTester.getCertificates(timedout);
+
+            this.testTranfers = typeTester.getTransferMonitor().getTestTransfers();
+
+            this.timers = typeTester.getTimers();
         }
 
         @Override
@@ -186,12 +199,19 @@ public class TAJSUtil {
                 builder.append("Type-checking timedout!").append("\n");
             builder.append("Tests not performed (").append(testNot.size()).append(")").append("\n");
             for (Test notPerformed : testNot) {
-                builder.append("   ").append(notPerformed).append("\n");
+                builder.append("   ").append(notPerformed);
+                if (retractedTests.contains(notPerformed)) {
+                    builder.append(" (retracted)");
+                }
+                builder.append("\n");
             }
 
             builder.append("Tests performed (").append(testPerformed.size()).append(")").append("\n");
             for (Test performed : testPerformed) {
                 builder.append("   ").append(performed).append("\n");
+                if (retractedTests.contains(performed)) {
+                    throw new RuntimeException();
+                }
             }
 
             printTypeViolations(builder, this.detectedViolations, "Violations");
@@ -199,14 +219,11 @@ public class TAJSUtil {
             printTypeViolations(builder, this.detectedWarnings, "Warnings");
 
             if (VERBOSE) {
-                builder.append("Test details:\n   ")
-                        .append(mkString(certificates, "\n   "));
+//                builder.append("Test details:\n   ")
+//                        .append(mkString(certificates, "\n   "));
                 builder.append("\n");
                 builder.append("Transfers per test:\n   ")
-                        .append(mkString(testTranfers.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getValue)).map(e -> e.getKey() + ": " + e.getValue()), "\n   "));
-                builder.append("\n");
-                builder.append("Suspicious locations per test:\n   ")
-                        .append(mkString(suspiciousLocations.entrySet().stream().map(e -> e.getKey() + ": " + e.getValue()), "\n   "));
+                        .append(mkString(testTranfers.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getValue)).map(e -> e.getKey() + ": " + e.getValue() + (retractedTests.contains(e.getKey()) ? " (retracted)" : "")), "\n   "));
                 builder.append("\n");
                 builder.append(timers.toString());
             }

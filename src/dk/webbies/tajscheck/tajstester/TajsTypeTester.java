@@ -15,15 +15,20 @@ import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.ExpansionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.RetractionPolicy;
+import dk.webbies.tajscheck.tajstester.data.TestCertificate;
+import dk.webbies.tajscheck.tajstester.data.Timers;
+import dk.webbies.tajscheck.tajstester.data.TypeViolation;
+import dk.webbies.tajscheck.tajstester.monitors.SuspiciousnessMonitor;
+import dk.webbies.tajscheck.tajstester.monitors.TestTransfersMonitor;
 import dk.webbies.tajscheck.testcreator.test.*;
+import dk.webbies.tajscheck.util.Util;
 
+import java.io.IOException;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.newList;
 import static dk.brics.tajs.util.Collections.newSet;
-import static dk.webbies.tajscheck.util.Util.prettyValue;
 
 public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTestRunner {
     private static final boolean DEBUG = true;
@@ -34,9 +39,14 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private final ExpansionPolicy expansionPolicy;
     private TypeValuesHandler valueHandler = null;
 
-    final private List<TypeViolation> allViolations = newList();
-    final private List<TypeViolation> allWarnings = newList();
-    final private List<TestCertificate> allCertificates = newList();
+    final private List<TypeViolation> violations = newList();
+    final private List<TypeViolation> warnings = newList();
+    final private List<TestCertificate> certificates = newList();
+
+    // violations etc. reported while the analysis was not yet done.
+    private List<TypeViolation> notDoneViolations = newList();
+    private List<TypeViolation> notDoneWarnings = newList();
+    private List<TestCertificate> notDoneCertificates = newList();
 
     private final Set<Test> performed = new LinkedHashSet<>();
 
@@ -154,6 +164,18 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         timers.stop(Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
 
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
+
+        this.notDoneCertificates = this.notDoneCertificates.stream().distinct().collect(Collectors.toList());
+        this.notDoneWarnings = this.notDoneWarnings.stream().distinct().collect(Collectors.toList());
+        this.notDoneViolations = this.notDoneViolations.stream().distinct().collect(Collectors.toList());
+
+        TAJSUtil.TajsAnalysisResults partialResults = new TAJSUtil.TajsAnalysisResults(this, !c.isScanning());
+
+        try {
+            Util.writeFile("partialResult.txt", partialResults.toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void init(Solver.SolverInterface c) {
@@ -212,9 +234,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
         } else {
             if(DEBUG_VALUES) System.out.println("Value " + UnknownValueResolver.getRealValue(value, c.getState()) + " not added because it violates type " + t + " path:" + path);
-            if(c.isScanning()) {
-                allViolations.addAll(violations);
-            }
+            violations.forEach(violation -> addViolation(violation, c));
         }
 
         return violations.isEmpty();
@@ -239,16 +259,28 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
      * Getters, setters, and adders.
      */
 
-    public void addViolation(TypeViolation violation) {
-        allViolations.add(violation);
+    public void addViolation(TypeViolation violation, Solver.SolverInterface c) {
+        if (c.isScanning()) {
+            violations.add(violation);
+        } else {
+            notDoneViolations.add(violation);
+        }
     }
 
-    public void addWarning(TypeViolation warning) {
-        allWarnings.add(warning);
+    public void addWarning(TypeViolation warning, Solver.SolverInterface c) {
+        if (c.isScanning()) {
+            warnings.add(warning);
+        } else {
+            notDoneWarnings.add(warning);
+        }
     }
 
-    void addCertificate(TestCertificate testCertificate) {
-        allCertificates.add(testCertificate);
+    void addCertificate(TestCertificate testCertificate, Solver.SolverInterface c) {
+        if (c.isScanning()) {
+            certificates.add(testCertificate);
+        } else {
+            notDoneCertificates.add(testCertificate);
+        }
     }
 
     public int getTotalTests() {return tests.size();}
@@ -257,13 +289,29 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public Collection<Test> getPerformedTests() {return performed;}
 
-    public List<TypeViolation> getAllViolations() {return allViolations;}
-
-    public List<TypeViolation> getAllWarnings() {
-        return allWarnings;
+    public List<TypeViolation> getViolations(boolean timeout) {
+        if (timeout) {
+            return notDoneViolations;
+        } else {
+            return violations;
+        }
     }
 
-    public List<TestCertificate> getAllCertificates() {return allCertificates;}
+    public List<TypeViolation> getWarnings(boolean timeout) {
+        if (timeout) {
+            return notDoneWarnings;
+        } else {
+            return warnings;
+        }
+    }
+
+    public List<TestCertificate> getCertificates(boolean timeout) {
+        if (timeout) {
+            return notDoneCertificates;
+        } else {
+            return certificates;
+        }
+    }
 
     public TesterContextSensitivity getSensitivity() {return sensitivity; }
 
@@ -271,34 +319,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public TestTransfersMonitor getTransferMonitor() {return transferMonitor; }
 
-    public static class TestCertificate {
-        final String message;
-        final Value[] usedValues;
-        final Test test;
-        final State ownerState;
-
-        TestCertificate(Test test, String message, Value[] usedValues, State ownerState) {
-            this.test = test;
-            this.message = message;
-            this.usedValues = usedValues;
-            this.ownerState = ownerState;
-        }
-
-        @Override
-        public String toString() {
-            String patternString = "\\[[0-9]+\\]";
-            Pattern pattern = Pattern.compile(patternString);
-
-            Matcher matcher = pattern.matcher(message);
-            int total = 0;
-            while (matcher.find())
-                total++;
-
-            String m = message;
-            for(int i = 0; i < total; i++) {
-                m = m.replace("[" + i + "]", prettyValue(usedValues[i], ownerState));
-            }
-            return test.getClass().getSimpleName() + "(" + test.getPath() +"):" + m;
-        }
+    public Set<Test> getRetractedTests() {
+        return tests.stream().filter(retractionPolicy::isRetracted).collect(Collectors.toSet());
     }
+
 }

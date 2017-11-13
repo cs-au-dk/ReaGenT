@@ -1,8 +1,8 @@
 package dk.webbies.tajscheck.test.tajs;
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
-import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Test;
 import org.junit.runner.RunWith;

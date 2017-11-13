@@ -1,9 +1,9 @@
-package dk.webbies.tajscheck.tajstester;
+package dk.webbies.tajscheck.tajstester.data;
 
 public class TypeViolation {
     final public String message;
     final public String path;
-    TypeViolation(String message, String path){
+    public TypeViolation(String message, String path){
         this.message = message;
         this.path = path;
     }

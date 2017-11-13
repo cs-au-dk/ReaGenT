@@ -1,4 +1,4 @@
-package dk.webbies.tajscheck.tajstester;
+package dk.webbies.tajscheck.tajstester.data;
 
 import java.util.ArrayList;
 import java.util.List;
