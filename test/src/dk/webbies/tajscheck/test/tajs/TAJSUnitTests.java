@@ -781,6 +781,15 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
+    @Test
+    public void readableObjectErrors() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("readableObjectErrors");
+
+        System.out.println(result);
+
+        assertThat(result.detectedViolations.keySet(), hasSize(1));
+    }
+
     // TODO: Test string-indexers somehow.
     // TODO: Handle construction of native objects.
 }

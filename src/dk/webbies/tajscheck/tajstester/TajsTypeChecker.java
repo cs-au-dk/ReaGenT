@@ -92,71 +92,85 @@ public class TajsTypeChecker {
     }
 
     private List<Tuple3<String, Value, TypeCheck>> getTypeViolations(TypeWithContext typeWithContext, Value v, List<TypeCheck> typeChecks, String path) {
-        return typeChecks.stream().flatMap(typeCheck -> {
-            Check check = typeCheck.getCheck();
-            Supplier<List<Tuple3<String, Value, TypeCheck>>> getForCache = () -> {
-                if (check instanceof CanHaveSubTypeCheck) {
-                    if (check instanceof FieldCheck) {
-                        FieldCheck fieldCheck = (FieldCheck) check;
-                        String field = fieldCheck.getField();
+        return typeChecks.stream()
+            .sorted((testA, testB) -> {
+                // Making sure all CanHaveSubTypeCheck comes last.
+                if (testA instanceof CanHaveSubTypeCheck && !(testB instanceof CanHaveSubTypeCheck)) {
+                    return 1;
+                } else if (!(testA instanceof CanHaveSubTypeCheck) && testB instanceof CanHaveSubTypeCheck) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            })
+            .map(typeCheck -> {
+                Check check = typeCheck.getCheck();
+                Supplier<List<Tuple3<String, Value, TypeCheck>>> getForCache = () -> {
+                    if (check instanceof CanHaveSubTypeCheck) {
+                        if (check instanceof FieldCheck) {
+                            FieldCheck fieldCheck = (FieldCheck) check;
+                            String field = fieldCheck.getField();
 
-                        String newPath = path + "." + field;
+                            String newPath = path + "." + field;
 
-                        List<TypeCheck> subTypeChecks;
-                        if (typeCheck instanceof FieldTypeCheck) {
-                            subTypeChecks = ((FieldTypeCheck) typeCheck).getFieldChecks();
+                            List<TypeCheck> subTypeChecks;
+                            if (typeCheck instanceof FieldTypeCheck) {
+                                subTypeChecks = ((FieldTypeCheck) typeCheck).getFieldChecks();
+                            } else {
+                                AndCheck andSubChecks = Check.and(fieldCheck.getChecks());
+                                subTypeChecks = Collections.singletonList(new SimpleTypeCheck(andSubChecks, andSubChecks.toString()));
+                            }
+
+                            return performSubTypeCheck(v, fieldCheck, newPath, subTypeChecks, Value.makeStr(field));
+                        } else if (check instanceof NumberIndexCheck) {
+                            NumberIndexCheck numberIndexCheck = (NumberIndexCheck) check;
+                            String newPath = path + "." + "[numberIndexer]";
+
+                            String expected;
+                            if (typeCheck.getExpected().startsWith("(arrayIndex: ")) {
+                                expected = Util.removeSuffix(Util.removePrefix(typeCheck.getExpected(), "(arrayIndex: "), ")");
+                            } else {
+                                expected = Util.removeSuffix(Util.removePrefix(typeCheck.getExpected(), "(numberIndexer: "), ")");
+                            }
+
+                            List<TypeCheck> subTypeChecks = Collections.singletonList(new SimpleTypeCheck(numberIndexCheck.getSubCheck(), expected));
+
+                            return performSubTypeCheck(v, numberIndexCheck, newPath, subTypeChecks, Value.makeAnyStrUInt());
+                        } else if (check instanceof StringIndexCheck) {
+                            StringIndexCheck stringIndexCheck = (StringIndexCheck) check;
+                            if (v.isMaybeUndef() && v.restrictToNotUndef().isNone()) {
+                                return java.util.Collections.emptyList();
+                            }
+                            if (v.isMaybePrimitive()) {
+                                return Collections.singletonList(new Tuple3<>(path, v, typeCheck));
+                            }
+                            System.err.println("Skipping check" + check + " against " + v); // TODO: What do.
+                            return java.util.Collections.emptyList();
                         } else {
-                            AndCheck andSubChecks = Check.and(fieldCheck.getChecks());
-                            subTypeChecks = Collections.singletonList(new SimpleTypeCheck(andSubChecks, andSubChecks.toString()));
+                            throw new RuntimeException(check.getClass().getSimpleName());
                         }
-
-                        return performSubTypeCheck(v, fieldCheck, newPath, subTypeChecks, Value.makeStr(field));
-                    } else if (check instanceof NumberIndexCheck) {
-                        NumberIndexCheck numberIndexCheck = (NumberIndexCheck) check;
-                        String newPath = path + "." + "[numberIndexer]";
-
-                        String expected;
-                        if (typeCheck.getExpected().startsWith("(arrayIndex: ")) {
-                            expected = Util.removeSuffix(Util.removePrefix(typeCheck.getExpected(), "(arrayIndex: "), ")");
+                    } else {
+                        if (!check.accept(cc, v)) {
+                            return Collections.singletonList(new Tuple3<>(path, v, typeCheck));
                         } else {
-                            expected = Util.removeSuffix(Util.removePrefix(typeCheck.getExpected(), "(numberIndexer: "), ")");
-                        }
-
-                        List<TypeCheck> subTypeChecks = Collections.singletonList(new SimpleTypeCheck(numberIndexCheck.getSubCheck(), expected));
-
-                        return performSubTypeCheck(v, numberIndexCheck, newPath, subTypeChecks, Value.makeAnyStrUInt());
-                    } else if (check instanceof StringIndexCheck) {
-                        StringIndexCheck stringIndexCheck = (StringIndexCheck) check;
-                        if (v.isMaybeUndef() && v.restrictToNotUndef().isNone()) {
                             return java.util.Collections.emptyList();
                         }
-                        if (v.isMaybePrimitive()) {
-                            return Collections.singletonList(new Tuple3<>(path, v, typeCheck));
-                        }
-                        System.err.println("Skipping check" + check + " against " + v); // TODO: What do.
-                        return java.util.Collections.emptyList();
-                    } else {
-                        throw new RuntimeException(check.getClass().getSimpleName());
                     }
-                } else {
-                    if (!check.accept(cc, v)) {
-                        return Collections.singletonList(new Tuple3<>(path, v, typeCheck));
-                    } else {
-                        return java.util.Collections.emptyList();
-                    }
-                }
-            };
+                };
 
-            Tuple3<Check, TypeWithContext, Value> key = new Tuple3<>(check, typeWithContext, v);
-            if (cache.containsKey(key)) {
-                return cache.get(key).stream();
-            } else {
-                cache.put(key, java.util.Collections.emptyList()); // coinductive assumption, if we hit the same check, it must be true.
-                List<Tuple3<String, Value, TypeCheck>> result = getForCache.get();
-                cache.put(key, result);
-                return result.stream();
-            }
-        }).collect(Collectors.toList());
+                Tuple3<Check, TypeWithContext, Value> key = new Tuple3<>(check, typeWithContext, v);
+                if (cache.containsKey(key)) {
+                    return cache.get(key);
+                } else {
+                    cache.put(key, java.util.Collections.emptyList()); // coinductive assumption, if we hit the same check, it must be true.
+                    List<Tuple3<String, Value, TypeCheck>> result = getForCache.get();
+                    cache.put(key, result);
+                    return result;
+                }
+            })
+            .filter(Util.not(List::isEmpty))
+            .findFirst()
+            .orElse(java.util.Collections.emptyList());
     }
 
     private List<Tuple3<String, Value, TypeCheck>> performSubTypeCheck(Value v, CanHaveSubTypeCheck hasSubType, String newPath, List<TypeCheck> subTypeChecks, Value field) {
