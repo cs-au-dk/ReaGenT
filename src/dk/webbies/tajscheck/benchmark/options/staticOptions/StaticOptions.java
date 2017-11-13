@@ -15,6 +15,7 @@ public class StaticOptions implements OptionsI {
     public final boolean createSingletonObjects;
     public final boolean betterAnyString;
     public final RetractionPolicy retractionPolicy;
+    public final ExpansionPolicy expansionPolicy;
 
     private final Builder builder;
 
@@ -23,6 +24,7 @@ public class StaticOptions implements OptionsI {
         this.createSingletonObjects = builder.createSingletonObjects;
         this.betterAnyString = builder.betterAnyString;
         this.retractionPolicy = builder.retractionPolicy;
+        this.expansionPolicy = builder.expansionPolicy;
         this.builder = builder;
     }
 
@@ -36,6 +38,7 @@ public class StaticOptions implements OptionsI {
         private boolean createSingletonObjects = false;
         public boolean betterAnyString = true; // if true all string types are *not* well-known strings in Object or Function prototypes
         public RetractionPolicy retractionPolicy = new NoRetractPolicy();
+        public ExpansionPolicy expansionPolicy = new ExpandImmediatelyPolicy();
 
         private final CheckOptions.Builder outerBuilder;
 
@@ -46,6 +49,11 @@ public class StaticOptions implements OptionsI {
         public Builder(Builder builder) {
             this.outerBuilder = builder.outerBuilder;
             Util.copyPrimitives(this, builder);
+        }
+
+        public Builder setExpansionPolicy(ExpansionPolicy expansionPolicy) {
+            this.expansionPolicy = expansionPolicy;
+            return this;
         }
 
         public Builder setCreateSingletonObjects(boolean createSingletonObjects) {

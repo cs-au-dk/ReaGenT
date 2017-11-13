@@ -13,6 +13,7 @@ import dk.brics.tajs.solver.WorkList;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.ExpansionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.RetractionPolicy;
 import dk.webbies.tajscheck.testcreator.test.*;
 
@@ -30,6 +31,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private final List<Test> tests;
     private final BenchmarkInfo info;
+    private final ExpansionPolicy expansionPolicy;
     private TypeValuesHandler valueHandler = null;
 
     final private List<TypeViolation> allViolations = newList();
@@ -55,6 +57,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         this.tests = tests;
         this.info = info;
         this.retractionPolicy = this.info.options.staticOptions.retractionPolicy;
+        this.expansionPolicy = this.info.options.staticOptions.expansionPolicy;
         this.transferMonitor = new TestTransfersMonitor(this, retractionPolicy::notifyTestTransfer);
         this.suspiciousMonitor = new SuspiciousnessMonitor(this, retractionPolicy::notifySuspiciousLocation);
     }
@@ -63,10 +66,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private Context previousTestContext = null;
 
-    public Solver.SolverInterface c;
     public void triggerTypeTests(Solver.SolverInterface c) {
         if(allTestsBlock == null) {
-            this.c = c;
             init(c);
         }
 
@@ -88,13 +89,31 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker, this, info, valueHandler);
 
         performed.clear();
+        expansionPolicy.nextRound();
         for (Test test : tests) {
-            // Generating one local context per test
-            Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
-
             if (retractionPolicy.isRetracted(test)) {
                 continue;
             }
+
+            if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
+                if (DEBUG && !c.isScanning()) {
+                    System.out.println("Skipped test " + test);
+                }
+                if (DEBUG && c.isScanning()) {
+                    System.out.println("Never performed test " + test);
+                }
+                continue;
+            }
+
+            if (test instanceof FunctionTest && !expansionPolicy.include((FunctionTest) test)) {
+                if (DEBUG) {
+                    System.out.println("Didn't expand to " + test);
+                }
+                continue;
+            }
+
+            // Generating one local context per test
+            Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
             // Propagate previous state into this, chaining the flow
             if(previousTestContext != null) {
@@ -114,15 +133,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             // attempting to perform the test in the local context
             timers.start(Timers.Tags.TEST_TRANSFER);
             c.withState(testState, () -> {
-                if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
-                    if (DEBUG && !c.isScanning()) {
-                        System.out.println("Skipped test " + test);
-                    }
-                    if (DEBUG && c.isScanning()) {
-                        System.out.println("Never performed test " + test);
-                    }
-                    return;
-                }
                 if (DEBUG && !c.isScanning()){
                     System.out.println("Performing test " + test);
                 }
@@ -214,14 +224,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         return tajsTypeChecker.typeCheck(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), info, path);
     }
 
-    // TODO: Create a retraction-policy
-    // TODO: Test that we can retract a test, and that side-effects from such a test are ignored.
-    // TODO: Make an expansion-policy, to add only one method to the universe at a time. Test it on moment.
-    // TODo: Overhaul the result toString.
-    // TODO: Figure out why all the not-executed tests seemingly have some transfers.
-
+    // TODO: Overhaul the result toString.
     // TODO: Make sure all violations, warning and certificates are always saved (even if not scanning), and then the latest set of results are reported back in case of a timeout.
-    // TODO: Write the latest set of results to a file.
+    // TODO: (Write the latest set of results to a file.)
 
     @Override
     public boolean shouldSkipEntry(WorkList<Context>.Entry e) {
