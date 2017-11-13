@@ -1,15 +1,14 @@
 package dk.webbies.tajscheck.test.tajs.analyze;
 
-import dk.brics.tajs.options.Options;
-import dk.webbies.tajscheck.Main;
-import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
+import dk.webbies.tajscheck.benchmark.options.OptionsI;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.ExpandOneAtATimePolicy;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.tajs.TAJSUtil;
-import dk.webbies.tajscheck.util.Util;
 import junit.framework.TestCase;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -21,12 +20,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static dk.webbies.tajscheck.test.Matchers.emptyMap;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -118,12 +114,13 @@ public class AnalyzeBenchmarks extends TestCase {
                 .collect(Collectors.toList());
     }
 
-    public static Function<CheckOptions.Builder, CheckOptions.Builder> options() {
+    public static Function<CheckOptions.Builder, StaticOptions.Builder> options() {
         return options -> options
                 .setCombineNullAndUndefined(true) // because no-one cares.
                 .staticOptions
                     .setKillGetters(true) // because getters currently causes the analysis to loop.
-                .build().getBuilder();
+//                    .setRetractionPolicy(new LimitTransfersRetractionPolicy(1000))
+                    .setExpansionPolicy(new ExpandOneAtATimePolicy());
     }
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
@@ -153,7 +150,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
     @Test(timeout = (int)(INIT_TIMEOUT * 1000 * 1.3))
     public void initialize() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).setOnlyInitialize(true));
+        Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).getOuterBuilder().setOnlyInitialize(true));
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, INIT_TIMEOUT);
         System.out.println(result);
         assert(!result.timedout);
