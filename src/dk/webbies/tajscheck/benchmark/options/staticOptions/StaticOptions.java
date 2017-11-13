@@ -51,6 +51,10 @@ public class StaticOptions implements OptionsI {
             Util.copyPrimitives(this, builder);
         }
 
+        public CheckOptions.Builder getOuterBuilder() {
+            return outerBuilder;
+        }
+
         public Builder setExpansionPolicy(ExpansionPolicy expansionPolicy) {
             this.expansionPolicy = expansionPolicy;
             return this;
