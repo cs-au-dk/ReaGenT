@@ -350,16 +350,25 @@ public class SpecInstantiator implements TestBlockEntryObserver {
 
     private Value instantiateNative(String name) {
         switch (name) {
-            case "HTMLElement":
+            case "HTMLElement": {
                 return DOMFunctions.makeAnyHTMLElement();
-            case "Date":
+            }
+            case "Date": {
                 ObjectLabel objlabel = ObjectLabel.make(c.getNode(), ObjectLabel.Kind.DATE);
                 c.getState().newObject(objlabel);
                 c.getState().writeInternalValue(objlabel, Value.makeAnyNumUInt());
                 c.getState().writeInternalPrototype(objlabel, Value.makeObject(InitialStateBuilder.DATE_PROTOTYPE));
                 return Value.makeObject(objlabel);
-            case "Function":
+            }
+            case "Function": {
                 return SimpleUnevalizerAPI.evaluateFunctionCall(c.getNode(), Collections.emptyList(), "", c);
+            }
+            case "RegExp": {
+                ObjectLabel label = ObjectLabel.make(c.getNode(), ObjectLabel.Kind.REGEXP, null);
+                c.getState().newObject(label);
+                c.getState().writeInternalPrototype(label, Value.makeObject(InitialStateBuilder.REGEXP_PROTOTYPE));
+                return Value.makeObject(label);
+            }
             default:
                 throw new RuntimeException("Yet unknown how to create native object: " + name);
         }
