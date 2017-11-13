@@ -5,6 +5,8 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.HostAPIs;
 import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
+import dk.brics.tajs.analysis.dom.DOMFunctions;
+import dk.brics.tajs.analysis.nativeobjects.JSArray;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.util.AnalysisException;
@@ -135,6 +137,9 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                     if (Arrays.asList("Object", "module").equals(p)) {
                         return;
                     }
+                    if (p.get(0).equals("HTMLListIndexElement")) { // deprecated, and not actually a thing, but included in TAJS.
+                        return;
+                    }
 
                     TypeWithContext type = resolveType(p);
                     if (type == null) {
@@ -182,12 +187,16 @@ public class SpecInstantiator implements TestBlockEntryObserver {
 
             @Override
             public TypeWithContext visit(GenericType genericType) {
-                return new TypeWithContext(genericType.getDeclaredProperties().get(step), root.getTypeContext());
+                return genericType.toInterface().accept(this);
             }
 
             @Override
             public TypeWithContext visit(InterfaceType interfaceType) {
-                return new TypeWithContext(interfaceType.getDeclaredProperties().get(step), root.getTypeContext());
+                Type result = interfaceType.getDeclaredProperties().get(step);
+                if (result == null && interfaceType.getDeclaredProperties().containsKey("prototype")) {
+                    return interfaceType.getDeclaredProperties().get("prototype").accept(this);
+                }
+                return new TypeWithContext(result, root.getTypeContext());
             }
 
             @Override
@@ -313,7 +322,9 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         if (!valueCache.containsKey(key)) {
             Value value;
             ObjectLabel label = getObjectLabel(type, info);
-            if (processing.contains(key) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
+            if (SpecInstantiator.this.info.nativeTypes.contains(type) && !(type instanceof TypeParameterType)) {
+                value = instantiateNative(SpecInstantiator.this.info.typeNames.get(type));
+            } else if (processing.contains(key) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
                 // trying to instantiate a (recursive) type that is already being instantiated
                 assert labelCache.containsKey(new TypeWithContext(type, info.context));
                 if (label == null) {
@@ -325,15 +336,24 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                 log.debug("Visiting: " + info.path.toString());
                 value = type.accept(visitor, info.withlabel(label));
                 processing.remove(key);
-            }
 
-            if (value.isMaybeObject() && !SpecInstantiator.this.info.options.staticOptions.createSingletonObjects) {
-                value = value.restrictToNotObject().join(Value.makeObject(value.getObjectLabels().stream().map(effects::summarize).collect(Collectors.toSet())));
+                if (value.isMaybeObject() && !SpecInstantiator.this.info.options.staticOptions.createSingletonObjects) {
+                    value = value.restrictToNotObject().join(Value.makeObject(value.getObjectLabels().stream().map(effects::summarize).collect(Collectors.toSet())));
+                }
             }
 
             valueCache.put(key, value);
         }
         return valueCache.get(key);
+    }
+
+    private Value instantiateNative(String name) {
+        switch (name) {
+            case "HTMLElement":
+                return DOMFunctions.makeAnyHTMLElement();
+            default:
+                throw new RuntimeException("Yet unknown how to create: " + name);
+        }
     }
 
     public Value createValue(TypeWithContext type, String path) {
@@ -448,8 +468,20 @@ public class SpecInstantiator implements TestBlockEntryObserver {
 
         @Override
         public Value visit(ReferenceType t, MiscInfo info) {
+            if ("Array".equals(SpecInstantiator.this.info.typeNames.get(t.getTarget()))) {
+                Type indexType = t.getTypeArguments().iterator().next();
+                return constructArray(info, indexType);
+            }
             info = info.withContext(SpecInstantiator.this.info.typesUtil.generateParameterMap(t, info.context));
             return t.getTarget().accept(this, info);
+        }
+
+        private Value constructArray(MiscInfo info, Type indexType) {
+            ObjectLabel array = JSArray.makeArray(c.getNode(), c);
+            Value indexValue = instantiate(indexType, info, "[numberindexer]");
+            c.getAnalysis().getPropVarOperations().writeProperty(Collections.singleton(array), Value.makeAnyStrUInt(), indexValue);
+            c.getAnalysis().getPropVarOperations().writeProperty(array, "length", Value.makeAnyNumUInt());
+            return Value.makeObject(array);
         }
 
         @Override
