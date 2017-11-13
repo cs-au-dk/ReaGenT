@@ -216,6 +216,7 @@ public class TajsTypeChecker {
                         case OBJECT:
                         case ARRAY:
                         case ERROR:
+                        case DATE:
                             return true;
                         case FUNCTION:
                         case SYMBOL:
