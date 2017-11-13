@@ -9,6 +9,7 @@ import dk.brics.tajs.analysis.dom.DOMFunctions;
 import dk.brics.tajs.analysis.nativeobjects.JSArray;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.solver.GenericSolver;
+import dk.brics.tajs.unevalizer.SimpleUnevalizerAPI;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -322,7 +323,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         if (!valueCache.containsKey(key)) {
             Value value;
             ObjectLabel label = getObjectLabel(type, info);
-            if (SpecInstantiator.this.info.nativeTypes.contains(type) && !(type instanceof TypeParameterType)) {
+            if (SpecInstantiator.this.info.nativeTypes.contains(type) && !(type instanceof TypeParameterType) && !(type instanceof ReferenceType && SpecInstantiator.this.info.typeNames.get(((ReferenceType) type).getTarget()).equals("Array"))) {
                 value = instantiateNative(SpecInstantiator.this.info.typeNames.get(type));
             } else if (processing.contains(key) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
                 // trying to instantiate a (recursive) type that is already being instantiated
@@ -351,8 +352,16 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         switch (name) {
             case "HTMLElement":
                 return DOMFunctions.makeAnyHTMLElement();
+            case "Date":
+                ObjectLabel objlabel = ObjectLabel.make(c.getNode(), ObjectLabel.Kind.DATE);
+                c.getState().newObject(objlabel);
+                c.getState().writeInternalValue(objlabel, Value.makeAnyNumUInt());
+                c.getState().writeInternalPrototype(objlabel, Value.makeObject(InitialStateBuilder.DATE_PROTOTYPE));
+                return Value.makeObject(objlabel);
+            case "Function":
+                return SimpleUnevalizerAPI.evaluateFunctionCall(c.getNode(), Collections.emptyList(), "", c);
             default:
-                throw new RuntimeException("Yet unknown how to create: " + name);
+                throw new RuntimeException("Yet unknown how to create native object: " + name);
         }
     }
 
