@@ -323,8 +323,9 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         if (!valueCache.containsKey(key)) {
             Value value;
             ObjectLabel label = getObjectLabel(type, info);
-            if (SpecInstantiator.this.info.nativeTypes.contains(type) && !(type instanceof TypeParameterType) && !(type instanceof ReferenceType && SpecInstantiator.this.info.typeNames.get(((ReferenceType) type).getTarget()).equals("Array"))) {
-                value = instantiateNative(SpecInstantiator.this.info.typeNames.get(type));
+            BenchmarkInfo benchInfo = SpecInstantiator.this.info;
+            if (benchInfo.nativeTypes.contains(type) && !nativesToConstructStructurally.contains(benchInfo.typeNames.get(type)) && !(type instanceof TypeParameterType) && !(type instanceof ReferenceType && benchInfo.typeNames.get(((ReferenceType) type).getTarget()).equals("Array"))) {
+                value = instantiateNative(benchInfo.typeNames.get(type));
             } else if (processing.contains(key) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
                 // trying to instantiate a (recursive) type that is already being instantiated
                 assert labelCache.containsKey(new TypeWithContext(type, info.context));
@@ -338,7 +339,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                 value = type.accept(visitor, info.withlabel(label));
                 processing.remove(key);
 
-                if (value.isMaybeObject() && !SpecInstantiator.this.info.options.staticOptions.createSingletonObjects) {
+                if (value.isMaybeObject() && !benchInfo.options.staticOptions.createSingletonObjects) {
                     value = value.restrictToNotObject().join(Value.makeObject(value.getObjectLabels().stream().map(effects::summarize).collect(Collectors.toSet())));
                 }
             }
@@ -347,6 +348,13 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         }
         return valueCache.get(key);
     }
+
+    private static final Set<String> nativesToConstructStructurally = new HashSet<>(Arrays.asList(
+            "RTCConfiguration",
+            "RTCIceServer",
+            "RTCIceTransportPolicy",
+            "RTCBundlePolicy"
+    ));
 
     private Value instantiateNative(String name) {
         switch (name) {
