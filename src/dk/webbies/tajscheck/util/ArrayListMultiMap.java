@@ -82,15 +82,15 @@ public class ArrayListMultiMap<K, T> implements MultiMap<K, T> {
     }
 
 
-    public static <K, T> Collector<? super Map.Entry<K, Collection<T>>, MultiMap<K, T>, MultiMap<K, T>> collector() {
-        return new Collector<Map.Entry<K, Collection<T>>, MultiMap<K, T>, MultiMap<K, T>>() {
+    public static <K, T> Collector<? super Map.Entry<K, ? extends Collection<T>>, MultiMap<K, T>, MultiMap<K, T>> collector() {
+        return new Collector<Map.Entry<K, ? extends Collection<T>>, MultiMap<K, T>, MultiMap<K, T>>() {
             @Override
             public Supplier<MultiMap<K, T>> supplier() {
                 return ArrayListMultiMap::new;
             }
 
             @Override
-            public BiConsumer<MultiMap<K, T>, Map.Entry<K, Collection<T>>> accumulator() {
+            public BiConsumer<MultiMap<K, T>, Map.Entry<K, ? extends Collection<T>>> accumulator() {
                 return (map, entry) -> map.putAll(entry.getKey(), entry.getValue());
             }
 
@@ -111,7 +111,7 @@ public class ArrayListMultiMap<K, T> implements MultiMap<K, T> {
 
             @Override
             public Set<Characteristics> characteristics() {
-                return Collections.emptySet();
+                return Collections.singleton(Characteristics.UNORDERED);
             }
         };
     }
