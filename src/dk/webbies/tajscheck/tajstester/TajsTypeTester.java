@@ -100,10 +100,14 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         performed.clear();
         expansionPolicy.nextRound();
+        valueHandler.cleanUp();
+
         for (Test test : tests) {
             if (retractionPolicy.isRetracted(test)) {
                 continue;
             }
+
+            valueHandler.clearValuesForTest(test);
 
             if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
                 if (DEBUG && !c.isScanning()) {
@@ -157,6 +161,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 previousTestContext = newc;
             }
         }
+
+        valueHandler.clearValuesForTest(null); // null is the special test used for saved arguments from higher-order-functions.
 
         timers.start(Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
         State finalChainingState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
@@ -214,23 +220,23 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     /**
      *
      * @param tajsTypeChecker
+     * @param test
      * @param value the abstract value
      * @param t the type
      * @param path the Path from which the value is added.
      * @return if the value satisfied the type
      */
-    public boolean attemptAddValue(Value value, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker) {
+    public boolean attemptAddValue(Value value, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker, Test test) {
         if (value.isNone()) {
             return true;
         }
         List<TypeViolation> violations = getViolations(value, t, path, c, tajsTypeChecker);
 
         if(violations.isEmpty() && !value.isNone()) {
-            boolean newValue = valueHandler.addFeedbackValue(t, value);
+            boolean newValue = valueHandler.addFeedbackValue(test, t, value);
             if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + value);
             if(newValue && c.isScanning()) {
                 throw new RuntimeException("New values should not appear in scanning!");
-//                System.err.println("New values should not appear in scanning"); // TODO: Get this to work again.
             }
         } else {
             if(DEBUG_VALUES) System.out.println("Value " + UnknownValueResolver.getRealValue(value, c.getState()) + " not added because it violates type " + t + " path:" + path);

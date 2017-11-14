@@ -6,18 +6,23 @@ import dk.brics.tajs.lattice.Value;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
+import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
+import dk.webbies.tajscheck.util.ArrayListMultiMap;
+import dk.webbies.tajscheck.util.MultiMap;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public class TypeValuesHandler {
 
     private final Map<Type, String> typeNames;
     private BenchmarkInfo info;
-    private final Map<TypeWithContext, Value> savedValues = new HashMap<>();
     private final SpecInstantiator instantiator;
+
+    private final MultiMap<TypeWithContext, Reference<Value>> typeValueMap = new ArrayListMultiMap<>();
+    private MultiMap<Test, Reference<Value>> testValueMap = new ArrayListMultiMap<>();
 
     TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, TajsTypeTester tester, BenchmarkInfo info) {
         this.typeNames = typeNames;
@@ -31,10 +36,11 @@ public class TypeValuesHandler {
     }
 
     public Value findFeedbackValue(TypeWithContext t) {
-        if (savedValues.containsKey(t)) {
-            return savedValues.get(t);
+        List<Value> result = typeValueMap.get(t).stream().map(Reference::getValue).filter(Objects::nonNull).collect(Collectors.toList());
+        if (result.isEmpty()) {
+            return null;
         }
-        return null;
+        return Value.join(result);
     }
 
     public Value createValue(Type type, TypeContext context) {
@@ -52,9 +58,6 @@ public class TypeValuesHandler {
         } else if (t.getType() instanceof StringLiteral) {
             name = "string:" + ((StringLiteral) t.getType()).getText();
         } else {
-            if (!typeNames.containsKey(t.getType())) {
-                System.out.println();
-            }
             assert typeNames.containsKey(t.getType());
             name = typeNames.get(t.getType());
         }
@@ -62,24 +65,50 @@ public class TypeValuesHandler {
         return instantiator.createValue(t, name);
     }
 
-    public boolean addFeedbackValue(TypeWithContext t, Value v) {
+    public void cleanUp() {
+        testValueMap = testValueMap
+                .asMap().entrySet().stream()
+                .map(entry ->
+                        new AbstractMap.SimpleEntry<>(
+                                entry.getKey(),
+                                entry.getValue().stream()
+                                        .filter(ref -> ref.value != null)
+                                        .collect(Collectors.toList())
+                        )
+                ).filter(entry -> !entry.getValue().isEmpty())
+                .collect(ArrayListMultiMap.collector());
+    }
+
+    public void clearValuesForTest(Test test) {
+        testValueMap.get(test).forEach(Reference::setToNull);
+        testValueMap.remove(test);
+    }
+
+    public boolean addFeedbackValue(Test test, TypeWithContext type, Value v) {
         assert(v != null);
         AtomicBoolean valueWasAdded = new AtomicBoolean(false);
-        info.typesUtil.forAllSubTypes(t.getType(), t.getTypeContext(), (subType) -> {
-            if (savedValues.containsKey(subType)) {
-                Value prevValue = savedValues.get(subType);
-                Value joined = v.join(prevValue);
-                if (prevValue.equals(joined)) {
-                    return;
-                }
-                savedValues.put(subType, joined);
-                valueWasAdded.set(true);
-            } else {
-                savedValues.put(subType, v);
-                valueWasAdded.set(true);
-            }
+        Reference<Value> ref = new Reference<>(v);
+        testValueMap.put(test, ref);
+        info.typesUtil.forAllSubTypes(type.getType(), type.getTypeContext(), (subType) -> {
+            typeValueMap.put(subType, ref);
         });
         return valueWasAdded.get();
+    }
+
+    private static final class Reference<T> {
+        T value;
+
+        Reference(T value) {
+            this.value = value;
+        }
+
+        T getValue() {
+            return value;
+        }
+
+        void setToNull() {
+            this.value = null;
+        }
     }
 }
 

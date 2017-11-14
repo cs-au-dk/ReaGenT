@@ -101,16 +101,16 @@ public class TypedSymbolicFunctionEvaluator {
                     }
                     if (signature.isHasRestParameter()) {
                         // restricting to not undef, because rest-args must be possibly undef.
-                        tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[argUnknown]", c, tajsTypeChecker);
+                        tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[argUnknown]", c, tajsTypeChecker, null);
                     }
                 }
 
                 for (int i = 0; i < Math.min(parameters.size(), call.getNumberOfArgs()); i++) {
-                    tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker);
+                    tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
                 }
                 if (signature.isHasRestParameter()) {
                     for (int i = parameters.size(); i < call.getNumberOfArgs(); i++) {
-                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker);
+                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
                     }
                 }
                 assert signature.getResolvedReturnType() != null;
@@ -137,15 +137,15 @@ public class TypedSymbolicFunctionEvaluator {
                         parameters = parameters.subList(0, parameters.size() - 1);
 
                         for (int i = parameters.size(); i < call.getNumberOfArgs(); i++) {
-                            tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker);
+                            tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
                         }
 
                         if (call.isUnknownNumberOfArgs()) {
-                            tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[argUnknown]", c, tajsTypeChecker);
+                            tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, finalContext), info.typeNames.get(typeWithContext.getType()) + ".[argUnknown]", c, tajsTypeChecker, null);
                         }
                     }
                     for (int i = 0; i < Math.min(parameters.size(), call.getNumberOfArgs()); i++) {
-                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker);
+                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), finalContext), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
                     }
                 }
 

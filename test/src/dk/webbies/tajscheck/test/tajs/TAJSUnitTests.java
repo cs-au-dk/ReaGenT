@@ -4,6 +4,7 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.FixedExpansionOrder;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
@@ -17,6 +18,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
 import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertTrue;
@@ -786,6 +789,23 @@ public class TAJSUnitTests {
         System.out.println(result);
 
         assertThat(result.detectedViolations.keySet(), hasSize(1));
+    }
+
+    @Test // Tests that the order in which tests are executed does not matter.
+    public void discardSpuriousValues() throws Exception {
+        List<String> executionOrder = Arrays.asList("module.foo()", "module.foo().baz()", "module.bar()");
+
+        TAJSUtil.TajsAnalysisResults resultNoOrder = run("discardSpuriousValues", options());
+
+        TAJSUtil.TajsAnalysisResults resultFixedExpansion = run("discardSpuriousValues", options().staticOptions.setExpansionPolicy(new FixedExpansionOrder(executionOrder)));
+
+        System.out.println("With default expansion-policy");
+        System.out.println(resultNoOrder);
+
+        System.out.println("With fixed expansion");
+        System.out.println(resultFixedExpansion);
+
+        assertThat(resultNoOrder.detectedViolations.keySet(), is(equalTo(resultFixedExpansion.detectedViolations.keySet())));
     }
 
     // TODO: Test string-indexers somehow.
