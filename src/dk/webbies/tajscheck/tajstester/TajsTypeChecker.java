@@ -5,10 +5,7 @@ import dk.brics.tajs.analysis.HostAPIs;
 import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
-import dk.brics.tajs.lattice.ObjectLabel;
-import dk.brics.tajs.lattice.State;
-import dk.brics.tajs.lattice.UnknownValueResolver;
-import dk.brics.tajs.lattice.Value;
+import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.util.Collections;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -88,7 +85,7 @@ public class TajsTypeChecker {
             String violationPath = tuple.getA();
             Value value = tuple.getB();
             TypeCheck check = tuple.getC();
-            return new TypeViolation("Expected " + check.getExpected() + " but found " + value, violationPath);
+            return new TypeViolation("Expected " + check.getExpected() + " but found " + Util.prettyValue(value, c.getState()), violationPath);
         }).collect(Collectors.toList());
     }
 
