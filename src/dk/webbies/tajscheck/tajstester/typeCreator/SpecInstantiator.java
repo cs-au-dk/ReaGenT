@@ -377,6 +377,13 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                 c.getState().writeInternalPrototype(label, Value.makeObject(InitialStateBuilder.REGEXP_PROTOTYPE));
                 return Value.makeObject(label);
             }
+            case "Error": {
+                ObjectLabel ex = ObjectLabel.make(c.getNode(), ObjectLabel.Kind.ERROR);
+                c.getState().newObject(ex);
+                c.getState().writeInternalPrototype(ex, Value.makeObject(InitialStateBuilder.ERROR_PROTOTYPE));
+                c.getAnalysis().getPropVarOperations().writeProperty(ex, "message", Value.makeAnyStr());
+                return Value.makeObject(ex);
+            }
             default:
                 throw new RuntimeException("Yet unknown how to create native object: " + name);
         }
