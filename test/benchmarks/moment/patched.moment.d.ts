@@ -630,11 +630,11 @@ declare namespace moment {
    */
   export function lang(language?: string, definition?: Locale): string;
 
-  export function locale(language?: string): string;
-  export function locale(language?: string[]): string;
-  export function locale(language?: string, definition?: LocaleSpecification | null | undefined): string;
+  export function locale(language?: string): string | undefined;
+  export function locale(language?: string[]): string | undefined;
+  export function locale(language?: string, definition?: LocaleSpecification | null | undefined): string | undefined;
 
-  export function localeData(key?: string | string[]): Locale;
+  export function localeData(key?: string | string[]): Locale | undefined | null;
 
   export function duration(inp?: DurationInputArg1, unit?: DurationInputArg2): Duration;
 
@@ -676,8 +676,8 @@ declare namespace moment {
   export function weekdaysMin(localeSorted: boolean, format: string): string[];
   export function weekdaysMin(localeSorted: boolean, format: string, index: number): string;
 
-  export function min(...moments: MomentInput[]): Moment;
-  export function max(...moments: MomentInput[]): Moment;
+  export function min(...moments: Moment[]): Moment | undefined;
+  export function max(...moments: Moment[]): Moment | undefined;
 
   /**
    * Returns unix time in milliseconds. Overwrite for profit.
