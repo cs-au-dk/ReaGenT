@@ -133,13 +133,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             if(previousTestContext != null) {
                 timers.start(Timers.Tags.PROPAGATING_TO_THIS_CONTEXT);
                 State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
-                if(Options.get().isNewFlowEnabled()) {
-                    System.out.println("Propagating to this test context");
-                }
                 c.propagateToBasicBlock(preState, allTestsBlock, newc);
-                if(Options.get().isNewFlowEnabled()) {
-                    System.out.println("Done propagating to this test context");
-                }
                 timers.stop(Timers.Tags.PROPAGATING_TO_THIS_CONTEXT);
             }
 
@@ -171,6 +165,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
 
+        // Recording partial results.
         this.notDoneCertificates = this.notDoneCertificates.stream().distinct().collect(Collectors.toList());
         this.notDoneWarnings = this.notDoneWarnings.stream().distinct().collect(Collectors.toList());
         this.notDoneViolations = this.notDoneViolations.stream().distinct().collect(Collectors.toList());
@@ -227,6 +222,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
      * @return if the value satisfied the type
      */
     public boolean attemptAddValue(Value value, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker, Test test) {
+        value = UnknownValueResolver.getRealValue(value, c.getState());
         if (value.isNone()) {
             return true;
         }
@@ -239,7 +235,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 throw new RuntimeException("New values should not appear in scanning!");
             }
         } else {
-            if(DEBUG_VALUES) System.out.println("Value " + UnknownValueResolver.getRealValue(value, c.getState()) + " not added because it violates type " + t + " path:" + path);
+            if(DEBUG_VALUES) System.out.println("Value " + value + " not added because it violates type " + t + " path:" + path);
             violations.forEach(violation -> addViolation(violation, c));
         }
 

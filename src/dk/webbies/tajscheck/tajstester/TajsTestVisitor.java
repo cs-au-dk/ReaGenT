@@ -188,7 +188,7 @@ public class TajsTestVisitor implements TestVisitor<Void> {
 
             };
 
-            final Value returnedValue;
+            Value returnedValue;
 
             if (l.getHostObject() != null && l.getHostObject().getAPI() == HostAPIs.SPEC) {
                 returnedValue = tajsTypeTester.evaluateCallToSymbolicFunction(l.getHostObject(), callinfo, c);
@@ -197,6 +197,8 @@ public class TajsTestVisitor implements TestVisitor<Void> {
 
                 returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), true, implicitAfterCall, c);
             }
+
+            returnedValue = UnknownValueResolver.getRealValue(returnedValue, c.getState());
 
             if (isConstructorCall) {
                 tajsTypeTester.addCertificate(new TestCertificate(test, "Function [0] has been called as constructor and returned [1]", new Value[]{function, returnedValue}, c.getState()), c);
