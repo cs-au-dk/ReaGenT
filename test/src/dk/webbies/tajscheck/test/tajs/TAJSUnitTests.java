@@ -98,6 +98,11 @@ public class TAJSUnitTests {
             return this;
         }
 
+        TAJSUnitTests.TAJSResultTester notPerformedAllTests() {
+            MatcherAssert.assertThat("there weere no tests that were not performed", !results.testNot.isEmpty());
+            return this;
+        }
+
         TAJSUnitTests.TAJSResultTester hasNoViolations() {
             MatcherAssert.assertThat("there are no violations", results.detectedViolations.size() == 0);
             return this;
@@ -772,7 +777,7 @@ public class TAJSUnitTests {
 
     @Test
     public void retract() throws Exception {
-        StaticOptions.Builder options = options().staticOptions.setRetractionPolicy(new LimitTransfersRetractionPolicy(100, 0));
+        StaticOptions.Builder options = options().staticOptions.setRetractionPolicy(new LimitTransfersRetractionPolicy(100, 0)).setExpansionPolicy(new FixedExpansionOrder("module.toRetract(string)", "module.returnsBool()"));
 
         TAJSUtil.TajsAnalysisResults result = run("retract", options);
 
@@ -830,6 +835,15 @@ public class TAJSUnitTests {
         TAJSUtil.TajsAnalysisResults resultDoPropagate = run("noStateFromFailingMethods", options().staticOptions.setPropagateStateFromFailingTest(true));
 
         assertThat(resultDoPropagate.detectedViolations.keySet(), hasSize(2));
+    }
+
+    @Test
+    public void cannotHaveNonMonotomeState() throws Exception {
+        // If we retracted state, this would run in an infinite loop.
+        TAJSUtil.TajsAnalysisResults result = run("cannotHaveNonMonotomeState");
+
+        expect(result)
+                .notPerformedAllTests();
     }
 
     // TODO: Test string-indexers somehow.
