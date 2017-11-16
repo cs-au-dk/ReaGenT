@@ -163,6 +163,20 @@ public class BenchmarkInfo {
         }
 
         for (Type type : allTypes) {
+            // randomizing the order of properties.
+            if (info.options.randomizePropertyOrder) {
+                if (type instanceof InterfaceType) {
+                    InterfaceType inter = (InterfaceType) type;
+                    inter.setDeclaredProperties(shuffleOrder(inter.getDeclaredProperties()));
+                } else if (type instanceof GenericType) {
+                    GenericType inter = (GenericType) type;
+                    inter.setDeclaredProperties(shuffleOrder(inter.getDeclaredProperties()));
+                } else if (type instanceof ClassType) {
+                    ClassType inter = (ClassType) type;
+                    inter.setStaticProperties(shuffleOrder(inter.getStaticProperties()));
+                    inter.setInstanceProperties(shuffleOrder(inter.getInstanceProperties()));
+                }
+            }
 
             // Generic signatures sometimes have their return-type in the target signature.
             if (type instanceof InterfaceType) {
@@ -346,6 +360,14 @@ public class BenchmarkInfo {
                 }
             }
         }
+    }
+
+    private static Map<String, Type> shuffleOrder(Map<String, Type> properties) {
+        List<Map.Entry<String, Type>> entires = new ArrayList<>(properties.entrySet());
+        Collections.shuffle(entires);
+        Map<String, Type> result = new LinkedHashMap<>();
+        entires.forEach(entry -> result.put(entry.getKey(), entry.getValue()));
+        return result;
     }
 
     private static Type addUndefUnion(Type indexType) {
