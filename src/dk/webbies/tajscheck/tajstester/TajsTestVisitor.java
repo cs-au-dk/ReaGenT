@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.newList;
 
-public class TajsTestVisitor implements TestVisitor<Void> {
+public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     private final Solver.SolverInterface c;
     private final PropVarOperations pv;
@@ -56,20 +56,21 @@ public class TajsTestVisitor implements TestVisitor<Void> {
     }
 
     @Override
-    public Void visit(PropertyReadTest test) {
+    public Boolean visit(PropertyReadTest test) {
         State s = c.getState();
         Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(),test.getTypeContext()));
-        baseValue.getObjectLabels().forEach(label -> {
+        boolean result = true;
+        for (ObjectLabel label : baseValue.getObjectLabels()) {
             Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(Collections.singletonList(label), Value.makeStr(test.getProperty()), info.options.staticOptions.killGetters), c.getState());
             TypeWithContext closedType = new TypeWithContext(test.getPropertyType(), test.getTypeContext());
             tajsTypeTester.addCertificate(new TestCertificate(test, "Property " + test.getProperty() + " accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s), c);
-            tajsTypeTester.attemptAddValue(propertyValue, closedType, test.getPath(), c, typeChecker, test);
-        });
-        return null;
+            result &= tajsTypeTester.attemptAddValue(propertyValue, closedType, test.getPath(), c, typeChecker, test);
+        }
+        return result;
     }
 
     @Override
-    public Void visit(LoadModuleTest test) {
+    public Boolean visit(LoadModuleTest test) {
         Value v;
         switch (info.bench.run_method) {
             case NODE:
@@ -89,23 +90,22 @@ public class TajsTestVisitor implements TestVisitor<Void> {
         }
         tajsTypeTester.addCertificate(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()), c);
 
-        tajsTypeTester.attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test.getPath(), c, typeChecker, test);
-        return null;
+        return tajsTypeTester.attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test.getPath(), c, typeChecker, test);
     }
 
     @Override
-    public Void visit(MethodCallTest test) {
+    public Boolean visit(MethodCallTest test) {
         final Value receiver = attemptGetValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
         Value function = UnknownValueResolver.getRealValue(pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName()))), c.getState());
         Value constructedReceiver = typeValuesHandler.createValue(test.getObject(), test.getTypeContext()); // TODO: Using this causes things to crash, because when the analysis reads the value there are no properties on the object....
         return functionTest(test, receiver, function, false);
     }
 
-    private Void functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
+    private Boolean functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
         List<Value> arguments = test.getParameters().stream().map(paramType -> typeValuesHandler.createValue(paramType, test.getTypeContext())).collect(Collectors.toList());
 
         if (arguments.stream().anyMatch(Value::isNone)) {
-            return null;
+            return true;
         }
 
         boolean restArgs = test.isRestArgs();
@@ -115,7 +115,9 @@ public class TajsTestVisitor implements TestVisitor<Void> {
             arguments.remove(arguments.size() - 1);
         }
 
-        function.getAllObjectLabels().forEach(l -> {
+        boolean typeChecked = true;
+
+        for (ObjectLabel l : function.getAllObjectLabels()) {
             FunctionCalls.CallInfo callinfo = new FunctionCalls.CallInfo() {
 
                 @Override
@@ -214,30 +216,32 @@ public class TajsTestVisitor implements TestVisitor<Void> {
                     tajsTypeTester.addWarning(violation, c);
                 }
             }
-            tajsTypeTester.attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test.getPath(), c, typeChecker, test);
-        });
+            typeChecked &= tajsTypeTester.attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test.getPath(), c, typeChecker, test);
+        }
 
-        return null;
+        return typeChecked;
     }
 
     @Override
-    public Void visit(ConstructorCallTest test) {
+    public Boolean visit(ConstructorCallTest test) {
         Value function = attemptGetValue(test.getFunction(), test.getTypeContext());
         return functionTest(test, null, function, true); // receiver is ignored, since it is a constructor-call.
     }
 
     @Override
-    public Void visit(FunctionCallTest test) {
+    public Boolean visit(FunctionCallTest test) {
         Value receiver = Value.makeObject(InitialStateBuilder.GLOBAL).joinUndef();
         Value function = attemptGetValue(test.getFunction(), test.getTypeContext());
         return functionTest(test, receiver, function, false);
     }
 
     @Override
-    public Void visit(UnionTypeTest test) {
+    public Boolean visit(UnionTypeTest test) {
         Value value = attemptGetValue(test.getGetUnionType(), test.getTypeContext());
 
         Set<Type> nonMatchedTypes = new HashSet<>(test.getGetUnionType().getElements());
+
+        boolean typeChecked = true;
 
         for (Value splitValue : TajsTypeChecker.split(value)) {
             List<Type> matchingTypes = test.getGetUnionType().getElements().stream().filter(subType -> {
@@ -250,6 +254,7 @@ public class TajsTestVisitor implements TestVisitor<Void> {
 
             if (matchingTypes.isEmpty()) {
                 tajsTypeTester.addViolation(new TypeViolation("Values matched none of the unions", test.getPath()), c);
+                typeChecked = false;
             }
 
             matchingTypes.forEach(subType -> tajsTypeTester.attemptAddValue(splitValue, new TypeWithContext(subType, test.getTypeContext()), test.getPath(), c, typeChecker, test));
@@ -259,33 +264,31 @@ public class TajsTestVisitor implements TestVisitor<Void> {
             tajsTypeTester.addWarning(new TypeViolation("No value matches the type: " + nonMatchedType + " in union " + test.getGetUnionType(), test.getPath()), c);
         }
 
-        return null;
+        return typeChecked;
     }
 
     @Override
-    public Void visit(NumberIndexTest test) {
+    public Boolean visit(NumberIndexTest test) {
         State s = c.getState();
         Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(),test.getTypeContext()));
         Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(baseValue.getAllObjectLabels(), Value.makeAnyStrUInt()), c.getState());
         tajsTypeTester.addCertificate(new TestCertificate(test, "numberIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s), c);
         TypeWithContext resultType = new TypeWithContext(test.getReturnType(), test.getTypeContext());
-        tajsTypeTester.attemptAddValue(propertyValue, resultType, test.getPath(), c, typeChecker, test);
-        return null;
+        return tajsTypeTester.attemptAddValue(propertyValue, resultType, test.getPath(), c, typeChecker, test);
     }
 
     @Override
-    public Void visit(StringIndexTest test) {
+    public Boolean visit(StringIndexTest test) {
         State s = c.getState();
         Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(),test.getTypeContext()));
         Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(baseValue.getAllObjectLabels(), Value.makeAnyStr()), c.getState());
         tajsTypeTester.addCertificate(new TestCertificate(test, "stringIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s), c);
         TypeWithContext resultType = new TypeWithContext(test.getReturnType(), test.getTypeContext());
-        tajsTypeTester.attemptAddValue(propertyValue, resultType, test.getPath(), c, typeChecker, test);
-        return null;
+        return tajsTypeTester.attemptAddValue(propertyValue, resultType, test.getPath(), c, typeChecker, test);
     }
 
     @Override
-    public Void visit(PropertyWriteTest test) {
+    public Boolean visit(PropertyWriteTest test) {
         throw new RuntimeException();
     }
 }

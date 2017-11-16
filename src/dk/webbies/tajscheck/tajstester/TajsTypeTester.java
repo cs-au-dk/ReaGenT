@@ -110,19 +110,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             valueHandler.clearValuesForTest(test);
 
             if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
-                if (DEBUG && !c.isScanning()) {
-                    System.out.println("Skipped test " + test);
-                }
-                if (DEBUG && c.isScanning()) {
-                    System.out.println("Never performed test " + test);
-                }
+                if (DEBUG && !c.isScanning()) System.out.println("Skipped test " + test);
+                if (DEBUG && c.isScanning()) System.out.println("Never performed test " + test);
                 continue;
             }
 
             if (test instanceof FunctionTest && !expansionPolicy.include((FunctionTest) test)) {
-                if (DEBUG) {
-                    System.out.println("Didn't expand to " + test);
-                }
+                if (DEBUG) System.out.println("Didn't expand to " + test);
                 continue;
             }
 
@@ -138,30 +132,28 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
 
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
+
+            if (DEBUG && !c.isScanning()) System.out.println("Performing test " + test);
+            performed.add(test);
+
             // attempting to perform the test in the local context
             timers.start(Timers.Tags.TEST_TRANSFER);
-            c.withState(testState, () -> {
-                if (DEBUG && !c.isScanning()){
-                    System.out.println("Performing test " + test);
-                }
-
-                performed.add(test);
-
-                test.accept(visitor);
-            });
+            boolean typeChecked = c.withState(testState, () -> test.accept(visitor));
             timers.stop(Timers.Tags.TEST_TRANSFER);
 
-            if(performed.contains(test)) {
+            if (typeChecked || info.options.staticOptions.propagateStateFromFailingTest) {
                 previousTestContext = newc;
             }
         }
 
         valueHandler.clearValuesForTest(null); // null is the special test used for saved arguments from higher-order-functions.
 
-        timers.start(Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
-        State finalChainingState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
-        c.propagateToBasicBlock(finalChainingState, allTestsBlock, allTestsContext);
-        timers.stop(Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
+        if (previousTestContext != null) { // if null, then none of the tests succeeded, and there is therefore no state to do anything with.
+            timers.start(Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
+            State finalChainingState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
+            c.propagateToBasicBlock(finalChainingState, allTestsBlock, allTestsContext);
+            timers.stop(Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
+        }
 
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
 

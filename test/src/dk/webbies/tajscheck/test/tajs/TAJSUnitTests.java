@@ -809,6 +809,7 @@ public class TAJSUnitTests {
     }
 
     @Test
+    @Ignore
     public void asyncError() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("asyncError");
 
@@ -818,6 +819,17 @@ public class TAJSUnitTests {
                 .forPath("window, module, foo, [arg0]")
                 .hasViolations();
 
+    }
+
+    @Test
+    public void noStateFromFailingMethods() throws Exception {
+        TAJSUtil.TajsAnalysisResults resultNoPropagate = run("noStateFromFailingMethods", options().staticOptions.setPropagateStateFromFailingTest(false));
+
+        assertThat(resultNoPropagate.detectedViolations.keySet(), hasSize(1));
+
+        TAJSUtil.TajsAnalysisResults resultDoPropagate = run("noStateFromFailingMethods", options().staticOptions.setPropagateStateFromFailingTest(true));
+
+        assertThat(resultDoPropagate.detectedViolations.keySet(), hasSize(2));
     }
 
     // TODO: Test string-indexers somehow.
