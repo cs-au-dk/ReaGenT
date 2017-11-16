@@ -808,6 +808,18 @@ public class TAJSUnitTests {
         assertThat(resultNoOrder.detectedViolations.keySet(), is(equalTo(resultFixedExpansion.detectedViolations.keySet())));
     }
 
+    @Test
+    public void asyncError() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("asyncError");
+
+        System.out.println(result);
+        expect(result)
+                .performedAllTests()
+                .forPath("window, module, foo, [arg0]")
+                .hasViolations();
+
+    }
+
     // TODO: Test string-indexers somehow.
     // TODO: Handle construction of native objects.
 }
