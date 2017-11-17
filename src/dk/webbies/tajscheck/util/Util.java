@@ -703,4 +703,17 @@ public class Util {
         return String.join(", ", prettyStrings);
     }
 
+    public static String simplifyPath(String path) {
+        int fromIndex = -1;
+        while (true) {
+            fromIndex = path.indexOf('(', fromIndex+1);
+            if (fromIndex == -1) {
+                break;
+            }
+            int toIndex = path.indexOf(')', fromIndex);
+            assert toIndex != -1;
+            path = path.substring(0, fromIndex + 1) + path.substring(toIndex, path.length());
+        }
+        return path;
+    }
 }

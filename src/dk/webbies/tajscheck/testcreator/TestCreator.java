@@ -86,7 +86,7 @@ public class TestCreator {
         if (info.bench.pathsToTest != null) {
             tests = tests.stream().filter(test -> isRelevantPath(test.getPath(), pathsToTestTrie)).collect(Collectors.toList());
 
-            Set<String> paths = tests.stream().map(Test::getPath).map(TestCreator::simplifyPath).collect(Collectors.toSet());
+            Set<String> paths = tests.stream().map(Test::getPath).map(Util::simplifyPath).collect(Collectors.toSet());
 
             assert Util.intersection(paths, info.bench.pathsToTest).size() == info.bench.pathsToTest.size();
         }
@@ -120,21 +120,7 @@ public class TestCreator {
         if (path.contains("[arg")) {
             path = path.substring(0, path.indexOf(".[arg"));
         }
-        return path.contains("[arg") || potentialPaths.startsWith(TestCreator.simplifyPath(path));
-    }
-
-    public static String simplifyPath(String path) {
-        int fromIndex = -1;
-        while (true) {
-            fromIndex = path.indexOf('(', fromIndex+1);
-            if (fromIndex == -1) {
-                break;
-            }
-            int toIndex = path.indexOf(')', fromIndex);
-            assert toIndex != -1;
-            path = path.substring(0, fromIndex + 1) + path.substring(toIndex, path.length());
-        }
-        return path;
+        return path.contains("[arg") || potentialPaths.startsWith(Util.simplifyPath(path));
     }
 
     private List<Test> addTopLevelFunctionTests(Type type, String path, TypeContext typeContext, CreateTestVisitor visitor, Set<TypeWithContext> negativeTypesSeen, Set<Type> nativeTypes, int depth, Set<TypeWithContext> seenTopLevel) {

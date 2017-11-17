@@ -1,14 +1,15 @@
 package dk.webbies.tajscheck.benchmark.options.staticOptions;
 
 import dk.webbies.tajscheck.testcreator.test.FunctionTest;
+import dk.webbies.tajscheck.util.Util;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public class ExpandOneAtATimePolicy implements ExpansionPolicy {
-    private final Set<FunctionTest> whitelist = new HashSet<>();
+    private final Set<String> whitelist = new HashSet<>();
 
-    boolean clean = true;
+    private boolean clean = true;
 
     @Override
     public void nextRound() {
@@ -17,11 +18,12 @@ public class ExpandOneAtATimePolicy implements ExpansionPolicy {
 
     @Override
     public boolean include(FunctionTest test) {
-        if (whitelist.contains(test)) {
+        String path = Util.simplifyPath(test.getPath());
+        if (whitelist.contains(path)) {
             return true;
         }
         if (clean) {
-            whitelist.add(test);
+            whitelist.add(path);
             clean = false;
             return true;
         }

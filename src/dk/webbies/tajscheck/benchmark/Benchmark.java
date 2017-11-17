@@ -58,7 +58,7 @@ public class Benchmark {
                 this.jsFile,
                 this.dTSFile,
                 this.run_method,
-                Collections.unmodifiableSet(pathsToTest.stream().map(TestCreator::simplifyPath).collect(Collectors.toSet())),
+                Collections.unmodifiableSet(pathsToTest.stream().map(Util::simplifyPath).collect(Collectors.toSet())),
                 this.options,
                 this.dependencies,
                 this.exportName);

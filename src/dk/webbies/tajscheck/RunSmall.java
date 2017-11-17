@@ -62,7 +62,7 @@ public class RunSmall {
     public static List<List<String>> getPathsToTest(Benchmark orgBench, int runsLimit, int collectionSizeLimit) {
         BenchmarkInfo firstInfo = BenchmarkInfo.create(orgBench);
 
-        List<String> allPaths = new TestCreator(firstInfo).createTests(false).stream().map(Test::getPath).map(TestCreator::simplifyPath).collect(Collectors.toList());
+        List<String> allPaths = new TestCreator(firstInfo).createTests(false).stream().map(Test::getPath).map(Util::simplifyPath).collect(Collectors.toList());
 
         allPaths = allPaths.stream().filter(path -> !path.contains("[arg")).collect(Collectors.toList());
 
