@@ -112,7 +112,7 @@ interface Async {
     mapSeries: typeof async.map;
     mapLimit<T, R, E>(arr: T[], limit: number, iterator: AsyncResultIterator<T, R, E>, callback?: AsyncResultArrayCallback<R, E>): void;
     mapLimit<T, R, E>(arr: Dictionary<T>, limit: number, iterator: AsyncResultIterator<T, R, E>, callback?: AsyncResultArrayCallback<R, E>): void;
-    mapValuesLimit<T, R, E>(obj: Dictionary<T>, limit: number, iteratee: (value: T, key: string, callback: AsyncResultCallback<R, E>) => void, callback: AsyncResultObjectCallback<R, E>): void; // TODO: Gets retracted.
+    mapValuesLimit<T, R, E>(obj: Dictionary<T>, limit: number, iteratee: (value: T, key: string, callback: AsyncResultCallback<R, E>) => void, callback: AsyncResultObjectCallback<R, E>): void;
     mapValues<T, R, E>(obj: Dictionary<T>, iteratee: (value: T, key: string, callback: AsyncResultCallback<R, E>) => void, callback: AsyncResultObjectCallback<R, E>): void;
     mapValuesSeries: typeof async.mapValues;
     filter<T, E>(arr: T[], iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultArrayCallback<T, E>): void;
@@ -157,10 +157,9 @@ interface Async {
     allSeries: typeof async.every;
     allLimit: typeof async.everyLimit;
 
-    // TODO: Run into an undefined register exception. 
-    // concat<T, R, E>(arr: T[], iterator: AsyncResultIterator<T, R[], E>, callback?: AsyncResultArrayCallback<R, E>): void;
-    // concat<T, R, E>(arr: Dictionary<T>, iterator: AsyncResultIterator<T, R[], E>, callback?: AsyncResultArrayCallback<R, E>): void;
-    // concatSeries: typeof async.concat;
+    concat<T, R, E>(arr: T[], iterator: AsyncResultIterator<T, R[], E>, callback?: AsyncResultArrayCallback<R, E>): void;
+    concat<T, R, E>(arr: Dictionary<T>, iterator: AsyncResultIterator<T, R[], E>, callback?: AsyncResultArrayCallback<R, E>): void;
+    concatSeries: typeof async.concat;
 
     // Control Flow
     series<T, E>(tasks: AsyncFunction<T, E>[], callback?: AsyncResultArrayCallback<T, E>): void;
@@ -185,8 +184,8 @@ interface Async {
     queue<T, R, E>(worker: AsyncResultIterator<T, R, E>, concurrency?: number): AsyncQueue<T>;
     priorityQueue<T, E>(worker: AsyncWorker<T, E>, concurrency: number): AsyncPriorityQueue<T>;
     cargo<E>(worker : (tasks: any[], callback : ErrorCallback<E>) => void, payload? : number) : AsyncCargo;
-    // auto<E>(tasks: any, concurrency?: number, callback?: AsyncResultCallback<any, E>): void; // TODO: Comment in, gets retracted anyway.
-    // autoInject<E>(tasks: any, callback?: AsyncResultCallback<any, E>): void; // TODO: Is retracted.
+    auto<E>(tasks: any, concurrency?: number, callback?: AsyncResultCallback<any, E>): void;
+    autoInject<E>(tasks: any, callback?: AsyncResultCallback<any, E>): void;
     retry<T, E>(opts: number, task: (callback : AsyncResultCallback<T, E>, results: any) => void, callback:  AsyncResultCallback<any, E>): void;
     retry<T, E>(opts: { times: number, interval: number|((retryCount: number) => number) }, task: (callback: AsyncResultCallback<T, E>, results : any) => void, callback:  AsyncResultCallback<any, E>): void;
     retryable<T, E>(opts: number | {times: number, interval: number}, task: AsyncFunction<T, E>): AsyncFunction<T, E>;
