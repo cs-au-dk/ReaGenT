@@ -143,6 +143,7 @@ public class TAJSUtil {
         public final Timers timers;
 
         private boolean VERBOSE = true;
+        private Map<Test, Exception> exceptionsEncountered;
 
         public TajsAnalysisResults(MultiMap<String, TypeViolation> detectedViolations,
                             MultiMap<String, TypeViolation> warnings,
@@ -178,7 +179,9 @@ public class TAJSUtil {
                 this.detectedWarnings.put(vio.path, vio);
             });
 
-            testPerformed = typeTester.getPerformedTests();
+            this.exceptionsEncountered = typeTester.getExceptionsEncountered();
+
+            this.testPerformed = typeTester.getPerformedTests();
 
             this.testNot = new ArrayList<>(typeTester.getAllTests());
             this.testNot.removeAll(typeTester.getPerformedTests());
@@ -203,13 +206,16 @@ public class TAJSUtil {
                 if (retractedTests.contains(notPerformed)) {
                     builder.append(" (retracted)");
                 }
+                if (exceptionsEncountered.containsKey(notPerformed)) {
+                    builder.append(" (exception: ").append(exceptionsEncountered).append(")");
+                }
                 builder.append("\n");
             }
 
             builder.append("Tests performed (").append(testPerformed.size()).append(")").append("\n");
             for (Test performed : testPerformed) {
                 builder.append("   ").append(performed).append("\n");
-                if (retractedTests.contains(performed)) {
+                if (retractedTests.contains(performed) || exceptionsEncountered.containsKey(performed)) {
                     throw new RuntimeException();
                 }
             }

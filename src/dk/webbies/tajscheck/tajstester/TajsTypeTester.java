@@ -51,6 +51,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private final Set<Test> performed = new LinkedHashSet<>();
 
     private final RetractionPolicy retractionPolicy;
+    private final Map<Test, Exception> exceptionsEncountered = new HashMap<>();
 
     private BasicBlock allTestsBlock;
     private Context allTestsContext;
@@ -103,11 +104,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         valueHandler.cleanUp();
 
         for (Test test : tests) {
-            if (retractionPolicy.isRetracted(test)) {
+            valueHandler.clearValuesForTest(test);
+
+            if (retractionPolicy.isRetracted(test) || exceptionsEncountered.containsKey(test)) {
                 continue;
             }
-
-            valueHandler.clearValuesForTest(test);
 
             if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
                 if (DEBUG && !c.isScanning()) System.out.println("Skipped test " + test);
@@ -244,9 +245,22 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     @Override
     public boolean shouldSkipEntry(WorkList<Context>.Entry e) {
-        return sensitivity != null &&
-                sensitivity.isTestContext(e.getContext()) &&
-                retractionPolicy.isRetracted(sensitivity.getTest(e.getContext()));
+        if (sensitivity != null && sensitivity.isTestContext(e.getContext())) {
+            Test test = sensitivity.getTest(e.getContext());
+            return retractionPolicy.isRetracted(test) || exceptionsEncountered.containsKey(test);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean recoverFrom(Exception e, WorkList<Context>.Entry p) {
+        if (sensitivity != null && sensitivity.isTestContext(p.getContext())) {
+            Test test = sensitivity.getTest(p.getContext());
+            assert !exceptionsEncountered.containsKey(test);
+            exceptionsEncountered.put(test, e);
+            return true;
+        }
+        return false;
     }
 
     /*
@@ -305,6 +319,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         } else {
             return certificates;
         }
+    }
+
+    public Map<Test, Exception> getExceptionsEncountered() {
+        return exceptionsEncountered;
     }
 
     public TesterContextSensitivity getSensitivity() {return sensitivity; }
