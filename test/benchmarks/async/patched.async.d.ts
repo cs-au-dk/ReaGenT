@@ -91,95 +91,96 @@ interface AsyncCargo {
 interface Async {
 
     // Collections
-    // each<T, E>(arr: T[], iterator: AsyncIterator<T, E>, callback?: ErrorCallback<E>): void;
-    // each<T, E>(arr: Dictionary<T>, iterator: AsyncIterator<T, E>, callback?: ErrorCallback<E>): void;
-    // eachSeries: typeof async.each;
-    // eachLimit<T, E>(arr: T[], limit: number, iterator: AsyncIterator<T, E>, callback?: ErrorCallback<E>): void;
-    // eachLimit<T, E>(arr: Dictionary<T>, limit: number, iterator: AsyncIterator<T, E>, callback?: ErrorCallback<E>): void;
-    // forEach: typeof async.each;
-    // forEachSeries: typeof async.each;
-    // forEachLimit: typeof async.eachLimit;
-    // forEachOf<T, E>(obj: T[], iterator: AsyncForEachOfIterator<T, E>, callback?: ErrorCallback<E>): void;
-    // forEachOf<T, E>(obj: Dictionary<T>, iterator: AsyncForEachOfIterator<T, E>, callback?: ErrorCallback<E>): void;
-    // forEachOfSeries: typeof async.forEachOf;
-    // forEachOfLimit<T, E>(obj: T[], limit: number, iterator: AsyncForEachOfIterator<T, E>, callback?: ErrorCallback<E>): void;
-    // forEachOfLimit<T, E>(obj: Dictionary<T>, limit: number, iterator: AsyncForEachOfIterator<T, E>, callback?: ErrorCallback<E>): void;
-    // eachOf: typeof async.forEachOf;
-    // eachOfSeries: typeof async.forEachOf;
-    // eachOfLimit: typeof async.forEachOfLimit;
-    // map<T, R, E>(arr: T[], iterator: AsyncResultIterator<T, R, E>, callback?: AsyncResultArrayCallback<R, E>): void;
-    // map<T, R, E>(arr: Dictionary<T>, iterator: AsyncResultIterator<T, R, E>, callback?: AsyncResultArrayCallback<R, E>): void;
-    // mapSeries: typeof async.map;
-    // mapLimit<T, R, E>(arr: T[], limit: number, iterator: AsyncResultIterator<T, R, E>, callback?: AsyncResultArrayCallback<R, E>): void;
-    // mapLimit<T, R, E>(arr: Dictionary<T>, limit: number, iterator: AsyncResultIterator<T, R, E>, callback?: AsyncResultArrayCallback<R, E>): void;
-    // mapValuesLimit<T, R, E>(obj: Dictionary<T>, limit: number, iteratee: (value: T, key: string, callback: AsyncResultCallback<R, E>) => void, callback: AsyncResultObjectCallback<R, E>): void; // TODO: Gets retracted.
+    each<T, E>(arr: T[], iterator: AsyncIterator<T, E>, callback?: ErrorCallback<E>): void;
+    each<T, E>(arr: Dictionary<T>, iterator: AsyncIterator<T, E>, callback?: ErrorCallback<E>): void;
+    eachSeries: typeof async.each;
+    eachLimit<T, E>(arr: T[], limit: number, iterator: AsyncIterator<T, E>, callback?: ErrorCallback<E>): void;
+    eachLimit<T, E>(arr: Dictionary<T>, limit: number, iterator: AsyncIterator<T, E>, callback?: ErrorCallback<E>): void;
+    forEach: typeof async.each;
+    forEachSeries: typeof async.each;
+    forEachLimit: typeof async.eachLimit;
+    forEachOf<T, E>(obj: T[], iterator: AsyncForEachOfIterator<T, E>, callback?: ErrorCallback<E>): void;
+    forEachOf<T, E>(obj: Dictionary<T>, iterator: AsyncForEachOfIterator<T, E>, callback?: ErrorCallback<E>): void;
+    forEachOfSeries: typeof async.forEachOf;
+    forEachOfLimit<T, E>(obj: T[], limit: number, iterator: AsyncForEachOfIterator<T, E>, callback?: ErrorCallback<E>): void;
+    forEachOfLimit<T, E>(obj: Dictionary<T>, limit: number, iterator: AsyncForEachOfIterator<T, E>, callback?: ErrorCallback<E>): void;
+    eachOf: typeof async.forEachOf;
+    eachOfSeries: typeof async.forEachOf;
+    eachOfLimit: typeof async.forEachOfLimit;
+    map<T, R, E>(arr: T[], iterator: AsyncResultIterator<T, R, E>, callback?: AsyncResultArrayCallback<R, E>): void;
+    map<T, R, E>(arr: Dictionary<T>, iterator: AsyncResultIterator<T, R, E>, callback?: AsyncResultArrayCallback<R, E>): void;
+    mapSeries: typeof async.map;
+    mapLimit<T, R, E>(arr: T[], limit: number, iterator: AsyncResultIterator<T, R, E>, callback?: AsyncResultArrayCallback<R, E>): void;
+    mapLimit<T, R, E>(arr: Dictionary<T>, limit: number, iterator: AsyncResultIterator<T, R, E>, callback?: AsyncResultArrayCallback<R, E>): void;
+    mapValuesLimit<T, R, E>(obj: Dictionary<T>, limit: number, iteratee: (value: T, key: string, callback: AsyncResultCallback<R, E>) => void, callback: AsyncResultObjectCallback<R, E>): void; // TODO: Gets retracted.
     mapValues<T, R, E>(obj: Dictionary<T>, iteratee: (value: T, key: string, callback: AsyncResultCallback<R, E>) => void, callback: AsyncResultObjectCallback<R, E>): void;
     mapValuesSeries: typeof async.mapValues;
-    // filter<T, E>(arr: T[], iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultArrayCallback<T, E>): void;
-    // filter<T, E>(arr: Dictionary<T>, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultArrayCallback<T, E>): void;
-    // filterSeries: typeof async.filter;
-    // filterLimit<T, E>(arr: T[], limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultArrayCallback<T, E>): void;
-    // filterLimit<T, E>(arr: Dictionary<T>, limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultArrayCallback<T, E>): void;
-    // select: typeof async.filter;
-    // selectSeries: typeof async.filter;
-    // selectLimit: typeof async.filterLimit;
-    // reject: typeof async.filter;
-    // rejectSeries: typeof async.filter;
-    // rejectLimit: typeof async.filterLimit;
-    // reduce<T, R, E>(arr: T[], memo: R, iterator: AsyncMemoIterator<T, R, E>, callback?: AsyncResultCallback<R, E>): void;
-    // inject: typeof async.reduce;
-    // foldl: typeof async.reduce;
-    // reduceRight: typeof async.reduce;
-    // foldr: typeof async.reduce;
-    // detect<T, E>(arr: T[], iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultCallback<T, E>): void;
-    // detect<T, E>(arr: Dictionary<T>, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultCallback<T, E>): void;
-    // detectSeries: typeof async.detect;
-    // detectLimit<T, E>(arr: T[], limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultCallback<T, E>): void;
-    // detectLimit<T, E>(arr: Dictionary<T>, limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultCallback<T, E>): void;
-    // find: typeof async.detect;
-    // findSeries: typeof async.detect;
-    // findLimit: typeof async.detectLimit;
-    // sortBy<T, V, E>(arr: T[], iterator: AsyncResultIterator<T, V, E>, callback?: AsyncResultArrayCallback<T, E>): void;
-    // some<T, E>(arr: T[], iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
-    // some<T, E>(arr: Dictionary<T>, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
-    // someSeries: typeof async.some;
-    // someLimit<T, E>(arr: T[], limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
-    // someLimit<T, E>(arr: Dictionary<T>, limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
-    // any: typeof async.some;
-    // anySeries: typeof async.someSeries;
-    // anyLimit: typeof async.someLimit;
-    // every<T, E>(arr: T[], iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
-    // every<T, E>(arr: Dictionary<T>, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
-    // everySeries: typeof async.every;
-    // everyLimit<T, E>(arr: T[], limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
-    // everyLimit<T, E>(arr: Dictionary<T>, limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
-    // all: typeof async.every;
-    // allSeries: typeof async.every;
-    // allLimit: typeof async.everyLimit;
+    filter<T, E>(arr: T[], iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultArrayCallback<T, E>): void;
+    filter<T, E>(arr: Dictionary<T>, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultArrayCallback<T, E>): void;
+    filterSeries: typeof async.filter;
+    filterLimit<T, E>(arr: T[], limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultArrayCallback<T, E>): void;
+    filterLimit<T, E>(arr: Dictionary<T>, limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultArrayCallback<T, E>): void;
+    select: typeof async.filter;
+    selectSeries: typeof async.filter;
+    selectLimit: typeof async.filterLimit;
+    reject: typeof async.filter;
+    rejectSeries: typeof async.filter;
+    rejectLimit: typeof async.filterLimit;
+    reduce<T, R, E>(arr: T[], memo: R, iterator: AsyncMemoIterator<T, R, E>, callback?: AsyncResultCallback<R, E>): void;
+    inject: typeof async.reduce;
+    foldl: typeof async.reduce;
+    reduceRight: typeof async.reduce;
+    foldr: typeof async.reduce;
+    detect<T, E>(arr: T[], iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultCallback<T, E>): void;
+    detect<T, E>(arr: Dictionary<T>, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultCallback<T, E>): void;
+    detectSeries: typeof async.detect;
+    detectLimit<T, E>(arr: T[], limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultCallback<T, E>): void;
+    detectLimit<T, E>(arr: Dictionary<T>, limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncResultCallback<T, E>): void;
+    find: typeof async.detect;
+    findSeries: typeof async.detect;
+    findLimit: typeof async.detectLimit;
+    sortBy<T, V, E>(arr: T[], iterator: AsyncResultIterator<T, V, E>, callback?: AsyncResultArrayCallback<T, E>): void;
+    some<T, E>(arr: T[], iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
+    some<T, E>(arr: Dictionary<T>, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
+    someSeries: typeof async.some;
+    someLimit<T, E>(arr: T[], limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
+    someLimit<T, E>(arr: Dictionary<T>, limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
+    any: typeof async.some;
+    anySeries: typeof async.someSeries;
+    anyLimit: typeof async.someLimit;
+    every<T, E>(arr: T[], iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
+    every<T, E>(arr: Dictionary<T>, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
+    everySeries: typeof async.every;
+    everyLimit<T, E>(arr: T[], limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
+    everyLimit<T, E>(arr: Dictionary<T>, limit: number, iterator: AsyncBooleanIterator<T, E>, callback?: AsyncBooleanResultCallback<E>): void;
+    all: typeof async.every;
+    allSeries: typeof async.every;
+    allLimit: typeof async.everyLimit;
 
+    // TODO: Run into an undefined register exception. 
     // concat<T, R, E>(arr: T[], iterator: AsyncResultIterator<T, R[], E>, callback?: AsyncResultArrayCallback<R, E>): void;
     // concat<T, R, E>(arr: Dictionary<T>, iterator: AsyncResultIterator<T, R[], E>, callback?: AsyncResultArrayCallback<R, E>): void;
     // concatSeries: typeof async.concat;
 
     // Control Flow
-    // series<T, E>(tasks: AsyncFunction<T, E>[], callback?: AsyncResultArrayCallback<T, E>): void;
-    // series<T, E>(tasks: Dictionary<AsyncFunction<T, E>>, callback?: AsyncResultObjectCallback<T, E>): void;
-    // parallel<T, E>(tasks: Array<AsyncFunction<T, E>>, callback?: AsyncResultArrayCallback<T, E>): void;
-    // parallel<T, E>(tasks: Dictionary<AsyncFunction<T, E>>, callback?: AsyncResultObjectCallback<T, E>): void;
-    // parallelLimit<T, E>(tasks: Array<AsyncFunction<T, E>>, limit: number, callback?: AsyncResultArrayCallback<T, E>): void;
-    // parallelLimit<T, E>(tasks: Dictionary<AsyncFunction<T, E>>, limit: number, callback?: AsyncResultObjectCallback<T, E>): void;
-    // whilst<E>(test: () => boolean, fn: AsyncVoidFunction<E>, callback: ErrorCallback<E>): void; // TODO: Looses precision.
-    // doWhilst<E>(fn: AsyncVoidFunction<E>, test: () => boolean, callback: ErrorCallback<E>): void; // TODO: Looses precision.
+    series<T, E>(tasks: AsyncFunction<T, E>[], callback?: AsyncResultArrayCallback<T, E>): void;
+    series<T, E>(tasks: Dictionary<AsyncFunction<T, E>>, callback?: AsyncResultObjectCallback<T, E>): void;
+    parallel<T, E>(tasks: Array<AsyncFunction<T, E>>, callback?: AsyncResultArrayCallback<T, E>): void;
+    parallel<T, E>(tasks: Dictionary<AsyncFunction<T, E>>, callback?: AsyncResultObjectCallback<T, E>): void;
+    parallelLimit<T, E>(tasks: Array<AsyncFunction<T, E>>, limit: number, callback?: AsyncResultArrayCallback<T, E>): void;
+    parallelLimit<T, E>(tasks: Dictionary<AsyncFunction<T, E>>, limit: number, callback?: AsyncResultObjectCallback<T, E>): void;
+    whilst<E>(test: () => boolean, fn: AsyncVoidFunction<E>, callback: ErrorCallback<E>): void;
+    doWhilst<E>(fn: AsyncVoidFunction<E>, test: () => boolean, callback: ErrorCallback<E>): void;
     until<E>(test: () => boolean, fn: AsyncVoidFunction<E>, callback: ErrorCallback<E>): void;
     doUntil<E>(fn: AsyncVoidFunction<E>, test: () => boolean, callback: ErrorCallback<E>): void;
-    // during<E>(test: (testCallback : AsyncBooleanResultCallback<E>) => void, fn: AsyncVoidFunction<E>, callback: ErrorCallback<E>): void; // TODO: Looses precision.
-    // doDuring<E>(fn: AsyncVoidFunction<E>, test: (testCallback: AsyncBooleanResultCallback<E>) => void, callback: ErrorCallback<E>): void; // TODO: Looses precision.
+    during<E>(test: (testCallback : AsyncBooleanResultCallback<E>) => void, fn: AsyncVoidFunction<E>, callback: ErrorCallback<E>): void;
+    doDuring<E>(fn: AsyncVoidFunction<E>, test: (testCallback: AsyncBooleanResultCallback<E>) => void, callback: ErrorCallback<E>): void;
     forever<E>(next: (next : ErrorCallback<E>) => void, errBack: ErrorCallback<E>) : void;
     waterfall<T, E>(tasks: Function[], callback?: AsyncResultCallback<T,E>): void;
     compose(...fns: Function[]): Function;
     seq(...fns: Function[]): Function;
-    // applyEach(fns: Function[], argsAndCallback: any[]): void;           // applyEach(fns, args..., callback). TS does not support ... for a middle argument. Callback is optional.
-    // applyEachSeries(fns: Function[], argsAndCallback: any[]): void;     // applyEachSeries(fns, args..., callback). TS does not support ... for a middle argument. Callback is optional.
+    applyEach(fns: Function[], argsAndCallback: any[]): void;           // applyEach(fns, args..., callback). TS does not support ... for a middle argument. Callback is optional.
+    applyEachSeries(fns: Function[], argsAndCallback: any[]): void;     // applyEachSeries(fns, args..., callback). TS does not support ... for a middle argument. Callback is optional.
     queue<T, E>(worker: AsyncWorker<T, E>, concurrency?: number): AsyncQueue<T>;
     queue<T, R, E>(worker: AsyncResultIterator<T, R, E>, concurrency?: number): AsyncQueue<T>;
     priorityQueue<T, E>(worker: AsyncWorker<T, E>, concurrency: number): AsyncPriorityQueue<T>;
@@ -193,21 +194,20 @@ interface Async {
     nextTick(callback: Function, ...args: any[]): void;
     setImmediate: typeof async.nextTick;
 
-    // TODO: Looses precision in these two, Function.apply is called with an array of unknown size.
-    // reflect<T, E>(fn: AsyncFunction<T, E>) : (callback: (err: void, result: {error?: Error, value?: T}) => void) => void;
-    // reflectAll<T, E>(tasks: AsyncFunction<T, E>[]): ((callback: (err: void, result: {error?: Error, value?: T}) => void) => void)[];
+    reflect<T, E>(fn: AsyncFunction<T, E>) : (callback: (err: void, result: {error?: Error, value?: T}) => void) => void;
+    reflectAll<T, E>(tasks: AsyncFunction<T, E>[]): ((callback: (err: void, result: {error?: Error, value?: T}) => void) => void)[];
 
     timeout<T, E>(fn: AsyncFunction<T, E>, milliseconds: number, info?: any): AsyncFunction<T, E>;
     timeout<T, R, E>(fn: AsyncResultIterator<T, R, E>, milliseconds: number, info?: any): AsyncResultIterator<T, R, E>;
 
-    // times<T, E> (n: number, iterator: AsyncResultIterator<number, T, E>, callback: AsyncResultArrayCallback<T, E>): void;
-    // timesSeries<T, E>(n: number, iterator: AsyncResultIterator<number, T, E>, callback: AsyncResultArrayCallback<T, E>): void;
-    // timesLimit<T, E>(n: number, limit: number, iterator: AsyncResultIterator<number, T, E>, callback: AsyncResultArrayCallback<T, E>): void;
+    times<T, E> (n: number, iterator: AsyncResultIterator<number, T, E>, callback: AsyncResultArrayCallback<T, E>): void;
+    timesSeries<T, E>(n: number, iterator: AsyncResultIterator<number, T, E>, callback: AsyncResultArrayCallback<T, E>): void;
+    timesLimit<T, E>(n: number, limit: number, iterator: AsyncResultIterator<number, T, E>, callback: AsyncResultArrayCallback<T, E>): void;
 
-    // transform<T, R, E>(arr: T[], iteratee: (acc: R[], item: T, key: string, callback: (error?: E) => void) => void): void;
-    // transform<T, R, E>(arr: T[], acc: R[], iteratee: (acc: R[], item: T, key: string, callback: (error?: E) => void) => void): void;
-    // transform<T, R, E>(arr: {[key: string] : T}, iteratee: (acc: {[key: string] : R}, item: T, key: string, callback: (error?: E) => void) => void): void;
-    // transform<T, R, E>(arr: {[key: string] : T}, acc: {[key: string] : R}, iteratee: (acc: {[key: string] : R}, item: T, key: string, callback: (error?: E) => void) => void): void;
+    transform<T, R, E>(arr: T[], iteratee: (acc: R[], item: T, key: string, callback: (error?: E) => void) => void): void;
+    transform<T, R, E>(arr: T[], acc: R[], iteratee: (acc: R[], item: T, key: string, callback: (error?: E) => void) => void): void;
+    transform<T, R, E>(arr: {[key: string] : T}, iteratee: (acc: {[key: string] : R}, item: T, key: string, callback: (error?: E) => void) => void): void;
+    transform<T, R, E>(arr: {[key: string] : T}, acc: {[key: string] : R}, iteratee: (acc: {[key: string] : R}, item: T, key: string, callback: (error?: E) => void) => void): void;
 
     race<T, E>(tasks: (AsyncFunction<T, E>)[], callback: AsyncResultCallback<T, E>) : void;
 
