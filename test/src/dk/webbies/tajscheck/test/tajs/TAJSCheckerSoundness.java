@@ -195,6 +195,8 @@ public class TAJSCheckerSoundness {
             "unit-extendsArray",
             "Leaflet",
 
+            "unit-generators", // ts-spec-reader fails on CI.
+
             "unit-complexOverloads", // symbol
             "unit-symbol", // symbol
             "tajsunit-createUnionsOfDateAndFunction", // a higher-order function is never called.
