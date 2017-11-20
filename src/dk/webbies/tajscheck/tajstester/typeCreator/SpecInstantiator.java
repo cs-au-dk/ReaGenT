@@ -5,11 +5,8 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.HostAPIs;
 import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
-import dk.brics.tajs.analysis.dom.DOMFunctions;
-import dk.brics.tajs.analysis.nativeobjects.JSArray;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.solver.GenericSolver;
-import dk.brics.tajs.unevalizer.SimpleUnevalizerAPI;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -53,6 +50,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
     private final Solver.SolverInterface c;
 
     private Value defaultAnyString;
+    private NativesInstantiator nativesInstantiator;
 
     public SpecInstantiator(Solver.SolverInterface c, BenchmarkInfo info) {
         this.global = info.getSpec().getGlobal();
@@ -63,6 +61,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         this.valueCache = newMap();
         this.processing = newSet();
         this.effects = new Effects(c);
+        this.nativesInstantiator = new NativesInstantiator(info, this);
         this.info = info;
         this.c = c;
 
@@ -308,7 +307,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         return type.accept(objectLabelKindDecider);
     }
 
-    private Value instantiate(Type type, MiscInfo info, String step) {
+    Value instantiate(Type type, MiscInfo info, String step) {
         info = info.withContext(info.context.optimizeTypeParameters(type));
         if (step != null) {
             info = info.apendPath(step);
@@ -323,15 +322,9 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         if (!valueCache.containsKey(key)) {
             Value value;
             ObjectLabel label = getObjectLabel(type, info);
-            BenchmarkInfo benchInfo = SpecInstantiator.this.info;
-            if (
-                    benchInfo.nativeTypes.contains(type) &&
-                    !nativesToConstructStructurally.contains(benchInfo.typeNames.get(type)) &&
-                    !(type instanceof TypeParameterType) &&
-                    !(type instanceof ReferenceType && benchInfo.typeNames.get(((ReferenceType) type).getTarget()).equals("Array")) &&
-                    !benchInfo.typeNames.get(type).contains("[")
-                    ) {
-                value = instantiateNative(benchInfo.typeNames.get(type), type, info, step);
+            info = info.withlabel(label);
+            if (nativesInstantiator.shouldConstructAsNative(type)) {
+                value = nativesInstantiator.instantiateNative(type, info, step, c);
             } else if (processing.contains(key) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
                 // trying to instantiate a (recursive) type that is already being instantiated
                 assert labelCache.containsKey(new TypeWithContext(type, info.context));
@@ -342,10 +335,10 @@ public class SpecInstantiator implements TestBlockEntryObserver {
             } else {
                 processing.add(key);
                 log.debug("Visiting: " + info.path.toString());
-                value = type.accept(visitor, info.withlabel(label));
+                value = type.accept(visitor, info);
                 processing.remove(key);
 
-                if (value.isMaybeObject() && !benchInfo.options.staticOptions.createSingletonObjects) {
+                if (value.isMaybeObject() && !this.info.options.staticOptions.createSingletonObjects) {
                     value = value.restrictToNotObject().join(Value.makeObject(value.getObjectLabels().stream().map(effects::summarize).collect(Collectors.toSet())));
                 }
             }
@@ -353,49 +346,6 @@ public class SpecInstantiator implements TestBlockEntryObserver {
             valueCache.put(key, value);
         }
         return valueCache.get(key);
-    }
-
-    private static final Set<String> nativesToConstructStructurally = new HashSet<>(Arrays.asList(
-            "RTCConfiguration",
-            "RTCIceServer",
-            "RTCIceTransportPolicy",
-            "RTCBundlePolicy"
-    ));
-
-    private Value instantiateNative(String name, Type type, MiscInfo info, String step) {
-        switch (name) {
-            case "Element":
-            case "HTMLElement": {
-                return DOMFunctions.makeAnyHTMLElement();
-            }
-            case "Date": {
-                ObjectLabel objlabel = ObjectLabel.make(c.getNode(), ObjectLabel.Kind.DATE);
-                c.getState().newObject(objlabel);
-                c.getState().writeInternalValue(objlabel, Value.makeAnyNumUInt());
-                c.getState().writeInternalPrototype(objlabel, Value.makeObject(InitialStateBuilder.DATE_PROTOTYPE));
-                return Value.makeObject(objlabel);
-            }
-            case "Function": {
-                return SimpleUnevalizerAPI.evaluateFunctionCall(c.getNode(), Collections.emptyList(), "", c);
-            }
-            case "RegExp": {
-                ObjectLabel label = ObjectLabel.make(c.getNode(), ObjectLabel.Kind.REGEXP, null);
-                c.getState().newObject(label);
-                c.getState().writeInternalPrototype(label, Value.makeObject(InitialStateBuilder.REGEXP_PROTOTYPE));
-                return Value.makeObject(label);
-            }
-            case "Error": {
-                ObjectLabel ex = ObjectLabel.make(c.getNode(), ObjectLabel.Kind.ERROR);
-                c.getState().newObject(ex);
-                c.getState().writeInternalPrototype(ex, Value.makeObject(InitialStateBuilder.ERROR_PROTOTYPE));
-                c.getAnalysis().getPropVarOperations().writeProperty(ex, "message", Value.makeAnyStr());
-                return Value.makeObject(ex);
-            }
-            case "String":
-                return instantiate(new SimpleType(SimpleTypeKind.String), info, step);
-            default:
-                throw new RuntimeException("Yet unknown how to create native object: " + name);
-        }
     }
 
     private Value constructArray(MiscInfo info, Type indexType) {
@@ -653,7 +603,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
 
     }
 
-    private class MiscInfo {
+    class MiscInfo {
 
         public final List<String> path;
         public final TypeContext context;

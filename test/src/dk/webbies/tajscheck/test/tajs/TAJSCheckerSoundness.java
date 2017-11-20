@@ -62,7 +62,7 @@ public class TAJSCheckerSoundness {
                 .filter(bench -> !createsIntersection.contains(bench.name))
                 .filter(bench -> !intentionallyUnsound.contains(bench.name))
                 .filter(bench -> !unsupportedFeatures.contains(bench.name))
-                .filter(bench -> !blackList.contains(bench.name))
+                .filter(bench -> blackList.contains(bench.name))
                 .collect(Collectors.toList());
         Collections.shuffle(result);
         return result;
@@ -144,7 +144,9 @@ public class TAJSCheckerSoundness {
             // wait.
             "unit-firstMatchPolicy", // seems to be insufficient context-sensitivity.
 
-            "unit-complexSanityCheck15", // This one is OK to accept. It is that we don't "remove" methods that have been overridden.
+            // This one is OK to accept. It is that we don't "remove" methods that have been overridden.
+            "unit-complexSanityCheck15",
+            "unit-overrideNumberOfArguments",
 
             // Various
             "QUnit",
@@ -155,12 +157,9 @@ public class TAJSCheckerSoundness {
             // Unmodelled native object
             "Swiper",
             "CodeMirror",
-            "unit-extendsEvent",
             "unit-complexSanityCheck22",
             "Handlebars",
             "PDF.js",
-            "unit-extendsEvent3",
-            "unit-extendsEvent2",
             "unit-complexSanityCheck26",
             "unit-complexSanityCheck25",
             "Moment.js",
@@ -180,9 +179,6 @@ public class TAJSCheckerSoundness {
             "unit-symbol", // symbol
 
             "reveal.js", // something about overloads not being called correctly.
-
-            // should be possible.
-            "unit-overrideNumberOfArguments", // none of the overloads matched...
 
             // impossible, forget them
             "unit-exponentialComplexity" // too big.
