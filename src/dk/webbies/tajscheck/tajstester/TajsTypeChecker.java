@@ -325,7 +325,7 @@ public class TajsTypeChecker {
 
     }
 
-    private static class CheckEqualityVisitor implements ExpressionVisitor<Boolean> {
+    private class CheckEqualityVisitor implements ExpressionVisitor<Boolean> {
         private Value o;
 
         public CheckEqualityVisitor(Value o) {
@@ -420,6 +420,9 @@ public class TajsTypeChecker {
 
         @Override
         public Boolean visit(ObjectLiteral objectLiteral) {
+            if (objectLiteral.getProperties().isEmpty()) {
+                return Check.typeOf("object").accept(new CheckChecker(), this.o);
+            }
             throw new RuntimeException();
         }
 
