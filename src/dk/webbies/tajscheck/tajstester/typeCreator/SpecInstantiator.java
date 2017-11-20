@@ -325,7 +325,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
             ObjectLabel label = getObjectLabel(type, info);
             BenchmarkInfo benchInfo = SpecInstantiator.this.info;
             if (benchInfo.nativeTypes.contains(type) && !nativesToConstructStructurally.contains(benchInfo.typeNames.get(type)) && !(type instanceof TypeParameterType) && !(type instanceof ReferenceType && benchInfo.typeNames.get(((ReferenceType) type).getTarget()).equals("Array"))) {
-                value = instantiateNative(benchInfo.typeNames.get(type));
+                value = instantiateNative(benchInfo.typeNames.get(type), info, step);
             } else if (processing.contains(key) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
                 // trying to instantiate a (recursive) type that is already being instantiated
                 assert labelCache.containsKey(new TypeWithContext(type, info.context));
@@ -356,8 +356,9 @@ public class SpecInstantiator implements TestBlockEntryObserver {
             "RTCBundlePolicy"
     ));
 
-    private Value instantiateNative(String name) {
+    private Value instantiateNative(String name, MiscInfo info, String step) {
         switch (name) {
+            case "Element":
             case "HTMLElement": {
                 return DOMFunctions.makeAnyHTMLElement();
             }
@@ -384,6 +385,8 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                 c.getAnalysis().getPropVarOperations().writeProperty(ex, "message", Value.makeAnyStr());
                 return Value.makeObject(ex);
             }
+            case "String":
+                return instantiate(new SimpleType(SimpleTypeKind.String), info, step);
             default:
                 throw new RuntimeException("Yet unknown how to create native object: " + name);
         }
