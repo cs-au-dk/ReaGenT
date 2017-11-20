@@ -2,6 +2,7 @@ image: algobardo/jsraces:v1.6
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  GRADLE_OPTS: -Xmx10G
 
 before_script:
   - echo "Runnning on $CI_RUNNER_DESCRIPTION"
@@ -116,6 +117,10 @@ test_tajs:unit:
 
 
 
+######################
+##### BENCHMARKS #####
+######################
+
 .benchmark: &benchmarks_template
   stage: unit_tests
   allow_failure: true
@@ -132,153 +137,113 @@ test_tajs:unit:
 
 benchmark_zepto:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Zepto.js}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Zepto.js}]"
 
 benchmark_pathjs:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{pathjs}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{pathjs}]"
 
 benchmark_pdf:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PDF.js}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PDF.js}]"
 
 benchmark_peerjs:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PeerJS}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PeerJS}]"
 
 benchmark_moment:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Moment.js}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Moment.js}]"
 
 benchmark_box2dweb:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{box2dweb}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{box2dweb}]"
 
 benchmark_hammer:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Hammer.js}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Hammer.js}]"
 
 benchmark_photoswipe:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PhotoSwipe}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PhotoSwipe}]"
 
 benchmark_accounting:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{accounting.js}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{accounting.js}]"
 
 benchmark_medium:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Medium Editor}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Medium Editor}]"
 
 benchmark_highlight:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{highlight.js}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{highlight.js}]"
 
 benchmark_pleasejs:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PleaseJS}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PleaseJS}]"
 
 benchmark_codemirror:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{CodeMirror}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{CodeMirror}]"
 
 benchmark_intro:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{intro.js}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{intro.js}]"
 
 benchmark_lunr:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{lunr.js}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{lunr.js}]"
 
 benchmark_handlebars:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Handlebars}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Handlebars}]"
 
 benchmark_jasmine:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Jasmine}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Jasmine}]"
 
 benchmark_reveal:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{reveal.js}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{reveal.js}]"
 
 benchmark_leaflet:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Leaflet}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Leaflet}]"
 
 benchmark_redux:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Redux}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Redux}]"
 
 benchmark_qunit:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{QUnit}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{QUnit}]"
 
 benchmark_knockout:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Knockout}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Knockout}]"
 
 benchmark_async:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{async}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{async}]"
 
 benchmark_sortable:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Sortable}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Sortable}]"
 
 benchmark_swiper:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Swiper}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Swiper}]"
 
 benchmark_axios:
   <<: *benchmarks_template
-  script:
-  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{axios}]"
+  script: gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{axios}]"
 
-#test_tajs:benchmarks:
-#  stage: unit_tests
-#  script:
-#  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks"
-#  - mv build/reports/tests build/reports/test_tajs_benchmarks
-#  artifacts:
-#    expire_in: 4 week
-#    paths:
-#    - builds/TSTAJS/TajsCheck/build/reports
-#
-#test_tajs:benchmarks_tracified:
-#  stage: unit_tests
-#  script:
-#  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeTracified"
-#  - mv build/reports/tests build/reports/test_tajs_benchmarks_tracified
-#  artifacts:
-#    expire_in: 4 week
-#    paths:
-#    - builds/TSTAJS/TajsCheck/build/reports
+
+
+######################
+###### WRAP-UP #######
+######################
 
 
 wrapup_task:
