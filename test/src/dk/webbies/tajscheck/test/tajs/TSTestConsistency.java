@@ -51,7 +51,8 @@ public class TSTestConsistency {
             "tajsunit-correctUnion",
             "PhotoSwipe",
             "accounting.js",
-            "Swiper"
+            "Swiper",
+            "Hammer.js" // failed once on CI.
     ));
 
     @Test
