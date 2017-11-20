@@ -324,8 +324,14 @@ public class SpecInstantiator implements TestBlockEntryObserver {
             Value value;
             ObjectLabel label = getObjectLabel(type, info);
             BenchmarkInfo benchInfo = SpecInstantiator.this.info;
-            if (benchInfo.nativeTypes.contains(type) && !nativesToConstructStructurally.contains(benchInfo.typeNames.get(type)) && !(type instanceof TypeParameterType) && !(type instanceof ReferenceType && benchInfo.typeNames.get(((ReferenceType) type).getTarget()).equals("Array"))) {
-                value = instantiateNative(benchInfo.typeNames.get(type), info, step);
+            if (
+                    benchInfo.nativeTypes.contains(type) &&
+                    !nativesToConstructStructurally.contains(benchInfo.typeNames.get(type)) &&
+                    !(type instanceof TypeParameterType) &&
+                    !(type instanceof ReferenceType && benchInfo.typeNames.get(((ReferenceType) type).getTarget()).equals("Array")) &&
+                    !benchInfo.typeNames.get(type).contains("[")
+                    ) {
+                value = instantiateNative(benchInfo.typeNames.get(type), type, info, step);
             } else if (processing.contains(key) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
                 // trying to instantiate a (recursive) type that is already being instantiated
                 assert labelCache.containsKey(new TypeWithContext(type, info.context));
@@ -356,7 +362,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
             "RTCBundlePolicy"
     ));
 
-    private Value instantiateNative(String name, MiscInfo info, String step) {
+    private Value instantiateNative(String name, Type type, MiscInfo info, String step) {
         switch (name) {
             case "Element":
             case "HTMLElement": {
@@ -390,6 +396,14 @@ public class SpecInstantiator implements TestBlockEntryObserver {
             default:
                 throw new RuntimeException("Yet unknown how to create native object: " + name);
         }
+    }
+
+    private Value constructArray(MiscInfo info, Type indexType) {
+        ObjectLabel array = info.labelToUse;
+        Value indexValue = instantiate(indexType, info, "[numberindexer]");
+        c.getAnalysis().getPropVarOperations().writeProperty(Collections.singleton(array), Value.makeAnyStrUInt(), indexValue);
+        c.getAnalysis().getPropVarOperations().writeProperty(array, "length", Value.makeAnyNumUInt());
+        return Value.makeObject(array);
     }
 
     public Value createValue(TypeWithContext type, String path) {
@@ -505,14 +519,6 @@ public class SpecInstantiator implements TestBlockEntryObserver {
             }
             info = info.withContext(SpecInstantiator.this.info.typesUtil.generateParameterMap(t, info.context));
             return t.getTarget().accept(this, info);
-        }
-
-        private Value constructArray(MiscInfo info, Type indexType) {
-            ObjectLabel array = info.labelToUse;
-            Value indexValue = instantiate(indexType, info, "[numberindexer]");
-            c.getAnalysis().getPropVarOperations().writeProperty(Collections.singleton(array), Value.makeAnyStrUInt(), indexValue);
-            c.getAnalysis().getPropVarOperations().writeProperty(array, "length", Value.makeAnyNumUInt());
-            return Value.makeObject(array);
         }
 
         @Override

@@ -144,8 +144,7 @@ public class TAJSCheckerSoundness {
             // wait.
             "unit-firstMatchPolicy", // seems to be insufficient context-sensitivity.
 
-            // something about generics.
-            "unit-complexSanityCheck15",
+            "unit-complexSanityCheck15", // This one is OK to accept. It is that we don't "remove" methods that have been overridden.
 
             // Various
             "QUnit",
@@ -157,8 +156,6 @@ public class TAJSCheckerSoundness {
             "Swiper",
             "CodeMirror",
             "unit-extendsEvent",
-            "unit-extendsArray4",
-            "unit-extendsArray2",
             "unit-complexSanityCheck22",
             "Handlebars",
             "PDF.js",
@@ -168,7 +165,6 @@ public class TAJSCheckerSoundness {
             "unit-complexSanityCheck25",
             "Moment.js",
             "Hammer.js",
-            "unit-extendsArray3",
             "axios",
             "Medium Editor",
             "PeerJS",
@@ -176,7 +172,6 @@ public class TAJSCheckerSoundness {
             "highlight.js",
             "unit-classAndClassInstances",
             "box2dweb",
-            "unit-extendsArray",
             "Leaflet",
 
             "unit-generators", // ts-spec-reader fails on CI.
