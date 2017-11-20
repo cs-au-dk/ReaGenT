@@ -251,8 +251,7 @@ public class TAJSUnitTests {
      * Because what the analysis does, is say, if this code is reachable, then the following is true.
      * But if that code isn't reachable,
      */
-    @Test
-    @Ignore // TODO: maybe for later.
+    @Test(expected = AssertionError.class)
     public void baitingTajsUnion() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("baitingTajsUnion");
 
