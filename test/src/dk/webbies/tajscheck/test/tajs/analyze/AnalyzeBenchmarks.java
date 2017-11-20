@@ -22,10 +22,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-
 /**
  * Created by erik1 on 19-12-2016.
  */
@@ -41,7 +37,6 @@ public class AnalyzeBenchmarks extends TestCase {
 
     // Benchmarks that seem analyzeable.
     static final Set<String> whitelist = new HashSet<>(Arrays.asList(
-            "q",
             "async",
             "Leaflet",
             "reveal.js",
@@ -59,18 +54,13 @@ public class AnalyzeBenchmarks extends TestCase {
             "accounting.js",
             "lunr.js",
             "PDF.js",
-            "Foundation",
-            "Materialize",
-            "Backbone.js",
             "Moment.js",
             "Medium Editor",
-            "CreateJS",
             "Handlebars",
             "Redux",
             "QUnit",
             "Knockout",
             "axios",
-            "D3.js",
             "PeerJS",
             "Hammer.js"
     ));
@@ -82,11 +72,17 @@ public class AnalyzeBenchmarks extends TestCase {
             "PixiJS",
             "P2.js",
             "bluebird",
+            "Foundation",
+            "Materialize",
+            "Backbone.js",
             "Vue.js",
+            "D3.js",
             "Modernizr",
             "Fabric.js",
             "Video.js",
+            "q",
             "RequireJS",
+            "CreateJS",
             "Lodash",
             "Sugar",
             "Ace",
@@ -118,8 +114,7 @@ public class AnalyzeBenchmarks extends TestCase {
                 .setCombineNullAndUndefined(true) // because no-one cares.
                 .staticOptions
                     .setKillGetters(true) // because getters currently causes the analysis to loop.
-                    .setRetractionPolicy(new LimitTransfersRetractionPolicy(10000, 0))
-                    .setExpansionPolicy(new ExpandOneAtATimePolicy());
+                    .setRetractionPolicy(new LimitTransfersRetractionPolicy(10000, 0));
     }
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
@@ -127,7 +122,6 @@ public class AnalyzeBenchmarks extends TestCase {
         Benchmark benchmark = this.benchmark.withOptions(options());
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
         System.out.println(result);
-        assert(!result.timedout);
     }
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
@@ -138,11 +132,11 @@ public class AnalyzeBenchmarks extends TestCase {
         if (!new File(patched).exists()) {
             return;
         }
-        String patchedEnty = entryPath.getParent().resolve("patched." + entryPath.getFileName()).toString();
+        String patchedEntry = entryPath.getParent().resolve("patched." + entryPath.getFileName()).toString();
         Benchmark benchmark = this.benchmark.withOptions(options())
                 .withDecl(patched)
-                .withJsFile(patchedEnty);
-        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
+                .withJsFile(patchedEntry);
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, Integer.MAX_VALUE);
         System.out.println(result);
         assert(!result.timedout);
     }
