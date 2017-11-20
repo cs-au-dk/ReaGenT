@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.tajstester;
 
+import com.google.gson.Gson;
 import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.flowgraph.FlowGraph;
 import dk.brics.tajs.monitoring.*;
@@ -15,9 +16,11 @@ import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.TajsMisc;
+import dk.webbies.tajscheck.util.Util;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -121,6 +124,9 @@ public class TAJSUtil {
         List<Test> tests = new TestCreator(info).createTests();
 
         TajsAnalysisResults result = runNoDriverTAJS(bench, secondsTimeout, info, tests, useInspector);
+
+        Gson gson = new Gson();
+        Util.writeFile(Paths.get(info.bench.dTSFile).getParent().resolve("finalResult.json").toAbsolutePath().toString(), gson.toJson(result.summary()));
 
         //System.out.println(prettyResult(result, assertionResult -> assertionResult.result.isSometimesFalse()));
 
@@ -243,6 +249,21 @@ public class TAJSUtil {
                 for (TypeViolation violation : entry.getValue()) {
                     builder.append("      ").append(violation).append("\n");
                 }
+            }
+        }
+
+        public ResultSummary summary() {
+            return new ResultSummary(this);
+        }
+    }
+
+    public static class ResultSummary {
+        Map<String, ArrayList<TypeViolation>> violations = new HashMap<>();
+        ResultSummary(TajsAnalysisResults result) {
+            for(String k : result.detectedViolations.keySet()) {
+                ArrayList<TypeViolation> al = new ArrayList<>();
+                al.addAll(result.detectedViolations.get(k));
+                violations.put(k, al);
             }
         }
     }

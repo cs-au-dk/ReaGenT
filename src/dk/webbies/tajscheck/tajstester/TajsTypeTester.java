@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.tajstester;
 
+import com.google.gson.Gson;
 import dk.brics.tajs.analysis.*;
 import dk.brics.tajs.analysis.FunctionCalls.CallInfo;
 import dk.brics.tajs.flowgraph.BasicBlock;
@@ -24,6 +25,7 @@ import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -163,9 +165,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         this.notDoneWarnings = this.notDoneWarnings.stream().distinct().collect(Collectors.toList());
         this.notDoneViolations = this.notDoneViolations.stream().distinct().collect(Collectors.toList());
 
-        TAJSUtil.TajsAnalysisResults partialResults = new TAJSUtil.TajsAnalysisResults(this, !c.isScanning());
 
+        TAJSUtil.TajsAnalysisResults partialResults = new TAJSUtil.TajsAnalysisResults(this, !c.isScanning());
         try {
+            Gson gson = new Gson();
+            Util.writeFile(Paths.get(info.bench.dTSFile).getParent().resolve("partialResult.json").toAbsolutePath().toString(), gson.toJson(partialResults.summary()));
             Util.writeFile("partialResult.txt", partialResults.toString());
         } catch (IOException e) {
             throw new RuntimeException(e);
