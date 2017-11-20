@@ -62,7 +62,7 @@ public class TAJSCheckerSoundness {
                 .filter(bench -> !createsIntersection.contains(bench.name))
                 .filter(bench -> !intentionallyUnsound.contains(bench.name))
                 .filter(bench -> !unsupportedFeatures.contains(bench.name))
-                .filter(bench -> blackList.contains(bench.name))
+                .filter(bench -> !blackList.contains(bench.name))
                 .collect(Collectors.toList());
         Collections.shuffle(result);
         return result;
@@ -141,6 +141,8 @@ public class TAJSCheckerSoundness {
 
     // TODO: the ones that currently fails for various reasons.
     private static final List<String> blackList = Arrays.asList(
+            "unit-stringIndexer", // take this one first.
+
             // wait.
             "unit-firstMatchPolicy", // seems to be insufficient context-sensitivity.
 
@@ -152,13 +154,11 @@ public class TAJSCheckerSoundness {
             "QUnit",
             "lunr.js",
             "Knockout",
-            "unit-stringIndexer",
 
             // Unmodelled native object
             "Swiper",
             "CodeMirror",
-            "unit-complexSanityCheck22",
-            "Handlebars",
+            "PDF.js",
             "PDF.js",
             "unit-complexSanityCheck26",
             "unit-complexSanityCheck25",
@@ -169,7 +169,6 @@ public class TAJSCheckerSoundness {
             "PeerJS",
             "unit-booleans",
             "highlight.js",
-            "unit-classAndClassInstances",
             "box2dweb",
             "Leaflet",
 
@@ -177,8 +176,6 @@ public class TAJSCheckerSoundness {
 
             "unit-complexOverloads", // symbol
             "unit-symbol", // symbol
-
-            "reveal.js", // something about overloads not being called correctly.
 
             // impossible, forget them
             "unit-exponentialComplexity" // too big.

@@ -1,14 +1,17 @@
 package dk.webbies.tajscheck.tajstester.typeCreator;
 
+import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.dom.DOMFunctions;
 import dk.brics.tajs.analysis.dom.DOMObjects;
 import dk.brics.tajs.analysis.dom.DOMWindow;
+import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.unevalizer.SimpleUnevalizerAPI;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -73,13 +76,22 @@ public class NativesInstantiator {
                 c.getAnalysis().getPropVarOperations().writeProperty(ex, "message", Value.makeAnyStr());
                 return Value.makeObject(ex);
             }
+            case "StringConstructor":
+                return Value.makeObject(ObjectLabel.make(ECMAScriptObjects.STRING, ObjectLabel.Kind.FUNCTION));
+            case "DateConstructor":
+                return Value.makeObject(ObjectLabel.make(ECMAScriptObjects.DATE, ObjectLabel.Kind.FUNCTION));
+            case "ArrayConstructor":
+                return Value.makeObject(ObjectLabel.make(ECMAScriptObjects.ARRAY, ObjectLabel.Kind.FUNCTION));
             case "String":
                 return specInstantiator.instantiate(new SimpleType(SimpleTypeKind.String), info, step);
             case "Window":
                 return Value.makeObject(Collections.singleton(DOMWindow.WINDOW_CONSTRUCTOR));
-            case "EventTarget": {
+            case "EventTarget":
                 return constructFromPrototype(info, DOMObjects.EVENT_TARGET_PROTOTYPE, c);
-            }
+            case "WebGLRenderingContext":
+                return constructFromPrototype(info, DOMObjects.WEBGLRENDERINGCONTEXT_PROTOTYPE, c);
+            case "Object":
+                return specInstantiator.instantiate(SpecReader.makeEmptySyntheticInterfaceType(), info, step);
             default:
                 throw new RuntimeException("Yet unknown how to create native object: " + name);
         }
