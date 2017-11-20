@@ -846,6 +846,14 @@ public class TAJSUnitTests {
                 .notPerformedAllTests();
     }
 
+    @Test
+    public void restArgsSoundness() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run(benchFromFolder("restArgsSoundness", options().setConstructAllTypes(true).staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BOOTSTRAP));
+        System.out.println(result);
+        expect(result)
+                .performedAllTests();
+    }
+
     // TODO: Test string-indexers somehow.
     // TODO: Handle construction of native objects.
 }

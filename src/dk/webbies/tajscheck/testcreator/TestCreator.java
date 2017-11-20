@@ -6,7 +6,6 @@ import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.testcreator.test.*;
-import dk.webbies.tajscheck.testcreator.test.check.Check;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.*;
@@ -195,7 +194,7 @@ public class TestCreator {
             List<Signature> precedingSignatures = new ArrayList<>();
             for (Signature callSignature : callSignatures) {
                 List<Type> parameters = callSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters);
+                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters, callSignature.isHasRestParameter());
                 result.add(
                         new FunctionCallTest(type, parameters, callSignature.getResolvedReturnType(), path, typeContext, callSignature.isHasRestParameter(), new ArrayList<>(precedingSignatures))
                 );
@@ -209,7 +208,7 @@ public class TestCreator {
             List<Signature> constructSignatures = ((InterfaceType) type).getDeclaredConstructSignatures();
             for (Signature constructSignature : constructSignatures) {
                 List<Type> parameters = constructSignature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters);
+                findPositiveTypesInParameters(visitor, new Arg(path, typeContext, depth), parameters, constructSignature.isHasRestParameter());
                 result.add(
                         new ConstructorCallTest(type, parameters, constructSignature.getResolvedReturnType(), path, typeContext, constructSignature.isHasRestParameter(), new ArrayList<>(precedingSignatures))
                 );
@@ -222,7 +221,12 @@ public class TestCreator {
         throw new RuntimeException(type.getClass().getName());
     }
 
-    private void findPositiveTypesInParameters(CreateTestVisitor visitor, Arg arg, List<Type> parameters) {
+    private void findPositiveTypesInParameters(CreateTestVisitor visitor, Arg arg, List<Type> parameters, boolean hasRestParameter) {
+        if (hasRestParameter) {
+            Type restArgType = TypesUtil.extractRestArgsType(parameters);
+            parameters = parameters.subList(0, parameters.size() - 1);
+            findPositiveTypes(visitor, restArgType, arg.append("[restArg]").withTopLevelFunctions());
+        }
         for (int i = 0; i < parameters.size(); i++) {
             Type parameter = parameters.get(i);
             findPositiveTypes(visitor, parameter, arg.append("[arg" + i + "]").withTopLevelFunctions());
@@ -530,7 +534,7 @@ public class TestCreator {
                 List<Signature> precedingSignatures = new ArrayList<>();
                 for (Signature signature : callSignatures) {
                     List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                    findPositiveTypesInParameters(this, arg.append(key), parameters);
+                    findPositiveTypesInParameters(this, arg.append(key), parameters, signature.isHasRestParameter());
                     tests.add(new MethodCallTest(baseType, propertyType, key, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext(), signature.isHasRestParameter(), new ArrayList<>(precedingSignatures)));
                     precedingSignatures.add(signature);
 
@@ -541,7 +545,7 @@ public class TestCreator {
                 List<Signature> constructSignatures = ((InterfaceType) propertyType).getDeclaredConstructSignatures();
                 for (Signature signature : constructSignatures) {
                     List<Type> parameters = signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList());
-                    findPositiveTypesInParameters(this, arg.append(key), parameters);
+                    findPositiveTypesInParameters(this, arg.append(key), parameters, signature.isHasRestParameter());
                     tests.add(new ConstructorCallTest(propertyType, parameters, signature.getResolvedReturnType(), arg.append(key).path, arg.getTypeContext(), signature.isHasRestParameter(), new ArrayList<>(precedingSignatures)));
                     precedingSignatures.add(signature);
 

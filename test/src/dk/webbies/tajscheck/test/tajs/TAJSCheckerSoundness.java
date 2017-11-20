@@ -149,21 +149,15 @@ public class TAJSCheckerSoundness {
             "tajsunit-soundness1",
             "unit-complexSanityCheck15",
 
-            // Somehting about numberIndexer.
+            // Various
             "QUnit",
             "lunr.js",
-            "unit-genRestArgsWithOverloads",
-            "tajsunit-testRestArgs",
             "tajsunit-smokeTest1",
-            "tajsunit-createRestArgs",
             "Sortable",
             "Knockout",
-            "unit-optionalDoesNotMeanUndefinedWithRestArg",
             "unit-complexGenerics2",
             "unit-complexSanityCheck16",
-            "unit-testRestArgs",
             "unit-stringIndexer",
-            "unit-genRestArgs",
             "unit-differentSizeOverloads",
             "unit-correctArrayType",
 
@@ -204,13 +198,10 @@ public class TAJSCheckerSoundness {
             "reveal.js", // something about overloads not being called correctly.
             "pathjs", // multiple things, likely the above numberIndex and generic thing.
             "intro.js", // multiple things, like the same as reveal.js (fix reveal.js first).
-            "unit-thisTypesAreOptimized", // likely the above numberIndexer and something else.
             "unit-thisTypesAreOptimized2", // likely the above numberIndexer and something else.
 
 
             // should be possible.
-            "unit-complexThisTypes", // looks like a this-type getting overwritten.
-            "unit-complexUnion", // currently does not support union between function and Date.
             "unit-overrideNumberOfArguments", // none of the overloads matched...
 
             // impossible, forget them
