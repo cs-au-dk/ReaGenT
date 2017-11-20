@@ -194,6 +194,8 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
             if (l.getHostObject() != null && l.getHostObject().getAPI() == HostAPIs.SPEC) {
                 returnedValue = tajsTypeTester.evaluateCallToSymbolicFunction(l.getHostObject(), callinfo, c);
+                // this is only needed, because we have an invariant that higher-order methods are called when control is returned to TAJS. Here that is not the case, so if we didn't do this, we wouldn't save all the feedback-values we need (because they are cleared at the end of the inner for-loop).
+                tajsTypeTester.addEndOfInnerLoopCallback(() -> tajsTypeTester.evaluateCallToSymbolicFunction(l.getHostObject(), callinfo, c));
             } else {
                 BasicBlock implicitAfterCall = UserFunctionCalls.implicitUserFunctionCall(l, callinfo, c);
 

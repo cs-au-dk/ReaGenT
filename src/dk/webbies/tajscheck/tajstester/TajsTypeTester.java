@@ -7,7 +7,6 @@ import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
-import dk.brics.tajs.options.Options;
 import dk.brics.tajs.solver.BlockAndContext;
 import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.solver.WorkList;
@@ -158,6 +157,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             timers.stop(Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
         }
 
+        endOfInnerLoopCallbacks.forEach(Runnable::run);
+        endOfInnerLoopCallbacks.clear();
+
         if (DEBUG && !c.isScanning()) System.out.println(" .... finished a round of doable tests, performed " + performed.size() + " tests\n");
 
         // Recording partial results.
@@ -174,6 +176,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private final List<Runnable> endOfInnerLoopCallbacks = new ArrayList<>();
+    public void addEndOfInnerLoopCallback(Runnable runner) {
+        endOfInnerLoopCallbacks.add(runner);
     }
 
     private void init(Solver.SolverInterface c) {
@@ -338,5 +345,4 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     public Set<Test> getRetractedTests() {
         return tests.stream().filter(retractionPolicy::isRetracted).collect(Collectors.toSet());
     }
-
 }

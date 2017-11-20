@@ -848,7 +848,15 @@ public class TAJSUnitTests {
 
     @Test
     public void restArgsSoundness() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run(benchFromFolder("restArgsSoundness", options().setConstructAllTypes(true).staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BOOTSTRAP));
+        TAJSUtil.TajsAnalysisResults result = soundness("restArgsSoundness", options -> options.staticOptions.setCreateSingletonObjects(true));
+        System.out.println(result);
+        expect(result)
+                .performedAllTests();
+    }
+
+    @Test
+    public void higherOrderFunctionCompleteness() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = soundness("higherOrderFunctionCompleteness", options -> options.staticOptions.setCreateSingletonObjects(true));
         System.out.println(result);
         expect(result)
                 .performedAllTests();

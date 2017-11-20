@@ -144,9 +144,6 @@ public class TAJSCheckerSoundness {
             "unit-firstMatchPolicy", // seems to be insufficient context-sensitivity.
 
             // something about generics.
-            "unit-simpleFunctionArg",
-            "unit-complexSanityCheck12",
-            "tajsunit-soundness1",
             "unit-complexSanityCheck15",
 
             // Various
@@ -155,13 +152,9 @@ public class TAJSCheckerSoundness {
             "tajsunit-smokeTest1",
             "Sortable",
             "Knockout",
-            "unit-complexGenerics2",
             "unit-complexSanityCheck16",
             "unit-stringIndexer",
-            "unit-differentSizeOverloads",
             "unit-correctArrayType",
-
-            "tajsunit-readProperty", // a callback not being called.
 
             // Unmodelled native object
             "Swiper",
@@ -193,7 +186,6 @@ public class TAJSCheckerSoundness {
 
             "unit-complexOverloads", // symbol
             "unit-symbol", // symbol
-            "tajsunit-createUnionsOfDateAndFunction", // a higher-order function is never called.
 
             "reveal.js", // something about overloads not being called correctly.
             "pathjs", // multiple things, likely the above numberIndex and generic thing.
