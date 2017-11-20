@@ -3,6 +3,8 @@ package dk.webbies.tajscheck.test.tajs;
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.benchmark.options.CheckOptions;
+import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
 import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks;
@@ -16,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.test.tajs.TAJSUnitTests.*;
@@ -73,16 +76,24 @@ public class TAJSCheckerSoundness {
     }
 
     @Test(timeout = 70 * 1000)
-    public void hasNoViolations() throws Exception { // TODO: complexGenerics2
-        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true)), 60);
+    public void hasNoViolations() throws Exception {
+        Benchmark bench = this.bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options());
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 60);
         System.out.println(result);
         expect(result)
                 .hasNoViolations();
     }
 
+    private Function<CheckOptions.Builder, OptionsI.Builder> options() {
+        return options -> options
+                .setConstructAllTypes(true)
+                .staticOptions.setCreateSingletonObjects(true); // TODO: Remove?
+    }
+
     @Test(timeout = 70 * 1000)
     public void performsAllTests() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true)), 60);
+        Benchmark bench = this.bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options());
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 60);
         System.out.println(result);
         expect(result)
                 .performedAllTests();
@@ -104,7 +115,9 @@ public class TAJSCheckerSoundness {
             "unit-thisTypesInInterfaces3",
             "unit-valueCantBeTrueAndFalse",
             "unit-genericClassFeedbackWithConstraint",
-            "PhotoSwipe"
+            "PhotoSwipe",
+            "Redux",
+            "unit-loopingType"
     );
 
     private static final List<String> unsupportedFeatures = Arrays.asList(
@@ -125,19 +138,86 @@ public class TAJSCheckerSoundness {
             "Jasmine" // more first match policy
     );
 
-    // the ones that currently fails for various reasons.
+    // TODO: the ones that currently fails for various reasons.
     private static final List<String> blackList = Arrays.asList(
-            // impossible, forget them
-            "unit-complexSanityCheck18", // you cannot at runtime distinguish the different signatures.
-            "unit-exponentialComplexity", // too big.
+            // wait.
+            "unit-firstMatchPolicy", // seems to be insufficient context-sensitivity.
+
+            // something about generics.
+            "unit-simpleFunctionArg",
+            "unit-complexSanityCheck12",
+            "tajsunit-soundness1",
+            "unit-complexSanityCheck15",
+
+            // Somehting about numberIndexer.
+            "QUnit",
+            "lunr.js",
+            "unit-genRestArgsWithOverloads",
+            "tajsunit-testRestArgs",
+            "tajsunit-smokeTest1",
+            "tajsunit-createRestArgs",
+            "Sortable",
+            "Knockout",
+            "unit-optionalDoesNotMeanUndefinedWithRestArg",
+            "unit-complexGenerics2",
+            "unit-complexSanityCheck16",
+            "unit-testRestArgs",
+            "unit-stringIndexer",
+            "unit-genRestArgs",
+            "unit-differentSizeOverloads",
+            "unit-correctArrayType",
+
+            "tajsunit-readProperty", // a callback not being called.
+
+            // Unmodelled native object
+            "Swiper",
+            "CodeMirror",
+            "unit-extendsEvent",
+            "unit-extendsArray4",
+            "unit-extendsArray2",
+            "unit-complexSanityCheck22",
+            "Handlebars",
+            "PDF.js",
+            "unit-extendsEvent3",
+            "unit-extendsEvent2",
+            "unit-complexSanityCheck26",
+            "unit-complexSanityCheck25",
+            "Moment.js",
+            "Hammer.js",
+            "unit-extendsArray3",
+            "axios",
+            "Medium Editor",
+            "PeerJS",
+            "unit-booleans",
+            "highlight.js",
+            "unit-classAndClassInstances",
+            "box2dweb",
+            "unit-extendsArray",
+            "Leaflet",
+
+            "unit-complexOverloads", // symbol
+            "unit-symbol", // symbol
+            "tajsunit-createUnionsOfDateAndFunction", // a higher-order function is never called.
+
+            "reveal.js", // something about overloads not being called correctly.
+            "pathjs", // multiple things, likely the above numberIndex and generic thing.
+            "intro.js", // multiple things, like the same as reveal.js (fix reveal.js first).
+            "unit-thisTypesAreOptimized", // likely the above numberIndexer and something else.
+            "unit-thisTypesAreOptimized2", // likely the above numberIndexer and something else.
+
 
             // should be possible.
             "unit-complexThisTypes", // looks like a this-type getting overwritten.
             "unit-complexUnion", // currently does not support union between function and Date.
             "unit-overrideNumberOfArguments", // none of the overloads matched...
 
-            // wait.
-            "unit-firstMatchPolicy" // seems to be insufficient context-sensitivity.
+            // impossible, forget them
+            "unit-complexSanityCheck18", // you cannot at runtime distinguish the different signatures.
+            "unit-exponentialComplexity", // too big.
+
+            // Recursive generics, but this shouldn't give an error.
+            "unit-complexSanityCheck24",
+            "unit-complexSanityCheck21"
     );
 }
 
