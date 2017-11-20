@@ -861,6 +861,16 @@ public class TAJSUnitTests {
                 .performedAllTests();
     }
 
+    @Test
+    public void multiSignatureSoundness() throws Exception { // The actual issue is that the two arrays are allocated in the same object-label.
+        TAJSUtil.TajsAnalysisResults result = run("multiSignatureSoundness");
+        System.out.println(result);
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+
+    }
+
     // TODO: Test string-indexers somehow.
     // TODO: Handle construction of native objects.
 }

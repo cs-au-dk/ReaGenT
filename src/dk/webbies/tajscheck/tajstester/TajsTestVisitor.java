@@ -97,7 +97,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
     public Boolean visit(MethodCallTest test) {
         final Value receiver = attemptGetValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
         Value function = UnknownValueResolver.getRealValue(pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName()))), c.getState());
-        Value constructedReceiver = typeValuesHandler.createValue(test.getObject(), test.getTypeContext()); // TODO: Using this causes things to crash, because when the analysis reads the value there are no properties on the object....
+//        Value constructedReceiver = typeValuesHandler.createValue(test.getObject(), test.getTypeContext()); // TODO: Using this causes things to crash, because when the analysis reads the value there are no properties on the object....
         return functionTest(test, receiver, function, false);
     }
 

@@ -399,11 +399,6 @@ public class SpecInstantiator implements TestBlockEntryObserver {
 
     private ObjectLabel makeObjectLabel(Type t, MiscInfo miscInfo) {
         TypeWithContext key = new TypeWithContext(t, miscInfo.context);
-        if (labelCache.containsKey(key)) {
-            ObjectLabel l = labelCache.get(key);
-            effects.newObject(l);
-            return l;
-        }
         ObjectLabel.Kind kind = getObjectLabelKind(t);
         ObjectLabel label = null;
         if (kind != null) {
@@ -513,7 +508,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         }
 
         private Value constructArray(MiscInfo info, Type indexType) {
-            ObjectLabel array = JSArray.makeArray(c.getNode(), c);
+            ObjectLabel array = info.labelToUse;
             Value indexValue = instantiate(indexType, info, "[numberindexer]");
             c.getAnalysis().getPropVarOperations().writeProperty(Collections.singleton(array), Value.makeAnyStrUInt(), indexValue);
             c.getAnalysis().getPropVarOperations().writeProperty(array, "length", Value.makeAnyNumUInt());

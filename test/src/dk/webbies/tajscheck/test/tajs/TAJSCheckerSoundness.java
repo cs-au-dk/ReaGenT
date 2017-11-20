@@ -62,7 +62,7 @@ public class TAJSCheckerSoundness {
                 .filter(bench -> !createsIntersection.contains(bench.name))
                 .filter(bench -> !intentionallyUnsound.contains(bench.name))
                 .filter(bench -> !unsupportedFeatures.contains(bench.name))
-                .filter(bench -> !blackList.contains(bench.name))
+                .filter(bench -> blackList.contains(bench.name))
                 .collect(Collectors.toList());
         Collections.shuffle(result);
         return result;
@@ -135,7 +135,8 @@ public class TAJSCheckerSoundness {
             "Zepto.js", // really a failure of enforcing first-match-policy on ZeptoStatic#each.
             "accounting.js", // also first-match-policy.
             "async", // more first match policy
-            "Jasmine" // more first match policy
+            "Jasmine", // more first match policy
+            "unit-complexSanityCheck18" // the signatures are not sub-types of each other.
     );
 
     // TODO: the ones that currently fails for various reasons.
@@ -149,12 +150,8 @@ public class TAJSCheckerSoundness {
             // Various
             "QUnit",
             "lunr.js",
-            "tajsunit-smokeTest1",
-            "Sortable",
             "Knockout",
-            "unit-complexSanityCheck16",
             "unit-stringIndexer",
-            "unit-correctArrayType",
 
             // Unmodelled native object
             "Swiper",
@@ -188,21 +185,12 @@ public class TAJSCheckerSoundness {
             "unit-symbol", // symbol
 
             "reveal.js", // something about overloads not being called correctly.
-            "pathjs", // multiple things, likely the above numberIndex and generic thing.
-            "intro.js", // multiple things, like the same as reveal.js (fix reveal.js first).
-            "unit-thisTypesAreOptimized2", // likely the above numberIndexer and something else.
-
 
             // should be possible.
             "unit-overrideNumberOfArguments", // none of the overloads matched...
 
             // impossible, forget them
-            "unit-complexSanityCheck18", // you cannot at runtime distinguish the different signatures.
-            "unit-exponentialComplexity", // too big.
-
-            // Recursive generics, but this shouldn't give an error.
-            "unit-complexSanityCheck24",
-            "unit-complexSanityCheck21"
+            "unit-exponentialComplexity" // too big.
     );
 }
 
