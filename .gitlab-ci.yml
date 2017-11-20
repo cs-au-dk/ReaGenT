@@ -115,25 +115,25 @@ test_tajs:unit:
     - builds/TSTAJS/TajsCheck/build/reports
 
 
-test_tajs:benchmarks:
-  stage: unit_tests
-  script:
-  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks"
-  - mv build/reports/tests build/reports/test_tajs_benchmarks
-  artifacts:
-    expire_in: 4 week
-    paths:
-    - builds/TSTAJS/TajsCheck/build/reports
-
-test_tajs:benchmarks_tracified:
-  stage: unit_tests
-  script:
-  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeTracified"
-  - mv build/reports/tests build/reports/test_tajs_benchmarks_tracified
-  artifacts:
-    expire_in: 4 week
-    paths:
-    - builds/TSTAJS/TajsCheck/build/reports
+#test_tajs:benchmarks:
+#  stage: unit_tests
+#  script:
+#  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks"
+#  - mv build/reports/tests build/reports/test_tajs_benchmarks
+#  artifacts:
+#    expire_in: 4 week
+#    paths:
+#    - builds/TSTAJS/TajsCheck/build/reports
+#
+#test_tajs:benchmarks_tracified:
+#  stage: unit_tests
+#  script:
+#  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeTracified"
+#  - mv build/reports/tests build/reports/test_tajs_benchmarks_tracified
+#  artifacts:
+#    expire_in: 4 week
+#    paths:
+#    - builds/TSTAJS/TajsCheck/build/reports
 
 
 wrapup_task:
