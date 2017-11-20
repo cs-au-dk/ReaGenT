@@ -115,6 +115,151 @@ test_tajs:unit:
     - builds/TSTAJS/TajsCheck/build/reports
 
 
+
+.benchmark: &benchmarks_template
+  stage: unit_tests
+  allow_failure: true
+  only:
+    - tags
+    - triggers
+    - schedules
+  artifacts:
+    expire_in: 4 week
+    when: always
+    paths:
+    - test/benchmarks/
+
+
+benchmark_zepto:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Zepto.js}]"
+
+benchmark_pathjs:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{pathjs}]"
+
+benchmark_pdf:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PDF.js}]"
+
+benchmark_peerjs:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PeerJS}]"
+
+benchmark_moment:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Moment.js}]"
+
+benchmark_box2dweb:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{box2dweb}]"
+
+benchmark_hammer:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Hammer.js}]"
+
+benchmark_photoswipe:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PhotoSwipe}]"
+
+benchmark_accounting:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{accounting.js}]"
+
+benchmark_medium:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Medium Editor}]"
+
+benchmark_highlight:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{highlight.js}]"
+
+benchmark_pleasejs:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{PleaseJS}]"
+
+benchmark_codemirror:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{CodeMirror}]"
+
+benchmark_intro:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{intro.js}]"
+
+benchmark_lunr:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{lunr.js}]"
+
+benchmark_handlebars:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Handlebars}]"
+
+benchmark_jasmine:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Jasmine}]"
+
+benchmark_reveal:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{reveal.js}]"
+
+benchmark_leaflet:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Leaflet}]"
+
+benchmark_redux:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Redux}]"
+
+benchmark_qunit:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{QUnit}]"
+
+benchmark_knockout:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Knockout}]"
+
+benchmark_async:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{async}]"
+
+benchmark_sortable:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Sortable}]"
+
+benchmark_swiper:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{Swiper}]"
+
+benchmark_axios:
+  <<: *benchmarks_template
+  script:
+  - gradle :test -i --test "dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks.analyzeBenchmark[Benchmark{axios}]"
+
 #test_tajs:benchmarks:
 #  stage: unit_tests
 #  script:
