@@ -28,8 +28,11 @@ import java.util.stream.Collectors;
 @RunWith(Parameterized.class)
 public class AnalyzeBenchmarks extends TestCase {
 
-    private final static int BENCHMARK_TIMEOUT = 4 * 60;
-    private final static int INIT_TIMEOUT = 2 * 60;
+    // We assume to have more time for running the benchmarks when running in docker
+    private final static boolean inDocker = new File("/.dockerenv").exists();
+
+    private final static int BENCHMARK_TIMEOUT = (inDocker ? 60 : 4) * 60;
+    private final static int INIT_TIMEOUT = (inDocker ? 60 : 4) * 60;
 
     @SuppressWarnings("WeakerAccess")
     @Parameterized.Parameter
