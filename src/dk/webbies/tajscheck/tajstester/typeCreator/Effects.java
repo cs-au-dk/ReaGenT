@@ -65,9 +65,7 @@ public class Effects {
     }
 
     public void writeStringIndexer(ObjectLabel label, Value value) {
-        Obj object = c.getState().getObject(label, true);
-        object.setDefaultNonArrayProperty(value.join(Value.makeAbsent()));
-        c.getAnalysis().getPropVarOperations().writeProperty(Collections.singletonList(label), Value.makeAnyStr(), value);
+        writeProperty(label, "$__specialStringIndexerProperty__$", value);
     }
 
     public ObjectLabel summarize(ObjectLabel objectLabel) {

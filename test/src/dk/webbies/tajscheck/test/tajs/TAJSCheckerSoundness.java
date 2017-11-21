@@ -132,8 +132,6 @@ public class TAJSCheckerSoundness {
 
     // TODO: the ones that currently fails for various reasons.
     private static final List<String> blackList = Arrays.asList(
-            "unit-stringIndexer", // take this one first.
-
             // wait.
             "unit-firstMatchPolicy", // I don't think i handle firstMatchPolicy when a callback is invoked.
 
@@ -145,6 +143,7 @@ public class TAJSCheckerSoundness {
             "QUnit",
             "lunr.js",
             "Knockout",
+            "Handlebars",
 
             "reveal.js", // Callback arguments not matching their given types.
 
@@ -163,6 +162,7 @@ public class TAJSCheckerSoundness {
             "highlight.js",
             "box2dweb",
             "Leaflet",
+
 
             "unit-generators", // ts-spec-reader fails on CI.
 
