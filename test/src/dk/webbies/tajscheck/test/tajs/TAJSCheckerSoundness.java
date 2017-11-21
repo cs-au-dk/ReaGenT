@@ -60,7 +60,7 @@ public class TAJSCheckerSoundness {
                 .filter(bench -> !createsIntersection.contains(bench.name))
                 .filter(bench -> !intentionallyUnsound.contains(bench.name))
                 .filter(bench -> !unsupportedFeatures.contains(bench.name))
-                .filter(bench -> blackList.contains(bench.name))
+                .filter(bench -> !blackList.contains(bench.name))
                 .collect(Collectors.toList());
         Collections.shuffle(result);
         return result;
