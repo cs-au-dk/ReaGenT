@@ -67,11 +67,12 @@ public class TAJSCheckerSoundness {
 //        return result;
     }
 
-    @Test
+/*    @Test
     @Ignore
     public void fillCache() throws Exception {
         BenchmarkInfo info = BenchmarkInfo.create(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP));
     }
+*/
 
     @Test(timeout = 70 * 1000)
     public void checkSoundness() throws Exception {

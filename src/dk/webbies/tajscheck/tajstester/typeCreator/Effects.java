@@ -1,37 +1,22 @@
 package dk.webbies.tajscheck.tajstester.typeCreator;
 
-import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
-import dk.brics.tajs.lattice.*;
-import dk.brics.tajs.monitoring.IAnalysisMonitoring;
-import dk.brics.tajs.solver.GenericSolver;
+import dk.brics.tajs.lattice.Obj;
+import dk.brics.tajs.lattice.ObjectLabel;
+import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Collections;
 
-import java.util.Map;
-import java.util.Set;
-
-import static dk.brics.tajs.util.Collections.newMap;
-import static dk.brics.tajs.util.Collections.newSet;
-
 public class Effects {
 
-    private final Stats stats;
-
-    private final GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c;
+    private final Solver.SolverInterface c;
 
     public Effects(Solver.SolverInterface c) {
         this.c = c;
-        this.stats = new Stats();
-    }
-
-    public Stats getStats() {
-        return stats;
     }
 
     public void newObject(ObjectLabel label) {
-        stats.newObject(label);
         c.getState().newObject(label);
         ObjectLabel prototype;
         // TODO the kind of a label should not have semantic meaning: it is only intended to distinguish different allocations at the samme site...
@@ -71,57 +56,22 @@ public class Effects {
     }
 
     public void writeProperty(ObjectLabel label, String propertyName, Value value) {
-        Obj object = c.getState().getObject(label, false);
-        if (object.isAllNone()) {
-            throw new AnalysisException("Trying to write properties of BottomObject?! (" + label + ")");
-        }
-        stats.newProperty(label, propertyName);
         c.getAnalysis().getPropVarOperations().writeProperty(label, propertyName, value);
     }
 
     public void writeNumberIndexer(ObjectLabel label, Value value) {
         Obj object = c.getState().getObject(label, true);
-        if (object.isAllNone()) {
-            throw new AnalysisException("Trying to write properties of BottomObject?! (" + label + ")");
-        }
-        stats.newProperty(label, "[numberIndexer]");
         object.setDefaultArrayProperty(value.join(Value.makeAbsent()));
     }
 
     public void writeStringIndexer(ObjectLabel label, Value value) {
         Obj object = c.getState().getObject(label, true);
-        if (object.isAllNone()) {
-            throw new AnalysisException("Trying to write properties of BottomObject?! (" + label + ")");
-        }
-        stats.newProperty(label, "[stringIndexer]");
         object.setDefaultNonArrayProperty(value.join(Value.makeAbsent()));
+        c.getAnalysis().getPropVarOperations().writeProperty(Collections.singletonList(label), Value.makeAnyStr(), value);
     }
 
     public ObjectLabel summarize(ObjectLabel objectLabel) {
         c.getState().multiplyObject(objectLabel);
         return objectLabel.makeSingleton().makeSummary();
-    }
-
-    public static class Stats {
-
-        private Set<ObjectLabel> newObjects = newSet();
-
-        private Map<ObjectLabel, Set<String>> newProperties = newMap();
-
-        public void newObject(ObjectLabel label) {
-            newObjects.add(label);
-        }
-
-        public void newProperty(ObjectLabel label, String propertyName) {
-            Collections.addToMapSet(newProperties, label, propertyName);
-        }
-
-        public Set<ObjectLabel> getNewObjects() {
-            return newObjects;
-        }
-
-        public Map<ObjectLabel, Set<String>> getNewProperties() {
-            return newProperties;
-        }
     }
 }

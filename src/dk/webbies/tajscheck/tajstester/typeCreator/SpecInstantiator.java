@@ -271,23 +271,6 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         return resolveType(newRoot, shorterPath);
     }
 
-    public void showStats() {
-        Effects.Stats stats = effects.getStats();
-
-        StringBuilder sb = new StringBuilder();
-        int allocationCount = stats.getNewObjects().size();
-        long newFunctionCount = stats.getNewObjects().stream().filter(l -> l.getKind() == ObjectLabel.Kind.FUNCTION).count();
-        long newObjectCount = stats.getNewObjects().stream().filter(l -> l.getKind() == ObjectLabel.Kind.OBJECT).count();
-
-        sb.append(String.format(getClass().getSimpleName() + " statistics:%n"));
-        sb.append(String.format(" Allocations: %d%n", allocationCount));
-        sb.append(String.format("  Functions: %d%n", newFunctionCount));
-        sb.append(String.format("  Objects: %d%n", newObjectCount));
-        sb.append(String.format("  Other: %d%n", allocationCount - newFunctionCount - newObjectCount));
-
-        System.out.println(sb.toString());
-    }
-
     private ObjectLabel getObjectLabel(Type type, MiscInfo info) {
         TypeWithContext key = new TypeWithContext(type, info.context);
         if (!labelCache.containsKey(key)) {
@@ -389,7 +372,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         }
         initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
 
-        effects.writeStringIndexer(label, Value.makeUndef()); // TODO: Try to instead have an special (function) object-label, that summerizes "any". When called it returns itself (and throws exceptions). // TODO:
+        c.getState().getObject(label, true).setDefaultNonArrayProperty(Value.makeUndef().join(Value.makeAbsent()));// TODO: Try to instead have an special (function) object-label, that summerizes "any". When called it returns itself (and throws exceptions).
         return Value.makeObject(label);
     }
 
@@ -430,14 +413,14 @@ public class SpecInstantiator implements TestBlockEntryObserver {
             return withNewObject(info.labelToUse, label -> {
                 Map<String, Type> declaredProperties = type.getDeclaredProperties();
 
+                if (type.getDeclaredStringIndexType() != null) {
+                    effects.writeStringIndexer(label, type.getDeclaredStringIndexType().accept(this, info.apendPath("[stringIndexer]")));
+                }
                 if (type.getDeclaredNumberIndexType() != null) {
                     effects.writeNumberIndexer(label, type.getDeclaredNumberIndexType().accept(this, info.apendPath("[numberIndexer]")));
                 }
                 writeProperties(label, declaredProperties, info);
 
-                if (type.getDeclaredStringIndexType() != null) {
-                    effects.writeStringIndexer(label, type.getDeclaredStringIndexType().accept(this, info.apendPath("[stringIndexer]")));
-                }
             });
         }
 

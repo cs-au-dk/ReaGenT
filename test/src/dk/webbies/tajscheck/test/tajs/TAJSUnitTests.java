@@ -871,6 +871,25 @@ public class TAJSUnitTests {
 
     }
 
+    @Test
+    public void createStringIndexer() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("createStringIndexer", options().staticOptions.setCreateSingletonObjects(true));
+
+        System.out.println(result);
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
+    public void createStringIndexer2() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("createStringIndexer2");
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
     // TODO: Test string-indexers somehow.
     // TODO: Handle construction of native objects.
 }
