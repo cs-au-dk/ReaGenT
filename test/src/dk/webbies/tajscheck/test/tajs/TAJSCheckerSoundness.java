@@ -53,16 +53,14 @@ public class TAJSCheckerSoundness {
                 )
                 .forEach(result::add);
 
-        result.addAll(AnalyzeBenchmarks.getBenchmarks()); // TODO: Add these.
-//        TODO: (typeNames): Foundation, Materialize, highlight.js, Jasmine, reveal.js, Leaflet
-        // TODO: Soundness: PleaseJS
+        result.addAll(AnalyzeBenchmarks.getBenchmarks());
 
         result = result.stream()
                 .filter(bench -> !bench.name.equals("unit-exponentialComplexity"))
                 .filter(bench -> !createsIntersection.contains(bench.name))
                 .filter(bench -> !intentionallyUnsound.contains(bench.name))
                 .filter(bench -> !unsupportedFeatures.contains(bench.name))
-                .filter(bench -> !blackList.contains(bench.name))
+                .filter(bench -> blackList.contains(bench.name))
                 .collect(Collectors.toList());
         Collections.shuffle(result);
         return result;
@@ -76,27 +74,19 @@ public class TAJSCheckerSoundness {
     }
 
     @Test(timeout = 70 * 1000)
-    public void hasNoViolations() throws Exception {
+    public void checkSoundness() throws Exception {
         Benchmark bench = this.bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options());
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 60);
         System.out.println(result);
         expect(result)
-                .hasNoViolations();
+                .hasNoViolations()
+                .performedAllTests();
     }
 
     private Function<CheckOptions.Builder, OptionsI.Builder> options() {
         return options -> options
                 .setConstructAllTypes(true)
                 .staticOptions.setCreateSingletonObjects(true); // TODO: Remove?
-    }
-
-    @Test(timeout = 70 * 1000)
-    public void performsAllTests() throws Exception {
-        Benchmark bench = this.bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(options());
-        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 60);
-        System.out.println(result);
-        expect(result)
-                .performedAllTests();
     }
 
     private static final List<String> createsIntersection = Arrays.asList(
@@ -144,7 +134,7 @@ public class TAJSCheckerSoundness {
             "unit-stringIndexer", // take this one first.
 
             // wait.
-            "unit-firstMatchPolicy", // seems to be insufficient context-sensitivity.
+            "unit-firstMatchPolicy", // I don't think i handle firstMatchPolicy when a callback is invoked.
 
             // This one is OK to accept. It is that we don't "remove" methods that have been overridden.
             "unit-complexSanityCheck15",
@@ -155,10 +145,11 @@ public class TAJSCheckerSoundness {
             "lunr.js",
             "Knockout",
 
+            "reveal.js", // Callback arguments not matching their given types.
+
             // Unmodelled native object
             "Swiper",
             "CodeMirror",
-            "PDF.js",
             "PDF.js",
             "unit-complexSanityCheck26",
             "unit-complexSanityCheck25",
