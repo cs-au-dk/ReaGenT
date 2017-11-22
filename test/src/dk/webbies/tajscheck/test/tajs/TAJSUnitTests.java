@@ -33,17 +33,25 @@ import static org.junit.Assert.assertTrue;
 
 public class TAJSUnitTests {
     private static TAJSUtil.TajsAnalysisResults run(String folderName) throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run(benchFromFolder(folderName, options()));
+        return run(folderName, false);
+    }
+
+    private static TAJSUtil.TajsAnalysisResults run(String folderName, boolean useInspector) throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run(benchFromFolder(folderName, options()), useInspector);
         System.out.println(result);
         return result;
     }
 
     private static TAJSUtil.TajsAnalysisResults run(String folderName, OptionsI.Builder options) throws Exception {
-        return run(benchFromFolder(folderName, options));
+        return run(benchFromFolder(folderName, options), false);
     }
 
     private static TAJSUtil.TajsAnalysisResults run(Benchmark bench) throws Exception {
-        return TAJSUtil.runNoDriver(bench, 60);
+        return TAJSUtil.runNoDriver(bench, 60, false);
+    }
+
+    private static TAJSUtil.TajsAnalysisResults run(Benchmark bench, boolean useInspector) throws Exception {
+        return TAJSUtil.runNoDriver(bench, 60, useInspector);
     }
 
     private TAJSUtil.TajsAnalysisResults soundness(String folder) throws Exception {
@@ -813,7 +821,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore
     public void asyncError() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("asyncError");
 
