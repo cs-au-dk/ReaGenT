@@ -52,6 +52,8 @@ public class TSTestConsistency {
             "PhotoSwipe",
             "accounting.js",
             "Swiper",
+            "intro.js", // sometimes fails on CI
+            "PeerJS", // sometimes fails on CI
             "Hammer.js" // failed once on CI.
     ));
 
