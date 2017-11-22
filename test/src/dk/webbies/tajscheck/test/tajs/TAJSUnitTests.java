@@ -731,12 +731,12 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: Fails because the instanceof checks always spuriously throws at runtime.
     public void instanceOfSmokeTest() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("instanceOfSmokeTest", options().setSplitUnions(false).staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
+                .hasNoWarnings()
                 .hasNoViolations();
     }
 
@@ -899,9 +899,19 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
+    @Test
+    public void functionProperties() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("functionProperties");
 
+        expect(result)
+                .performedAllTests()
+                .hasNoWarnings()
+                .hasNoViolations();
+    }
 
     // TODO: Test string-indexers somehow.
     // TODO: Make sure constructed functions have Function.prototype set, and that reading .length and .name gives actual results.
     // TODO: Should objects have the internal prototype as Object.prototype as default? (TypeScript does assume every interface inherits from Object)
+
+    // TODO: Numbers: Tæl paths, hvor mange certificates og hvor mange violations (og warnings?)
 }

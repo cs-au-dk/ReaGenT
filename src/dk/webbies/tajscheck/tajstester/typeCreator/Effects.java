@@ -20,10 +20,11 @@ public class Effects {
     public void newObject(ObjectLabel label) {
         c.getState().newObject(label);
         ObjectLabel prototype;
-        // TODO the kind of a label should not have semantic meaning: it is only intended to distinguish different allocations at the samme site...
         switch (label.getKind()) {
             case FUNCTION:
                 prototype = InitialStateBuilder.FUNCTION_PROTOTYPE;
+                writeProperty(label, "length", Value.makeAnyNumUInt());
+                writeProperty(label, "name", Value.makeAnyStr());
                 break;
             case OBJECT:
                 prototype = InitialStateBuilder.OBJECT_PROTOTYPE;
