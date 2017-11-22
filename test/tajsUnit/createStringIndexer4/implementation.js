@@ -8,6 +8,6 @@ export module module {
 
 module.exports = {
     foo: function (obj) {
-        return obj[Math.random() + "foo" + Math.random()];
+        return obj["foo" + Math.random()];
     }
 };
