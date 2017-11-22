@@ -890,6 +890,18 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
+    @Test
+    public void createStringIndexer3() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("createStringIndexer3");
+        expect(result)
+                .performedAllTests()
+                .hasNoWarnings()
+                .hasNoViolations();
+    }
+
+
+
     // TODO: Test string-indexers somehow.
-    // TODO: Handle construction of native objects.
+    // TODO: Make sure constructed functions have Function.prototype set, and that reading .length and .name gives actual results.
+    // TODO: Should objects have the internal prototype as Object.prototype as default? (TypeScript does assume every interface inherits from Object)
 }

@@ -4,6 +4,7 @@ import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.Obj;
 import dk.brics.tajs.lattice.ObjectLabel;
+import dk.brics.tajs.lattice.PKey;
 import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Collections;
@@ -65,7 +66,10 @@ public class Effects {
     }
 
     public void writeStringIndexer(ObjectLabel label, Value value) {
-        writeProperty(label, "$__specialStringIndexerProperty__$", value);
+//        Obj object = c.getState().getObject(label, true);
+//        object.setDefaultNonArrayProperty(value.join(Value.makeAbsent()));
+        c.getAnalysis().getPropVarOperations().writeProperty(Collections.singletonList(label), Value.makeAnyStr(), value);
+
     }
 
     public ObjectLabel summarize(ObjectLabel objectLabel) {
