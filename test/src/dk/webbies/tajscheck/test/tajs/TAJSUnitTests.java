@@ -645,7 +645,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // when this works, any-type should come for free.
     public void createRecursiveObject2() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("createRecursiveObject2");
 
