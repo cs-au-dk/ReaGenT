@@ -112,6 +112,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
 
             if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
+                if(performed.contains(test))
+                    throw new RuntimeException("Previously performed test is now skipped because of no values for the types to test");
+
                 if (DEBUG && !c.isScanning()) System.out.println("Skipped test " + test);
                 if (DEBUG && c.isScanning()) System.out.println("Never performed test " + test);
                 continue;
@@ -135,7 +138,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
-            if (DEBUG && !c.isScanning()) System.out.println("Performing test " + test);
+            if (DEBUG) System.out.println("Performing test " + test);
             performed.add(test);
 
             // attempting to perform the test in the local context
@@ -196,7 +199,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             // Generating one local context per test
             Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
-            // and propagating to them the after-load state
+            // and propagating to them the after-load/other state
             if (c.getAnalysisLatticeElement().getState(allTestsBlock, newc) == null) {
                 c.propagate(originalState.clone(), new BlockAndContext<>(allTestsBlock, newc), false);
             }

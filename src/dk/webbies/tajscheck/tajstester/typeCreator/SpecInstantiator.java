@@ -475,7 +475,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                 case Never:
                     return Value.makeNone();
                 case Symbol:
-                    System.err.println("Symbols should be inprecise, they are not."); // TODO:
+                    log.error("Symbols should be imprecise, they are not."); // TODO:
                     SpecObjects hostObject = SpecObjects.getObjectAbstraction(info.path, new TypeWithContext(t, info.context));
                     ObjectLabel l = ObjectLabel.make(hostObject, ObjectLabel.Kind.SYMBOL);
                     effects.newObject(l);

@@ -20,6 +20,7 @@ import dk.webbies.tajscheck.util.Util;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
@@ -34,16 +35,11 @@ import static org.junit.Assert.assertThat;
 
 public class TAJSUtil {
 
-    public static TajsAnalysisResults runNoDriverTAJS(Benchmark bench, int secondsTimeout, BenchmarkInfo info, List<Test> tests) throws TimeoutException {
-        return runNoDriverTAJS(bench, secondsTimeout, info, tests, false);
-    }
-
     public static TajsAnalysisResults runNoDriverTAJS(
             Benchmark bench,
             int secondsTimeout,
             BenchmarkInfo info,
-            List<Test> tests,
-            boolean useInspector) throws TimeoutException {
+            List<Test> tests) throws TimeoutException {
         dk.brics.tajs.Main.reset();
 
         OptionValues additionalOpts = new OptionValues();
@@ -90,12 +86,12 @@ public class TAJSUtil {
         additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyWrites(true);
 
         additionalOpts.enableUnevalizer();
-        if (useInspector) additionalOpts.enableInspector();
+        if (bench.options.useInspector) additionalOpts.enableInspector();
 
         List<IAnalysisMonitoring> optMonitors = new LinkedList<>();
 
         if (secondsTimeout > 0) { // Timeout
-            AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, -1, !useInspector);
+            AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, -1, !bench.options.useInspector);
             optMonitors.add(timeLimiter);
         }
 
@@ -119,22 +115,21 @@ public class TAJSUtil {
         return new TajsAnalysisResults(typeTester, timedout);
     }
 
-    public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout, boolean useInspector) throws Exception {
+    public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout) throws Exception {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
         List<Test> tests = new TestCreator(info).createTests();
 
-        TajsAnalysisResults result = runNoDriverTAJS(bench, secondsTimeout, info, tests, useInspector);
+        TajsAnalysisResults result = runNoDriverTAJS(bench, secondsTimeout, info, tests);
 
         Gson gson = new Gson();
-        Util.writeFile(Paths.get(info.bench.dTSFile).getParent().resolve("finalResult.json").toAbsolutePath().toString(), gson.toJson(result.summary()));
+        Path finalResultPath = Paths.get(info.bench.dTSFile).getParent().resolve("finalResult.json").toAbsolutePath();
+        Util.writeFile(finalResultPath.toString(), gson.toJson(result.summary()));
+        ResultIndex.singleton.addFinalResult(info.bench.name, finalResultPath);
+        ResultIndex.singleton.save();//FIXME: Move to test after-all?
 
         //System.out.println(prettyResult(result, assertionResult -> assertionResult.result.isSometimesFalse()));
 
         return result;
-    }
-
-    public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout) throws Exception {
-        return runNoDriver(bench, secondsTimeout, false);
     }
 
     public static class TajsAnalysisResults {
@@ -265,6 +260,39 @@ public class TAJSUtil {
                 al.addAll(result.detectedViolations.get(k));
                 violations.put(k, al);
             }
+        }
+    }
+
+    public static class ResultIndex {
+        public static ResultIndex singleton = loadOrWipe();
+
+        private static Path defaultIndexPath = Paths.get("out").resolve("index.json").toAbsolutePath();
+
+        private Map<String, String> index = new HashMap<>();
+
+        private ResultIndex() {
+
+        }
+
+        private static ResultIndex loadOrWipe() {
+            new ResultIndex();
+            Gson gson = new Gson();
+            try {
+                return gson.fromJson(Util.readFile(defaultIndexPath.toString()), ResultIndex.class);
+            }
+            catch (Exception e) {
+                return new ResultIndex();
+            }
+
+        }
+
+        public void addFinalResult(String name, Path path) {
+            index.put(name, Paths.get("").toAbsolutePath().relativize(path.toAbsolutePath()).toString());
+        }
+
+        public void save() throws Exception {
+            Gson gson = new Gson();
+            Util.writeFile(defaultIndexPath.toString(), gson.toJson(this));
         }
     }
 }

@@ -73,6 +73,11 @@ public class StaticOptions implements OptionsI {
             return this;
         }
 
+        public Builder setUseInspector(boolean useInspector) {
+            outerBuilder.setUseInspector(true);
+            return this;
+        }
+
         public Builder setKillGetters(boolean killGetters) {
             this.killGetters = killGetters;
             return this;
