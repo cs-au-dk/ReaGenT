@@ -34,16 +34,11 @@ import static org.junit.Assert.assertThat;
 
 public class TAJSUtil {
 
-    public static TajsAnalysisResults runNoDriverTAJS(Benchmark bench, int secondsTimeout, BenchmarkInfo info, List<Test> tests) throws TimeoutException {
-        return runNoDriverTAJS(bench, secondsTimeout, info, tests, false);
-    }
-
     public static TajsAnalysisResults runNoDriverTAJS(
             Benchmark bench,
             int secondsTimeout,
             BenchmarkInfo info,
-            List<Test> tests,
-            boolean useInspector) throws TimeoutException {
+            List<Test> tests) throws TimeoutException {
         dk.brics.tajs.Main.reset();
 
         OptionValues additionalOpts = new OptionValues();
@@ -90,12 +85,12 @@ public class TAJSUtil {
         additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyWrites(true);
 
         additionalOpts.enableUnevalizer();
-        if (useInspector) additionalOpts.enableInspector();
+        if (bench.options.useInspector) additionalOpts.enableInspector();
 
         List<IAnalysisMonitoring> optMonitors = new LinkedList<>();
 
         if (secondsTimeout > 0) { // Timeout
-            AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, -1, !useInspector);
+            AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, -1, !bench.options.useInspector);
             optMonitors.add(timeLimiter);
         }
 
@@ -119,11 +114,11 @@ public class TAJSUtil {
         return new TajsAnalysisResults(typeTester, timedout);
     }
 
-    public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout, boolean useInspector) throws Exception {
+    public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout) throws Exception {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
         List<Test> tests = new TestCreator(info).createTests();
 
-        TajsAnalysisResults result = runNoDriverTAJS(bench, secondsTimeout, info, tests, useInspector);
+        TajsAnalysisResults result = runNoDriverTAJS(bench, secondsTimeout, info, tests);
 
         Gson gson = new Gson();
         Util.writeFile(Paths.get(info.bench.dTSFile).getParent().resolve("finalResult.json").toAbsolutePath().toString(), gson.toJson(result.summary()));
@@ -131,10 +126,6 @@ public class TAJSUtil {
         //System.out.println(prettyResult(result, assertionResult -> assertionResult.result.isSometimesFalse()));
 
         return result;
-    }
-
-    public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout) throws Exception {
-        return runNoDriver(bench, secondsTimeout, false);
     }
 
     public static class TajsAnalysisResults {

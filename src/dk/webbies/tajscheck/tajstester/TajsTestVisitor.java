@@ -97,6 +97,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
     public Boolean visit(MethodCallTest test) {
         final Value receiver = attemptGetValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
         Value function = UnknownValueResolver.getRealValue(pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName()))), c.getState());
+
         Value constructedReceiver = typeValuesHandler.createValue(test.getObject(), test.getTypeContext()); // TODO: For some reason this dead code is needed, otherwise some tests fails. I got NO idea what is going on.
         return functionTest(test, receiver, function, false);
     }
@@ -105,6 +106,12 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         List<Value> arguments = test.getParameters().stream().map(paramType -> typeValuesHandler.createValue(paramType, test.getTypeContext())).collect(Collectors.toList());
 
         if (arguments.stream().anyMatch(Value::isNone)) {
+            // A test for a function that is triggered but it is not able to get to the function call is definitely a problem
+            // in theory this should not happen because the test should be skipped in this case, but better safe than sorry
+            if(c.isScanning()) {
+                TypeViolation violation = new TypeViolation("Function " + function + " triggered without arguments", test.getPath());
+                tajsTypeTester.addViolation(violation, c);
+            }
             return true;
         }
 
