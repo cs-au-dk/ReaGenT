@@ -586,6 +586,8 @@ public class TAJSUnitTests {
 
         assertThat(result.detectedViolations.asMap().keySet(), is(hasSize(2)));
 
+        System.out.println(result.detectedViolations.asMap().keySet().toArray()[0]);
+
         expect(result)
                 .performedAllTests()
                 .forPath("module.Baz.[arg0]")
@@ -593,7 +595,7 @@ public class TAJSUnitTests {
 
         expect(result)
                 .performedAllTests()
-                .forPath("window, module, Bar")
+                .forPath("module, Bar")
                 .hasViolations();
     }
 
