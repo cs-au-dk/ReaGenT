@@ -593,7 +593,7 @@ public class TAJSUnitTests {
 
         expect(result)
                 .performedAllTests()
-                .forPath("window, module, Bar")
+                .forPath("module, Bar")
                 .hasViolations();
     }
 
