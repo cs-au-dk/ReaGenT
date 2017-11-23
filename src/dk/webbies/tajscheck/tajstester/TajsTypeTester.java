@@ -83,8 +83,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             init(c);
         }
 
-        if(c.isScanning()) System.out.println("SCANNING: " + c.getState().getContext() + sensitivity.isLocalTestContext(c.getState().getContext()));
-
         if(sensitivity.isLocalTestContext(c.getState().getContext())) {
             if(!c.isScanning()) {
                 if(DEBUG_VALUES) System.out.println("New flow for " + c.getState().getBasicBlock().getIndex() + ", " + c.getState().getContext());

@@ -1,0 +1,5 @@
+<h3>Catalog</h3>
+
+<div *ngFor="let entry of indexEntries | async">
+  {{ entry[0] }}: <a href="{{ entry[1] }}">{{ entry[1] }}</a>
+</div>
