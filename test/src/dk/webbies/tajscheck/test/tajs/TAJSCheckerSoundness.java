@@ -137,7 +137,7 @@ public class TAJSCheckerSoundness {
 
             // This one is OK to accept. It is that we don't "remove" methods that have been overridden.
             "unit-complexSanityCheck15",
-            "unit-overrideNumberOfArguments",
+            "unit-overrideNumberOfArguments", // the actual issue is that we don't have an actual subtype relation. Because then one test could actually use a value from another test, that has an compatible (and unrelated) type.
 
             // Various
             "QUnit",
