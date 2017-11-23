@@ -3,7 +3,7 @@ export interface IDictionary<X> {
 }
 
 export interface ResultSummary {
-    violations: IDictionary<TypeViolation>
+    violations: IDictionary<TypeViolation[]>
 }
 
 export interface TypeViolation {

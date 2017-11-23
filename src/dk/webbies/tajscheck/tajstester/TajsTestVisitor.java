@@ -107,8 +107,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
             // A test for a function that is triggered but it is not able to get to the function call is definitely a problem
             // in theory this should not happen because the test should be skipped in this case, but better safe than sorry
             if(c.isScanning()) {
-                TypeViolation violation = new TypeViolation("Function " + function + " triggered without arguments", test.getPath());
-                tajsTypeTester.addViolation(violation, c);
+                throw new RuntimeException("Function " + function + " triggered without arguments @" + test.getPath());
             }
             return true;
         }
