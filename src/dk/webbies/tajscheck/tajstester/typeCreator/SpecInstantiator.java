@@ -372,7 +372,8 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         }
         initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
 
-        c.getState().getObject(label, true).setDefaultNonArrayProperty(Value.makeUndef().join(Value.makeAbsent()));// TODO: Try to instead have an special (function) object-label, that summerizes "any". When called it returns itself (and throws exceptions).
+        Obj object = c.getState().getObject(label, true);
+        object.setDefaultNonArrayProperty(Value.join(object.getDefaultNonArrayProperty(), Value.makeUndef(), Value.makeAbsent()));// TODO: Try to instead have an special (function) object-label, that summerizes "any". When called it returns itself (and throws exceptions).
         return Value.makeObject(label);
     }
 

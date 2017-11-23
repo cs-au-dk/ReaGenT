@@ -900,7 +900,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: Only works if accessed with an actual any-string, not if anything more concrete.
     public void createStringIndexer4() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("createStringIndexer4");
         expect(result)
