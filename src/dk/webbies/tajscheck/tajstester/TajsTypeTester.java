@@ -96,10 +96,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             obs.onTestBlockEntry(c);
         }
 
-        TajsTypeChecker typeChecker = new TajsTypeChecker(c, info);
-
-        TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker, this, info, valueHandler);
-
         performed.clear();
         expansionPolicy.nextRound();
         valueHandler.cleanUp();
@@ -140,6 +136,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
             if (DEBUG) System.out.println("Performing test " + test);
             performed.add(test);
+
+            TajsTypeChecker typeChecker = new TajsTypeChecker(test, c, info);
+            TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker, this, info, valueHandler);
 
             // attempting to perform the test in the local context
             timers.start(Timers.Tags.TEST_TRANSFER);

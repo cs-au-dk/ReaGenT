@@ -17,6 +17,7 @@ import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.paser.ExpressionVisitor;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
+import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.testcreator.test.check.*;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Tuple3;
@@ -41,10 +42,14 @@ public class TajsTypeChecker {
 
     private final Map<Tuple3<Check, TypeWithContext, Value>, List<Tuple3<String, Value, TypeCheck>>> cache = new HashMap<>();
 
-    public TajsTypeChecker(Solver.SolverInterface c, BenchmarkInfo info) {
+    @SuppressWarnings({"unused", "FieldCanBeLocal"})
+    private final Test test; // Not used for anything, but this way we enforce that a TajsTypeChecker is constructed for every test, and thereby the cache's aren't mixed.
+
+    public TajsTypeChecker(Test test, Solver.SolverInterface c, BenchmarkInfo info) {
         this.c = c;
         this.pv = c.getAnalysis().getPropVarOperations();
         this.info = info;
+        this.test = test;
     }
 
     public static List<Value> split(Value v) {

@@ -22,7 +22,7 @@ module.exports = {
         return true;
     },
     nestedProps: function (x) {
-        var foo = x.foo.bar;
+        var foo = x.foo.bar.baz;
         return true;
     },
     asFunction: function (x) {

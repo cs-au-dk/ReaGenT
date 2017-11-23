@@ -620,7 +620,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: Look at any later.
     public void any() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("any");
 

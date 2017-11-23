@@ -47,6 +47,9 @@ public class Effects {
             case STRING:
                 prototype = InitialStateBuilder.STRING_PROTOTYPE;
                 break;
+            case SYMBOL:
+                prototype = InitialStateBuilder.SYMBOL_PROTOTYPE;
+                break;
             default:
                 throw new AnalysisException("No support for guessing prototype of " + label.getKind());
         }

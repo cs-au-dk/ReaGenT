@@ -101,22 +101,42 @@ public class SpecInstantiator implements TestBlockEntryObserver {
     }
 
     private Value createAny() {
-        // TODO: Rewrite this.
-        ObjectLabel label1 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any1>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.FUNCTION);
-        effects.newObject(label1);
-        ObjectLabel label2 = ObjectLabel.make(SpecObjects.getObjectAbstraction(Collections.singletonList("<any2>"), new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info))), ObjectLabel.Kind.OBJECT);
-        effects.newObject(label2);
+        InterfaceType anyObj = SpecReader.makeEmptySyntheticInterfaceType();
 
-        effects.newObject(label1);
-        effects.multiplyObject(label1);
-        effects.newObject(label2);
-        effects.multiplyObject(label2);
+        UnionType any = new UnionType();
+        any.setElements(Arrays.asList(
+                anyObj,
+                new SimpleType(SimpleTypeKind.String),
+                new SimpleType(SimpleTypeKind.Number),
+                new SimpleType(SimpleTypeKind.Boolean),
+                new SimpleType(SimpleTypeKind.Undefined),
+                new SimpleType(SimpleTypeKind.Null),
+                new SimpleType(SimpleTypeKind.Symbol),
+                new SimpleType(SimpleTypeKind.Object))
+        );
 
-        Value any = Value.makeObject(label1, label2).joinUndef().joinNull().joinAnyBool().joinAnyStr().joinAnyNum();
+        anyObj.setDeclaredStringIndexType(any);
+        Signature signature = new Signature();
+        signature.setHasRestParameter(true);
 
-        effects.writeStringIndexer(label1, any);
-        effects.writeStringIndexer(label2, any);
-        return any;
+        GenericType arrayBase = (GenericType) ((ReferenceType) ((InterfaceType) info.getSpec().getGlobal().getDeclaredProperties().get("Array")).getDeclaredProperties().get("prototype")).getTarget();
+        ReferenceType anyArray = new ReferenceType();
+        anyArray.setTarget(arrayBase);
+        anyArray.setTypeArguments(Collections.singletonList(any));
+        Signature.Parameter anyParameter = new Signature.Parameter();
+        anyParameter.setName("any");
+        anyParameter.setType(anyArray);
+        signature.setMinArgumentCount(0);
+        signature.setResolvedReturnType(any);
+        signature.setParameters(Collections.singletonList(anyParameter));
+
+        anyObj.getDeclaredCallSignatures().add(signature);
+        anyObj.getDeclaredConstructSignatures().add(signature);
+
+        info.typeNames.put(anyObj, "any-obj");
+        info.typeNames.put(any, "any");
+
+        return instantiate(any, new MiscInfo("any", TypeContext.create(info), null), "theAny");
     }
 
     /**
@@ -415,10 +435,10 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                 Map<String, Type> declaredProperties = type.getDeclaredProperties();
 
                 if (type.getDeclaredStringIndexType() != null) {
-                    effects.writeStringIndexer(label, type.getDeclaredStringIndexType().accept(this, info.apendPath("[stringIndexer]")));
+                    effects.writeStringIndexer(label, instantiate(type.getDeclaredStringIndexType(), info, "[stringIndexer]"));
                 }
                 if (type.getDeclaredNumberIndexType() != null) {
-                    effects.writeNumberIndexer(label, type.getDeclaredNumberIndexType().accept(this, info.apendPath("[numberIndexer]")));
+                    effects.writeNumberIndexer(label, instantiate(type.getDeclaredNumberIndexType(), info, "[numberIndexer]"));
                 }
                 writeProperties(label, declaredProperties, info);
 
@@ -480,6 +500,8 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                     ObjectLabel l = ObjectLabel.make(hostObject, ObjectLabel.Kind.SYMBOL);
                     effects.newObject(l);
                     return Value.makeObject(l);
+                case Object:
+                    return instantiate(SpecReader.makeEmptySyntheticInterfaceType(), info, "-object");
                 default:
                     throw new RuntimeException("Unhandled TypeKind: " + t);
             }
