@@ -97,8 +97,6 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
     public Boolean visit(MethodCallTest test) {
         final Value receiver = attemptGetValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
         Value function = UnknownValueResolver.getRealValue(pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName()))), c.getState());
-
-        Value constructedReceiver = typeValuesHandler.createValue(test.getObject(), test.getTypeContext()); // TODO: For some reason this dead code is needed, otherwise some tests fails. I got NO idea what is going on.
         return functionTest(test, receiver, function, false);
     }
 
