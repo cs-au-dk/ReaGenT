@@ -66,15 +66,15 @@ test_various:
     paths:
     - builds/TSTAJS/TajsCheck/build/reports
 
-test_dynamic_benchmarks:
-  stage: unit_tests
-  script:
-  - gradle :test -i --tests "dk.webbies.tajscheck.test.dynamic.RunBenchmarks"
-  - mv build/reports/tests build/reports/test_dynamic
-  artifacts:
-    expire_in: 4 week
-    paths:
-    - builds/TSTAJS/TajsCheck/build/reports
+#test_dynamic_benchmarks:
+#  stage: unit_tests
+#  script:
+#  - gradle :test -i --tests "dk.webbies.tajscheck.test.dynamic.RunBenchmarks"
+#  - mv build/reports/tests build/reports/test_dynamic
+#  artifacts:
+#    expire_in: 4 week
+#    paths:
+#    - builds/TSTAJS/TajsCheck/build/reports
 
 test_dynamic_unit:
   stage: unit_tests
@@ -86,25 +86,25 @@ test_dynamic_unit:
     paths:
     - builds/TSTAJS/TajsCheck/build/reports
 
-test_static_soundness:
-  stage: unit_tests
-  script:
-  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.TAJSCheckerSoundness"
-  - mv build/reports/tests build/reports/test_static_soundness
-  artifacts:
-    expire_in: 4 week
-    paths:
-    - builds/TSTAJS/TajsCheck/build/reports
+#test_static_soundness:
+#  stage: unit_tests
+#  script:
+#  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.TAJSCheckerSoundness"
+#  - mv build/reports/tests build/reports/test_static_soundness
+#  artifacts:
+#    expire_in: 4 week
+#    paths:
+#    - builds/TSTAJS/TajsCheck/build/reports
 
-test_static_consistency:
-  stage: unit_tests
-  script:
-  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.TSTestConsistency"
-  - mv build/reports/tests build/reports/test_static_soundness
-  artifacts:
-    expire_in: 4 week
-    paths:
-    - builds/TSTAJS/TajsCheck/build/reports
+#test_static_consistency:
+#  stage: unit_tests
+#  script:
+#  - gradle :test -i --tests "dk.webbies.tajscheck.test.tajs.TSTestConsistency"
+#  - mv build/reports/tests build/reports/test_static_soundness
+#  artifacts:
+#    expire_in: 4 week
+#    paths:
+#    - builds/TSTAJS/TajsCheck/build/reports
 
 test_tajs:unit:
   stage: unit_tests
