@@ -917,6 +917,16 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
+    @Test
+    public void compareWithTheAny() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("compareWithTheAny");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
+
     // TODO: Test string-indexers somehow.
     // TODO: Make sure constructed functions have Function.prototype set, and that reading .length and .name gives actual results.
     // TODO: Should objects have the internal prototype as Object.prototype as default? (TypeScript does assume every interface inherits from Object)

@@ -111,7 +111,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                 new SimpleType(SimpleTypeKind.Boolean),
                 new SimpleType(SimpleTypeKind.Undefined),
                 new SimpleType(SimpleTypeKind.Null),
-                new SimpleType(SimpleTypeKind.Symbol),
+//                new SimpleType(SimpleTypeKind.Symbol), // TODO: Comment back in when we have merged symbols, make sure TAJSUnitTests.compareWithTheAny still passes.
                 new SimpleType(SimpleTypeKind.Object))
         );
 
