@@ -385,7 +385,6 @@ wrapup_task:
     - ssh-add <(echo "$CASADEV_PRIVATE_KEY")
     - mkdir -p ~/.ssh
     - 'echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-    - ssh -p $SCP_REMOTE_PORT $SCP_REMOTE_USER@$SCP_REMOTE_HOST "rm -r $SCP_REMOTE_FOLDER | true"
     - scp -r -P $SCP_REMOTE_PORT web-ui/dist $SCP_REMOTE_USER@$SCP_REMOTE_HOST:$SCP_REMOTE_FOLDER
     - scp -r -P $SCP_REMOTE_PORT out $SCP_REMOTE_USER@$SCP_REMOTE_HOST:$SCP_REMOTE_FOLDER/out
     - scp -r -P $SCP_REMOTE_PORT test $SCP_REMOTE_USER@$SCP_REMOTE_HOST:$SCP_REMOTE_FOLDER/test
