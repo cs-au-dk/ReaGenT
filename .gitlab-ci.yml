@@ -258,6 +258,7 @@ benchmark_axios:
     when: always
     paths:
     - test/benchmarks/
+    - out/
 
 
 benchmark_patched_zepto:
