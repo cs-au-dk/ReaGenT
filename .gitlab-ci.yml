@@ -375,7 +375,7 @@ wrapup_task:
   when: always
   environment:
     name: $CI_COMMIT_REF_NAME
-    url: http://tajscheck.casadev.cs.au.dk/$CI_COMMIT_REF_SLUG
+    url: http://tajscheck.casadev.cs.au.dk
   tags:
     - casadev
   script:
@@ -385,10 +385,10 @@ wrapup_task:
     - ssh-add <(echo "$CASADEV_PRIVATE_KEY")
     - mkdir -p ~/.ssh
     - 'echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-    - ssh -p $SCP_REMOTE_PORT $SCP_REMOTE_USER@$SCP_REMOTE_HOST "rm -r $SCP_REMOTE_FOLDER/$CI_COMMIT_REF_SLUG | true"
-    - scp -r -P $SCP_REMOTE_PORT web-ui/dist $SCP_REMOTE_USER@$SCP_REMOTE_HOST:$SCP_REMOTE_FOLDER/$CI_COMMIT_REF_SLUG
-    - scp -r -P $SCP_REMOTE_PORT out $SCP_REMOTE_USER@$SCP_REMOTE_HOST:$SCP_REMOTE_FOLDER/$CI_COMMIT_REF_SLUG/out/
-    - scp -r -P $SCP_REMOTE_PORT test $SCP_REMOTE_USER@$SCP_REMOTE_HOST:$SCP_REMOTE_FOLDER/$CI_COMMIT_REF_SLUG/test/
+    - ssh -p $SCP_REMOTE_PORT $SCP_REMOTE_USER@$SCP_REMOTE_HOST "rm -r $SCP_REMOTE_FOLDER | true"
+    - scp -r -P $SCP_REMOTE_PORT web-ui/dist $SCP_REMOTE_USER@$SCP_REMOTE_HOST:$SCP_REMOTE_FOLDER
+    - scp -r -P $SCP_REMOTE_PORT out $SCP_REMOTE_USER@$SCP_REMOTE_HOST:$SCP_REMOTE_FOLDER/out
+    - scp -r -P $SCP_REMOTE_PORT test $SCP_REMOTE_USER@$SCP_REMOTE_HOST:$SCP_REMOTE_FOLDER/test
   artifacts:
     expire_in: 4 week
     paths:
