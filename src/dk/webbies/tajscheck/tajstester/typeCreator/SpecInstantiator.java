@@ -93,10 +93,10 @@ public class SpecInstantiator implements TestBlockEntryObserver {
 
             Set<PKey> forbidden = new HashSet<>(initial.getProperties(lbs, ObjProperties.PropertyQuery.makeQuery().includeSymbols().withoutProto())
                     .getMaybe());
-            forbidden.add(PKey.mk("prototype"));
-            forbidden.add(PKey.__PROTO__);
+            forbidden.add(PKey.StringPKey.make("prototype"));
+            forbidden.add(PKey.StringPKey.__PROTO__);
 
-            defaultAnyString = Value.makeAnyStrNotUInt().removePKeys(forbidden);
+            defaultAnyString = Value.makeAnyStrNotUInt().removeStringsAndSymbols(forbidden);
         }
     }
 

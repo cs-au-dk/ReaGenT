@@ -117,7 +117,7 @@ public class AstBuilder {
     }
 
     public static UnaryExpression unary(Operator operator, Expression expression) {
-        return new UnaryExpression(null, operator, expression);
+        return new UnaryExpression(null, operator, expression, false);
     }
 
     public static final Predicate<String> testIdentifier = Pattern.compile("^[^\\d\\W]\\w*\\Z").asPredicate(); // Not complete, or sound.

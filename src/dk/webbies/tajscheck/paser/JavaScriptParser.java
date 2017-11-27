@@ -75,7 +75,7 @@ public class JavaScriptParser {
 
         ProgramTree programAST = null;
         try {
-            programAST = new Parser(new Parser.Config(mode), errorReporter, new SourceFile(name, contents)).parseProgram();
+            programAST = new Parser(new Parser.Config(mode, false), errorReporter, new SourceFile(name, contents)).parseProgram();
         } catch (Exception e) {
             errors.add(new SyntaxMesssage(String.format("%s: %s", e.getClass(), e.getMessage()), new SourceLocation(0, 0, name)));
         }

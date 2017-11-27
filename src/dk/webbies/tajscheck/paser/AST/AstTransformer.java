@@ -39,7 +39,7 @@ public class AstTransformer {
             if (variable.initializer != null) {
                 initialize = (Expression) convert(variable.initializer);
             } else {
-                initialize = new UnaryExpression(loc, Operator.VOID, new NumberLiteral(loc, 0));
+                initialize = new UnaryExpression(loc, Operator.VOID, new NumberLiteral(loc, 0), false);
             }
             return new VariableNode(variable.location, (Expression)convert(variable.lvalue), initialize);
         } else if (tree instanceof VariableDeclarationListTree) {
@@ -74,7 +74,7 @@ public class AstTransformer {
                     }
                 } catch (NumberFormatException e) {
                     System.err.println("Couldn't get a proper number value for: " + ((LiteralToken) literal).value + " using a mock integer instead.");
-                    return new UnaryExpression(loc, Operator.MINUS, new NumberLiteral(loc, 1));
+                    return new UnaryExpression(loc, Operator.MINUS, new NumberLiteral(loc, 1), false);
                 }
             } else {
                 switch (literal.type) {
@@ -104,7 +104,7 @@ public class AstTransformer {
             if (aReturn.expression != null) {
                 expression = (Expression) this.convert(aReturn.expression);
             } else {
-                expression = new UnaryExpression(loc, Operator.VOID, new NumberLiteral(loc, 0));
+                expression = new UnaryExpression(loc, Operator.VOID, new NumberLiteral(loc, 0), false);
             }
             return new Return(loc, expression);
         } else if (tree instanceof BinaryOperatorTree) {
@@ -188,7 +188,7 @@ public class AstTransformer {
             return new MemberExpression(loc, member.memberName.toString(), (Expression) convert(member.operand));
         } else if (tree instanceof UnaryExpressionTree) {
             UnaryExpressionTree unOp = (UnaryExpressionTree) tree;
-            return new UnaryExpression(loc, convertOperator(unOp.operator), (Expression)convert(unOp.operand));
+            return new UnaryExpression(loc, convertOperator(unOp.operator), (Expression)convert(unOp.operand), false);
         } else if (tree instanceof ThisExpressionTree) {
             return new ThisExpression(loc);
         } else if (tree instanceof NewExpressionTree) {
@@ -227,15 +227,15 @@ public class AstTransformer {
         } else if (tree instanceof WhileStatementTree) {
             WhileStatementTree whileStatement = (WhileStatementTree) tree;
             return new WhileStatement(loc, (Expression) convert(whileStatement.condition), (Statement) convert(whileStatement.body));
-        } else if (tree instanceof PostfixExpressionTree) {
-            PostfixExpressionTree post = (PostfixExpressionTree) tree;
+        } else if (tree instanceof UpdateExpressionTree) {
+            UpdateExpressionTree post = (UpdateExpressionTree) tree;
             Operator operator;
             switch (post.operator.type) {
                 case PLUS_PLUS: operator = Operator.POST_PLUS_PLUS; break;
                 case MINUS_MINUS: operator = Operator.POST_MINUS_MINUS; break;
                 default:throw new RuntimeException("Unknown operator for postfix operator: " + post.operator);
             }
-            return new UnaryExpression(loc, operator, (Expression)convert(post.operand));
+            return new UnaryExpression(loc, operator, (Expression)convert(post.operand), post.operatorPosition == UpdateExpressionTree.OperatorPosition.POSTFIX);
         } else if (tree instanceof MemberLookupExpressionTree) {
             MemberLookupExpressionTree memberLook = (MemberLookupExpressionTree) tree;
             Expression operand = (Expression) convert(memberLook.operand);

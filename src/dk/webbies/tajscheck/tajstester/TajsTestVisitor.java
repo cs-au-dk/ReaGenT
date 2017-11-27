@@ -75,11 +75,11 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         switch (info.bench.run_method) {
             case NODE:
                 ObjectLabel moduleObject = ObjectLabel.make(ECMAScriptObjects.OBJECT_MODULE, ObjectLabel.Kind.OBJECT);
-                v = UnknownValueResolver.getProperty(moduleObject, PKey.mk("exports"), c.getState(), false);
+                v = UnknownValueResolver.getProperty(moduleObject, PKey.StringPKey.make("exports"), c.getState(), false);
                 break;
             case BROWSER:
                 ObjectLabel globalObject = InitialStateBuilder.GLOBAL;
-                v = UnknownValueResolver.getProperty(globalObject, PKey.mk(test.getPath()), c.getState(), false);
+                v = UnknownValueResolver.getProperty(globalObject, PKey.StringPKey.make(test.getPath()), c.getState(), false);
                 break;
             case BOOTSTRAP:
                 v = valueHandler.createValue(test.getModuleType(), test.getTypeContext());
@@ -96,7 +96,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
     @Override
     public Boolean visit(MethodCallTest test) {
         final Value receiver = attemptGetValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
-        Value function = UnknownValueResolver.getRealValue(pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makePKeyValue(PKey.mk(test.getPropertyName()))), c.getState());
+        Value function = UnknownValueResolver.getRealValue(pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makeStr(test.getPropertyName())), c.getState());
         return functionTest(test, receiver, function, false);
     }
 
