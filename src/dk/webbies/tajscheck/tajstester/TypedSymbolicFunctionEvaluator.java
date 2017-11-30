@@ -97,12 +97,17 @@ public class TypedSymbolicFunctionEvaluator {
             if (signature.isHasRestParameter()) {
                 restArgsType = TypesUtil.extractRestArgsType(parameters.stream().map(Signature.Parameter::getType).collect(Collectors.toList()));
                 parameters = parameters.subList(0, parameters.size() - 1);
-                if (call.getNumberOfArgs() < parameters.size()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Expected a minimum of " + parameters.size() + " args, got " + call.getNumberOfArgs(), path), c);
+                if (call.isUnknownNumberOfArgs()) {
+                    // it is ok for the number of arguments to be unknown if rest args, when we try to add the arguments we will find potential errors anyway.
+//                    tajsTypeTester.addViolation(new TypeViolation("Expected a minimum of " + parameters.size() + " arguments, got an unknown number of arguments", path), c);
+                } else if (!call.isUnknownNumberOfArgs() && call.getNumberOfArgs() < parameters.size()) {
+                    tajsTypeTester.addViolation(new TypeViolation("Expected a minimum of " + parameters.size() + " arguments, got " + call.getNumberOfArgs(), path), c);
                 }
             } else {
-                if (parameters.size() != call.getNumberOfArgs()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Expected  " + parameters.size() + " args, got " + call.getNumberOfArgs(), path), c);
+                if (call.isUnknownNumberOfArgs()) {
+                    tajsTypeTester.addViolation(new TypeViolation("Expected  " + parameters.size() + " arguments, got an unknown number of arguments", path), c);
+                } else if (parameters.size() != call.getNumberOfArgs()) {
+                    tajsTypeTester.addViolation(new TypeViolation("Expected  " + parameters.size() + " arguments, got " + call.getNumberOfArgs(), path), c);
                 }
             }
             if (call.isUnknownNumberOfArgs()) {
@@ -115,12 +120,19 @@ public class TypedSymbolicFunctionEvaluator {
                 }
             }
 
-            for (int i = 0; i < Math.min(parameters.size(), call.getNumberOfArgs()); i++) {
-                tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), context), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
+            for (int i = 0; i < parameters.size(); i++) {
+                Value arg = call.getArg(i);
+                if (arg.isMaybePresent()) {
+                    tajsTypeTester.attemptAddValue(arg, new TypeWithContext(parameters.get(i).getType(), context), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
+                }
             }
             if (signature.isHasRestParameter()) {
-                for (int i = parameters.size(); i < call.getNumberOfArgs(); i++) {
-                    tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, context), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
+                if (call.isUnknownNumberOfArgs()) {
+                    tajsTypeTester.attemptAddValue(call.getArg(parameters.size()), new TypeWithContext(restArgsType, context), info.typeNames.get(typeWithContext.getType()) + ".[arg" + parameters.size() + "]", c, tajsTypeChecker, null);
+                } else {
+                    for (int i = parameters.size(); i < call.getNumberOfArgs(); i++) {
+                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, context), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
+                    }
                 }
             }
             assert signature.getResolvedReturnType() != null;
@@ -167,6 +179,9 @@ public class TypedSymbolicFunctionEvaluator {
     private boolean sigMatches(Signature signature, TypeContext context, FunctionCalls.CallInfo call, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c, String path, TajsTypeChecker tajsTypeChecker) {
         List<Signature.Parameter> parameters = signature.getParameters();
         Type restArgsType = null;
+        if (call.isUnknownNumberOfArgs()) {
+            return false;
+        }
         if (signature.isHasRestParameter()) {
             restArgsType = TypesUtil.extractRestArgsType(parameters.stream().map(Signature.Parameter::getType).collect(Collectors.toList()));
             parameters = parameters.subList(0, parameters.size() - 1);
