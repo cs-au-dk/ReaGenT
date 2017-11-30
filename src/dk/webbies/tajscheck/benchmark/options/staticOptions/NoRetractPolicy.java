@@ -21,4 +21,9 @@ public class NoRetractPolicy implements RetractionPolicy {
     public boolean isRetracted(Test test) {
         return false;
     }
+
+    @Override
+    public boolean isTimeout(Test test) {
+        return false;
+    }
 }

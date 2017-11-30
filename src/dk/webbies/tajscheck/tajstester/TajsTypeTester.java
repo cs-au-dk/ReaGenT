@@ -103,7 +103,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         for (Test test : tests) {
             valueHandler.clearValuesForTest(test);
 
-            if (retractionPolicy.isRetracted(test) || exceptionsEncountered.containsKey(test)) {
+            if (retractionPolicy.isRetracted(test) || exceptionsEncountered.containsKey(test)) { // importantly, even if it is timed out, we still continue.
                 continue;
             }
 
@@ -265,7 +265,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     public boolean shouldSkipEntry(WorkList<Context>.Entry e) {
         if (sensitivity != null && sensitivity.isTestContext(e.getContext())) {
             Test test = sensitivity.getTest(e.getContext());
-            return retractionPolicy.isRetracted(test) || exceptionsEncountered.containsKey(test);
+            return retractionPolicy.isRetracted(test) || retractionPolicy.isTimeout(test) || exceptionsEncountered.containsKey(test);
         }
         return false;
     }
@@ -351,5 +351,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public Set<Test> getRetractedTests() {
         return tests.stream().filter(retractionPolicy::isRetracted).collect(Collectors.toSet());
+    }
+
+    public Set<Test> getTimedOutTests() {
+        return tests.stream().filter(retractionPolicy::isTimeout).collect(Collectors.toSet());
     }
 }

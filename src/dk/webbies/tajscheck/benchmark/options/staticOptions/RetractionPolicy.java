@@ -12,4 +12,6 @@ public interface RetractionPolicy {
     void notifySuspiciousLocation(Test test, Set<NodeAndContext<Context>> location);
 
     boolean isRetracted(Test test);
+
+    boolean isTimeout(Test test);
 }

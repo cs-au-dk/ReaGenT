@@ -11,15 +11,20 @@ var bool = true;
 module.exports = {
     toRetract: function (str) {
         bool = "NO";
-        var a = {};
-        var b = {};
-        a[str + str] = b[str + str];
-        for (var i in a) {
-            for (var j in b) {
-                b[i] = a[str + i + str];
-                a[i] = b[str + i + str];
-            }
+        var host1 = parseInt;
+        var host2 = parseFloat;
+        var user1 = function () {};
+        var foo;
+        if (Math.random() > 0.5) {
+            foo = host1;
         }
+        if (Math.random() > 0.5) {
+            foo = host2;
+        }
+        if (Math.random() > 0.5) {
+            foo = user1;
+        }
+        console.log(foo.bar);
     },
     returnsBool: function () {
         return bool;

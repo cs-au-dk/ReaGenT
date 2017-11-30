@@ -125,7 +125,7 @@ public class TAJSUnitTests {
             List<dk.webbies.tajscheck.testcreator.test.Test> testsNot = results.testNot.stream().filter(test -> test.getPath().startsWith(path)).collect(Collectors.toList());
             MultiMap<String, TypeViolation> warnings = results.detectedWarnings.asMap().entrySet().stream().filter(entry -> entry.getKey().startsWith(path)).collect(ArrayListMultiMap.collector());
 
-            return new TAJSResultTester(new TAJSUtil.TajsAnalysisResults(detectedViolations, warnings, performedTest, testsNot, results.certificates, results.testTranfers, results.timers, results.timedout, results.retractedTests));
+            return new TAJSResultTester(new TAJSUtil.TajsAnalysisResults(detectedViolations, warnings, performedTest, testsNot, results.certificates, results.testTranfers, results.timers, results.timedout, results.retractedTests, results.timeoutTests));
         }
 
         TAJSUnitTests.TAJSResultTester hasWarnings() {

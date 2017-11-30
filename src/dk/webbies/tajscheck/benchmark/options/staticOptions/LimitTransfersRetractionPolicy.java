@@ -11,6 +11,7 @@ public class LimitTransfersRetractionPolicy implements RetractionPolicy {
     private final int maxTransfers;
     private int maxSuspiciousLocations;
     private final Set<Test> retracted = new HashSet<>();
+    private final Set<Test> timeouts = new HashSet<>();
 
     public LimitTransfersRetractionPolicy(int maxTransfers, int maxSuspiciousLocations) {
         this.maxTransfers = maxTransfers;
@@ -20,7 +21,7 @@ public class LimitTransfersRetractionPolicy implements RetractionPolicy {
     @Override
     public void notifyTestTransfer(Test test, int totalTransfers) {
         if (totalTransfers > maxTransfers) {
-            retracted.add(test);
+            timeouts.add(test);
         }
     }
 
@@ -34,5 +35,10 @@ public class LimitTransfersRetractionPolicy implements RetractionPolicy {
     @Override
     public boolean isRetracted(Test test) {
         return retracted.contains(test);
+    }
+
+    @Override
+    public boolean isTimeout(Test test) {
+        return timeouts.contains(test);
     }
 }

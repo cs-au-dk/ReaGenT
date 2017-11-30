@@ -139,6 +139,7 @@ public class TAJSUtil {
         public final List<Test> testNot;
         public final boolean timedout;
         public Set<Test> retractedTests;
+        public Set<Test> timeoutTests;
         public final Map<Test, Integer> testTranfers;
         public final List<TestCertificate> certificates;
         public final Timers timers;
@@ -154,7 +155,8 @@ public class TAJSUtil {
                             Map<Test, Integer> testTranfers,
                             Timers timers,
                             boolean timedout,
-                            Set<Test> retractedTests) {
+                            Set<Test> retractedTests,
+                            Set<Test> timeoutTests) {
 
             this.detectedViolations = detectedViolations;
             this.detectedWarnings = warnings;
@@ -165,6 +167,7 @@ public class TAJSUtil {
             this.timers = timers;
             this.timedout = timedout;
             this.retractedTests = retractedTests;
+            this.timeoutTests = timeoutTests;
         }
 
         public TajsAnalysisResults(TajsTypeTester typeTester, boolean timedout) {
@@ -188,6 +191,7 @@ public class TAJSUtil {
             this.testNot.removeAll(typeTester.getPerformedTests());
 
             this.retractedTests = typeTester.getRetractedTests();
+            this.timeoutTests = typeTester.getTimedOutTests();
 
             this.certificates = typeTester.getCertificates(timedout);
 
@@ -206,6 +210,9 @@ public class TAJSUtil {
                 builder.append("   ").append(notPerformed);
                 if (retractedTests.contains(notPerformed)) {
                     builder.append(" (retracted)");
+                }
+                if (timeoutTests.contains(notPerformed)) {
+                    builder.append(" (timeout)");
                 }
                 if (exceptionsEncountered.containsKey(notPerformed)) {
                     builder.append(" (exception: ").append(exceptionsEncountered.get(notPerformed)).append(")");
@@ -230,7 +237,17 @@ public class TAJSUtil {
 //                        .append(mkString(certificates, "\n   "));
                 builder.append("\n");
                 builder.append("Transfers per test:\n   ")
-                        .append(mkString(testTranfers.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getValue)).map(e -> e.getKey() + ": " + e.getValue() + (retractedTests.contains(e.getKey()) ? " (retracted)" : "")), "\n   "));
+                        .append(mkString(testTranfers.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getValue)).map(e -> {
+                            Test test = e.getKey();
+                            String result = test + ": " + e.getValue();
+                            if (retractedTests.contains(test)) {
+                                result += " (retracted)";
+                            }
+                            if (timeoutTests.contains(test)) {
+                                result += " (timeout)";
+                            }
+                            return result;
+                        }), "\n   "));
                 builder.append("\n");
                 builder.append(timers.toString());
             }
