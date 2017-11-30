@@ -619,6 +619,8 @@ public class TAJSUnitTests {
 
     }
 
+    // TODO: If you pass a function to the "any" value, you can expect it to be potentially called with any value.
+    // TODO: Any can be equal to any other object.
     @Test
     public void any() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("any");
@@ -812,7 +814,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore
     public void asyncError() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("asyncError");
 
