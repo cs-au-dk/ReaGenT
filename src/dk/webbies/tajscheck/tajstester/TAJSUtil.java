@@ -208,7 +208,7 @@ public class TAJSUtil {
                     builder.append(" (retracted)");
                 }
                 if (exceptionsEncountered.containsKey(notPerformed)) {
-                    builder.append(" (exception: ").append(exceptionsEncountered).append(")");
+                    builder.append(" (exception: ").append(exceptionsEncountered.get(notPerformed)).append(")");
                 }
                 builder.append("\n");
             }
