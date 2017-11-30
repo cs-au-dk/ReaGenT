@@ -136,7 +136,7 @@ declare namespace Sortablejs {
     }
 
     class Sortable {
-        public options?: SortableOptions;
+        // public options?: SortableOptions;
         public el: any;
 
         /**
