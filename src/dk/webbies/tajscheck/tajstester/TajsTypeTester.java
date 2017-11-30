@@ -135,14 +135,19 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
             if (DEBUG) System.out.println("Performing test " + test);
-            performed.add(test);
 
             TajsTypeChecker typeChecker = new TajsTypeChecker(test, c, info);
             TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker, this, info, valueHandler);
 
             // attempting to perform the test in the local context
             timers.start(Timers.Tags.TEST_TRANSFER);
-            boolean typeChecked = c.withState(testState, () -> test.accept(visitor));
+            boolean typeChecked = false;
+            try {
+                typeChecked = c.withState(testState, () -> test.accept(visitor));
+                performed.add(test);
+            } catch (Exception e) {
+                exceptionsEncountered.put(test, e);
+            }
             timers.stop(Timers.Tags.TEST_TRANSFER);
 
             if (typeChecked || info.options.staticOptions.propagateStateFromFailingTest) {
