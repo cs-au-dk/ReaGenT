@@ -35,33 +35,34 @@ public class AnalyzeBenchmarks extends TestCase {
     public Benchmark benchmark = null;
 
     // Benchmarks that seem analyzeable.
+    // TODO: Most of these remarks are before the rebase to extended.
     static final Set<String> whitelist = new HashSet<>(Arrays.asList(
-            "async",
-            "Leaflet",
-            "reveal.js",
-            "intro.js",
-            "PleaseJS",
-            "highlight.js",
-            "Zepto.js",
-            "pathjs",
-            "CodeMirror",
-            "PhotoSwipe",
-            "Jasmine",
-            "Swiper",
-            "box2dweb",
-            "Sortable",
-            "accounting.js",
-            "lunr.js",
-            "PDF.js",
-            "Moment.js",
-            "Medium Editor",
-            "Handlebars",
-            "Redux",
-            "QUnit",
-            "Knockout",
-            "axios",
-            "PeerJS",
-            "Hammer.js"
+            "async", // can analyze
+            "Moment.js", // can analyze (requires lots of memory)
+            "pathjs", // can analyze.
+            "Zepto.js", // can analyze. (TODO: Try to run with a lot of mem, it after rebase it seems different) (Before: Gets a useless spurious result after few minutes, because: We analyze the global object, is fine, we analyze some methods get some state, doing this a spurious write is performed on the global object, this causes everything except global object to be removed from type-to-test, and the single spurious error is reported.)
+            "reveal.js", // can analyze. But takes a while.
+            "PleaseJS", // can analyze
+            "CodeMirror", // TODO: EVERYTHING was retracted? (even LoadModuleTest)
+            "PhotoSwipe", // encounters (cannot construct intersectionType) at top-level constructor.
+            "Jasmine", // has a lot of globals that it cannot find (because they aren't registered).
+            "Swiper", // Top level constructor gets retracted.
+            "box2dweb", // TODO: Big, takes a lot of mem.
+            "Sortable", // can analyze
+            "accounting.js", // TODO: NullPointerException in TAJS.
+            "lunr.js", // can analyze. But plenty or errors in top-level constructors, meaning we skip a lot of tests.
+            "PDF.js", // can analyze. But top-level constructor gets retracted.
+            "Medium Editor", // TODO: Top level object not found.
+            "Handlebars", // TODO: Error in top-level object.
+            "Redux", // TODO: Top level object not found (try to not have an exports object)
+            "Knockout", // 157 violations in the top-level object. So no methods are analyzed.
+            "axios", // TODO: Module not found (node?)
+            "PeerJS", // TODO: Top level constructor always returns exceptionally.
+            "Hammer.js", // TODO: Seemingly have some false positives (like Hammer.TouchAction.preventDefaults).
+            "intro.js", // currently get a timeout (but is real close).
+            "QUnit", // TODO: Takes a long time
+            "highlight.js", // TODO: Takes a long time
+            "Leaflet" // initialization crashes on line 2302, because TAJS thinks it is reading an undefined property.
     ));
 
     static final Set<String> blackList = new HashSet<>(Arrays.asList(
@@ -91,7 +92,6 @@ public class AnalyzeBenchmarks extends TestCase {
             "Backbone.js",
             "React",
             "Knockout",
-            "async",
             "q",
             "jQuery",
             "Underscore.js",
