@@ -23,9 +23,8 @@ import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Tuple3;
 import dk.webbies.tajscheck.util.Util;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -90,90 +89,92 @@ public class TajsTypeChecker {
             String violationPath = tuple.getA();
             Value value = tuple.getB();
             TypeCheck check = tuple.getC();
+
+            split.stream().flatMap(splittenValue -> getTypeViolations(new TypeWithContext(type, context), splittenValue, typeChecks, path).stream()).collect(Collectors.toList());
             return new TypeViolation("Expected " + check.getExpected() + " but found " + Util.prettyValue(value, c.getState()), violationPath);
         }).collect(Collectors.toList());
     }
 
     private List<Tuple3<String, Value, TypeCheck>> getTypeViolations(TypeWithContext typeWithContext, Value v, List<TypeCheck> typeChecks, String path) {
-        return typeChecks.stream()
-            .sorted((testA, testB) -> {
-                // Making sure all CanHaveSubTypeCheck comes last.
-                if (testA instanceof CanHaveSubTypeCheck && !(testB instanceof CanHaveSubTypeCheck)) {
-                    return 1;
-                } else if (!(testA instanceof CanHaveSubTypeCheck) && testB instanceof CanHaveSubTypeCheck) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-            })
-            .map(typeCheck -> {
-                Check check = typeCheck.getCheck();
-                Supplier<List<Tuple3<String, Value, TypeCheck>>> getForCache = () -> {
-                    if (check instanceof CanHaveSubTypeCheck) {
-                        if (check instanceof FieldCheck) {
-                            FieldCheck fieldCheck = (FieldCheck) check;
-                            String field = fieldCheck.getField();
 
-                            String newPath = path + "." + field;
+        Function<TypeCheck, List<Tuple3<String, Value, TypeCheck>>> findTypeViolations = typeCheck -> {
+            Check check = typeCheck.getCheck();
+            Supplier<List<Tuple3<String, Value, TypeCheck>>> getForCache = () -> {
+                if (check instanceof CanHaveSubTypeCheck) {
+                    if (check instanceof FieldCheck) {
+                        FieldCheck fieldCheck = (FieldCheck) check;
+                        String field = fieldCheck.getField();
 
-                            List<TypeCheck> subTypeChecks;
-                            if (typeCheck instanceof FieldTypeCheck) {
-                                subTypeChecks = ((FieldTypeCheck) typeCheck).getFieldChecks();
-                            } else {
-                                AndCheck andSubChecks = Check.and(fieldCheck.getChecks());
-                                subTypeChecks = Collections.singletonList(new SimpleTypeCheck(andSubChecks, andSubChecks.toString()));
-                            }
+                        String newPath = path + "." + field;
 
-                            return performSubTypeCheck(v, fieldCheck, newPath, subTypeChecks, Value.makeStr(field));
-                        } else if (check instanceof NumberIndexCheck) {
-                            NumberIndexCheck numberIndexCheck = (NumberIndexCheck) check;
-                            String newPath = path + "." + "[numberIndexer]";
-
-                            String expected;
-                            if (typeCheck.getExpected().startsWith("(arrayIndex: ")) {
-                                expected = Util.removeSuffix(Util.removePrefix(typeCheck.getExpected(), "(arrayIndex: "), ")");
-                            } else {
-                                expected = Util.removeSuffix(Util.removePrefix(typeCheck.getExpected(), "(numberIndexer: "), ")");
-                            }
-
-                            List<TypeCheck> subTypeChecks = Collections.singletonList(new SimpleTypeCheck(numberIndexCheck.getSubCheck(), expected));
-
-                            return performSubTypeCheck(v, numberIndexCheck, newPath, subTypeChecks, Value.makeAnyStrUInt());
-                        } else if (check instanceof StringIndexCheck) {
-                            StringIndexCheck stringIndexCheck = (StringIndexCheck) check;
-                            if (v.isMaybeUndef() && v.restrictToNotUndef().isNone()) {
-                                return java.util.Collections.emptyList();
-                            }
-                            if (v.isMaybePrimitive()) {
-                                return Collections.singletonList(new Tuple3<>(path, v, typeCheck));
-                            }
-                            System.err.println("Skipping check" + check + " against " + v); // TODO: What do.
-                            return java.util.Collections.emptyList();
+                        List<TypeCheck> subTypeChecks;
+                        if (typeCheck instanceof FieldTypeCheck) {
+                            subTypeChecks = ((FieldTypeCheck) typeCheck).getFieldChecks();
                         } else {
-                            throw new RuntimeException(check.getClass().getSimpleName());
+                            AndCheck andSubChecks = Check.and(fieldCheck.getChecks());
+                            subTypeChecks = Collections.singletonList(new SimpleTypeCheck(andSubChecks, andSubChecks.toString()));
                         }
-                    } else {
-                        if (!check.accept(cc, v)) {
+
+                        return performSubTypeCheck(v, fieldCheck, newPath, subTypeChecks, Value.makeStr(field));
+                    } else if (check instanceof NumberIndexCheck) {
+                        NumberIndexCheck numberIndexCheck = (NumberIndexCheck) check;
+                        String newPath = path + "." + "[numberIndexer]";
+
+                        String expected;
+                        if (typeCheck.getExpected().startsWith("(arrayIndex: ")) {
+                            expected = Util.removeSuffix(Util.removePrefix(typeCheck.getExpected(), "(arrayIndex: "), ")");
+                        } else {
+                            expected = Util.removeSuffix(Util.removePrefix(typeCheck.getExpected(), "(numberIndexer: "), ")");
+                        }
+
+                        List<TypeCheck> subTypeChecks = Collections.singletonList(new SimpleTypeCheck(numberIndexCheck.getSubCheck(), expected));
+
+                        return performSubTypeCheck(v, numberIndexCheck, newPath, subTypeChecks, Value.makeAnyStrUInt());
+                    } else if (check instanceof StringIndexCheck) {
+                        StringIndexCheck stringIndexCheck = (StringIndexCheck) check;
+                        if (v.isMaybeUndef() && v.restrictToNotUndef().isNone()) {
+                            return java.util.Collections.emptyList();
+                        }
+                        if (v.isMaybePrimitive()) {
                             return Collections.singletonList(new Tuple3<>(path, v, typeCheck));
-                        } else {
-                            return java.util.Collections.emptyList();
                         }
+                        System.err.println("Skipping check" + check + " against " + v); // TODO: What do.
+                        return java.util.Collections.emptyList();
+                    } else {
+                        throw new RuntimeException(check.getClass().getSimpleName());
                     }
-                };
-
-                Tuple3<Check, TypeWithContext, Value> key = new Tuple3<>(check, typeWithContext, v);
-                if (cache.containsKey(key)) {
-                    return cache.get(key);
                 } else {
-                    cache.put(key, java.util.Collections.emptyList()); // coinductive assumption, if we hit the same check, it must be true.
-                    List<Tuple3<String, Value, TypeCheck>> result = getForCache.get();
-                    cache.put(key, result);
-                    return result;
+                    if (!check.accept(cc, v)) {
+                        return Collections.singletonList(new Tuple3<>(path, v, typeCheck));
+                    } else {
+                        return java.util.Collections.emptyList();
+                    }
                 }
-            })
-            .filter(Util.not(List::isEmpty))
-            .findFirst()
-            .orElse(java.util.Collections.emptyList());
+            };
+
+            Tuple3<Check, TypeWithContext, Value> key = new Tuple3<>(check, typeWithContext, v);
+            if (cache.containsKey(key)) {
+                return cache.get(key);
+            } else {
+                cache.put(key, java.util.Collections.emptyList()); // coinductive assumption, if we hit the same check, it must be true.
+                List<Tuple3<String, Value, TypeCheck>> result = getForCache.get();
+                cache.put(key, result);
+                return result;
+            }
+        };
+
+        List<Tuple3<String, Value, TypeCheck>> baseErrors = typeChecks.stream()
+                .filter(typeCheck -> !CanHaveSubTypeCheck.class.isInstance(typeCheck.getCheck()))
+                .map(findTypeViolations)
+                .reduce(new ArrayList<>(), Util::reduceList);
+        if (!baseErrors.isEmpty()) {
+            return baseErrors;
+        }
+
+        return typeChecks.stream()
+                .filter(typeCheck -> CanHaveSubTypeCheck.class.isInstance(typeCheck.getCheck()))
+                .map(findTypeViolations)
+                .reduce(new ArrayList<>(), Util::reduceList);
     }
 
     private List<Tuple3<String, Value, TypeCheck>> performSubTypeCheck(Value v, CanHaveSubTypeCheck hasSubType, String newPath, List<TypeCheck> subTypeChecks, Value field) {
@@ -184,7 +185,7 @@ public class TajsTypeChecker {
 
         List<Value> split = split(propertyValue);
         if (split.isEmpty()) {
-            return Collections.singletonList(new Tuple3<>(newPath, Value.makeNone(), TypeChecker.createIntersection(subTypeChecks)));
+            split = Arrays.asList(Value.makeUndef());
         }
 
         List<TypeCheck> subChecks;
@@ -213,17 +214,21 @@ public class TajsTypeChecker {
         public Boolean visit(TypeOfCheck check, Value o) {
             switch(check.getTypeString()) {
                 case "object":
-                    if(o.getAllObjectLabels().isEmpty()) return false;
+                    if (o.isMaybeNull() && o.restrictToNotNull().isNone()) return true;
+                    if (o.getAllObjectLabels().isEmpty()) return false;
                     ObjectLabel.Kind kind = o.getAllObjectLabels().iterator().next().getKind();
                     switch (kind) {
                         case OBJECT:
                         case ARRAY:
                         case ERROR:
                         case DATE:
+                        case MATH:
                             return true;
                         case FUNCTION:
                         case SYMBOL:
                         case BOOLEAN:
+                        case STRING:
+                        case NUMBER:
                             return false;
                         default:
                             throw new RuntimeException("Didn't consider: " + kind);
