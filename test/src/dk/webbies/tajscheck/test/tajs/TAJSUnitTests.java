@@ -26,9 +26,8 @@ import java.util.stream.Collectors;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
 import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class TAJSUnitTests {
@@ -41,7 +40,15 @@ public class TAJSUnitTests {
         return run(benchFromFolder(folderName, options));
     }
 
+    private static TAJSUtil.TajsAnalysisResults run(String folderName, OptionsI.Builder options, int timeout) throws Exception {
+        return run(benchFromFolder(folderName, options), timeout);
+    }
+
     private static TAJSUtil.TajsAnalysisResults run(Benchmark bench) throws Exception {
+        return run(bench, 60);
+    }
+
+    private static TAJSUtil.TajsAnalysisResults run(Benchmark bench, int timeout) throws Exception {
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 60);
         System.out.println(result);
         return result;
@@ -926,6 +933,18 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations()
                 .hasNoWarnings();
+    }
+
+    @Test
+    @Ignore
+    public void polutionFromNeighbour() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("polutionFromNeighbour", options());
+
+        String path = "L.testMethod()";
+        assertFalse(
+                result.detectedViolations.containsKey(path) &&
+                result.detectedViolations.get(path).iterator().next().toString().trim().equals("Expected string but found 2.0 in test " + path)
+        );
     }
 
     // TODO: Test string-indexers somehow.
