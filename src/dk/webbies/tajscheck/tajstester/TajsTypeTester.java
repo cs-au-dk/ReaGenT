@@ -356,4 +356,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     public Set<Test> getTimedOutTests() {
         return tests.stream().filter(retractionPolicy::isTimeout).collect(Collectors.toSet());
     }
+
+    public RetractionPolicy getRetractionPolicy() {
+        return retractionPolicy;
+    }
 }

@@ -217,7 +217,9 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
             if (returnedValue.isNone() && !(test.getReturnType() instanceof SimpleType && ((SimpleType) test.getReturnType()).getKind() == SimpleTypeKind.Never)) {
                 TypeViolation violation = new TypeViolation("Function " + function + " always returns exceptionally", test.getPath());
                 if (c.isScanning()) {
-                    tajsTypeTester.addViolation(violation, c); // only a violation if we are sure.
+                    if (!tajsTypeTester.getRetractionPolicy().isTimeout(test)) {
+                        tajsTypeTester.addViolation(violation, c); // only a violation if we are sure.
+                    }
                 } else {
                     tajsTypeTester.addWarning(violation, c);
                 }
