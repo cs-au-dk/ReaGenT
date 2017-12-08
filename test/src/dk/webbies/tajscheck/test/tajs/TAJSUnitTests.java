@@ -783,6 +783,25 @@ public class TAJSUnitTests {
     }
 
     @Test
+    public void leafletMotivating() throws Exception {
+        TAJSUtil.TajsAnalysisResults buggy = run(benchFromFolder("leafletMotivating/buggy", options().staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
+
+        TAJSUtil.TajsAnalysisResults fixed = run(benchFromFolder("leafletMotivating/fixed", options().staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
+
+        System.out.println(buggy);
+
+        System.out.println(fixed);
+
+        expect(buggy)
+                .hasViolations();
+
+        expect(fixed)
+                .hasNoWarnings()
+                .hasNoViolations()
+                .performedAllTests();
+    }
+
+    @Test
     public void retract() throws Exception {
         StaticOptions.Builder options = options().staticOptions.setRetractionPolicy(new LimitTransfersRetractionPolicy(100, 0)).setExpansionPolicy(new FixedExpansionOrder("module.toRetract(string)", "module.returnsBool()"));
 
