@@ -16,6 +16,7 @@ import dk.brics.tajs.monitoring.IAnalysisMonitoring;
 import dk.brics.tajs.solver.GenericSolver;
 import dk.webbies.tajscheck.testcreator.test.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static dk.brics.tajs.util.Collections.newMap;
@@ -98,7 +99,7 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
     }
 
     private ContextArguments tagContextArguments(ContextArguments sourceArgs, ContextArguments args, Value tag) {
-        Map<String, Value> newCVars = args == null || args.getSelectedClosureVariables() == null ? newMap() : args.getSelectedClosureVariables();
+        Map<String, Value> newCVars = args == null || args.getSelectedClosureVariables() == null ? newMap() : new HashMap<>(args.getSelectedClosureVariables());
         newCVars.putIfAbsent(testSpecialLocation, tag);
         return sourceArgs == null ?
                 new ContextArguments(null, null, newCVars)

@@ -936,7 +936,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore
     public void polutionFromNeighbour() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("polutionFromNeighbour", options());
 
