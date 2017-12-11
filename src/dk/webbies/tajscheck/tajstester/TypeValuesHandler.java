@@ -44,7 +44,12 @@ public class TypeValuesHandler {
     }
 
     public Value createValue(Type type, TypeContext context) {
-        return createValue(new TypeWithContext(type, context));
+        if (info.shouldConstructType(type)) {
+            return createValue(new TypeWithContext(type, context));
+        } else {
+            Value feedbackValue = findFeedbackValue(new TypeWithContext(type, context));
+            return feedbackValue == null ? Value.makeNone() : feedbackValue;
+        }
     }
 
     public Value createValue(TypeWithContext t) {
