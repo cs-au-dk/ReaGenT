@@ -64,6 +64,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private TestTransfersMonitor transferMonitor;
 
     private Timers timers = new Timers();
+    private List<Test> typeCheckedTests = new ArrayList<>();
 
     public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
         this.tests = tests;
@@ -99,6 +100,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         performed.clear();
         expansionPolicy.nextRound();
         valueHandler.cleanUp();
+
+        typeCheckedTests.clear();
 
         for (Test test : tests) {
             valueHandler.clearValuesForTest(test);
@@ -152,6 +155,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
             if (typeChecked || info.options.staticOptions.propagateStateFromFailingTest) {
                 previousTestContext = newc;
+            }
+            if (typeChecked) {
+                typeCheckedTests.add(test);
             }
         }
 
@@ -235,7 +241,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     public boolean attemptAddValue(Value value, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker, Test test) {
         value = UnknownValueResolver.getRealValue(value, c.getState());
         if (value.isNone()) {
-            return true;
+            return !c.isScanning(); // if not scanning, it is ok. If scanning, it is a type-error.
         }
         List<TypeViolation> violations = getViolations(value, t, path, c, tajsTypeChecker);
 
@@ -355,6 +361,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public Set<Test> getTimedOutTests() {
         return tests.stream().filter(retractionPolicy::isTimeout).collect(Collectors.toSet());
+    }
+
+    public List<Test> getTypeCheckedTests() {
+        return typeCheckedTests;
     }
 
     public RetractionPolicy getRetractionPolicy() {

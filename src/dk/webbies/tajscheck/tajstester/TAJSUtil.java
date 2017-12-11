@@ -138,6 +138,7 @@ public class TAJSUtil {
         public final Collection<Test> testPerformed;
         public final List<Test> testNot;
         public final boolean timedout;
+        public final List<Test> typeCheckedTests;
         public Set<Test> retractedTests;
         public Set<Test> timeoutTests;
         public final Map<Test, Integer> testTranfers;
@@ -148,15 +149,16 @@ public class TAJSUtil {
         private Map<Test, Exception> exceptionsEncountered;
 
         public TajsAnalysisResults(MultiMap<String, TypeViolation> detectedViolations,
-                            MultiMap<String, TypeViolation> warnings,
-                            Collection<Test> testPerformed,
-                            List<Test> testNot,
-                            List<TestCertificate> certificates,
-                            Map<Test, Integer> testTranfers,
-                            Timers timers,
-                            boolean timedout,
-                            Set<Test> retractedTests,
-                            Set<Test> timeoutTests) {
+                                   MultiMap<String, TypeViolation> warnings,
+                                   Collection<Test> testPerformed,
+                                   List<Test> testNot,
+                                   List<TestCertificate> certificates,
+                                   Map<Test, Integer> testTranfers,
+                                   Timers timers,
+                                   boolean timedout,
+                                   Set<Test> retractedTests,
+                                   Set<Test> timeoutTests,
+                                   List<Test> typeCheckedTests) {
 
             this.detectedViolations = detectedViolations;
             this.detectedWarnings = warnings;
@@ -168,6 +170,7 @@ public class TAJSUtil {
             this.timedout = timedout;
             this.retractedTests = retractedTests;
             this.timeoutTests = timeoutTests;
+            this.typeCheckedTests = typeCheckedTests;
         }
 
         public TajsAnalysisResults(TajsTypeTester typeTester, boolean timedout) {
@@ -198,6 +201,8 @@ public class TAJSUtil {
             this.testTranfers = typeTester.getTransferMonitor().getTestTransfers();
 
             this.timers = typeTester.getTimers();
+
+            this.typeCheckedTests = typeTester.getTypeCheckedTests();
         }
 
         @Override

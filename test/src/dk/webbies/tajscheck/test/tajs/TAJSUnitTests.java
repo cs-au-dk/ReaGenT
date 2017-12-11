@@ -132,7 +132,7 @@ public class TAJSUnitTests {
             List<dk.webbies.tajscheck.testcreator.test.Test> testsNot = results.testNot.stream().filter(test -> test.getPath().startsWith(path)).collect(Collectors.toList());
             MultiMap<String, TypeViolation> warnings = results.detectedWarnings.asMap().entrySet().stream().filter(entry -> entry.getKey().startsWith(path)).collect(ArrayListMultiMap.collector());
 
-            return new TAJSResultTester(new TAJSUtil.TajsAnalysisResults(detectedViolations, warnings, performedTest, testsNot, results.certificates, results.testTranfers, results.timers, results.timedout, results.retractedTests, results.timeoutTests));
+            return new TAJSResultTester(new TAJSUtil.TajsAnalysisResults(detectedViolations, warnings, performedTest, testsNot, results.certificates, results.testTranfers, results.timers, results.timedout, results.retractedTests, results.timeoutTests, results.typeCheckedTests));
         }
 
         TAJSUnitTests.TAJSResultTester hasWarnings() {
@@ -606,11 +606,17 @@ public class TAJSUnitTests {
 
     @Test
     public void classInheritance() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("classInheritance", options().staticOptions.setCreateSingletonObjects(true));
+        TAJSUtil.TajsAnalysisResults withConstructAll = run("classInheritance", options().setConstructAllTypes(true).staticOptions.setCreateSingletonObjects(true));
 
-        expect(result)
+        expect(withConstructAll)
                 .performedAllTests()
                 .hasNoViolations();
+
+        TAJSUtil.TajsAnalysisResults dontConstructAll = run("classInheritance", options().setConstructAllTypes(false).staticOptions.setCreateSingletonObjects(true));
+
+        expect(dontConstructAll)
+                .performedAllTests()
+                .hasViolations();
     }
 
     @Test
@@ -783,17 +789,35 @@ public class TAJSUnitTests {
     }
 
     @Test
-    public void leafletMotivating() throws Exception {
-        TAJSUtil.TajsAnalysisResults buggy = run(benchFromFolder("leafletMotivating/buggy", options().staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
+    public void leafletMotivatingBuggy() throws Exception {
+        TAJSUtil.TajsAnalysisResults buggy = run(benchFromFolder("leafletMotivating/buggy", options().setConstructAllTypes(false).setUseInspector(false).staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
 
-        TAJSUtil.TajsAnalysisResults fixed = run(benchFromFolder("leafletMotivating/fixed", options().staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
 
         System.out.println(buggy);
 
-        System.out.println(fixed);
-
         expect(buggy)
                 .hasViolations();
+    }
+
+    @Test
+    public void leafletMotivatingFixed() throws Exception {
+
+        TAJSUtil.TajsAnalysisResults fixed = run(benchFromFolder("leafletMotivating/fixed", options().setConstructAllTypes(false).setUseInspector(false).staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
+
+        System.out.println(fixed);
+
+        expect(fixed)
+                .hasNoWarnings()
+                .hasNoViolations()
+                .performedAllTests();
+    }
+
+    @Test
+    @Ignore // TODO: Look at this later. I got no idea what is going on.
+    public void feedbackValuesReadUndefined() throws Exception {
+        TAJSUtil.TajsAnalysisResults fixed = run("feedbackValuesReadUndefined", options().setConstructAllTypes(false).setUseInspector(true));
+
+        System.out.println(fixed);
 
         expect(fixed)
                 .hasNoWarnings()
@@ -965,9 +989,13 @@ public class TAJSUnitTests {
         );
     }
 
+    // TODO: The SpecInstantiator should respect the info.shouldConstruct() predicate. And possibly use feedback-values.
+
     // TODO: Test string-indexers somehow.
     // TODO: Make sure constructed functions have Function.prototype set, and that reading .length and .name gives actual results.
     // TODO: Should objects have the internal prototype as Object.prototype as default? (TypeScript does assume every interface inherits from Object)
 
     // TODO: Numbers: Tæl paths, hvor mange certificates og hvor mange violations (og warnings?)
+
+    // TODO: For now we assume that class-instances (and class-constructors) should not be constructed, instead feedback-values are used.
 }
