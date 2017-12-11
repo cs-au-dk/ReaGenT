@@ -90,6 +90,10 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         }
         tajsTypeTester.addCertificate(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()), c);
 
+        if (v.isNone()) {
+            tajsTypeTester.addViolation(new TypeViolation("Module could not be found", test.getPath()), c);
+        }
+
         return tajsTypeTester.attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test.getPath(), c, typeChecker, test);
     }
 
