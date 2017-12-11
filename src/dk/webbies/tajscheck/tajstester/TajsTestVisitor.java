@@ -125,79 +125,77 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
         boolean typeChecked = true;
 
-        for (ObjectLabel l : function.getAllObjectLabels()) {
-            FunctionCalls.CallInfo callinfo = new FunctionCalls.CallInfo() {
+        FunctionCalls.CallInfo callinfo = new FunctionCalls.CallInfo() {
+            @Override
+            public AbstractNode getSourceNode() {
+                return c.getNode();
+            }
 
-                @Override
-                public AbstractNode getSourceNode() {
-                    return c.getNode();
-                }
+            @Override
+            public AbstractNode getJSSourceNode() {
+                return c.getNode();
+            }
 
-                @Override
-                public AbstractNode getJSSourceNode() {
-                    return c.getNode();
-                }
+            @Override
+            public boolean isConstructorCall() {
+                return isConstructorCall;
+            }
 
-                @Override
-                public boolean isConstructorCall() {
-                    return isConstructorCall;
-                }
+            @Override
+            public Value getFunctionValue() {
+                throw new AnalysisException();
+            }
 
-                @Override
-                public Value getFunctionValue() {
-                    throw new AnalysisException();
-                }
+            @Override
+            public Value getThis() {
+                return tajsTypeTester.getRetractionPolicy().isTimeout(test) ? Value.makeNone() : receiver;
+            }
 
-                @Override
-                public Value getThis() {
-                    return receiver;
-                }
-
-                @Override
-                public Value getArg(int i) {
-                    if (i >= arguments.size()) {
-                        if (restArgs) {
-                            return restArgType;
-                        } else {
-                            return Value.makeUndef();
-                        }
+            @Override
+            public Value getArg(int i) {
+                if (i >= arguments.size()) {
+                    if (restArgs) {
+                        return restArgType;
+                    } else {
+                        return Value.makeUndef();
                     }
-                    return arguments.get(i);
                 }
+                return arguments.get(i);
+            }
 
-                @Override
-                public int getNumberOfArgs() {
-                    return arguments.size();
-                }
+            @Override
+            public int getNumberOfArgs() {
+                return arguments.size();
+            }
 
-                @Override
-                public Value getUnknownArg() {
-                    assert restArgs;
-                    return restArgType.join(Value.makeUndef());
-                }
+            @Override
+            public Value getUnknownArg() {
+                assert restArgs;
+                return restArgType.join(Value.makeUndef());
+            }
 
-                @Override
-                public boolean isUnknownNumberOfArgs() {
-                    return restArgs;
-                }
+            @Override
+            public boolean isUnknownNumberOfArgs() {
+                return restArgs;
+            }
 
-                @Override
-                public int getResultRegister() {
-                    throw new AnalysisException();
-                }
+            @Override
+            public int getResultRegister() {
+                throw new AnalysisException();
+            }
 
-                @Override
-                public ExecutionContext getExecutionContext() {
-                    throw new AnalysisException();
-                }
+            @Override
+            public ExecutionContext getExecutionContext() {
+                throw new AnalysisException();
+            }
 
-                @Override
-                public ICallEdge.Info toEdgeInfo() {
-                    return isConstructorCall ? ICallEdge.Info.makeImplicitConstructorCall() : ICallEdge.Info.makeImplicitCall();
-                }
+            @Override
+            public ICallEdge.Info toEdgeInfo() {
+                return isConstructorCall ? ICallEdge.Info.makeImplicitConstructorCall() : ICallEdge.Info.makeImplicitCall();
+            }
+        };
 
-            };
-
+        for (ObjectLabel l : function.getAllObjectLabels()) {
             Value returnedValue;
 
             if (l.getHostObject() != null && l.getHostObject().getAPI() == HostAPIs.SPEC) {
