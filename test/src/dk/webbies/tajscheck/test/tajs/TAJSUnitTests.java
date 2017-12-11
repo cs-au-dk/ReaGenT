@@ -987,15 +987,38 @@ public class TAJSUnitTests {
                 result.detectedViolations.containsKey(path) &&
                 result.detectedViolations.get(path).iterator().next().toString().trim().equals("Expected string but found 2.0 in test " + path)
         );
+
+        assertThat(result.timeoutTests, hasSize(1));
+        assertThat(result.timeoutTests.iterator().next().getPath(), is(equalTo("module.foo()")));
     }
 
+    @Test
+    public void timeout() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("timeout", options().staticOptions
+                .setExpansionPolicy(new FixedExpansionOrder("module.foo()", "module.polute()"))
+                .setRetractionPolicy(new LimitTransfersRetractionPolicy(100, 2))
+        );
+
+        expect(result)
+                .forPath("module.foo().foo")
+                .hasViolations();
+
+    }
+
+    // TODO: PathJS, termination.
+    // TODO: Errors in higher-order functions should report the call-site the error happened in.
     // TODO: The SpecInstantiator should respect the info.shouldConstruct() predicate. And possibly use feedback-values.
+
+    // TODO: If the library can construct a class, let it do so.
+    // TODO: Take one more look at instanceof, using the inspector.
+    // TODO: Option to insert <any> into undeclared properties.
 
     // TODO: Test string-indexers somehow.
     // TODO: Make sure constructed functions have Function.prototype set, and that reading .length and .name gives actual results.
     // TODO: Should objects have the internal prototype as Object.prototype as default? (TypeScript does assume every interface inherits from Object)
 
-    // TODO: Numbers: Tæl paths, hvor mange certificates og hvor mange violations (og warnings?)
+    // TODO: Possibly use both feedback-values and constructed values.
+    // TODO: Postpone calling functions with synthetic arguments (need generalization of expansion-policy). Possibly do a second pass, where the expansion-policy tells the type-tester which skipped tests should execute anyway.
 
     // TODO: For now we assume that class-instances (and class-constructors) should not be constructed, instead feedback-values are used.
 }
