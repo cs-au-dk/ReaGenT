@@ -33,13 +33,17 @@ public class Experiment {
         Collections.sort(this.benchmarks, Comparator.comparing(Pair::getLeft));
     }
 
-    public Experiment(String... names) {
+    public Experiment(Collection<String> names) {
         this(
-                Arrays.stream(names)
-                    .map(name -> {assert RunBenchmarks.benchmarks.containsKey(name); return name;})
-                    .map(name -> new Pair<>(name, RunBenchmarks.benchmarks.get(name)))
-                    .collect(Collectors.toList())
+                names.stream()
+                        .map(name -> {assert RunBenchmarks.benchmarks.containsKey(name); return name;})
+                        .map(name -> new Pair<>(name, RunBenchmarks.benchmarks.get(name)))
+                        .collect(Collectors.toList())
         );
+    }
+
+    public Experiment(String... names) {
+        this(Arrays.asList(names));
     }
 
     public Experiment() {

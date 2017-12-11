@@ -41,7 +41,7 @@ public class AutomaticExperiments {
         return Integer.toString(warnings);
     });
 
-    private static final Pair<String, Experiment.ExperimentSingleRunner> type = new Pair<>("type", (bench) -> bench.run_method.toString());
+    public static final Pair<String, Experiment.ExperimentSingleRunner> type = new Pair<>("type", (bench) -> bench.run_method.toString());
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> smallCoverage = new Pair<>(Arrays.asList("small-coverage(stmt)", "small-coverage(func)", "small-coverage(branches)"), (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setCheckDepthUseValue(bench.options.dynamicOptions.checkDepthUseValue).setMaxIterationsToRun(1000));
