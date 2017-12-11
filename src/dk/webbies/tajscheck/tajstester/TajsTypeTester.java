@@ -154,7 +154,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             timers.stop(Timers.Tags.TEST_TRANSFER);
 
             if (typeChecked || info.options.staticOptions.propagateStateFromFailingTest) {
-                previousTestContext = newc;
+                previousTestContext = newc; // do propagate the new state.
             }
             if (typeChecked) {
                 typeCheckedTests.add(test);
