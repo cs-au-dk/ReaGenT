@@ -987,9 +987,6 @@ public class TAJSUnitTests {
                 result.detectedViolations.containsKey(path) &&
                 result.detectedViolations.get(path).iterator().next().toString().trim().equals("Expected string but found 2.0 in test " + path)
         );
-
-        assertThat(result.timeoutTests, hasSize(1));
-        assertThat(result.timeoutTests.iterator().next().getPath(), is(equalTo("module.foo()")));
     }
 
     @Test
@@ -998,6 +995,10 @@ public class TAJSUnitTests {
                 .setExpansionPolicy(new FixedExpansionOrder("module.foo()", "module.polute()"))
                 .setRetractionPolicy(new LimitTransfersRetractionPolicy(100, 2))
         );
+
+
+        assertThat(result.timeoutTests, hasSize(1));
+        assertThat(result.timeoutTests.iterator().next().getPath(), is(equalTo("module.foo()")));
 
         expect(result)
                 .forPath("module.foo().foo")
