@@ -2,7 +2,6 @@ package dk.webbies.tajscheck.test.tajs.analyze;
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.ExpandOneAtATimePolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
@@ -126,8 +125,12 @@ public class AnalyzeBenchmarks extends TestCase {
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
     public void analyzeBenchmarkPatched() throws Exception {
-        Benchmark benchmark = getPatchedBenchmark(this.benchmark).withOptions(options());
-        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, Integer.MAX_VALUE);
+        Benchmark benchmark = getPatchedBenchmark(this.benchmark);
+        if (benchmark == null) {
+            return;
+        }
+        benchmark = benchmark.withOptions(options());
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
         System.out.println(result);
         assert(!result.timedout);
     }
