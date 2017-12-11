@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
@@ -26,7 +27,7 @@ public class Experiment {
     }
 
     private final List<Pair<String, Benchmark>> benchmarks;
-    private final List<Pair<List<String>, ExperimentMultiRunner>> experiments = new ArrayList<>();
+    private final List<BiConsumer<Benchmark, BiConsumer<String, String>>> experiments = new ArrayList<>();
 
     public Experiment(List<Pair<String, Benchmark>> benchmarks) {
         this.benchmarks = benchmarks.stream().sorted(Comparator.comparing(Pair::getLeft)).collect(Collectors.toList());
@@ -65,6 +66,10 @@ public class Experiment {
         ));
     }
 
+    public void addExperiment(BiConsumer<Benchmark, BiConsumer<String, String>> experiment) {
+        this.experiments.add(experiment);
+    }
+
     public void addMultiExperiment(String name1, String name2, ExperimentMultiRunner calculator) {
         addMultiExperiment(Arrays.asList(name1, name2), calculator);
     }
@@ -78,8 +83,21 @@ public class Experiment {
     }
 
     public void addMultiExperiment(Pair<List<String>, ExperimentMultiRunner> experiment) {
-        this.experiments.add(experiment);
+        this.experiments.add((benchmark, register) -> {
+            try {
+                List<String> result = experiment.right.run(benchmark);
+                List<String> names = experiment.left;
+                assert result.size() == names.size();
+                for (int i = 0; i < names.size(); i++) {
+                    register.accept(names.get(i), result.get(i));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
+
+
 
     public Table calculate() {
         return calculate(1);
@@ -90,7 +108,7 @@ public class Experiment {
 
         List<String> header = new ArrayList<>();
         header.add("Benchmark");
-        experiments.stream().map(Pair::getLeft).reduce(new ArrayList<>(), Util::reduceList).forEach(header::add);
+        Map<String, Integer> headerIndexes = new HashMap<>();
 
         table.addRow(header);
 
@@ -108,12 +126,24 @@ public class Experiment {
 
                 System.out.println("Running benchmark: " + benchmark.getLeft() + " (" + rowIndex + "/" + benchmarks.size() + ")");
                 try {
-                    for (Pair<List<String>, ExperimentMultiRunner> pair : experiments) {
-                        List<String> subResult;
+                    for (BiConsumer<Benchmark, BiConsumer<String, String>> experiment : experiments) {
                         int tries = 0;
                         while (true) {
                             try {
-                                subResult = pair.getRight().run(benchmark.getRight());
+                                experiment.accept(benchmark.getRight(), (name, result) -> {
+                                    int index;
+                                    if (headerIndexes.containsKey(name)) {
+                                        index = headerIndexes.get(name);
+                                    } else {
+                                        index = headerIndexes.size() + 1;
+                                        headerIndexes.put(name, index);
+                                        header.add(name);
+                                    }
+                                    while (row.size() <= index) {
+                                        row.add("");
+                                    }
+                                    row.set(index, result);
+                                });
                                 break;
                             } catch (Throwable e) {
                                 if (tries == 5) {
@@ -126,13 +156,11 @@ public class Experiment {
                                 }
                             }
                         }
-                        row.addAll(subResult);
 
                         System.out.println("\nSub result ready:");
                         System.out.println(table.toCSV());
                         System.out.println();
                     }
-                    table.consistencyCheck(rowIndex);
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }

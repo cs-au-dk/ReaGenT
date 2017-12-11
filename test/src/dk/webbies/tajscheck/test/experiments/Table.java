@@ -13,25 +13,12 @@ public class Table {
     private int size = -1;
 
     public synchronized void addRow(List<String> objects) {
-        assertSize(objects.size());
         table.add(objects);
-    }
-
-    private void assertSize(int newSize) {
-        if (size == -1) {
-            size = newSize;
-        } else {
-            assert size == newSize;
-        }
     }
 
     public synchronized void setRow(int index, List<String> objects) {
         Util.ensureSize(table, index + 1);
         table.set(index, objects);
-    }
-
-    public synchronized void consistencyCheck(int rowIndex) {
-        assertSize(table.get(rowIndex).size());
     }
 
     private synchronized String print(String columnSeparator, String rowSeparator) {
