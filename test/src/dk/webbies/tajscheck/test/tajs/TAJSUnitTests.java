@@ -600,7 +600,7 @@ public class TAJSUnitTests {
 
         expect(result)
                 .performedAllTests()
-                .forPath("module, Bar")
+                .forPath("module.Bar")
                 .hasViolations();
     }
 
@@ -777,7 +777,7 @@ public class TAJSUnitTests {
         TAJSUtil.TajsAnalysisResults result = run(bench);
         expect(result)
                 .performedAllTests()
-                .forPath("window, Path, map, (), exit, [arg0]")
+                .forPath("window.Path.map.().exit.[arg0]")
                 .hasViolations();
 
         // the dynamic testing can also find the error.
@@ -870,7 +870,7 @@ public class TAJSUnitTests {
         System.out.println(result);
         expect(result)
                 .performedAllTests()
-                .forPath("window, module, foo, [arg0]")
+                .forPath("window.module.foo.[arg0]")
                 .hasViolations();
 
     }
@@ -1006,7 +1006,15 @@ public class TAJSUnitTests {
 
     }
 
-    // TODO: PathJS, termination.
+    @Test
+    public void higherOrderIncludesCallsite() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("higherOrderIncludesCallsite");
+
+        System.out.println(result);
+
+        assertThat(result.detectedViolations.asMap().entrySet(), hasSize(2));
+    }
+
     // TODO: Errors in higher-order functions should report the call-site the error happened in.
     // TODO: The SpecInstantiator should respect the info.shouldConstruct() predicate. And possibly use feedback-values.
 

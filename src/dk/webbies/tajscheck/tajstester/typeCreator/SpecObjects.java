@@ -36,7 +36,7 @@ public class SpecObjects implements HostObject {
         }
 
         public String asText() {
-            return String.join(", ", path);
+            return String.join(".", path);
         }
 
         @Override

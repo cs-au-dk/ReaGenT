@@ -8,6 +8,7 @@ import org.apache.commons.io.IOUtils;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -136,6 +137,11 @@ public class Util {
 
     public static <S, T, R> Function<Map.Entry<S, T>, Map.Entry<S, R>> mapValue(Function<T, R> mapper) {
         return (entry) -> new AbstractMap.SimpleEntry<>(entry.getKey(), mapper.apply(entry.getValue()));
+    }
+
+    public static String lastUrlComponent(URL url) {
+        String path = url.getPath();
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     public static String toPercentage(double d) {

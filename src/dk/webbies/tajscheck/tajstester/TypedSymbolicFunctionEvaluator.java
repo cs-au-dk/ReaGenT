@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.FunctionCalls;
 import dk.brics.tajs.analysis.Solver;
+import dk.brics.tajs.flowgraph.SourceLocation;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
 import dk.brics.tajs.solver.GenericSolver;
@@ -15,11 +16,13 @@ import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
+import dk.webbies.tajscheck.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class TypedSymbolicFunctionEvaluator {
@@ -35,7 +38,11 @@ public class TypedSymbolicFunctionEvaluator {
 
     public Value evaluateCallToSymbolicFunction(HostObject hostObject, FunctionCalls.CallInfo call, Solver.SolverInterface c) {
         TypeWithContext typeWithContext = ((SpecObjects.TypedObject) hostObject).getType();
-        String path = ((SpecObjects.TypedObject) hostObject).asText();
+
+        SourceLocation sourceLocation = c.getNode().getBlock().getSourceLocation();
+        String shortLocation = Util.lastUrlComponent(sourceLocation.getLocation()) + sourceLocation.getLineNumber() + ":" + sourceLocation.getColumnNumber();
+
+        Function<String, String> path = suffix -> ((SpecObjects.TypedObject) hostObject).asText() + suffix + " {" + shortLocation + "}";
         TypeContext context = typeWithContext.getTypeContext();
 
         Type type = typeWithContext.getType();
@@ -79,14 +86,14 @@ public class TypedSymbolicFunctionEvaluator {
         }
 
         if (signatures.size() == 0) {
-            tajsTypeTester.addViolation(new TypeViolation("Called a non function", path), c);
+            tajsTypeTester.addViolation(new TypeViolation("Called a non function", path.apply("")), c);
             return Value.makeNone();
         }
 
-        return evaluateCallToSymbolicFunction(call, c, typeWithContext, path, context, signatures);
+        return evaluateCallToSymbolicFunction(call, c, path, context, signatures);
     }
 
-    private Value evaluateCallToSymbolicFunction(FunctionCalls.CallInfo call, Solver.SolverInterface c, TypeWithContext typeWithContext, String path, TypeContext context, List<Signature> signatures) {
+    private Value evaluateCallToSymbolicFunction(FunctionCalls.CallInfo call, Solver.SolverInterface c, Function<String, String> path, TypeContext context, List<Signature> signatures) {
         TajsTypeChecker tajsTypeChecker = new TajsTypeChecker(null, c, info);
 
         if (signatures.size() == 1) {
@@ -101,54 +108,54 @@ public class TypedSymbolicFunctionEvaluator {
                     // it is ok for the number of arguments to be unknown if rest args, when we try to add the arguments we will find potential errors anyway.
 //                    tajsTypeTester.addViolation(new TypeViolation("Expected a minimum of " + parameters.size() + " arguments, got an unknown number of arguments", path), c);
                 } else if (!call.isUnknownNumberOfArgs() && call.getNumberOfArgs() < parameters.size()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Expected a minimum of " + parameters.size() + " arguments, got " + call.getNumberOfArgs(), path), c);
+                    tajsTypeTester.addViolation(new TypeViolation("Expected a minimum of " + parameters.size() + " arguments, got " + call.getNumberOfArgs(), path.apply("")), c);
                 }
             } else {
                 if (call.isUnknownNumberOfArgs()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Expected  " + parameters.size() + " arguments, got an unknown number of arguments", path), c);
+                    tajsTypeTester.addViolation(new TypeViolation("Expected  " + parameters.size() + " arguments, got an unknown number of arguments", path.apply("")), c);
                 } else if (parameters.size() != call.getNumberOfArgs()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Expected  " + parameters.size() + " arguments, got " + call.getNumberOfArgs(), path), c);
+                    tajsTypeTester.addViolation(new TypeViolation("Expected  " + parameters.size() + " arguments, got " + call.getNumberOfArgs(), path.apply("")), c);
                 }
             }
             if (call.isUnknownNumberOfArgs()) {
                 if (!signature.isHasRestParameter()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Function was called with an unknown number of args, but it doesn't have a restArgs parameter", path), c);
+                    tajsTypeTester.addViolation(new TypeViolation("Function was called with an unknown number of args, but it doesn't have a restArgs parameter", path.apply("")), c);
                 }
                 if (signature.isHasRestParameter()) {
                     // restricting to not undef, because rest-args must be possibly undef.
-                    tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, context), info.typeNames.get(typeWithContext.getType()) + ".[argUnknown]", c, tajsTypeChecker, null);
+                    tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, context), path.apply(".[argUnknown]"), c, tajsTypeChecker, null);
                 }
             }
 
             for (int i = 0; i < parameters.size(); i++) {
                 Value arg = call.getArg(i);
                 if (arg.isMaybePresent()) {
-                    tajsTypeTester.attemptAddValue(arg, new TypeWithContext(parameters.get(i).getType(), context), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
+                    tajsTypeTester.attemptAddValue(arg, new TypeWithContext(parameters.get(i).getType(), context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, null);
                 }
             }
             if (signature.isHasRestParameter()) {
                 if (call.isUnknownNumberOfArgs()) {
-                    tajsTypeTester.attemptAddValue(call.getArg(parameters.size()), new TypeWithContext(restArgsType, context), info.typeNames.get(typeWithContext.getType()) + ".[arg" + parameters.size() + "]", c, tajsTypeChecker, null);
+                    tajsTypeTester.attemptAddValue(call.getArg(parameters.size()), new TypeWithContext(restArgsType, context), path.apply(".[arg" + parameters.size() + "]"), c, tajsTypeChecker, null);
                 } else {
                     for (int i = parameters.size(); i < call.getNumberOfArgs(); i++) {
-                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, context), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
+                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, null);
                     }
                 }
             }
             assert signature.getResolvedReturnType() != null;
             return valueHandler.createValue(signature.getResolvedReturnType(), context);
         } else {
-            List<Signature> matchingSignatures = signatures.stream().filter(sig -> sigMatches(sig, context, call, c, path, tajsTypeChecker)).collect(Collectors.toList());
+            List<Signature> matchingSignatures = signatures.stream().filter(sig -> sigMatches(sig, context, call, c, path.apply(""), tajsTypeChecker)).collect(Collectors.toList());
 
             if (matchingSignatures.isEmpty()) {
-                tajsTypeTester.addViolation(new TypeViolation("None of the overloads matched how the callback was called", path), c);
+                tajsTypeTester.addViolation(new TypeViolation("None of the overloads matched how the callback was called", path.apply("")), c);
             }
 
             if (matchingSignatures.size() < signatures.size()) {
                 ArrayList<Signature> nonMatchingSignatures = new ArrayList<>(signatures);
                 nonMatchingSignatures.removeAll(matchingSignatures);
                 for (Signature nonMatchingSignature : nonMatchingSignatures) {
-                    tajsTypeTester.addWarning(new TypeViolation("Signatures with args " + PrettyTypes.parameters(nonMatchingSignature.getParameters()) + " was never called", path), c);
+                    tajsTypeTester.addWarning(new TypeViolation("Signatures with args " + PrettyTypes.parameters(nonMatchingSignature.getParameters()) + " was never called", path.apply("")), c);
                 }
             }
 
@@ -159,15 +166,15 @@ public class TypedSymbolicFunctionEvaluator {
                     parameters = parameters.subList(0, parameters.size() - 1);
 
                     for (int i = parameters.size(); i < call.getNumberOfArgs(); i++) {
-                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, context), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
+                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, null);
                     }
 
                     if (call.isUnknownNumberOfArgs()) {
-                        tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, context), info.typeNames.get(typeWithContext.getType()) + ".[argUnknown]", c, tajsTypeChecker, null);
+                        tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, context), path.apply(".[argUnknown]"), c, tajsTypeChecker, null);
                     }
                 }
                 for (int i = 0; i < Math.min(parameters.size(), call.getNumberOfArgs()); i++) {
-                    tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), context), info.typeNames.get(typeWithContext.getType()) + ".[arg" + i + "]", c, tajsTypeChecker, null);
+                    tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, null);
                 }
             }
 
