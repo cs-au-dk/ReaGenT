@@ -3,7 +3,6 @@ package dk.webbies.tajscheck.test.experiments;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
-import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -37,7 +36,7 @@ public class Experiment {
     public Experiment(Collection<String> names) {
         this(
                 names.stream()
-                        .map(name -> {assert RunBenchmarks.benchmarks.containsKey(name); return name;})
+                        .peek(name -> {assert RunBenchmarks.benchmarks.containsKey(name);})
                         .map(name -> new Pair<>(name, RunBenchmarks.benchmarks.get(name)))
                         .collect(Collectors.toList())
         );
@@ -66,8 +65,9 @@ public class Experiment {
         ));
     }
 
-    public void addExperiment(BiConsumer<Benchmark, BiConsumer<String, String>> experiment) {
+    public Experiment addExperiment(BiConsumer<Benchmark, BiConsumer<String, String>> experiment) {
         this.experiments.add(experiment);
+        return this;
     }
 
     public void addMultiExperiment(String name1, String name2, ExperimentMultiRunner calculator) {
