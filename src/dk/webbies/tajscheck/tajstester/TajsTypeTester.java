@@ -84,7 +84,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         valueHandler.clearCreatedValueCache();
 
-        if(sensitivity.isLocalTestContext(c.getState().getContext())) {
+        if(TesterContextSensitivity.isLocalTestContext(c.getState().getContext())) {
             if(!c.isScanning()) {
                 if(DEBUG_VALUES) System.out.println("New flow for " + c.getState().getBasicBlock().getIndex() + ", " + c.getState().getContext());
                 // Then we can re-run the tests to see if more can be performed
@@ -99,78 +99,26 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         typeCheckedTests.clear();
 
-        for (Test test : tests) {
-            valueHandler.clearValuesForTest(test);
+        boolean progress;
+        do {
+            progress = iterateAllNonPerformedTests(c);
 
-            if (retractionPolicy.isRetracted(test) || exceptionsEncountered.containsKey(test)) { // importantly, even if it is timed out, we still continue.
-                continue;
+            for (Test test : expansionPolicy.getTestsToPerformAnyway()) {
+                if (performed.contains(test)) {
+                    continue;
+                }
+                valueHandler.clearValuesForTest(test);
+                Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
+                propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT, allTestsBlock);
+                State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
+
+                c.withState(testState, () -> performTest(c, test, newc));
             }
-
-            if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
-                if(performed.contains(test))
-                    throw new RuntimeException("Previously performed test is now skipped because of no values for the types to test");
-
-                if (DEBUG && !c.isScanning()) System.out.println("Skipped test " + test);
-                if (DEBUG && c.isScanning()) System.out.println("Never performed test " + test);
-                continue;
-            }
-
-            // Generating one local context per test
-            Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
-
-            // Propagate previous state into this, chaining the flow
-            if(previousTestContext != null) {
-                timers.start(Timers.Tags.PROPAGATING_TO_THIS_CONTEXT);
-                State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
-                c.propagateToBasicBlock(preState, allTestsBlock, newc);
-                timers.stop(Timers.Tags.PROPAGATING_TO_THIS_CONTEXT);
-            }
-
-            State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
-
-            c.withState(testState, () -> {
-                if (test.getDependsOn().stream().map(type -> valueHandler.createValue(type, test.getTypeContext())).anyMatch(Value::isNone)) {
-                    return;
-                }
-
-                if (test instanceof FunctionTest && !expansionPolicy.include((FunctionTest) test)) {
-                    if (DEBUG) System.out.println("Didn't expand to " + test);
-                    return;
-                }
-
-                if (DEBUG) System.out.println("Performing test " + test);
-
-                TajsTypeChecker typeChecker = new TajsTypeChecker(test, c, info);
-                TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker, this, info, valueHandler);
-
-                // attempting to perform the test in the local context
-                timers.start(Timers.Tags.TEST_TRANSFER);
-                boolean typeChecked = false;
-                try {
-                    typeChecked = test.accept(visitor);
-                    performed.add(test);
-                } catch (Exception e) {
-                    exceptionsEncountered.put(test, e);
-                }
-                timers.stop(Timers.Tags.TEST_TRANSFER);
-
-                if (typeChecked || info.options.staticOptions.propagateStateFromFailingTest) {
-                    previousTestContext = newc; // do propagate the new state.
-                }
-                if (typeChecked) {
-                    typeCheckedTests.add(test);
-                }
-            });
-        }
+        } while (progress);
 
         valueHandler.clearValuesForTest(null); // null is the special test used for saved arguments from higher-order-functions.
 
-        if (previousTestContext != null) { // if null, then none of the tests succeeded, and there is therefore no state to do anything with.
-            timers.start(Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
-            State finalChainingState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
-            c.propagateToBasicBlock(finalChainingState, allTestsBlock, allTestsContext);
-            timers.stop(Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
-        }
+        propagateStateToContext(c, allTestsContext, Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY, allTestsBlock);
 
         endOfInnerLoopCallbacks.forEach(Runnable::run);
         endOfInnerLoopCallbacks.clear();
@@ -190,6 +138,86 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             Util.writeFile("partialResult.txt", partialResults.toString());
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private boolean iterateAllNonPerformedTests(GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
+        boolean progress = false;
+        for (Test test : tests) {
+            if (performed.contains(test)) {
+                continue;
+            }
+            valueHandler.clearValuesForTest(test);
+
+            if (retractionPolicy.isRetracted(test) || exceptionsEncountered.containsKey(test)) { // importantly, even if it is timed out, we still continue.
+                continue;
+            }
+
+            if (test.getTypeToTest().stream().map(type -> new TypeWithContext(type, test.getTypeContext())).map(valueHandler::findFeedbackValue).anyMatch(Objects::isNull)) {
+                if(performed.contains(test))
+                    throw new RuntimeException("Previously performed test is now skipped because of no values for the types to test");
+
+                if (DEBUG && !c.isScanning()) System.out.println("Skipped test " + test);
+                if (DEBUG && c.isScanning()) System.out.println("Never performed test " + test);
+                continue;
+            }
+
+            // Generating one local context per test
+            Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
+
+            // Propagate previous state into this, chaining the flow
+            propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT, allTestsBlock);
+
+            State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
+
+            progress |= c.withState(testState, () -> {
+                if (test.getDependsOn().stream().map(type -> valueHandler.createValue(type, test.getTypeContext())).anyMatch(Value::isNone)) {
+                    return false;
+                }
+
+                if (test instanceof FunctionTest && !expansionPolicy.include((FunctionTest) test)) {
+                    if (DEBUG) System.out.println("Didn't expand to " + test);
+                    return false;
+                }
+
+                performTest(c, test, newc);
+                return true;
+            });
+        }
+        return progress;
+    }
+
+    private void propagateStateToContext(GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c, Context newc, Timers.Tags propagatingToThisContext, BasicBlock allTestsBlock) {
+        if (previousTestContext != null) {
+            timers.start(propagatingToThisContext);
+            State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
+            c.propagateToBasicBlock(preState, allTestsBlock, newc);
+            timers.stop(propagatingToThisContext);
+        }
+    }
+
+    private void performTest(GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c, Test test, Context newc) {
+        if (DEBUG) System.out.println("Performing test " + test);
+
+        TajsTypeChecker typeChecker = new TajsTypeChecker(test, c, info);
+        TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker, this, info, valueHandler);
+
+        // attempting to perform the test in the local context
+        timers.start(Timers.Tags.TEST_TRANSFER);
+        boolean typeChecked = false;
+        try {
+            typeChecked = test.accept(visitor);
+            performed.add(test);
+        } catch (Exception e) {
+            exceptionsEncountered.put(test, e);
+        }
+        timers.stop(Timers.Tags.TEST_TRANSFER);
+
+        if (typeChecked || info.options.staticOptions.propagateStateFromFailingTest) {
+            previousTestContext = newc; // do propagate the new state.
+        }
+        if (typeChecked) {
+            typeCheckedTests.add(test);
         }
     }
 

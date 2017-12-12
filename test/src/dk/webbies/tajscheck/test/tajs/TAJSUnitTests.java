@@ -4,6 +4,7 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.DelayAllTestsExpansionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.FixedExpansionOrder;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
@@ -1109,9 +1110,27 @@ public class TAJSUnitTests {
                 .hasViolations();
     }
 
+    @Test
+    public void lateExpansion() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("lateExpansion", options().staticOptions.setExpansionPolicy(new DelayAllTestsExpansionPolicy()));
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+    @Test
+    public void lateExpansion2() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("lateExpansion2", options().staticOptions.setExpansionPolicy(new DelayAllTestsExpansionPolicy()));
+
+        expect(result)
+                .forPath("module.bar().bar")
+                .hasViolations();
+    }
+
+    // TODO: Implement an expansion-policy that only uses constructed values when absolutely neccesary.
+
     // TODO: Should objects have the internal prototype as Object.prototype as default? (TypeScript does assume every interface inherits from Object)
 
-    // TODO: Possibly use both feedback-values and constructed values.
     // TODO: Postpone calling functions with synthetic arguments (need generalization of expansion-policy). Possibly do a second pass, where the expansion-policy tells the type-tester which skipped tests should execute anyway.
 
     // TODO: For now we assume that class-instances (and class-constructors) should not be constructed, instead feedback-values are used.

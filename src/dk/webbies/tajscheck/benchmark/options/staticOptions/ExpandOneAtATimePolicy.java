@@ -1,8 +1,11 @@
 package dk.webbies.tajscheck.benchmark.options.staticOptions;
 
 import dk.webbies.tajscheck.testcreator.test.FunctionTest;
+import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.util.Util;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,5 +31,10 @@ public class ExpandOneAtATimePolicy implements ExpansionPolicy {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public Collection<Test> getTestsToPerformAnyway() {
+        return Collections.emptyList();
     }
 }
