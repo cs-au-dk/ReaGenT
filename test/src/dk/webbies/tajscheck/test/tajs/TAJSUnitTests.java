@@ -1084,8 +1084,6 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
-    // TODO: Option to insert <any> into undeclared properties.
-
     // TODO: Test string-indexers somehow.
     // TODO: Should objects have the internal prototype as Object.prototype as default? (TypeScript does assume every interface inherits from Object)
 
