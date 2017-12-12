@@ -1064,9 +1064,16 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
-// TODO: The SpecInstantiator should respect the info.shouldConstruct() predicate. And possibly use feedback-values.
+    @Test
+    public void instanceofTest() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("instanceof");
 
-    // TODO: If the library can construct a class, let it do so.
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
+
     // TODO: Take one more look at instanceof, using the inspector.
     // TODO: Option to insert <any> into undeclared properties.
 

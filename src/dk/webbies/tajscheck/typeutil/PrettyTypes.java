@@ -81,6 +81,8 @@ public class PrettyTypes {
                     return "never";
                 case Symbol:
                     return "symbol";
+                case Object:
+                    return "object";
                 default:
                     throw new RuntimeException("what? " + ((SimpleType) type).getKind().name());
             }
