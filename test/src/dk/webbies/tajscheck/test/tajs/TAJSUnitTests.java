@@ -960,7 +960,18 @@ public class TAJSUnitTests {
 
     @Test
     public void functionProperties() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("functionProperties");
+        TAJSUtil.TajsAnalysisResults result = run("functionProperties", options());
+
+        expect(result)
+                .performedAllTests()
+                .hasNoWarnings()
+                .hasNoViolations();
+    }
+
+    @Test
+    @Ignore // we don't yet model a functions .prototype (and the .constructor on that .prototype).
+    public void functionProperties2() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("functionProperties2", options());
 
         expect(result)
                 .performedAllTests()

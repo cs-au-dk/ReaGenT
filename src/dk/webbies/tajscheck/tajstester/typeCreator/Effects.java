@@ -1,13 +1,12 @@
 package dk.webbies.tajscheck.tajstester.typeCreator;
 
 import dk.brics.tajs.analysis.InitialStateBuilder;
+import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.Obj;
 import dk.brics.tajs.lattice.ObjectLabel;
-import dk.brics.tajs.lattice.PKey;
 import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.util.AnalysisException;
-import dk.brics.tajs.util.Collections;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -15,14 +14,16 @@ import java.util.Set;
 class Effects {
 
     private final Solver.SolverInterface c;
+    private PropVarOperations pv;
 
     Effects(Solver.SolverInterface c) {
         this.c = c;
+        this.pv = c.getAnalysis().getPropVarOperations();
     }
 
 
     private final Set<ObjectLabel> initialized = new HashSet<>();
-    void newObject(ObjectLabel label) {
+    void newObject(ObjectLabel label, SpecInstantiator.MiscInfo info) {
         if (initialized.contains(label)) {
             return;
         }
@@ -67,7 +68,7 @@ class Effects {
     }
 
     void writeProperty(ObjectLabel label, String propertyName, Value value) {
-        c.getAnalysis().getPropVarOperations().writeProperty(label, propertyName, value);
+        pv.writeProperty(label, propertyName, value);
     }
 
     void writeNumberIndexer(ObjectLabel label, Value value) {

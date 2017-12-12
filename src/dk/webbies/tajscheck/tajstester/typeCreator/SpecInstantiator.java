@@ -6,7 +6,6 @@ import dk.brics.tajs.analysis.HostAPIs;
 import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.*;
-import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -363,13 +362,14 @@ public class SpecInstantiator {
         ObjectLabel label = null;
         if (kind != null) {
             label = ObjectLabel.make(SpecObjects.getObjectAbstraction(miscInfo.path, key), kind);
-            effects.newObject(label);
+            effects.newObject(label, miscInfo);
         }
         labelCache.put(key, label);
         return label;
     }
 
-    private Value withNewObject(ObjectLabel label, Consumer<ObjectLabel> initializer) {
+    private Value withNewObject(MiscInfo info, Consumer<ObjectLabel> initializer) {
+        ObjectLabel label = info.labelToUse;
         if (label == null) {
             throw new NullPointerException();
         }
@@ -379,8 +379,8 @@ public class SpecInstantiator {
         }
         // keep the object a singleton during instantiation, we create a summary later.
 
-        effects.newObject(label);
-        if (info.options.staticOptions.createSingletonObjects) {// if we keep it as singleton, create summary now.
+        effects.newObject(label, info);
+        if (this.info.options.staticOptions.createSingletonObjects) {// if we keep it as singleton, create summary now.
             effects.summarize(label);
         }
         initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
@@ -431,7 +431,7 @@ public class SpecInstantiator {
         }
 
         private Value writePropertiesToInterface(InterfaceType type, MiscInfo info) {
-            return withNewObject(info.labelToUse, label -> {
+            return withNewObject(info, label -> {
                 Map<String, Type> declaredProperties = type.getDeclaredProperties();
 
                 if (type.getDeclaredStringIndexType() != null) {
@@ -498,7 +498,7 @@ public class SpecInstantiator {
                     log.error("Symbols should be imprecise, they are not."); // TODO:
                     SpecObjects hostObject = SpecObjects.getObjectAbstraction(info.path, new TypeWithContext(t, info.context));
                     ObjectLabel l = ObjectLabel.make(hostObject, ObjectLabel.Kind.SYMBOL);
-                    effects.newObject(l);
+                    effects.newObject(l, info);
                     return Value.makeObject(l);
                 case Object:
                     return instantiate(emptyObjectType, info, "-object");
@@ -520,7 +520,7 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(TupleType t, MiscInfo info) {
-            return withNewObject(info.labelToUse, label -> {
+            return withNewObject(info, label -> {
                 for (int i = 0; i < t.getElementTypes().size(); i++) {
                     Type componentType = t.getElementTypes().get(i);
                     String indexName = i + "";

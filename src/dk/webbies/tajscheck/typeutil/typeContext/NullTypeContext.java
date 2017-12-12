@@ -15,10 +15,8 @@ import java.util.Map;
  */
 public class NullTypeContext implements TypeContext {
     private static final Type any = new SimpleType(SimpleTypeKind.Any);
-    private final Benchmark benchmark;
 
-    public NullTypeContext(Benchmark benchmark) {
-        this.benchmark = benchmark;
+    public NullTypeContext() {
     }
 
     @Override

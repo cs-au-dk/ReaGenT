@@ -28,7 +28,7 @@ public interface TypeContext {
 
     public static TypeContext create(BenchmarkInfo info) {
         if (info.bench.options.disableGenerics) {
-            return new NullTypeContext(info.bench);
+            return new NullTypeContext();
         } else {
             return OptimizingTypeContext.create(info);
         }
