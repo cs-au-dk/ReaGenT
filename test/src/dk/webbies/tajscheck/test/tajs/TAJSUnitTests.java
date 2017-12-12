@@ -1074,11 +1074,19 @@ public class TAJSUnitTests {
                 .hasNoWarnings();
     }
 
-    // TODO: Take one more look at instanceof, using the inspector.
+    @Test
+    public void properWidthSubtyping() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("properWidthSubtyping", options().staticOptions.setProperWidthSubtyping(true));
+
+        expect(result)
+                .performedAllTests()
+                .hasNoWarnings()
+                .hasNoViolations();
+    }
+
     // TODO: Option to insert <any> into undeclared properties.
 
     // TODO: Test string-indexers somehow.
-    // TODO: Make sure constructed functions have Function.prototype set, and that reading .length and .name gives actual results.
     // TODO: Should objects have the internal prototype as Object.prototype as default? (TypeScript does assume every interface inherits from Object)
 
     // TODO: Possibly use both feedback-values and constructed values.

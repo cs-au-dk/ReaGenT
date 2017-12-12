@@ -473,6 +473,9 @@ public class SpecInstantiator {
                 }
                 writeProperties(label, declaredProperties, info);
 
+                if (type.getDeclaredStringIndexType() == null && SpecInstantiator.this.info.options.staticOptions.properWidthSubtyping) {
+                    effects.writeStringIndexer(label, getTheAny());
+                }
             });
         }
 

@@ -18,6 +18,7 @@ public class StaticOptions implements OptionsI {
     public final ExpansionPolicy expansionPolicy;
     public final boolean propagateStateFromFailingTest;
     public final boolean mixFeedbackValuesIntoConstructedValues;
+    public final boolean properWidthSubtyping;
 
     private final Builder builder;
 
@@ -29,6 +30,7 @@ public class StaticOptions implements OptionsI {
         this.expansionPolicy = builder.expansionPolicy;
         this.propagateStateFromFailingTest = builder.propagateStateFromFailingTest;
         this.mixFeedbackValuesIntoConstructedValues = builder.mixFeedbackValuesIntoConstructedValues;
+        this.properWidthSubtyping = builder.properWidthSubtyping;
         this.builder = builder;
     }
 
@@ -45,6 +47,7 @@ public class StaticOptions implements OptionsI {
         public ExpansionPolicy expansionPolicy = new ExpandImmediatelyPolicy();
         public boolean propagateStateFromFailingTest = false;
         public boolean mixFeedbackValuesIntoConstructedValues = false;
+        private boolean properWidthSubtyping = false;
 
         private final CheckOptions.Builder outerBuilder;
 
@@ -93,6 +96,11 @@ public class StaticOptions implements OptionsI {
 
         public Builder setRetractionPolicy(RetractionPolicy retractionPolicy) {
             this.retractionPolicy = retractionPolicy;
+            return this;
+        }
+
+        public Builder setProperWidthSubtyping(boolean properWidthSubtyping) {
+            this.properWidthSubtyping = properWidthSubtyping;
             return this;
         }
 
