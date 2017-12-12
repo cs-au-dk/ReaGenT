@@ -1015,7 +1015,6 @@ public class TAJSUnitTests {
         assertThat(result.detectedViolations.asMap().entrySet(), hasSize(2));
     }
 
-    // TODO: Errors in higher-order functions should report the call-site the error happened in.
     // TODO: The SpecInstantiator should respect the info.shouldConstruct() predicate. And possibly use feedback-values.
 
     // TODO: If the library can construct a class, let it do so.

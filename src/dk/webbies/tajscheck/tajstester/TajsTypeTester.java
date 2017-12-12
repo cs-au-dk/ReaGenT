@@ -58,8 +58,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private Context allTestsContext;
     private TesterContextSensitivity sensitivity;
 
-    private Set<TestBlockEntryObserver> observers = newSet();
-
     private SuspiciousnessMonitor suspiciousMonitor;
     private TestTransfersMonitor transferMonitor;
 
@@ -84,6 +82,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             init(c);
         }
 
+        valueHandler.clearCreatedValueCache();
+
         if(sensitivity.isLocalTestContext(c.getState().getContext())) {
             if(!c.isScanning()) {
                 if(DEBUG_VALUES) System.out.println("New flow for " + c.getState().getBasicBlock().getIndex() + ", " + c.getState().getContext());
@@ -91,10 +91,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 c.addToWorklist(allTestsBlock, allTestsContext);
             }
             return;
-        }
-
-        for(TestBlockEntryObserver obs : observers) {
-            obs.onTestBlockEntry(c);
         }
 
         performed.clear();
@@ -216,12 +212,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
         timers.stop(Timers.Tags.INITIAL_STATE_PROPAGATION_TO_TEST_ENTRY);
         if(valueHandler == null) {
-            valueHandler = new TypeValuesHandler(info.typeNames, c, this, info);
+            valueHandler = new TypeValuesHandler(info.typeNames, c, info);
         }
-    }
-
-    public void registerTestEntryObserver(TestBlockEntryObserver obs) {
-        observers.add(obs);
     }
 
     @Override

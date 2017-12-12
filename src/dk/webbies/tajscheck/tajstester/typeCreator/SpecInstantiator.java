@@ -10,7 +10,6 @@ import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.tajstester.TestBlockEntryObserver;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 import static dk.brics.tajs.util.Collections.*;
 import static java.util.Collections.singletonList;
 
-public class SpecInstantiator implements TestBlockEntryObserver {
+public class SpecInstantiator {
     private static final Logger log = Logger.getLogger(SpecInstantiator.class);
 
     private static final String globalObjectPath = "<the global object>";
@@ -68,13 +67,6 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         initializeLabelsCacheWithCanonicals();
     }
 
-    @Override
-    public void onTestBlockEntry(GenericSolver.SolverInterface c) {
-        initAnyStr();
-    }
-
-
-
     private void initAnyStr() {
         if (info.options.staticOptions.betterAnyString && defaultAnyString == null) {
             State initial = c.getState();
@@ -100,7 +92,8 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         }
     }
 
-    private Value createAny() {
+    private Value any = null;
+    private void initAny() {
         InterfaceType anyObj = SpecReader.makeEmptySyntheticInterfaceType();
 
         UnionType any = new UnionType();
@@ -111,7 +104,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                 new SimpleType(SimpleTypeKind.Boolean),
                 new SimpleType(SimpleTypeKind.Undefined),
                 new SimpleType(SimpleTypeKind.Null),
-//                new SimpleType(SimpleTypeKind.Symbol), // TODO: Comment back in when we have merged symbols, make sure TAJSUnitTests.compareWithTheAny still passes.
+                new SimpleType(SimpleTypeKind.Symbol),
                 new SimpleType(SimpleTypeKind.Object))
         );
 
@@ -136,7 +129,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         info.typeNames.put(anyObj, "any-obj");
         info.typeNames.put(any, "any");
 
-        return instantiate(any, new MiscInfo("any", TypeContext.create(info), null), "theAny");
+        this.any = instantiate(any, new MiscInfo("any", TypeContext.create(info), null), "theAny");
     }
 
     /**
@@ -398,7 +391,14 @@ public class SpecInstantiator implements TestBlockEntryObserver {
     }
 
     public Value getTheAny() {
-        return createAny();
+        if (any == null) {
+            initAny();
+        }
+        return any;
+    }
+
+    public void clearValueCache() {
+        valueCache.clear();
     }
 
     private class InstantiatorVisitor implements TypeVisitorWithArgument<Value, MiscInfo> {
@@ -479,7 +479,7 @@ public class SpecInstantiator implements TestBlockEntryObserver {
         public Value visit(SimpleType t, MiscInfo info) {
             switch (t.getKind()) {
                 case Any:
-                    return createAny();
+                    return getTheAny();
                 case String:
                     return makeString();
                 case Enum:
@@ -501,14 +501,18 @@ public class SpecInstantiator implements TestBlockEntryObserver {
                     effects.newObject(l);
                     return Value.makeObject(l);
                 case Object:
-                    return instantiate(SpecReader.makeEmptySyntheticInterfaceType(), info, "-object");
+                    return instantiate(emptyObjectType, info, "-object");
                 default:
                     throw new RuntimeException("Unhandled TypeKind: " + t);
             }
         }
+        private final InterfaceType emptyObjectType = SpecReader.makeEmptySyntheticInterfaceType();
 
         private Value makeString() {
             if (info.options.staticOptions.betterAnyString) {
+                if (defaultAnyString == null) {
+                    initAnyStr();
+                }
                 return defaultAnyString;
             }
             return Value.makeAnyStr();

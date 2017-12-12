@@ -2,6 +2,7 @@ package dk.webbies.tajscheck.tajstester.typeCreator;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
+import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.dom.DOMFunctions;
@@ -9,14 +10,14 @@ import dk.brics.tajs.analysis.dom.DOMObjects;
 import dk.brics.tajs.analysis.dom.DOMWindow;
 import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
 import dk.brics.tajs.lattice.*;
+import dk.brics.tajs.monitoring.IAnalysisMonitoring;
+import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.unevalizer.SimpleUnevalizerAPI;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
+import dk.webbies.tajscheck.util.Pair;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class NativesInstantiator {
     private final BenchmarkInfo info;
@@ -46,7 +47,18 @@ public class NativesInstantiator {
             "RTCBundlePolicy"
     ));
 
+    private final Map<Pair<Type, List<String>>, Value> nativesValuesCache = new HashMap<>();
     Value instantiateNative(Type type, SpecInstantiator.MiscInfo info, String step, Solver.SolverInterface c) {
+        Pair<Type, List<String>> key = new Pair<>(type, info.path);
+        if (nativesValuesCache.containsKey(key)) {
+            return nativesValuesCache.get(key);
+        }
+        Value result = constructNoCache(type, info, step, c);
+        nativesValuesCache.put(key, result);
+        return result;
+    }
+
+    private Value constructNoCache(Type type, SpecInstantiator.MiscInfo info, String step, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
         String name = this.info.typeNames.get(type);
         switch (name) {
             case "Element":

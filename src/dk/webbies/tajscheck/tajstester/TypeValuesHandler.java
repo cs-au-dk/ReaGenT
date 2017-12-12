@@ -24,11 +24,10 @@ public class TypeValuesHandler {
     private final MultiMap<TypeWithContext, Reference<Value>> typeValueMap = new ArrayListMultiMap<>();
     private MultiMap<Test, Reference<Value>> testValueMap = new ArrayListMultiMap<>();
 
-    TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, TajsTypeTester tester, BenchmarkInfo info) {
+    TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, BenchmarkInfo info) {
         this.typeNames = typeNames;
         this.info = info;
         this.instantiator = new SpecInstantiator(c, info);
-        tester.registerTestEntryObserver(this.instantiator);
     }
 
     public Value getTheAny() {
@@ -98,6 +97,10 @@ public class TypeValuesHandler {
             typeValueMap.put(subType, ref);
         });
         return valueWasAdded.get();
+    }
+
+    public void clearCreatedValueCache() {
+        instantiator.clearValueCache();
     }
 
     private static final class Reference<T> {

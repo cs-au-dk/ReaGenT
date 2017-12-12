@@ -9,15 +9,25 @@ import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Collections;
 
-public class Effects {
+import java.util.HashSet;
+import java.util.Set;
+
+class Effects {
 
     private final Solver.SolverInterface c;
 
-    public Effects(Solver.SolverInterface c) {
+    Effects(Solver.SolverInterface c) {
         this.c = c;
     }
 
-    public void newObject(ObjectLabel label) {
+
+    private final Set<ObjectLabel> initialized = new HashSet<>();
+    void newObject(ObjectLabel label) {
+        if (initialized.contains(label)) {
+            return;
+        }
+        initialized.add(label);
+
         c.getState().newObject(label);
         ObjectLabel prototype;
         switch (label.getKind()) {
@@ -56,26 +66,26 @@ public class Effects {
         c.getState().writeInternalPrototype(label, Value.makeObject(prototype));
     }
 
-    public void multiplyObject(ObjectLabel label) {
-        c.getState().multiplyObject(label);
-    }
-
-    public void writeProperty(ObjectLabel label, String propertyName, Value value) {
+    void writeProperty(ObjectLabel label, String propertyName, Value value) {
         c.getAnalysis().getPropVarOperations().writeProperty(label, propertyName, value);
     }
 
-    public void writeNumberIndexer(ObjectLabel label, Value value) {
+    void writeNumberIndexer(ObjectLabel label, Value value) {
         Obj object = c.getState().getObject(label, true);
         object.setDefaultArrayProperty(value.join(Value.makeAbsent()));
     }
 
-    public void writeStringIndexer(ObjectLabel label, Value value) {
+    void writeStringIndexer(ObjectLabel label, Value value) {
         Obj object = c.getState().getObject(label, true);
         object.setDefaultNonArrayProperty(value.join(Value.makeAbsent()));
     }
 
-    public ObjectLabel summarize(ObjectLabel objectLabel) {
-        c.getState().multiplyObject(objectLabel);
-        return objectLabel.makeSingleton().makeSummary();
+    private final Set<ObjectLabel> summarized = new HashSet<>();
+    ObjectLabel summarize(ObjectLabel label) {
+        if (!summarized.contains(label)) {
+            c.getState().multiplyObject(label);
+            summarized.add(label);
+        }
+        return label.makeSingleton().makeSummary();
     }
 }
