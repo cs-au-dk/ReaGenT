@@ -9,6 +9,7 @@ import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.tajstester.TypeValuesHandler;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
@@ -28,6 +29,7 @@ public class SpecInstantiator {
     private static final String globalObjectPath = "<the global object>";
 
     private final Type global;
+    private TypeValuesHandler valueHandler;
 
     private final InstantiatorVisitor visitor;
 
@@ -50,8 +52,9 @@ public class SpecInstantiator {
     private Value defaultAnyString;
     private NativesInstantiator nativesInstantiator;
 
-    public SpecInstantiator(Solver.SolverInterface c, BenchmarkInfo info) {
+    public SpecInstantiator(Solver.SolverInterface c, BenchmarkInfo info, TypeValuesHandler valueHandler) {
         this.global = info.getSpec().getGlobal();
+        this.valueHandler = valueHandler;
         this.visitor = new InstantiatorVisitor();
         this.objectLabelKindDecider = new ObjectLabelKindDecider();
         this.canonicalHostObjectLabelPaths = new CanonicalHostObjectLabelPaths(c.getState().getStore().keySet()); // TODO: See what is inside this thing.
@@ -302,7 +305,17 @@ public class SpecInstantiator {
         return type.accept(objectLabelKindDecider);
     }
 
+    private static final class CannotConstructType extends RuntimeException { }
+
     Value instantiate(Type type, MiscInfo info, String step) {
+        if (!this.info.shouldConstructType(type)) {
+            Value feedbackValue = valueHandler.findFeedbackValue(new TypeWithContext(type, info.context));
+            if (feedbackValue == null) {
+                throw new CannotConstructType(); // this will be catched by the top-most construction method.
+            }
+            return feedbackValue;
+        }
+
         info = info.withContext(info.context.optimizeTypeParameters(type));
         if (step != null) {
             info = info.apendPath(step);
@@ -329,9 +342,12 @@ public class SpecInstantiator {
                 value = Value.makeObject(label);
             } else {
                 processing.add(key);
-                log.debug("Visiting: " + info.path.toString());
-                value = type.accept(visitor, info);
-                processing.remove(key);
+                try {
+                    log.debug("Visiting: " + info.path.toString());
+                    value = type.accept(visitor, info);
+                } finally {
+                    processing.remove(key);
+                }
 
                 if (value.isMaybeObject() && !this.info.options.staticOptions.createSingletonObjects) {
                     value = value.restrictToNotObject().join(Value.makeObject(value.getObjectLabels().stream().map(effects::summarize).collect(Collectors.toSet())));
@@ -340,7 +356,18 @@ public class SpecInstantiator {
 
             valueCache.put(key, value);
         }
-        return valueCache.get(key);
+
+
+        Value result = valueCache.get(key);
+
+        if (this.info.options.staticOptions.mixFeedbackValuesIntoConstructedValues) {
+            Value feedbackValue = valueHandler.findFeedbackValue(new TypeWithContext(type, info.context));
+            if (feedbackValue != null) {
+                result = result.join(feedbackValue);
+            }
+        }
+
+        return result;
     }
 
     private Value constructArray(MiscInfo info, Type indexType) {
@@ -352,8 +379,12 @@ public class SpecInstantiator {
     }
 
     public Value createValue(TypeWithContext type, String path) {
-        MiscInfo misc = new MiscInfo(path, type.getTypeContext(), null);
-        return instantiate(type.getType(), misc, null);
+        try {
+            MiscInfo misc = new MiscInfo(path, type.getTypeContext(), null);
+            return instantiate(type.getType(), misc, null);
+        } catch (CannotConstructType e) {
+            return Value.makeNone();
+        }
     }
 
     private ObjectLabel makeObjectLabel(Type t, MiscInfo miscInfo) {
@@ -457,9 +488,6 @@ public class SpecInstantiator {
         }
 
         private void writeProperty(ObjectLabel label, String propertyName, Type propertyType, MiscInfo info) {
-            List<String> fullPath = newList(info.path);
-
-            fullPath.add(propertyName);
             Value value = SpecInstantiator.this.instantiate(propertyType, info, propertyName);
 
             effects.writeProperty(label, propertyName, value);

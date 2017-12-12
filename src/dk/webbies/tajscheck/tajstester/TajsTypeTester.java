@@ -115,11 +115,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 continue;
             }
 
-            if (test instanceof FunctionTest && !expansionPolicy.include((FunctionTest) test)) {
-                if (DEBUG) System.out.println("Didn't expand to " + test);
-                continue;
-            }
-
             // Generating one local context per test
             Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
@@ -133,28 +128,39 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
-            if (DEBUG) System.out.println("Performing test " + test);
+            c.withState(testState, () -> {
+                if (test.getDependsOn().stream().map(type -> valueHandler.createValue(type, test.getTypeContext())).anyMatch(Value::isNone)) {
+                    return;
+                }
 
-            TajsTypeChecker typeChecker = new TajsTypeChecker(test, c, info);
-            TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker, this, info, valueHandler);
+                if (test instanceof FunctionTest && !expansionPolicy.include((FunctionTest) test)) {
+                    if (DEBUG) System.out.println("Didn't expand to " + test);
+                    return;
+                }
 
-            // attempting to perform the test in the local context
-            timers.start(Timers.Tags.TEST_TRANSFER);
-            boolean typeChecked = false;
-            try {
-                typeChecked = c.withState(testState, () -> test.accept(visitor));
-                performed.add(test);
-            } catch (Exception e) {
-                exceptionsEncountered.put(test, e);
-            }
-            timers.stop(Timers.Tags.TEST_TRANSFER);
+                if (DEBUG) System.out.println("Performing test " + test);
 
-            if (typeChecked || info.options.staticOptions.propagateStateFromFailingTest) {
-                previousTestContext = newc; // do propagate the new state.
-            }
-            if (typeChecked) {
-                typeCheckedTests.add(test);
-            }
+                TajsTypeChecker typeChecker = new TajsTypeChecker(test, c, info);
+                TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker, this, info, valueHandler);
+
+                // attempting to perform the test in the local context
+                timers.start(Timers.Tags.TEST_TRANSFER);
+                boolean typeChecked = false;
+                try {
+                    typeChecked = test.accept(visitor);
+                    performed.add(test);
+                } catch (Exception e) {
+                    exceptionsEncountered.put(test, e);
+                }
+                timers.stop(Timers.Tags.TEST_TRANSFER);
+
+                if (typeChecked || info.options.staticOptions.propagateStateFromFailingTest) {
+                    previousTestContext = newc; // do propagate the new state.
+                }
+                if (typeChecked) {
+                    typeCheckedTests.add(test);
+                }
+            });
         }
 
         valueHandler.clearValuesForTest(null); // null is the special test used for saved arguments from higher-order-functions.

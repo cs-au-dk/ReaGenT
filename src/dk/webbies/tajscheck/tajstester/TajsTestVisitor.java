@@ -110,10 +110,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         if (arguments.stream().anyMatch(Value::isNone)) {
             // A test for a function that is triggered but it is not able to get to the function call is definitely a problem
             // in theory this should not happen because the test should be skipped in this case, but better safe than sorry
-            if(c.isScanning()) {
-                throw new RuntimeException("Function " + function + " triggered without arguments @" + test.getPath());
-            }
-            return true;
+            throw new RuntimeException("Function " + function + " triggered without arguments @" + test.getPath());
         }
 
         boolean restArgs = test.isRestArgs();

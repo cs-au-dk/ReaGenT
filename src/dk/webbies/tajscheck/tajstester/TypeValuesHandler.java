@@ -27,7 +27,7 @@ public class TypeValuesHandler {
     TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, BenchmarkInfo info) {
         this.typeNames = typeNames;
         this.info = info;
-        this.instantiator = new SpecInstantiator(c, info);
+        this.instantiator = new SpecInstantiator(c, info, this);
     }
 
     public Value getTheAny() {
@@ -43,12 +43,7 @@ public class TypeValuesHandler {
     }
 
     public Value createValue(Type type, TypeContext context) {
-        if (info.shouldConstructType(type)) {
-            return createValue(new TypeWithContext(type, context));
-        } else {
-            Value feedbackValue = findFeedbackValue(new TypeWithContext(type, context));
-            return feedbackValue == null ? Value.makeNone() : feedbackValue;
-        }
+        return createValue(new TypeWithContext(type, context));
     }
 
     public Value createValue(TypeWithContext t) {

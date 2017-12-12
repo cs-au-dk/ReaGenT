@@ -17,6 +17,7 @@ public class StaticOptions implements OptionsI {
     public final RetractionPolicy retractionPolicy;
     public final ExpansionPolicy expansionPolicy;
     public final boolean propagateStateFromFailingTest;
+    public final boolean mixFeedbackValuesIntoConstructedValues;
 
     private final Builder builder;
 
@@ -27,6 +28,7 @@ public class StaticOptions implements OptionsI {
         this.retractionPolicy = builder.retractionPolicy;
         this.expansionPolicy = builder.expansionPolicy;
         this.propagateStateFromFailingTest = builder.propagateStateFromFailingTest;
+        this.mixFeedbackValuesIntoConstructedValues = builder.mixFeedbackValuesIntoConstructedValues;
         this.builder = builder;
     }
 
@@ -42,6 +44,7 @@ public class StaticOptions implements OptionsI {
         public RetractionPolicy retractionPolicy = new NoRetractPolicy();
         public ExpansionPolicy expansionPolicy = new ExpandImmediatelyPolicy();
         public boolean propagateStateFromFailingTest = false;
+        public boolean mixFeedbackValuesIntoConstructedValues = false;
 
         private final CheckOptions.Builder outerBuilder;
 
@@ -56,6 +59,11 @@ public class StaticOptions implements OptionsI {
 
         public CheckOptions.Builder getOuterBuilder() {
             return outerBuilder;
+        }
+
+        public Builder setMixFeedbackValuesIntoConstructedValues(boolean mixFeedbackValuesIntoConstructedValues) {
+            this.mixFeedbackValuesIntoConstructedValues = mixFeedbackValuesIntoConstructedValues;
+            return this;
         }
 
         public Builder setExpansionPolicy(ExpansionPolicy expansionPolicy) {

@@ -801,8 +801,8 @@ public class TAJSUnitTests {
 
     @Test
     public void leafletMotivatingFixed() throws Exception {
-
-        TAJSUtil.TajsAnalysisResults fixed = run(benchFromFolder("leafletMotivating/fixed", options().setConstructAllTypes(false).setUseInspector(false).staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
+        // Set constructAllTypes to true after feedbackValuesReadUndefined has been fixed.
+        TAJSUtil.TajsAnalysisResults fixed = run(benchFromFolder("leafletMotivating/fixed", options().setConstructAllTypes(true).setUseInspector(false).staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
 
         System.out.println(fixed);
 
@@ -1026,7 +1026,45 @@ public class TAJSUnitTests {
         assertThat(result.detectedViolations.asMap().entrySet(), hasSize(2));
     }
 
-    // TODO: The SpecInstantiator should respect the info.shouldConstruct() predicate. And possibly use feedback-values.
+    @Test
+    public void dontConstructClassInstances() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("dontConstructClassInstances", options()
+                .setSplitUnions(false)
+                .setConstructAllTypes(false)
+                .setConstructClassInstances(false)
+                .setConstructClassTypes(false)
+        );
+
+        expect(result)
+                .performedAllTests()
+                .hasNoWarnings()
+                .hasNoViolations();
+
+        TAJSUtil.TajsAnalysisResults withSplitUnions = run("dontConstructClassInstances", options()
+                .setSplitUnions(true)
+                .setConstructAllTypes(false)
+                .setConstructClassInstances(false)
+                .setConstructClassTypes(false)
+//                .setUseInspector(true)
+        );
+
+        expect(withSplitUnions)
+                .performedAllTests()
+                .hasNoWarnings()
+                .hasNoViolations();
+    }
+
+    @Test
+    public void mixConstructedAndFeedbackValues() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("mixConstructedAndFeedbackValues", options().setConstructAllTypes(true).staticOptions.setMixFeedbackValuesIntoConstructedValues(true));
+
+        expect(result)
+                .performedAllTests()
+                .hasNoWarnings()
+                .hasNoViolations();
+    }
+
+// TODO: The SpecInstantiator should respect the info.shouldConstruct() predicate. And possibly use feedback-values.
 
     // TODO: If the library can construct a class, let it do so.
     // TODO: Take one more look at instanceof, using the inspector.
