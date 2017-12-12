@@ -1084,7 +1084,31 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
-    // TODO: Test string-indexers somehow.
+    @Test
+    public void stringIndexCheck() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("stringIndexCheck");
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
+
+    @Test
+    public void stringIndexCheck2() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("stringIndexCheck2");
+
+        System.out.println(result);
+
+        expect(result)
+                .forPath("module.noError()")
+                .hasNoViolations()
+                .hasNoWarnings();
+
+        expect(result)
+                .forPath("module.hasError()")
+                .hasViolations();
+    }
+
     // TODO: Should objects have the internal prototype as Object.prototype as default? (TypeScript does assume every interface inherits from Object)
 
     // TODO: Possibly use both feedback-values and constructed values.

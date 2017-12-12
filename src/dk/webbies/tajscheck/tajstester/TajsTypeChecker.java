@@ -106,40 +106,20 @@ public class TajsTypeChecker {
                         String field = fieldCheck.getField();
 
                         String newPath = path + "." + field;
-
-                        List<TypeCheck> subTypeChecks;
-                        if (typeCheck instanceof FieldTypeCheck) {
-                            subTypeChecks = ((FieldTypeCheck) typeCheck).getFieldChecks();
-                        } else {
-                            AndCheck andSubChecks = Check.and(fieldCheck.getChecks());
-                            subTypeChecks = Collections.singletonList(new SimpleTypeCheck(andSubChecks, andSubChecks.toString()));
-                        }
-
-                        return performSubTypeCheck(v, fieldCheck, newPath, subTypeChecks, Value.makeStr(field));
+                        return performSubTypeCheck(v, fieldCheck, newPath, Value.makeStr(field));
                     } else if (check instanceof NumberIndexCheck) {
                         NumberIndexCheck numberIndexCheck = (NumberIndexCheck) check;
                         String newPath = path + "." + "[numberIndexer]";
 
-                        String expected;
-                        if (typeCheck.getExpected().startsWith("(arrayIndex: ")) {
-                            expected = Util.removeSuffix(Util.removePrefix(typeCheck.getExpected(), "(arrayIndex: "), ")");
-                        } else {
-                            expected = Util.removeSuffix(Util.removePrefix(typeCheck.getExpected(), "(numberIndexer: "), ")");
-                        }
-
-                        List<TypeCheck> subTypeChecks = Collections.singletonList(new SimpleTypeCheck(numberIndexCheck.getSubCheck(), expected));
-
-                        return performSubTypeCheck(v, numberIndexCheck, newPath, subTypeChecks, Value.makeAnyStrUInt());
+                        return performSubTypeCheck(v, numberIndexCheck, newPath, Value.makeAnyStrUInt());
                     } else if (check instanceof StringIndexCheck) {
-                        StringIndexCheck stringIndexCheck = (StringIndexCheck) check;
                         if (v.isMaybeUndef() && v.restrictToNotUndef().isNone()) {
                             return java.util.Collections.emptyList();
                         }
                         if (v.isMaybePrimitive()) {
                             return Collections.singletonList(new Tuple3<>(path, v, typeCheck));
                         }
-                        System.err.println("Skipping check" + check + " against " + v); // TODO: What do.
-                        return java.util.Collections.emptyList();
+                        return performSubTypeCheck(v, (StringIndexCheck)check, path + ".[stringIndexer]", Value.makeAnyStrUInt());
                     } else {
                         throw new RuntimeException(check.getClass().getSimpleName());
                     }
@@ -177,7 +157,7 @@ public class TajsTypeChecker {
                 .reduce(new ArrayList<>(), Util::reduceList);
     }
 
-    private List<Tuple3<String, Value, TypeCheck>> performSubTypeCheck(Value v, CanHaveSubTypeCheck hasSubType, String newPath, List<TypeCheck> subTypeChecks, Value field) {
+    private List<Tuple3<String, Value, TypeCheck>> performSubTypeCheck(Value v, CanHaveSubTypeCheck hasSubType, String newPath, Value field) {
         Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(v.getAllObjectLabels(), field, info.options.staticOptions.killGetters), c.getState());
         if(propertyValue.isMaybeAbsent()) {
             propertyValue = Value.join(propertyValue, Value.makeUndef());
@@ -188,12 +168,7 @@ public class TajsTypeChecker {
             split = Arrays.asList(Value.makeUndef());
         }
 
-        List<TypeCheck> subChecks;
-        if (hasSubType.getSubType() != null) {
-            subChecks = TypeChecker.getTypeChecks(hasSubType.getSubType().getType(), hasSubType.getSubType().getTypeContext(), info, 1);
-        } else {
-            subChecks = subTypeChecks;
-        }
+        List<TypeCheck> subChecks = TypeChecker.getTypeChecks(hasSubType.getSubType().getType(), hasSubType.getSubType().getTypeContext(), info, 1);
 
         return split.stream().flatMap(splittenValue -> getTypeViolations(hasSubType.getSubType(), splittenValue, subChecks, newPath).stream()).collect(Collectors.toList());
     }
@@ -298,16 +273,12 @@ public class TajsTypeChecker {
         public Boolean visit(FieldCheck check, Value o) {
             String field = check.getField();
 
-            List<TypeCheck> subTypeChecks = check.getChecks().stream().map(subCheck -> new SimpleTypeCheck(subCheck, "expected!")).collect(Collectors.toList());
-
-            return performSubTypeCheck(o, check, "fakeFieldPath", subTypeChecks, Value.makeStr(field)).isEmpty();
+            return performSubTypeCheck(o, check, "fakeFieldPath", Value.makeStr(field)).isEmpty();
         }
 
         @Override
         public Boolean visit(NumberIndexCheck check, Value o) {
-            List<TypeCheck> subTypeChecks = Collections.singletonList(new SimpleTypeCheck(check.getSubCheck(), "foo"));
-
-            return performSubTypeCheck(o, check, "fakeNumberIndexPath", subTypeChecks, Value.makeAnyStrUInt()).isEmpty();
+            return performSubTypeCheck(o, check, "fakeNumberIndexPath", Value.makeAnyStrUInt()).isEmpty();
         }
 
         @Override
@@ -318,9 +289,7 @@ public class TajsTypeChecker {
             if (!o.isNotBool()) {
                 return false;
             }
-            List<TypeCheck> subTypeChecks = Collections.singletonList(new SimpleTypeCheck(check.getSubCheck(), "foo"));
-
-            return performSubTypeCheck(o, check, "fakeStringIndexPath", subTypeChecks, Value.makeAnyStr()).isEmpty();
+            return performSubTypeCheck(o, check, "fakeStringIndexPath", Value.makeAnyStr()).isEmpty();
         }
 
         @Override
