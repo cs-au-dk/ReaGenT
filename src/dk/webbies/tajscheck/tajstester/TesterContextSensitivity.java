@@ -32,7 +32,7 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
 
     private int testIds = 0;
 
-    private final String testSpecialLocation = TEST_IDENTIFIER;
+    private static final String testSpecialLocation = TEST_IDENTIFIER;
 
     @Override
     public Context makeForInEntryContext(Context currentContext, BeginForInNode n, Value v) {
@@ -69,7 +69,7 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
         return tagTestContext(state.getContext(), super.makeFunctionEntryContext(state, function, callInfo, this_objs, c), true);
     }
 
-    private Context tagTestContext(Context sourceContext, Context destinationContext, boolean overwrite) {
+    private static Context tagTestContext(Context sourceContext, Context destinationContext, boolean overwrite) {
         if (isLocalTestContext(sourceContext) || isFunctionTestContext(sourceContext)) {
             Value t1 = sourceContext.getLocalContext() == null ? null : sourceContext.getLocalContext().getQualifiers().getOrDefault(TestQualifier.instance, null);
             Value t2 = sourceContext.getFunArgs() == null ? null : sourceContext.getFunArgs().getSelectedClosureVariables().getOrDefault(testSpecialLocation, null);
@@ -98,7 +98,20 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
         return destinationContext;
     }
 
-    private ContextArguments tagContextArguments(ContextArguments sourceArgs, ContextArguments args, Value tag) {
+    public static Context untagTestContext(Context sourceContext) {
+        if (isLocalTestContext(sourceContext) || isFunctionTestContext(sourceContext)) {
+
+            Map<String, Value> newCVars = sourceContext.getFunArgs() == null || sourceContext.getFunArgs().getSelectedClosureVariables() == null ? newMap() : new HashMap<>(sourceContext.getFunArgs().getSelectedClosureVariables());
+            newCVars.remove(testSpecialLocation);
+            ContextArguments cargs = sourceContext.getFunArgs() == null ?
+                    new ContextArguments(null, null, newCVars)
+                    : sourceContext.getFunArgs().copyWith(null, newCVars, null, null);
+            return Context.make(sourceContext.getThisVal(), cargs, sourceContext.getSpecialRegisters(), sourceContext.getLocalContext(), sourceContext.getLocalContextAtEntry());
+        }
+        return sourceContext;
+    }
+
+    private static ContextArguments tagContextArguments(ContextArguments sourceArgs, ContextArguments args, Value tag) {
         Map<String, Value> newCVars = args == null || args.getSelectedClosureVariables() == null ? newMap() : new HashMap<>(args.getSelectedClosureVariables());
         newCVars.putIfAbsent(testSpecialLocation, tag);
         return sourceArgs == null ?
@@ -145,20 +158,20 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
         return newContext;
     }
 
-    public boolean isLocalTestContext(Context c) {
+    public static boolean isLocalTestContext(Context c) {
         return c.getLocalContext() != null
                 && c.getLocalContext().getQualifiers().containsKey(TestQualifier.instance);
     }
 
-    public boolean isFunctionTestContext(Context c) {
+    public static boolean isFunctionTestContext(Context c) {
         return c.getFunArgs() != null
                 && c.getFunArgs().getSelectedClosureVariables() != null
                 && c.getFunArgs().getSelectedClosureVariables().containsKey(TEST_IDENTIFIER);
     }
 
-    public boolean isTestContext(Context c) { return c != null && (isFunctionTestContext(c) || isLocalTestContext(c)); }
+    public static boolean isTestContext(Context c) { return c != null && (isFunctionTestContext(c) || isLocalTestContext(c)); }
 
-    public String getTag(Context c) {
+    public static String getTag(Context c) {
         if(isLocalTestContext(c)) {
             return c.getLocalContext().getQualifiers().get(TestQualifier.instance).getSpecialStrings().iterator().next();
         }

@@ -1,10 +1,13 @@
 package dk.webbies.tajscheck.tajstester;
 
 import com.google.gson.Gson;
+import dk.brics.tajs.Main;
 import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.flowgraph.FlowGraph;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
+import dk.brics.tajs.solver.SolverSynchronizer;
+import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.AnalysisLimitationException;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -103,7 +106,7 @@ public class TAJSUtil {
         IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(optMonitors);
         initLogging();
 
-        Analysis a = dk.brics.tajs.Main.init(additionalOpts, monitoring, null);
+        Analysis a = dk.brics.tajs.Main.init(additionalOpts, monitoring, null, new TesterTransfer());
         boolean timedout = false;
         try {
             dk.brics.tajs.Main.run(a);
