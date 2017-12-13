@@ -1118,6 +1118,7 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations();
     }
+
     @Test
     public void lateExpansion2() throws Exception {
         TAJSUtil.TajsAnalysisResults result = run("lateExpansion2", options().staticOptions.setExpansionPolicy(new DelayAllTestsExpansionPolicy()));
@@ -1127,11 +1128,15 @@ public class TAJSUnitTests {
                 .hasViolations();
     }
 
-    // TODO: Implement an expansion-policy that only uses constructed values when absolutely neccesary.
+    @Test
+    public void emptyObjectHasToString() throws Exception {
+        TAJSUtil.TajsAnalysisResults result = run("emptyObjectHasToString");
 
-    // TODO: Should objects have the internal prototype as Object.prototype as default? (TypeScript does assume every interface inherits from Object)
+        expect(result)
+                .performedAllTests()
+                .hasNoWarnings()
+                .hasNoViolations();
+    }
 
     // TODO: Postpone calling functions with synthetic arguments (need generalization of expansion-policy). Possibly do a second pass, where the expansion-policy tells the type-tester which skipped tests should execute anyway.
-
-    // TODO: For now we assume that class-instances (and class-constructors) should not be constructed, instead feedback-values are used.
 }
