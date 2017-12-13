@@ -88,8 +88,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             if(!c.isScanning()) {
                 if(DEBUG_VALUES) System.out.println("New flow for " + c.getState().getBasicBlock().getIndex() + ", " + c.getState().getContext());
                 // Then we can re-run the tests to see if more can be performed
-                c.addToWorklist(allTestsBlock, allTestsContext);
+                enqueTypeTester(c);
             }
+            return;
+        }
+
+        if (!c.getWorklist().isEmpty()) { // I only want to run as the last one.
+            enqueTypeTester(c);
             return;
         }
 
@@ -141,9 +146,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         if (!c.getWorklist().isEmpty()) {
-            allTestsBlock.setOrder(Integer.MAX_VALUE);// Making sure that the TypeTester is the last to run.
-            c.addToWorklist(allTestsBlock, allTestsContext); // Making sure the TypeTester runs when the worklist is otherwise empty.
+            enqueTypeTester(c);
         }
+    }
+
+    private void enqueTypeTester(GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
+        allTestsBlock.setOrder(Integer.MAX_VALUE);// Making sure that the TypeTester is the last to run.
+        c.addToWorklist(allTestsBlock, allTestsContext); // Making sure the TypeTester runs when the worklist is otherwise empty.
     }
 
     private boolean iterateAllNonPerformedTests(Solver.SolverInterface c) {
