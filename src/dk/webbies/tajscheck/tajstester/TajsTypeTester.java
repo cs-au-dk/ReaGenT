@@ -139,9 +139,14 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        if (!c.getWorklist().isEmpty()) {
+            // Making sure that the TypeTester is the last to run.
+            c.addToWorklist(allTestsBlock, allTestsContext);
+        }
     }
 
-    private boolean iterateAllNonPerformedTests(GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
+    private boolean iterateAllNonPerformedTests(Solver.SolverInterface c) {
         boolean progress = false;
         for (Test test : tests) {
             if (performed.contains(test)) {
@@ -187,7 +192,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         return progress;
     }
 
-    private void propagateStateToContext(GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c, Context newc, Timers.Tags propagatingToThisContext, BasicBlock allTestsBlock) {
+    private void propagateStateToContext(Solver.SolverInterface c, Context newc, Timers.Tags propagatingToThisContext, BasicBlock allTestsBlock) {
         if (previousTestContext != null) {
             timers.start(propagatingToThisContext);
             State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
@@ -196,7 +201,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
     }
 
-    private void performTest(GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c, Test test, Context newc) {
+    private void performTest(Solver.SolverInterface c, Test test, Context newc) {
         if (DEBUG) System.out.println("Performing test " + test);
 
         TajsTypeChecker typeChecker = new TajsTypeChecker(test, c, info);
@@ -285,7 +290,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         return violations.isEmpty();
     }
 
-    List<TypeViolation> getViolations(Value v, TypeWithContext t, String path, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c, TajsTypeChecker tajsTypeChecker) {
+    List<TypeViolation> getViolations(Value v, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker) {
         return tajsTypeChecker.typeCheck(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), info, path);
     }
 

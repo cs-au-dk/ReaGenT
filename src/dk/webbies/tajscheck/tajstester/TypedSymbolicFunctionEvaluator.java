@@ -183,7 +183,7 @@ public class TypedSymbolicFunctionEvaluator {
         }
     }
 
-    private boolean sigMatches(Signature signature, TypeContext context, FunctionCalls.CallInfo call, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c, String path, TajsTypeChecker tajsTypeChecker) {
+    private boolean sigMatches(Signature signature, TypeContext context, FunctionCalls.CallInfo call, Solver.SolverInterface c, String path, TajsTypeChecker tajsTypeChecker) {
         List<Signature.Parameter> parameters = signature.getParameters();
         Type restArgsType = null;
         if (call.isUnknownNumberOfArgs()) {

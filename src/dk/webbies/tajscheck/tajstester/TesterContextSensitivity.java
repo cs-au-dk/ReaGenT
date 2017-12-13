@@ -65,7 +65,7 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
 
 
     @Override
-    public Context makeFunctionEntryContext(State state, ObjectLabel function, FunctionCalls.CallInfo callInfo, Value this_objs, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
+    public Context makeFunctionEntryContext(State state, ObjectLabel function, FunctionCalls.CallInfo callInfo, Value this_objs, Solver.SolverInterface c) {
         return tagTestContext(state.getContext(), super.makeFunctionEntryContext(state, function, callInfo, this_objs, c), true);
     }
 
