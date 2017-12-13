@@ -93,11 +93,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             return;
         }
 
-        if (!c.getWorklist().isEmpty()) { // I only want to run as the last one.
-            enqueTypeTester(c);
-            return;
-        }
-
         performed.clear();
         expansionPolicy.nextRound();
         valueHandler.cleanUp();
