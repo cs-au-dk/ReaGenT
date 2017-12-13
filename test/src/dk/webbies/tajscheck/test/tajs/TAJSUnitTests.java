@@ -4,8 +4,9 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.DelayAllTestsExpansionPolicy;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.FixedExpansionOrder;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.DelayAllTestsExpansionPolicy;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandOneAtATimeWhenWorkListEmptyExpansionPolicy;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.FixedExpansionOrder;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
@@ -46,11 +47,11 @@ public class TAJSUnitTests {
     }
 
     private static TAJSUtil.TajsAnalysisResults run(Benchmark bench) throws Exception {
-        return run(bench, 60);
+        return run(bench, Integer.MAX_VALUE);
     }
 
     private static TAJSUtil.TajsAnalysisResults run(Benchmark bench, int timeout) throws Exception {
-        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 60);
+        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, timeout);
         System.out.println(result);
         return result;
     }
@@ -1117,6 +1118,12 @@ public class TAJSUnitTests {
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
+
+        TAJSUtil.TajsAnalysisResults evenLater = run("lateExpansion", options().staticOptions.setExpansionPolicy(new ExpandOneAtATimeWhenWorkListEmptyExpansionPolicy()));
+
+        expect(evenLater)
+                .performedAllTests()
+                .hasNoViolations();
     }
 
     @Test
@@ -1124,6 +1131,12 @@ public class TAJSUnitTests {
         TAJSUtil.TajsAnalysisResults result = run("lateExpansion2", options().staticOptions.setExpansionPolicy(new DelayAllTestsExpansionPolicy()));
 
         expect(result)
+                .forPath("module.bar().bar")
+                .hasViolations();
+
+        TAJSUtil.TajsAnalysisResults evenLater = run("lateExpansion2", options().staticOptions.setExpansionPolicy(new ExpandOneAtATimeWhenWorkListEmptyExpansionPolicy()));
+
+        expect(evenLater)
                 .forPath("module.bar().bar")
                 .hasViolations();
     }
@@ -1139,4 +1152,19 @@ public class TAJSUnitTests {
     }
 
     // TODO: Postpone calling functions with synthetic arguments (need generalization of expansion-policy). Possibly do a second pass, where the expansion-policy tells the type-tester which skipped tests should execute anyway.
+    // TODO: Only add a function with synthetic arguments when the work-list is otherwise empty.
+    // TODO: Have test where a feedback value used as an argument can only be gotten
+    // TODO: Callbacks should just be constructed.
+
+    // TODO: After a FunctionTest, repeat property-read tests, and see if anything was modified (and in that case blame the function).
+
+    // TODO: Implement that you can write to primitives.
+
+    // TODO: Kig på de 2 "most general client" artikler der er linket til i artiklen (kig i related work). Fokuser på
+
+    // TODO: Example en declaration file that has class-type. Where it is obvious that it should be constructed by the library and not by the client (leaflet Point?). (for article)
+    // TODO: Example the other way around, where the client is supposed to construct a value, and not the library.
+    // TODO: Also example where the client is not supposed to construct something of an interface type.
+    // TODO: Example construction of function value.
+    // TODO: Put de eksemler ind i artiklen.
 }

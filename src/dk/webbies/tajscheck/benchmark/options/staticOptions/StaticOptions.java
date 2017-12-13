@@ -2,6 +2,8 @@ package dk.webbies.tajscheck.benchmark.options.staticOptions;
 
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandImmediatelyPolicy;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpansionPolicy;
 import dk.webbies.tajscheck.util.Util;
 
 /**

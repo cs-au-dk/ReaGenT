@@ -1,5 +1,6 @@
-package dk.webbies.tajscheck.benchmark.options.staticOptions;
+package dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy;
 
+import dk.brics.tajs.analysis.Solver;
 import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
 
@@ -33,7 +34,7 @@ public class FixedExpansionOrder implements ExpansionPolicy {
     }
 
     @Override
-    public Collection<Test> getTestsToPerformAnyway() {
+    public Collection<Test> getTestsToPerformAnyway(Solver.SolverInterface c) {
         return Collections.emptyList();
     }
 }

@@ -6,14 +6,12 @@ import dk.brics.tajs.analysis.FunctionCalls.CallInfo;
 import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
-import dk.brics.tajs.monitoring.IAnalysisMonitoring;
 import dk.brics.tajs.solver.BlockAndContext;
-import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.solver.WorkList;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.ExpansionPolicy;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpansionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.RetractionPolicy;
 import dk.webbies.tajscheck.tajstester.data.TestCertificate;
 import dk.webbies.tajscheck.tajstester.data.Timers;
@@ -88,8 +86,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             if(!c.isScanning()) {
                 if(DEBUG_VALUES) System.out.println("New flow for " + c.getState().getBasicBlock().getIndex() + ", " + c.getState().getContext());
                 // Then we can re-run the tests to see if more can be performed
-                enqueTypeTester(c);
+                enqueueTypeTester(c);
             }
+            return;
+        }
+
+        if (!c.getWorklist().isEmpty()) {
+            enqueueTypeTester(c);
             return;
         }
 
@@ -103,7 +106,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         do {
             progress = iterateAllNonPerformedTests(c);
 
-            for (Test test : expansionPolicy.getTestsToPerformAnyway()) {
+            for (Test test : expansionPolicy.getTestsToPerformAnyway(c)) {
                 if (performed.contains(test)) {
                     continue;
                 }
@@ -141,11 +144,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         if (!c.getWorklist().isEmpty()) {
-            enqueTypeTester(c);
+            enqueueTypeTester(c);
         }
     }
 
-    private void enqueTypeTester(GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
+    private void enqueueTypeTester(Solver.SolverInterface c) {
         allTestsBlock.setOrder(Integer.MAX_VALUE);// Making sure that the TypeTester is the last to run.
         c.addToWorklist(allTestsBlock, allTestsContext); // Making sure the TypeTester runs when the worklist is otherwise empty.
     }

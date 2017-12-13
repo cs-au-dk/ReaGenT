@@ -2,20 +2,14 @@ package dk.webbies.tajscheck.test.tajs.analyze;
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.ExpandOneAtATimePolicy;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
-import dk.webbies.tajscheck.tajstester.data.TypeViolation;
-import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.experiments.AutomaticExperiments;
 import dk.webbies.tajscheck.test.experiments.Experiment;
-import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
-import org.junit.Test;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 public class TajsCheckerEvaluation {
     private static final List<String> benchmarksToEvaluate = Arrays.asList(
