@@ -293,6 +293,10 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     @Override
     public Boolean visit(PropertyWriteTest test) {
-        throw new RuntimeException();
+        Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(),test.getTypeContext()));
+        for (ObjectLabel label : baseValue.getObjectLabels()) {
+            pv.writeProperty(label, test.getProperty(), typeValuesHandler.createValue(test.getToWrite(), test.getTypeContext()));
+        }
+        return true;
     }
 }

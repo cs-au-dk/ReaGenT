@@ -1206,9 +1206,22 @@ public class TAJSUnitTests {
                 .hasViolations();
     }
 
-    // TODO: After a FunctionTest, repeat property-read tests, and see if anything was modified (and in that case blame the function).
+    @Test
+    public void writeToPrimitives() throws Exception {
+        TajsAnalysisResults result = run("writeToPrimitives", options()
+                .setWritePrimitives(true)
+                .staticOptions
+                    .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
+                    .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
+        );
 
-    // TODO: Implement that you can write to primitives.
+        expect(result)
+                .performedAllTests()
+                .forPath("module.testFoo(obj)")
+                .hasViolations();
+
+
+    }
 
     // TODO: Kig på de 2 "most general client" artikler der er linket til i artiklen (kig i related work). Fokuser på
 
