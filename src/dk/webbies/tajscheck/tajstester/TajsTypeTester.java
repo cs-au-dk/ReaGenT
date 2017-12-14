@@ -64,7 +64,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private List<Test> typeCheckedTests = new ArrayList<>();
 
     public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
-        this.tests = tests;
+        this.tests = tests.stream().sorted((a, b) -> {
+            int aValue = a instanceof FunctionTest ? 1 : 0;
+            int bValue = b instanceof FunctionTest ? 1 : 0;
+            return Integer.compare(aValue, bValue);
+        }).collect(Collectors.toList());
         this.info = info;
         this.retractionPolicy = this.info.options.staticOptions.retractionPolicy;
         this.expansionPolicy = this.info.options.staticOptions.expansionPolicy;
@@ -273,11 +277,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     /**
      *
-     * @param tajsTypeChecker
-     * @param test
-     * @param value the abstract value
-     * @param t the type
-     * @param path the Path from which the value is added.
      * @return if the value satisfied the type
      */
     public boolean attemptAddValue(Value value, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker, Test test) {
@@ -305,13 +304,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         return tajsTypeChecker.typeCheck(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), info, path);
     }
 
-    // TODO: Overhaul the result toString.
-    // TODO: Make sure all violations, warning and certificates are always saved (even if not scanning), and then the latest set of results are reported back in case of a timeout.
-    // TODO: (Write the latest set of results to a file.)
-
     @Override
     public boolean shouldSkipEntry(WorkList<Context>.Entry e) {
-        if (sensitivity != null && sensitivity.isTestContext(e.getContext())) {
+        if (sensitivity != null && TesterContextSensitivity.isTestContext(e.getContext())) {
             Test test = sensitivity.getTest(e.getContext());
             return retractionPolicy.isRetracted(test) || retractionPolicy.isTimeout(test) || exceptionsEncountered.containsKey(test);
         }
@@ -320,7 +315,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     @Override
     public boolean recoverFrom(Exception e, WorkList<Context>.Entry p) {
-        if (sensitivity != null && sensitivity.isTestContext(p.getContext())) {
+        if (sensitivity != null && TesterContextSensitivity.isTestContext(p.getContext())) {
             Test test = sensitivity.getTest(p.getContext());
             assert !exceptionsEncountered.containsKey(test);
             exceptionsEncountered.put(test, e);
