@@ -124,6 +124,7 @@ public class AnalyzeBenchmarks extends TestCase {
                     .setRetractionPolicy(new LimitTransfersRetractionPolicy(10000, 0))
 
                     .setCheckAllPropertiesAreFunctionCall(true)
+                    .setPropagateStateFromFailingTest(false)
 
                     .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
                     .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
