@@ -9,7 +9,7 @@ import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.tajstester.TypeValuesHandler;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -120,7 +120,7 @@ public class SpecInstantiator {
         GenericType arrayBase = (GenericType) ((ReferenceType) ((InterfaceType) info.getSpec().getGlobal().getDeclaredProperties().get("Array")).getDeclaredProperties().get("prototype")).getTarget();
         ReferenceType anyArray = new ReferenceType();
         anyArray.setTarget(arrayBase);
-        anyArray.setTypeArguments(Collections.singletonList(any));
+        anyArray.setTypeArguments(Collections.singletonList(new SimpleType(SimpleTypeKind.Any)));
         Signature.Parameter anyParameter = new Signature.Parameter();
         anyParameter.setName("any");
         anyParameter.setType(anyArray);
@@ -318,7 +318,7 @@ public class SpecInstantiator {
             }
             return feedbackValue;
         }
-        if (this.info.options.staticOptions.argumentValuesStrategy == FEEDBACK_IF_POSSIBLE && feedbackValue != null) {
+        if (this.info.options.staticOptions.argumentValuesStrategy == FEEDBACK_IF_POSSIBLE && feedbackValue != null && !isSimpleType(type, info.context)) {
             return feedbackValue;
         }
 
@@ -373,6 +373,10 @@ public class SpecInstantiator {
         }
 
         return result;
+    }
+
+    private boolean isSimpleType(Type type, TypeContext context) {
+        return type.accept(new LateExpansionToFunctionsWithConstructedArguments.CanEasilyConstructVisitor(context, info, subType -> false));
     }
 
     private Value constructArray(MiscInfo info, Type indexType) {

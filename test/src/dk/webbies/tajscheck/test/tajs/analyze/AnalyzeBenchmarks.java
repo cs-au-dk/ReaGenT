@@ -122,8 +122,8 @@ public class AnalyzeBenchmarks extends TestCase {
                     .setKillGetters(true) // because getters currently causes the analysis to loop. // TODO: Still?
                     .setRetractionPolicy(new LimitTransfersRetractionPolicy(10000, 0))
                     .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
-                    .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments()
-                );
+                    .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
+                ;
     }
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
