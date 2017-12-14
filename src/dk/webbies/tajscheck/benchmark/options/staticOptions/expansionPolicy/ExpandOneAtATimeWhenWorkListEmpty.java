@@ -1,16 +1,15 @@
 package dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy;
 
 import dk.brics.tajs.analysis.Solver;
+import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
 
 import java.util.*;
 
-public class ExpandOneAtATimeWhenWorkListEmptyExpansionPolicy implements ExpansionPolicy {
+public class ExpandOneAtATimeWhenWorkListEmpty implements ExpansionPolicy {
 
     private Test nextFunction = null;
-
-    Set<Test> included = new HashSet<>();
 
     @Override
     public void nextRound() {
@@ -18,10 +17,7 @@ public class ExpandOneAtATimeWhenWorkListEmptyExpansionPolicy implements Expansi
     }
 
     @Override
-    public boolean include(FunctionTest test) {
-        if (included.contains(test)) {
-            return true;
-        }
+    public boolean expandTo(FunctionTest test, TajsTypeTester typeTester) {
         this.nextFunction = test;
         return false;
     }
@@ -31,7 +27,6 @@ public class ExpandOneAtATimeWhenWorkListEmptyExpansionPolicy implements Expansi
         if (!c.getWorklist().isEmpty() || this.nextFunction == null) {
             return Collections.emptyList();
         }
-        this.included.add(this.nextFunction);
         return Collections.singletonList(this.nextFunction);
     }
 }

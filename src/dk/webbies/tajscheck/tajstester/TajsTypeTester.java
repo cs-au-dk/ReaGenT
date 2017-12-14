@@ -36,6 +36,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private final List<Test> tests;
     private final BenchmarkInfo info;
     private final ExpansionPolicy expansionPolicy;
+    private final Set<Test> previouslyExpandedTo = new HashSet<>();
     private TypeValuesHandler valueHandler = null;
 
     final private List<TypeViolation> violations = newList();
@@ -107,6 +108,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             progress = iterateAllNonPerformedTests(c);
 
             for (Test test : expansionPolicy.getTestsToPerformAnyway(c)) {
+                previouslyExpandedTo.add(test);
                 if (performed.contains(test)) {
                     continue;
                 }
@@ -187,10 +189,12 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     return false;
                 }
 
-                if (test instanceof FunctionTest && !expansionPolicy.include((FunctionTest) test)) {
+                if (!previouslyExpandedTo.contains(test) && test instanceof FunctionTest && !expansionPolicy.expandTo((FunctionTest) test, this)) {
                     if (DEBUG) System.out.println("Didn't expand to " + test);
                     return false;
                 }
+
+                previouslyExpandedTo.add(test);
 
                 performTest(c, test, newc);
                 return true;
@@ -407,5 +411,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public RetractionPolicy getRetractionPolicy() {
         return retractionPolicy;
+    }
+
+    public TypeValuesHandler getValueHandler() {
+        return valueHandler;
+    }
+
+    public BenchmarkInfo getBenchmarkInfo() {
+        return info;
     }
 }

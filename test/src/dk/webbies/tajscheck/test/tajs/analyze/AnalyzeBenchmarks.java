@@ -4,6 +4,7 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import junit.framework.TestCase;
@@ -111,9 +112,18 @@ public class AnalyzeBenchmarks extends TestCase {
     public static Function<CheckOptions.Builder, StaticOptions.Builder> options() {
         return options -> options
                 .setCombineNullAndUndefined(true) // because no-one cares.
+
+                // same as default, but just to be explicit about it.
+                .setConstructClassInstances(false)
+                .setConstructClassTypes(false)
+                .setConstructAllTypes(false)
+
                 .staticOptions
-                    .setKillGetters(true) // because getters currently causes the analysis to loop.
-                    .setRetractionPolicy(new LimitTransfersRetractionPolicy(10000, 0));
+                    .setKillGetters(true) // because getters currently causes the analysis to loop. // TODO: Still?
+                    .setRetractionPolicy(new LimitTransfersRetractionPolicy(10000, 0))
+                    .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
+                    .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments()
+                );
     }
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))

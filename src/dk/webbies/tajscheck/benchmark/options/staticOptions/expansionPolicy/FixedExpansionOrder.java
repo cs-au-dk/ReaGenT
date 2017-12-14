@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy;
 
 import dk.brics.tajs.analysis.Solver;
+import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
 
@@ -27,7 +28,7 @@ public class FixedExpansionOrder implements ExpansionPolicy {
     }
 
     @Override
-    public boolean include(FunctionTest test) {
+    public boolean expandTo(FunctionTest test, TajsTypeTester typeTester) {
         assert executionOrder.contains(test.getPath());
         List<String> subList = executionOrder.subList(0, Math.min(index, executionOrder.size()));
         return subList.contains(test.getPath());

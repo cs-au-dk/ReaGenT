@@ -5,10 +5,11 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.DelayAllTestsExpansionPolicy;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandOneAtATimeWhenWorkListEmptyExpansionPolicy;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandOneAtATimeWhenWorkListEmpty;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.FixedExpansionOrder;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
@@ -25,6 +26,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE;
+import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED;
+import static dk.webbies.tajscheck.tajstester.TAJSUtil.*;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
 import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,35 +37,35 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class TAJSUnitTests {
-    private static TAJSUtil.TajsAnalysisResults run(String folderName) throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run(benchFromFolder(folderName, options()));
+    private static TajsAnalysisResults run(String folderName) throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder(folderName, options()));
         return result;
     }
 
-    private static TAJSUtil.TajsAnalysisResults run(String folderName, OptionsI.Builder options) throws Exception {
+    private static TajsAnalysisResults run(String folderName, OptionsI.Builder options) throws Exception {
         return run(benchFromFolder(folderName, options));
     }
 
-    private static TAJSUtil.TajsAnalysisResults run(String folderName, OptionsI.Builder options, int timeout) throws Exception {
+    private static TajsAnalysisResults run(String folderName, OptionsI.Builder options, int timeout) throws Exception {
         return run(benchFromFolder(folderName, options), timeout);
     }
 
-    private static TAJSUtil.TajsAnalysisResults run(Benchmark bench) throws Exception {
+    private static TajsAnalysisResults run(Benchmark bench) throws Exception {
         return run(bench, Integer.MAX_VALUE);
     }
 
-    private static TAJSUtil.TajsAnalysisResults run(Benchmark bench, int timeout) throws Exception {
-        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, timeout);
+    private static TajsAnalysisResults run(Benchmark bench, int timeout) throws Exception {
+        TajsAnalysisResults result = runNoDriver(bench, timeout);
         System.out.println(result);
         return result;
     }
 
-    private TAJSUtil.TajsAnalysisResults soundness(String folder) throws Exception {
+    private TajsAnalysisResults soundness(String folder) throws Exception {
         return soundness(folder, opt -> opt);
     }
 
-    private TAJSUtil.TajsAnalysisResults soundness(String folder, Function<CheckOptions.Builder, OptionsI.Builder> transformer) throws Exception {
-        TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchFromFolder(folder).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(transformer).withOptions(options -> options.setConstructAllTypes(true)), Integer.MAX_VALUE);
+    private TajsAnalysisResults soundness(String folder, Function<CheckOptions.Builder, OptionsI.Builder> transformer) throws Exception {
+        TajsAnalysisResults result = runNoDriver(benchFromFolder(folder).withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP).withOptions(transformer).withOptions(options -> options.setConstructAllTypes(true)), Integer.MAX_VALUE);
         System.out.println(result);
         expect(result)
                 .hasNoViolations();
@@ -92,9 +96,9 @@ public class TAJSUnitTests {
 
     @SuppressWarnings("UnusedReturnValue")
     static class TAJSResultTester {
-        private TAJSUtil.TajsAnalysisResults results;
+        private TajsAnalysisResults results;
 
-        private TAJSResultTester(TAJSUtil.TajsAnalysisResults result) {
+        private TAJSResultTester(TajsAnalysisResults result) {
             this.results = result;
         }
 
@@ -134,7 +138,7 @@ public class TAJSUnitTests {
             List<dk.webbies.tajscheck.testcreator.test.Test> testsNot = results.testNot.stream().filter(test -> test.getPath().startsWith(path)).collect(Collectors.toList());
             MultiMap<String, TypeViolation> warnings = results.detectedWarnings.asMap().entrySet().stream().filter(entry -> entry.getKey().startsWith(path)).collect(ArrayListMultiMap.collector());
 
-            return new TAJSResultTester(new TAJSUtil.TajsAnalysisResults(detectedViolations, warnings, performedTest, testsNot, results.certificates, results.testTranfers, results.timers, results.timedout, results.retractedTests, results.timeoutTests, results.typeCheckedTests));
+            return new TAJSResultTester(new TajsAnalysisResults(detectedViolations, warnings, performedTest, testsNot, results.certificates, results.testTranfers, results.timers, results.timedout, results.retractedTests, results.timeoutTests, results.typeCheckedTests));
         }
 
         TAJSUnitTests.TAJSResultTester hasWarnings() {
@@ -143,13 +147,13 @@ public class TAJSUnitTests {
         }
     }
 
-    public static TAJSUnitTests.TAJSResultTester expect(TAJSUtil.TajsAnalysisResults result) {
+    public static TAJSUnitTests.TAJSResultTester expect(TajsAnalysisResults result) {
         return new TAJSResultTester(result);
     }
 
     @Test
     public void unionMightFail() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("unionMightFail");
+        TajsAnalysisResults result = run("unionMightFail");
 
         expect(result)
                 .performed("module.foo()");
@@ -161,7 +165,7 @@ public class TAJSUnitTests {
 
     @Test
     public void callbacks() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("callbacks");
+        TajsAnalysisResults result = run("callbacks");
 
         expect(result)
                 .performed("module.foo(obj)");
@@ -174,7 +178,7 @@ public class TAJSUnitTests {
     @Test
     @Ignore // TODO: Calling "pv.readPropertyValue" with a getter property, seems to go wrong (it seems to mix in the base object).
     public void getter() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("getter");
+        TajsAnalysisResults result = run("getter");
 
         expect(result)
                 .hasNoViolations();
@@ -195,7 +199,7 @@ public class TAJSUnitTests {
 
     @Test
     public void simpleUnion() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("simpleUnion");
+        TajsAnalysisResults result = run("simpleUnion");
 
         expect(result)
                 .performed("module.foo()");
@@ -203,7 +207,7 @@ public class TAJSUnitTests {
 
     @Test
     public void primitiveOrObject() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("primitiveOrObject");
+        TajsAnalysisResults result = run("primitiveOrObject");
 
         expect(result)
                 .performed("module.foo()");
@@ -211,7 +215,7 @@ public class TAJSUnitTests {
 
     @Test
     public void objectWithNumberProps() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("objectWithNumberProps");
+        TajsAnalysisResults result = run("objectWithNumberProps");
 
         expect(result)
                 .performed("module.foo()");
@@ -222,7 +226,7 @@ public class TAJSUnitTests {
 
     @Test
     public void everythingIsRight() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("everythingIsRight");
+        TajsAnalysisResults result = run("everythingIsRight");
 
         expect(result).hasNoViolations();
 
@@ -242,7 +246,7 @@ public class TAJSUnitTests {
 
     @Test
     public void recursiveObject() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("recursiveObject");
+        TajsAnalysisResults result = run("recursiveObject");
 
         expect(result)
                 .performed("module.foo.rec");
@@ -250,7 +254,7 @@ public class TAJSUnitTests {
 
     @Test
     public void functionAndObject() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("functionAndObject");
+        TajsAnalysisResults result = run("functionAndObject");
 
         expect(result)
                 .performed("module.foo.foo");
@@ -263,7 +267,7 @@ public class TAJSUnitTests {
      */
     @Test(expected = AssertionError.class)
     public void baitingTajsUnion() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("baitingTajsUnion");
+        TajsAnalysisResults result = run("baitingTajsUnion");
 
         expect(result)
                 .performed("module.foo().[union0].bar.baz");
@@ -274,7 +278,7 @@ public class TAJSUnitTests {
 
     @Test
     public void spuriousUnion() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("spuriousUnion");
+        TajsAnalysisResults result = run("spuriousUnion");
 
         expect(result)
                 .performedAllTests()
@@ -285,7 +289,7 @@ public class TAJSUnitTests {
     @Test
     public void spuriousOverload() throws Exception {
         // I wanted to make a more complicated test, but since TAJS cannot see that (typeof [bool/number] !== "string"), it has to be quite simple.
-        TAJSUtil.TajsAnalysisResults result = run("spuriousOverload");
+        TajsAnalysisResults result = run("spuriousOverload");
 
         expect(result)
                 .performed("module.foo(obj)")
@@ -296,7 +300,7 @@ public class TAJSUnitTests {
 
     @Test
     public void splitSignatures() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("splitSignatures");
+        TajsAnalysisResults result = run("splitSignatures");
 
         expect(result)
                 .performedAllTests()
@@ -306,7 +310,7 @@ public class TAJSUnitTests {
 
     @Test
     public void multipleFunctions() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("multipleFunctions");
+        TajsAnalysisResults result = run("multipleFunctions");
 
         expect(result)
                 .hasNoViolations();
@@ -314,7 +318,7 @@ public class TAJSUnitTests {
 
     @Test
     public void numbers() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("numbers");
+        TajsAnalysisResults result = run("numbers");
 
         expect(result)
                 .performed("module.id(number)")
@@ -323,7 +327,7 @@ public class TAJSUnitTests {
 
     @Test
     public void strings() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("strings");
+        TajsAnalysisResults result = run("strings");
 
         expect(result)
                 .performed("module.id(string)")
@@ -332,7 +336,7 @@ public class TAJSUnitTests {
 
     @Test
     public void booleans() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("booleans");
+        TajsAnalysisResults result = run("booleans");
 
         expect(result)
                 .performed("module.id(boolean)")
@@ -341,7 +345,7 @@ public class TAJSUnitTests {
 
     @Test
     public void numberLit() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("numberLit");
+        TajsAnalysisResults result = run("numberLit");
 
         expect(result)
                 .performed("module.id(3)")
@@ -350,7 +354,7 @@ public class TAJSUnitTests {
 
     @Test
     public void stringLit() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("stringLit");
+        TajsAnalysisResults result = run("stringLit");
 
         expect(result)
                 .performed("module.id(\"str\")")
@@ -359,7 +363,7 @@ public class TAJSUnitTests {
 
     @Test
     public void boolLit() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("boolLit");
+        TajsAnalysisResults result = run("boolLit");
 
         expect(result)
                 .performed("module.id(true)")
@@ -368,7 +372,7 @@ public class TAJSUnitTests {
 
     @Test
     public void primitivesFail() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("primitivesFail");
+        TajsAnalysisResults result = run("primitivesFail");
 
         expect(result)
                 .performed("module.id(number)")
@@ -399,7 +403,7 @@ public class TAJSUnitTests {
 
     @Test
     public void nestedFunctions() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("nestedFunctions");
+        TajsAnalysisResults result = run("nestedFunctions");
         expect(result)
                 .performedAllTests();
 
@@ -419,7 +423,7 @@ public class TAJSUnitTests {
 
     @Test
     public void numberIndexer() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("numberIndexer");
+        TajsAnalysisResults result = run("numberIndexer");
 
         expect(result)
                 .performedAllTests()
@@ -428,7 +432,7 @@ public class TAJSUnitTests {
 
     @Test
     public void numberIndexerFails() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("numberIndexerFails");
+        TajsAnalysisResults result = run("numberIndexerFails");
 
         expect(result)
                 .forPath("foo().[numberIndexer]")
@@ -437,7 +441,7 @@ public class TAJSUnitTests {
 
     @Test
     public void testRestArgs() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("testRestArgs");
+        TajsAnalysisResults result = run("testRestArgs");
 
         expect(result)
                 .performedAllTests()
@@ -446,7 +450,7 @@ public class TAJSUnitTests {
 
     @Test
     public void overloadedCallbacks() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("overloadedCallbacks");
+        TajsAnalysisResults result = run("overloadedCallbacks");
 
         expect(result)
                 .performedAllTests()
@@ -460,7 +464,7 @@ public class TAJSUnitTests {
 
     @Test
     public void overloadedCallbacks2() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("overloadedCallbacks2");
+        TajsAnalysisResults result = run("overloadedCallbacks2");
 
         expect(result)
                 .performedAllTests()
@@ -470,7 +474,7 @@ public class TAJSUnitTests {
     }
     @Test
     public void overloadedCallbacks3() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("overloadedCallbacks3");
+        TajsAnalysisResults result = run("overloadedCallbacks3");
 
         expect(result)
                 .performedAllTests()
@@ -480,7 +484,7 @@ public class TAJSUnitTests {
 
     @Test
     public void constructors2() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run(benchFromFolder("constructors2", options(), Benchmark.RUN_METHOD.BROWSER));
+        TajsAnalysisResults result = run(benchFromFolder("constructors2", options(), Benchmark.RUN_METHOD.BROWSER));
 
         expect(result)
                 .performedAllTests()
@@ -491,7 +495,7 @@ public class TAJSUnitTests {
 
     @Test
     public void stringIndexer() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("stringIndexer");
+        TajsAnalysisResults result = run("stringIndexer");
 
         expect(result)
                 .performedAllTests()
@@ -500,7 +504,7 @@ public class TAJSUnitTests {
 
     @Test
     public void primitives() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("primitives", options().staticOptions);
+        TajsAnalysisResults result = run("primitives", options().staticOptions);
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
@@ -508,7 +512,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createRecursiveObject() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createRecursiveObject", options().staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults result = run("createRecursiveObject", options().staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -517,7 +521,7 @@ public class TAJSUnitTests {
 
     @Test
     public void extendsInterface() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("extendsInterface", options().staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults result = run("extendsInterface", options().staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -526,7 +530,7 @@ public class TAJSUnitTests {
 
     @Test
     public void readUndefProp() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("readUndefProp");
+        TajsAnalysisResults result = run("readUndefProp");
 
         expect(result)
                 .performedAllTests()
@@ -535,7 +539,7 @@ public class TAJSUnitTests {
 
     @Test
     public void weakWrites() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("weakWrites");
+        TajsAnalysisResults result = run("weakWrites");
 
         expect(result)
                 .performedAllTests()
@@ -545,7 +549,7 @@ public class TAJSUnitTests {
 
     @Test
     public void correctUnion() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("correctUnion");
+        TajsAnalysisResults result = run("correctUnion");
 
         expect(result)
                 .performedAllTests()
@@ -555,7 +559,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createConstructor() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createConstructor", options().staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults result = run("createConstructor", options().staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -564,7 +568,7 @@ public class TAJSUnitTests {
 
     @Test
     public void canHaveDifferentGenerics() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("canHaveDifferentGenerics", options().staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults result = run("canHaveDifferentGenerics", options().staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -573,7 +577,7 @@ public class TAJSUnitTests {
 
     @Test
     public void numberIndexer2() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("numberIndexer2");
+        TajsAnalysisResults result = run("numberIndexer2");
 
         expect(result)
                 .performedAllTests()
@@ -582,7 +586,7 @@ public class TAJSUnitTests {
 
     @Test
     public void indirectRecursiveObjects() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("indirectRecursiveObjects", options().staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults result = run("indirectRecursiveObjects", options().staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -591,7 +595,7 @@ public class TAJSUnitTests {
 
     @Test
     public void classInheritsConstructors() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("classInheritsConstructors", options().setConstructAllTypes(true));
+        TajsAnalysisResults result = run("classInheritsConstructors", options().setConstructAllTypes(true));
 
         assertThat(result.detectedViolations.asMap().keySet(), is(hasSize(2)));
 
@@ -608,13 +612,13 @@ public class TAJSUnitTests {
 
     @Test
     public void classInheritance() throws Exception {
-        TAJSUtil.TajsAnalysisResults withConstructAll = run("classInheritance", options().setConstructAllTypes(true).staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults withConstructAll = run("classInheritance", options().setConstructAllTypes(true).staticOptions.setCreateSingletonObjects(true));
 
         expect(withConstructAll)
                 .performedAllTests()
                 .hasNoViolations();
 
-        TAJSUtil.TajsAnalysisResults dontConstructAll = run("classInheritance", options().setConstructAllTypes(false).staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults dontConstructAll = run("classInheritance", options().setConstructAllTypes(false).staticOptions.setCreateSingletonObjects(true));
 
         expect(dontConstructAll)
                 .performedAllTests()
@@ -623,7 +627,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createRestArgs() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createRestArgs");
+        TajsAnalysisResults result = run("createRestArgs");
 
         assertThat(result.detectedViolations.asMap().keySet(), hasSize(1));
 
@@ -638,7 +642,7 @@ public class TAJSUnitTests {
     // TODO: Any can be equal to any other object.
     @Test
     public void any() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("any");
+        TajsAnalysisResults result = run("any");
 
         expect(result)
                 .performedAllTests();
@@ -662,7 +666,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createRecursiveObject2() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createRecursiveObject2");
+        TajsAnalysisResults result = run("createRecursiveObject2");
 
         expect(result)
                 .performedAllTests()
@@ -671,7 +675,7 @@ public class TAJSUnitTests {
 
     @Test
     public void fromTSFile() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run(benchFromFolderTSFile("fromTSFile", options(), Benchmark.RUN_METHOD.BROWSER));
+        TajsAnalysisResults result = run(benchFromFolderTSFile("fromTSFile", options(), Benchmark.RUN_METHOD.BROWSER));
 
         expect(result)
                 .performedAllTests()
@@ -681,7 +685,7 @@ public class TAJSUnitTests {
     @Test
     @Ignore // TODO: Fails because the keys of constructed objects aren't iterated when doing a for-in loop.
     public void copiesFunctions() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run(benchFromFolderTSFile("copiesFunctions", options(), Benchmark.RUN_METHOD.BROWSER));
+        TajsAnalysisResults result = run(benchFromFolderTSFile("copiesFunctions", options(), Benchmark.RUN_METHOD.BROWSER));
 
         expect(result)
                 .performedAllTests()
@@ -691,7 +695,7 @@ public class TAJSUnitTests {
     @Test
     @Ignore // TODO: Fails exactly because making an object a summery adds a possible "undefined" on all properties.
     public void weakReadsGiveUndefined() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("weakReadsGiveUndefined");
+        TajsAnalysisResults result = run("weakReadsGiveUndefined");
 
         expect(result)
                 .performedAllTests()
@@ -700,7 +704,7 @@ public class TAJSUnitTests {
 
     @Test
     public void readProperty() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("readProperty", options().staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults result = run("readProperty", options().staticOptions.setCreateSingletonObjects(true));
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
@@ -708,7 +712,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createUnionsOfDateAndFunction() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createUnionsOfDateAndFunction", options().setSplitUnions(false).staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults result = run("createUnionsOfDateAndFunction", options().setSplitUnions(false).staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -717,14 +721,14 @@ public class TAJSUnitTests {
 
     @Test
     public void deepChecking() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("deepChecking");
+        TajsAnalysisResults result = run("deepChecking");
 
         assertTrue(result.testNot.stream().map(dk.webbies.tajscheck.testcreator.test.Test::getPath).anyMatch("foo().foo"::equals));
     }
 
     @Test
     public void checkRecursiveObject() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("checkRecursiveObject");
+        TajsAnalysisResults result = run("checkRecursiveObject");
 
         expect(result)
                 .performedAllTests()
@@ -748,7 +752,7 @@ public class TAJSUnitTests {
 
     @Test
     public void instanceOfSmokeTest() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("instanceOfSmokeTest", options().setSplitUnions(false).staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults result = run("instanceOfSmokeTest", options().setSplitUnions(false).staticOptions.setCreateSingletonObjects(true));
 
         expect(result)
                 .performedAllTests()
@@ -764,7 +768,7 @@ public class TAJSUnitTests {
     @Test
     @Ignore // TODO: Fails because we never generate an object that has the same identity as an object created internally by the library.
     public void objectIdentity() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("objectIdentity");
+        TajsAnalysisResults result = run("objectIdentity");
 
         expect(result)
                 .performedAllTests()
@@ -776,7 +780,7 @@ public class TAJSUnitTests {
     public void motivatingPath() throws Exception {
         Benchmark bench = benchFromFolder("motivatingPath", options(), Benchmark.RUN_METHOD.BROWSER);
 
-        TAJSUtil.TajsAnalysisResults result = run(bench);
+        TajsAnalysisResults result = run(bench);
         expect(result)
                 .performedAllTests()
                 .forPath("window.Path.map.().exit.[arg0]")
@@ -792,7 +796,7 @@ public class TAJSUnitTests {
 
     @Test
     public void leafletMotivatingBuggy() throws Exception {
-        TAJSUtil.TajsAnalysisResults buggy = run(benchFromFolder("leafletMotivating/buggy", options().setConstructAllTypes(false).setUseInspector(false).staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
+        TajsAnalysisResults buggy = run(benchFromFolder("leafletMotivating/buggy", options().setConstructAllTypes(false).setUseInspector(false).staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
 
 
         System.out.println(buggy);
@@ -804,7 +808,7 @@ public class TAJSUnitTests {
     @Test
     public void leafletMotivatingFixed() throws Exception {
         // Set constructAllTypes to true after feedbackValuesReadUndefined has been fixed.
-        TAJSUtil.TajsAnalysisResults fixed = run(benchFromFolder("leafletMotivating/fixed", options().setConstructAllTypes(true).setUseInspector(false).staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
+        TajsAnalysisResults fixed = run(benchFromFolder("leafletMotivating/fixed", options().setConstructAllTypes(true).setUseInspector(false).staticOptions.setCreateSingletonObjects(true), Benchmark.RUN_METHOD.BROWSER));
 
         System.out.println(fixed);
 
@@ -817,7 +821,7 @@ public class TAJSUnitTests {
     @Test
     @Ignore // TODO: Look at this later. I got no idea what is going on.
     public void feedbackValuesReadUndefined() throws Exception {
-        TAJSUtil.TajsAnalysisResults fixed = run("feedbackValuesReadUndefined", options().setConstructAllTypes(false).setUseInspector(true));
+        TajsAnalysisResults fixed = run("feedbackValuesReadUndefined", options().setConstructAllTypes(false).setUseInspector(true));
 
         System.out.println(fixed);
 
@@ -831,7 +835,7 @@ public class TAJSUnitTests {
     public void retract() throws Exception {
         StaticOptions.Builder options = options().staticOptions.setRetractionPolicy(new LimitTransfersRetractionPolicy(100, 0)).setExpansionPolicy(new FixedExpansionOrder("module.toRetract(string)", "module.returnsBool()"));
 
-        TAJSUtil.TajsAnalysisResults result = run("retract", options);
+        TajsAnalysisResults result = run("retract", options);
 
         System.out.println(result);
 
@@ -841,7 +845,7 @@ public class TAJSUnitTests {
 
     @Test
     public void readableObjectErrors() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("readableObjectErrors");
+        TajsAnalysisResults result = run("readableObjectErrors");
 
         System.out.println(result);
 
@@ -852,9 +856,9 @@ public class TAJSUnitTests {
     public void discardSpuriousValues() throws Exception {
         List<String> executionOrder = Arrays.asList("module.foo()", "module.foo().baz()", "module.bar()");
 
-        TAJSUtil.TajsAnalysisResults resultNoOrder = run("discardSpuriousValues", options());
+        TajsAnalysisResults resultNoOrder = run("discardSpuriousValues", options());
 
-        TAJSUtil.TajsAnalysisResults resultFixedExpansion = run("discardSpuriousValues", options().staticOptions.setExpansionPolicy(new FixedExpansionOrder(executionOrder)));
+        TajsAnalysisResults resultFixedExpansion = run("discardSpuriousValues", options().staticOptions.setExpansionPolicy(new FixedExpansionOrder(executionOrder)));
 
         System.out.println("With default expansion-policy");
         System.out.println(resultNoOrder);
@@ -867,7 +871,7 @@ public class TAJSUnitTests {
 
     @Test
     public void asyncError() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("asyncError");
+        TajsAnalysisResults result = run("asyncError");
 
         System.out.println(result);
         expect(result)
@@ -879,11 +883,11 @@ public class TAJSUnitTests {
 
     @Test
     public void noStateFromFailingMethods() throws Exception {
-        TAJSUtil.TajsAnalysisResults resultNoPropagate = run("noStateFromFailingMethods", options().staticOptions.setPropagateStateFromFailingTest(false));
+        TajsAnalysisResults resultNoPropagate = run("noStateFromFailingMethods", options().staticOptions.setPropagateStateFromFailingTest(false));
 
         assertThat(resultNoPropagate.detectedViolations.keySet(), hasSize(1));
 
-        TAJSUtil.TajsAnalysisResults resultDoPropagate = run("noStateFromFailingMethods", options().staticOptions.setPropagateStateFromFailingTest(true));
+        TajsAnalysisResults resultDoPropagate = run("noStateFromFailingMethods", options().staticOptions.setPropagateStateFromFailingTest(true));
 
         assertThat(resultDoPropagate.detectedViolations.keySet(), hasSize(2));
     }
@@ -891,7 +895,7 @@ public class TAJSUnitTests {
     @Test
     public void cannotHaveNonMonotomeState() throws Exception {
         // If we retracted state, this would run in an infinite loop.
-        TAJSUtil.TajsAnalysisResults result = run("cannotHaveNonMonotomeState");
+        TajsAnalysisResults result = run("cannotHaveNonMonotomeState");
 
         expect(result)
                 .notPerformedAllTests();
@@ -899,7 +903,7 @@ public class TAJSUnitTests {
 
     @Test
     public void restArgsSoundness() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = soundness("restArgsSoundness", options -> options.staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults result = soundness("restArgsSoundness", options -> options.staticOptions.setCreateSingletonObjects(true));
         System.out.println(result);
         expect(result)
                 .performedAllTests();
@@ -907,7 +911,7 @@ public class TAJSUnitTests {
 
     @Test
     public void higherOrderFunctionCompleteness() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = soundness("higherOrderFunctionCompleteness", options -> options.staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults result = soundness("higherOrderFunctionCompleteness", options -> options.staticOptions.setCreateSingletonObjects(true));
         System.out.println(result);
         expect(result)
                 .performedAllTests();
@@ -915,7 +919,7 @@ public class TAJSUnitTests {
 
     @Test
     public void multiSignatureSoundness() throws Exception { // The actual issue is that the two arrays are allocated in the same object-label.
-        TAJSUtil.TajsAnalysisResults result = run("multiSignatureSoundness");
+        TajsAnalysisResults result = run("multiSignatureSoundness");
         System.out.println(result);
         expect(result)
                 .performedAllTests()
@@ -925,7 +929,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createStringIndexer() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createStringIndexer", options().staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults result = run("createStringIndexer", options().staticOptions.setCreateSingletonObjects(true));
 
         System.out.println(result);
 
@@ -936,7 +940,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createStringIndexer2() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createStringIndexer2");
+        TajsAnalysisResults result = run("createStringIndexer2");
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
@@ -944,7 +948,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createStringIndexer3() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createStringIndexer3");
+        TajsAnalysisResults result = run("createStringIndexer3");
         expect(result)
                 .performedAllTests()
                 .hasNoWarnings()
@@ -953,7 +957,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createStringIndexer4() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("createStringIndexer4");
+        TajsAnalysisResults result = run("createStringIndexer4");
         expect(result)
                 .performedAllTests()
                 .hasNoWarnings()
@@ -962,7 +966,7 @@ public class TAJSUnitTests {
 
     @Test
     public void functionProperties() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("functionProperties", options());
+        TajsAnalysisResults result = run("functionProperties", options());
 
         expect(result)
                 .performedAllTests()
@@ -973,7 +977,7 @@ public class TAJSUnitTests {
     @Test
     @Ignore // we don't yet model a functions .prototype (and the .constructor on that .prototype).
     public void functionProperties2() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("functionProperties2", options());
+        TajsAnalysisResults result = run("functionProperties2", options());
 
         expect(result)
                 .performedAllTests()
@@ -983,7 +987,7 @@ public class TAJSUnitTests {
 
     @Test
     public void compareWithTheAny() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("compareWithTheAny");
+        TajsAnalysisResults result = run("compareWithTheAny");
 
         expect(result)
                 .performedAllTests()
@@ -993,7 +997,7 @@ public class TAJSUnitTests {
 
     @Test
     public void polutionFromNeighbour() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("polutionFromNeighbour", options());
+        TajsAnalysisResults result = run("polutionFromNeighbour", options());
 
         String path = "L.testMethod()";
         assertFalse(
@@ -1004,7 +1008,7 @@ public class TAJSUnitTests {
 
     @Test
     public void timeout() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("timeout", options().staticOptions
+        TajsAnalysisResults result = run("timeout", options().staticOptions
                 .setExpansionPolicy(new FixedExpansionOrder("module.foo()", "module.polute()"))
                 .setRetractionPolicy(new LimitTransfersRetractionPolicy(100, 2))
         );
@@ -1021,7 +1025,7 @@ public class TAJSUnitTests {
 
     @Test
     public void higherOrderIncludesCallsite() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("higherOrderIncludesCallsite");
+        TajsAnalysisResults result = run("higherOrderIncludesCallsite");
 
         System.out.println(result);
 
@@ -1030,7 +1034,7 @@ public class TAJSUnitTests {
 
     @Test
     public void dontConstructClassInstances() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("dontConstructClassInstances", options()
+        TajsAnalysisResults result = run("dontConstructClassInstances", options()
                 .setSplitUnions(false)
                 .setConstructAllTypes(false)
                 .setConstructClassInstances(false)
@@ -1042,7 +1046,7 @@ public class TAJSUnitTests {
                 .hasNoWarnings()
                 .hasNoViolations();
 
-        TAJSUtil.TajsAnalysisResults withSplitUnions = run("dontConstructClassInstances", options()
+        TajsAnalysisResults withSplitUnions = run("dontConstructClassInstances", options()
                 .setSplitUnions(true)
                 .setConstructAllTypes(false)
                 .setConstructClassInstances(false)
@@ -1058,7 +1062,7 @@ public class TAJSUnitTests {
 
     @Test
     public void mixConstructedAndFeedbackValues() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("mixConstructedAndFeedbackValues", options().setConstructAllTypes(true).staticOptions.setMixFeedbackValuesIntoConstructedValues(true));
+        TajsAnalysisResults result = run("mixConstructedAndFeedbackValues", options().setConstructAllTypes(true).staticOptions.setArgumentValuesStrategy(MIX_FEEDBACK_AND_CONSTRUCTED));
 
         expect(result)
                 .performedAllTests()
@@ -1068,7 +1072,7 @@ public class TAJSUnitTests {
 
     @Test
     public void instanceofTest() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("instanceof");
+        TajsAnalysisResults result = run("instanceof");
 
         expect(result)
                 .performedAllTests()
@@ -1078,7 +1082,7 @@ public class TAJSUnitTests {
 
     @Test
     public void properWidthSubtyping() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("properWidthSubtyping", options().staticOptions.setProperWidthSubtyping(true));
+        TajsAnalysisResults result = run("properWidthSubtyping", options().staticOptions.setProperWidthSubtyping(true));
 
         expect(result)
                 .performedAllTests()
@@ -1088,7 +1092,7 @@ public class TAJSUnitTests {
 
     @Test
     public void stringIndexCheck() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("stringIndexCheck");
+        TajsAnalysisResults result = run("stringIndexCheck");
         expect(result)
                 .performedAllTests()
                 .hasNoViolations()
@@ -1097,7 +1101,7 @@ public class TAJSUnitTests {
 
     @Test
     public void stringIndexCheck2() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("stringIndexCheck2");
+        TajsAnalysisResults result = run("stringIndexCheck2");
 
         System.out.println(result);
 
@@ -1113,13 +1117,13 @@ public class TAJSUnitTests {
 
     @Test
     public void lateExpansion() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("lateExpansion", options().staticOptions.setExpansionPolicy(new DelayAllTestsExpansionPolicy()));
+        TajsAnalysisResults result = run("lateExpansion", options().staticOptions.setExpansionPolicy(new DelayAllTestsExpansionPolicy()));
 
         expect(result)
                 .performedAllTests()
                 .hasNoViolations();
 
-        TAJSUtil.TajsAnalysisResults evenLater = run("lateExpansion", options().staticOptions.setExpansionPolicy(new ExpandOneAtATimeWhenWorkListEmptyExpansionPolicy()));
+        TajsAnalysisResults evenLater = run("lateExpansion", options().staticOptions.setExpansionPolicy(new ExpandOneAtATimeWhenWorkListEmpty()));
 
         expect(evenLater)
                 .performedAllTests()
@@ -1128,13 +1132,13 @@ public class TAJSUnitTests {
 
     @Test
     public void lateExpansion2() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("lateExpansion2", options().staticOptions.setExpansionPolicy(new DelayAllTestsExpansionPolicy()));
+        TajsAnalysisResults result = run("lateExpansion2", options().staticOptions.setExpansionPolicy(new DelayAllTestsExpansionPolicy()));
 
         expect(result)
                 .forPath("module.bar().bar")
                 .hasViolations();
 
-        TAJSUtil.TajsAnalysisResults evenLater = run("lateExpansion2", options().staticOptions.setExpansionPolicy(new ExpandOneAtATimeWhenWorkListEmptyExpansionPolicy()));
+        TajsAnalysisResults evenLater = run("lateExpansion2", options().staticOptions.setExpansionPolicy(new ExpandOneAtATimeWhenWorkListEmpty()));
 
         expect(evenLater)
                 .forPath("module.bar().bar")
@@ -1143,13 +1147,55 @@ public class TAJSUnitTests {
 
     @Test
     public void emptyObjectHasToString() throws Exception {
-        TAJSUtil.TajsAnalysisResults result = run("emptyObjectHasToString");
+        TajsAnalysisResults result = run("emptyObjectHasToString");
 
         expect(result)
                 .performedAllTests()
                 .hasNoWarnings()
                 .hasNoViolations();
     }
+
+    @Test
+    public void useFeedbackIfAvailable() throws Exception {
+        TajsAnalysisResults withManualExpansionOrder = run("useFeedbackIfAvailable", options().staticOptions
+                .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
+                .setExpansionPolicy(new FixedExpansionOrder("module.produceFoo()", "module.produceBar()", "module.useFoo(obj)", "module.useBar(obj)"))
+        );
+
+        assertThat(withManualExpansionOrder.detectedViolations.asMap().entrySet(), hasSize(1));
+
+        expect(withManualExpansionOrder)
+                .forPath("module.useFoo(obj)")
+                .hasNoViolations()
+                .hasNoWarnings();
+
+        TajsAnalysisResults automaticExpansionOrder = run("useFeedbackIfAvailable", options().staticOptions
+                .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
+                .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
+        );
+
+        assertThat(automaticExpansionOrder.detectedViolations.asMap().entrySet(), hasSize(1));
+
+        expect(automaticExpansionOrder)
+                .forPath("module.useFoo(obj)")
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
+
+    @Test
+    public void callbacksAreConstructedEarly() throws Exception {
+        TajsAnalysisResults result = run("callbacksAreConstructedEarly", options().staticOptions
+                .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
+                .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
+        );
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
+
+    // TODO: Test that callbacks are constructed straight away.
 
     // TODO: Postpone calling functions with synthetic arguments (need generalization of expansion-policy). Possibly do a second pass, where the expansion-policy tells the type-tester which skipped tests should execute anyway.
     // TODO: Only add a function with synthetic arguments when the work-list is otherwise empty.

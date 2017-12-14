@@ -9,6 +9,7 @@ import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.tajstester.TypeValuesHandler;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -21,6 +22,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.*;
+import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE;
+import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED;
 import static java.util.Collections.singletonList;
 
 public class SpecInstantiator {
@@ -308,11 +311,14 @@ public class SpecInstantiator {
     private static final class CannotConstructType extends RuntimeException { }
 
     Value instantiate(Type type, MiscInfo info, String step) {
+        Value feedbackValue = valueHandler.findFeedbackValue(new TypeWithContext(type, info.context));
         if (!this.info.shouldConstructType(type)) {
-            Value feedbackValue = valueHandler.findFeedbackValue(new TypeWithContext(type, info.context));
             if (feedbackValue == null) {
                 throw new CannotConstructType(); // this will be catched by the top-most construction method.
             }
+            return feedbackValue;
+        }
+        if (this.info.options.staticOptions.argumentValuesStrategy == FEEDBACK_IF_POSSIBLE && feedbackValue != null) {
             return feedbackValue;
         }
 
@@ -360,8 +366,7 @@ public class SpecInstantiator {
 
         Value result = valueCache.get(key);
 
-        if (this.info.options.staticOptions.mixFeedbackValuesIntoConstructedValues) {
-            Value feedbackValue = valueHandler.findFeedbackValue(new TypeWithContext(type, info.context));
+        if (this.info.options.staticOptions.argumentValuesStrategy == MIX_FEEDBACK_AND_CONSTRUCTED) {
             if (feedbackValue != null) {
                 result = result.join(feedbackValue);
             }

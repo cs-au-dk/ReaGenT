@@ -4,7 +4,10 @@ import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandImmediatelyPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpansionPolicy;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.util.Util;
+
+import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.*;
 
 /**
  * Created by erik1 on 31-07-2017.
@@ -19,8 +22,15 @@ public class StaticOptions implements OptionsI {
     public final RetractionPolicy retractionPolicy;
     public final ExpansionPolicy expansionPolicy;
     public final boolean propagateStateFromFailingTest;
-    public final boolean mixFeedbackValuesIntoConstructedValues;
     public final boolean properWidthSubtyping;
+    public final ArgumentValuesStrategy argumentValuesStrategy;
+
+    public enum ArgumentValuesStrategy {
+        MIX_FEEDBACK_AND_CONSTRUCTED,
+        ONLY_CONSTRUCTED, // <- except if BenchmarkInfo::shouldConstruct states that the type cannot be constructed, then a feedback-value is used.
+        FEEDBACK_IF_POSSIBLE
+    }
+
 
     private final Builder builder;
 
@@ -31,7 +41,7 @@ public class StaticOptions implements OptionsI {
         this.retractionPolicy = builder.retractionPolicy;
         this.expansionPolicy = builder.expansionPolicy;
         this.propagateStateFromFailingTest = builder.propagateStateFromFailingTest;
-        this.mixFeedbackValuesIntoConstructedValues = builder.mixFeedbackValuesIntoConstructedValues;
+        this.argumentValuesStrategy = builder.argumentValuesStrategy;
         this.properWidthSubtyping = builder.properWidthSubtyping;
         this.builder = builder;
     }
@@ -48,7 +58,7 @@ public class StaticOptions implements OptionsI {
         public RetractionPolicy retractionPolicy = new NoRetractPolicy();
         public ExpansionPolicy expansionPolicy = new ExpandImmediatelyPolicy();
         public boolean propagateStateFromFailingTest = false;
-        public boolean mixFeedbackValuesIntoConstructedValues = false;
+        public ArgumentValuesStrategy argumentValuesStrategy = ONLY_CONSTRUCTED;
         private boolean properWidthSubtyping = false;
 
         private final CheckOptions.Builder outerBuilder;
@@ -66,8 +76,8 @@ public class StaticOptions implements OptionsI {
             return outerBuilder;
         }
 
-        public Builder setMixFeedbackValuesIntoConstructedValues(boolean mixFeedbackValuesIntoConstructedValues) {
-            this.mixFeedbackValuesIntoConstructedValues = mixFeedbackValuesIntoConstructedValues;
+        public Builder setArgumentValuesStrategy(ArgumentValuesStrategy argumentValuesStrategy) {
+            this.argumentValuesStrategy = argumentValuesStrategy;
             return this;
         }
 
