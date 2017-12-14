@@ -275,20 +275,18 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     @Override
     public Boolean visit(NumberIndexTest test) {
-        State s = c.getState();
         Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(),test.getTypeContext()));
         Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(baseValue.getAllObjectLabels(), Value.makeAnyStrUInt()), c.getState());
-        tajsTypeTester.addCertificate(new TestCertificate(test, "numberIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s), c);
+        tajsTypeTester.addCertificate(new TestCertificate(test, "numberIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, c.getState()), c);
         TypeWithContext resultType = new TypeWithContext(test.getReturnType(), test.getTypeContext());
         return tajsTypeTester.attemptAddValue(propertyValue, resultType, test.getPath(), c, typeChecker, test);
     }
 
     @Override
     public Boolean visit(StringIndexTest test) {
-        State s = c.getState();
         Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(),test.getTypeContext()));
         Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(baseValue.getAllObjectLabels(), Value.makeAnyStr()), c.getState());
-        tajsTypeTester.addCertificate(new TestCertificate(test, "stringIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s), c);
+        tajsTypeTester.addCertificate(new TestCertificate(test, "stringIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, c.getState()), c);
         TypeWithContext resultType = new TypeWithContext(test.getReturnType(), test.getTypeContext());
         return tajsTypeTester.attemptAddValue(propertyValue, resultType, test.getPath(), c, typeChecker, test);
     }
