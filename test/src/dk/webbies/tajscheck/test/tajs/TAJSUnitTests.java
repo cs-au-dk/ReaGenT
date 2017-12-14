@@ -1195,13 +1195,6 @@ public class TAJSUnitTests {
                 .hasNoWarnings();
     }
 
-    // TODO: Test that callbacks are constructed straight away.
-
-    // TODO: Postpone calling functions with synthetic arguments (need generalization of expansion-policy). Possibly do a second pass, where the expansion-policy tells the type-tester which skipped tests should execute anyway.
-    // TODO: Only add a function with synthetic arguments when the work-list is otherwise empty.
-    // TODO: Have test where a feedback value used as an argument can only be gotten
-    // TODO: Callbacks should just be constructed.
-
     // TODO: After a FunctionTest, repeat property-read tests, and see if anything was modified (and in that case blame the function).
 
     // TODO: Implement that you can write to primitives.
