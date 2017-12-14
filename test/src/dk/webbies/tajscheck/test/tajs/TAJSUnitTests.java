@@ -11,7 +11,6 @@ import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetrac
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
-import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
@@ -1193,6 +1192,18 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations()
                 .hasNoWarnings();
+    }
+
+    @Test
+    public void harmfulSideEffectsAreCatched() throws Exception {
+        TajsAnalysisResults result = run("harmfulSideEffectsAreCatched", options().staticOptions
+                .setCheckAllPropertiesAreFunctionCall(true)
+                .setPropagateStateFromFailingTest(false) // <- default, but to be explicit.
+        );
+
+        expect(result)
+                .performedAllTests() // <- that is the real test, that all tests are still performed.
+                .hasViolations();
     }
 
     // TODO: After a FunctionTest, repeat property-read tests, and see if anything was modified (and in that case blame the function).

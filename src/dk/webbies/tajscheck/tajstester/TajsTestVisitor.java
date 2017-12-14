@@ -57,13 +57,12 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     @Override
     public Boolean visit(PropertyReadTest test) {
-        State s = c.getState();
         Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(),test.getTypeContext()));
         boolean result = true;
         for (ObjectLabel label : baseValue.getObjectLabels()) {
             Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(Collections.singletonList(label), Value.makeStr(test.getProperty()), info.options.staticOptions.killGetters), c.getState());
             TypeWithContext closedType = new TypeWithContext(test.getPropertyType(), test.getTypeContext());
-            tajsTypeTester.addCertificate(new TestCertificate(test, "Property " + test.getProperty() + " accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, s), c);
+            tajsTypeTester.addCertificate(new TestCertificate(test, "Property " + test.getProperty() + " accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, c.getState()), c);
             result &= tajsTypeTester.attemptAddValue(propertyValue, closedType, test.getPath(), c, typeChecker, test);
         }
         return result;

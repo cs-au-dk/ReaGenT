@@ -27,7 +27,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.newList;
-import static dk.brics.tajs.util.Collections.newSet;
 
 public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTestRunner {
     private static final boolean DEBUG = true;
@@ -231,6 +230,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         } catch (Exception e) {
             exceptionsEncountered.put(test, e);
         }
+
+        if (test instanceof FunctionTest && info.options.staticOptions.checkAllPropertiesAreFunctionCall) {
+            typeChecked &= checkPropertyReads(test, typeCheckedTests.stream().filter(PropertyReadTest.class::isInstance).map(PropertyReadTest.class::cast).collect(Collectors.toList()), c);
+        }
+
         timers.stop(Timers.Tags.TEST_TRANSFER);
 
         if (typeChecked || info.options.staticOptions.propagateStateFromFailingTest) {
@@ -239,6 +243,36 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         if (typeChecked) {
             typeCheckedTests.add(test);
         }
+    }
+
+    private boolean checkPropertyReads(Test testToBlame, List<PropertyReadTest> propertyReads, Solver.SolverInterface c) {
+        boolean typeChecked = true;
+        TajsTypeChecker typeChecker = new TajsTypeChecker(testToBlame, c, info);
+        for (PropertyReadTest propertyRead : propertyReads) {
+            Value baseValue = valueHandler.findFeedbackValue(new TypeWithContext(propertyRead.getBaseType(),propertyRead.getTypeContext()));
+            PropVarOperations pc = c.getAnalysis().getPropVarOperations();
+            if (baseValue == null) {
+                continue;
+            }
+
+            for (ObjectLabel label : baseValue.getObjectLabels()) {
+                Value propertyValue = UnknownValueResolver.getRealValue(pc.readPropertyValue(Collections.singletonList(label), Value.makeStr(propertyRead.getProperty()), info.options.staticOptions.killGetters), c.getState());
+                TypeWithContext closedType = new TypeWithContext(propertyRead.getPropertyType(), propertyRead.getTypeContext());
+                if (propertyValue.isNone()) {
+                    continue;
+                }
+                List<TypeViolation> violations = getViolations(propertyValue, closedType, propertyRead.getPath(), c, typeChecker);
+
+                typeChecked &= violations.isEmpty();
+
+                for (TypeViolation violation : violations) {
+                    addViolation(new TypeViolation("Violation after FunctionCall: \"" + violation.toString() + "\"", testToBlame.getPath()), c);
+                }
+            }
+
+        }
+
+        return typeChecked;
     }
 
     private final List<Runnable> endOfInnerLoopCallbacks = new ArrayList<>();

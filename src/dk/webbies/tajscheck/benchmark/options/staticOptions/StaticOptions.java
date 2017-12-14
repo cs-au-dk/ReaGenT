@@ -4,7 +4,6 @@ import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandImmediatelyPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpansionPolicy;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.util.Util;
 
 import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.*;
@@ -24,6 +23,7 @@ public class StaticOptions implements OptionsI {
     public final boolean propagateStateFromFailingTest;
     public final boolean properWidthSubtyping;
     public final ArgumentValuesStrategy argumentValuesStrategy;
+    public final boolean checkAllPropertiesAreFunctionCall;
 
     public enum ArgumentValuesStrategy {
         MIX_FEEDBACK_AND_CONSTRUCTED,
@@ -43,6 +43,7 @@ public class StaticOptions implements OptionsI {
         this.propagateStateFromFailingTest = builder.propagateStateFromFailingTest;
         this.argumentValuesStrategy = builder.argumentValuesStrategy;
         this.properWidthSubtyping = builder.properWidthSubtyping;
+        this.checkAllPropertiesAreFunctionCall = builder.checkAllPropertiesAreFunctionCall;
         this.builder = builder;
     }
 
@@ -54,12 +55,13 @@ public class StaticOptions implements OptionsI {
     public static final class Builder implements OptionsI.Builder {
         private boolean killGetters = false;
         private boolean createSingletonObjects = false;
-        public boolean betterAnyString = true; // if true all string types are *not* well-known strings in Object or Function prototypes
-        public RetractionPolicy retractionPolicy = new NoRetractPolicy();
-        public ExpansionPolicy expansionPolicy = new ExpandImmediatelyPolicy();
-        public boolean propagateStateFromFailingTest = false;
-        public ArgumentValuesStrategy argumentValuesStrategy = ONLY_CONSTRUCTED;
+        private boolean betterAnyString = true; // if true all string types are *not* well-known strings in Object or Function prototypes
+        private RetractionPolicy retractionPolicy = new NoRetractPolicy();
+        private ExpansionPolicy expansionPolicy = new ExpandImmediatelyPolicy();
+        private boolean propagateStateFromFailingTest = false;
+        private ArgumentValuesStrategy argumentValuesStrategy = ONLY_CONSTRUCTED;
         private boolean properWidthSubtyping = false;
+        private boolean checkAllPropertiesAreFunctionCall = false;
 
         private final CheckOptions.Builder outerBuilder;
 
@@ -74,6 +76,16 @@ public class StaticOptions implements OptionsI {
 
         public CheckOptions.Builder getOuterBuilder() {
             return outerBuilder;
+        }
+
+        public Builder setCheckAllPropertiesAreFunctionCall(boolean checkAllPropertiesAreFunctionCall) {
+            this.checkAllPropertiesAreFunctionCall = checkAllPropertiesAreFunctionCall;
+            return this;
+        }
+
+        public Builder setBetterAnyString(boolean betterAnyString) {
+            this.betterAnyString = betterAnyString;
+            return this;
         }
 
         public Builder setArgumentValuesStrategy(ArgumentValuesStrategy argumentValuesStrategy) {

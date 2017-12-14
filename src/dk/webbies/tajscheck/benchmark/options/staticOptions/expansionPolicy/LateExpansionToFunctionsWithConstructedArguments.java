@@ -5,6 +5,7 @@ import dk.brics.tajs.analysis.Solver;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
+import dk.webbies.tajscheck.tajstester.TypeValuesHandler;
 import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -54,10 +55,14 @@ public class LateExpansionToFunctionsWithConstructedArguments implements Expansi
         if (!typeTester.getBenchmarkInfo().shouldConstructType(type)) {
             return false; // if we cannot construct it, it is not a constructed type.
         }
+        TypeValuesHandler valueHandler = typeTester.getValueHandler();
 
-        Predicate<TypeWithContext> test = subType -> typeTester.getValueHandler().findFeedbackValue(subType) != null || argumentsThatAreConstructedAnyway.contains(subType);
+        Predicate<TypeWithContext> whiteList = subType ->
+                valueHandler.findFeedbackValue(subType) != null ||
+                argumentsThatAreConstructedAnyway.contains(subType) ||
+                valueHandler.getInstantiator().getNativesInstantiator().shouldConstructAsNative(subType.getType());
 
-        return type.accept(new CanEasilyConstructVisitor(typeContext, typeTester.getBenchmarkInfo(), test));
+        return type.accept(new CanEasilyConstructVisitor(typeContext, typeTester.getBenchmarkInfo(), whiteList));
     }
 
     public static final class CanEasilyConstructVisitor implements TypeVisitor<Boolean> {

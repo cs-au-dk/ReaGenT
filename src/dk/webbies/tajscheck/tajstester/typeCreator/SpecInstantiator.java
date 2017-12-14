@@ -376,7 +376,7 @@ public class SpecInstantiator {
     }
 
     private boolean isSimpleType(Type type, TypeContext context) {
-        return type.accept(new LateExpansionToFunctionsWithConstructedArguments.CanEasilyConstructVisitor(context, info, subType -> false));
+        return type.accept(new LateExpansionToFunctionsWithConstructedArguments.CanEasilyConstructVisitor(context, info, subType -> nativesInstantiator.shouldConstructAsNative(subType.getType())));
     }
 
     private Value constructArray(MiscInfo info, Type indexType) {
@@ -827,5 +827,9 @@ public class SpecInstantiator {
         }
 
 
+    }
+
+    public NativesInstantiator getNativesInstantiator() {
+        return nativesInstantiator;
     }
 }

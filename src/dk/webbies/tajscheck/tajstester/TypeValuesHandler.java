@@ -98,6 +98,10 @@ public class TypeValuesHandler {
         instantiator.clearValueCache();
     }
 
+    public SpecInstantiator getInstantiator() {
+        return instantiator;
+    }
+
     private static final class Reference<T> {
         T value;
 
