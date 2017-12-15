@@ -356,6 +356,7 @@ public class TypeChecker {
                     case "WebGLRenderbuffer":
                     case "HTMLImageElement":
                     case "HTMLVideoElement":
+                    case "HTMLSpanElement":
                     case "XMLHttpRequest":
                     case "HTMLElement":
                     case "CanvasPattern":
@@ -648,7 +649,8 @@ public class TypeChecker {
             List<TypeCheck> result = new ArrayList<>(Arrays.asList(
                     expectNotNull(),
                     new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "tuple"),
-                    new SimpleTypeCheck(Check.field("length", null, Check.expression((actualSize) ->
+                    // The numberLitteral
+                    new SimpleTypeCheck(Check.field("length", new TypeWithContext(new NumberLiteral(size), arg.typeContext), Check.expression((actualSize) ->
                             binary(actualSize, Operator.GREATER_THAN_EQUAL, number(size))
                     )), "tuple of " + size + " elements")
             ));
