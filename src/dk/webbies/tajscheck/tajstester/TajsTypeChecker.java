@@ -2,8 +2,10 @@ package dk.webbies.tajscheck.tajstester;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.brics.tajs.analysis.HostAPIs;
+import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
+import dk.brics.tajs.analysis.js.Operators;
 import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.util.Collections;
@@ -165,7 +167,7 @@ public class TajsTypeChecker {
 
         List<Value> split = split(propertyValue);
         if (split.isEmpty()) {
-            split = Arrays.asList(Value.makeUndef());
+            split = java.util.Collections.singletonList(Value.makeUndef());
         }
 
         List<TypeCheck> subChecks = TypeChecker.getTypeChecks(hasSubType.getSubType().getType(), hasSubType.getSubType().getTypeContext(), info, 1);
@@ -250,23 +252,27 @@ public class TajsTypeChecker {
             if (!o.restrictToNotObject().isNone()) {
                 return false;
             }
-            //TODO: The checks should carry a value! (maybe not, instanceof checks are only used against values defined by the standard library, never for types defined by the library under test).
-//            Operators.instof(o, v2, c);
+            assert o.getObjectLabels().size() == 1;
             if (check.getExp() instanceof Identifier) {
                 String name = ((Identifier) check.getExp()).getName();
+                if (name.contains(".")) {
+                    throw new RuntimeException();
+                }
                 switch (name) {
                     case "Array":
-                        return o.getObjectLabels().stream().allMatch(label -> label.getKind() == ObjectLabel.Kind.ARRAY);
+                        return o.getObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.ARRAY;
                     case "RegExp":
-                        return o.getObjectLabels().stream().allMatch(label -> label.getKind() == ObjectLabel.Kind.REGEXP);
-                    case "Element":
-                        System.err.println("Skipping instanceof check on  Element against " + o);
+                        return o.getObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.REGEXP;
+                    case "Function":
+                        return o.getObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.FUNCTION;
                     default:
-                        System.err.println("Skipping instanceof check on " + name + " against " + o);
+                        Value clazz = UnknownValueResolver.getProperty(InitialStateBuilder.GLOBAL, PKey.make(Value.makeStr(name)), c.getState(), false);
+                        assert clazz.getObjectLabels().size() == 1;
+                        Value instanceOf = Operators.instof(o, clazz, c);
+                        return !instanceOf.isMaybeFalse();
                 }
             }
-            System.err.println("Skipping instance of check" + check + " against " + o);
-            return true;
+            throw new RuntimeException("Instanceof check" + check + " against " + o);
         }
 
         @Override
