@@ -1223,7 +1223,29 @@ public class TAJSUnitTests {
 
     }
 
-    // TODO: Kig på de 2 "most general client" artikler der er linket til i artiklen (kig i related work). Fokuser på
+    @Test
+    public void canConstructUint8Array() throws Exception {
+        TajsAnalysisResults result = run("canConstructUint8Array");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
+
+    @Test
+    public void instanceofChecks() throws Exception {
+        TajsAnalysisResults result = run("instanceofChecks");
+
+        assertThat(result.detectedViolations.asMap().entrySet(), hasSize(1));
+
+        expect(result)
+                .performedAllTests()
+                .forPath("module.baz()")
+                .hasViolations();
+    }
+
+    // TODO: Kig på de 2 "most general client" artikler der er linket til i artiklen (kig i related work). Fokuser på construction af værdier / nedarvning / assumptions.
 
     // TODO: Example en declaration file that has class-type. Where it is obvious that it should be constructed by the library and not by the client (leaflet Point?). (for article)
     // TODO: Example the other way around, where the client is supposed to construct a value, and not the library.

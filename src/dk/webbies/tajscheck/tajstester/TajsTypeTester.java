@@ -84,8 +84,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             init(c);
         }
 
-        valueHandler.clearCreatedValueCache();
-
         if(TesterContextSensitivity.isLocalTestContext(c.getState().getContext())) {
             if(!c.isScanning()) {
                 if(DEBUG_VALUES) System.out.println("New flow for " + c.getState().getBasicBlock().getIndex() + ", " + c.getState().getContext());
@@ -100,6 +98,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             return;
         }
 
+        valueHandler.clearCreatedValueCache();
         performed.clear();
         expansionPolicy.nextRound();
         valueHandler.cleanUp();
@@ -219,7 +218,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         if (DEBUG) System.out.println("Performing test " + test);
 
         TajsTypeChecker typeChecker = new TajsTypeChecker(test, c, info);
-        TajsTestVisitor visitor = new TajsTestVisitor(c, valueHandler, typeChecker, this, info, valueHandler);
+        TajsTestVisitor visitor = new TajsTestVisitor(c, typeChecker, this, info, valueHandler);
 
         // attempting to perform the test in the local context
         timers.start(Timers.Tags.TEST_TRANSFER);

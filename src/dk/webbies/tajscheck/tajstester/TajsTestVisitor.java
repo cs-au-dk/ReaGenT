@@ -31,16 +31,14 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     private final Solver.SolverInterface c;
     private final PropVarOperations pv;
-    private final TypeValuesHandler typeValuesHandler;
     private final TajsTypeChecker typeChecker;
     private TajsTypeTester tajsTypeTester;
     private BenchmarkInfo info;
     private TypeValuesHandler valueHandler;
 
-    TajsTestVisitor(Solver.SolverInterface c, TypeValuesHandler typeValuesHandler, TajsTypeChecker typeChecker, TajsTypeTester tajsTypeTester, BenchmarkInfo info, TypeValuesHandler valueHandler) {
+    public TajsTestVisitor(Solver.SolverInterface c, TajsTypeChecker typeChecker, TajsTypeTester tajsTypeTester, BenchmarkInfo info, TypeValuesHandler valueHandler) {
         this.pv = c.getAnalysis().getPropVarOperations();
         this.c = c;
-        this.typeValuesHandler = typeValuesHandler;
         this.typeChecker = typeChecker;
         this.tajsTypeTester = tajsTypeTester;
         this.info = info;
@@ -48,11 +46,11 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
     }
 
     public Value attemptGetValue(Type t, TypeContext context) {
-        return typeValuesHandler.findFeedbackValue(new TypeWithContext(t, context));
+        return valueHandler.findFeedbackValue(new TypeWithContext(t, context));
     }
 
     public Value attemptGetValue(TypeWithContext t) {
-        return typeValuesHandler.findFeedbackValue(t);
+        return valueHandler.findFeedbackValue(t);
     }
 
     @Override
@@ -103,8 +101,8 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         return functionTest(test, receiver, function, false);
     }
 
-    private Boolean functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
-        List<Value> arguments = test.getParameters().stream().map(paramType -> typeValuesHandler.createValue(paramType, test.getTypeContext())).collect(Collectors.toList());
+    public Boolean functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
+        List<Value> arguments = test.getParameters().stream().map(paramType -> valueHandler.createValue(paramType, test.getTypeContext())).collect(Collectors.toList());
 
         if (arguments.stream().anyMatch(Value::isNone)) {
             // A test for a function that is triggered but it is not able to get to the function call is definitely a problem
@@ -114,118 +112,127 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
         boolean restArgs = test.isRestArgs();
 
-        final Value restArgType = restArgs ? typeValuesHandler.createValue(TypesUtil.extractRestArgsType(test.getParameters()), test.getTypeContext()) : null;
+        final Value restArgType = restArgs ? valueHandler.createValue(TypesUtil.extractRestArgsType(test.getParameters()), test.getTypeContext()) : null;
         if (restArgs) {
             arguments.remove(arguments.size() - 1);
         }
 
         boolean typeChecked = true;
 
-        FunctionCalls.CallInfo callinfo = new FunctionCalls.CallInfo() {
-            @Override
-            public AbstractNode getSourceNode() {
-                return c.getNode();
-            }
-
-            @Override
-            public AbstractNode getJSSourceNode() {
-                return c.getNode();
-            }
-
-            @Override
-            public boolean isConstructorCall() {
-                return isConstructorCall;
-            }
-
-            @Override
-            public Value getFunctionValue() {
-                throw new AnalysisException();
-            }
-
-            @Override
-            public Value getThis() {
-                return tajsTypeTester.getRetractionPolicy().isTimeout(test) ? Value.makeNone() : receiver;
-            }
-
-            @Override
-            public Value getArg(int i) {
-                if (i >= arguments.size()) {
-                    if (restArgs) {
-                        return restArgType;
-                    } else {
-                        return Value.makeUndef();
-                    }
-                }
-                return arguments.get(i);
-            }
-
-            @Override
-            public int getNumberOfArgs() {
-                return arguments.size();
-            }
-
-            @Override
-            public Value getUnknownArg() {
-                assert restArgs;
-                return restArgType.join(Value.makeUndef());
-            }
-
-            @Override
-            public boolean isUnknownNumberOfArgs() {
-                return restArgs;
-            }
-
-            @Override
-            public int getResultRegister() {
-                throw new AnalysisException();
-            }
-
-            @Override
-            public ExecutionContext getExecutionContext() {
-                throw new AnalysisException();
-            }
-
-            @Override
-            public ICallEdge.Info toEdgeInfo() {
-                return isConstructorCall ? ICallEdge.Info.makeImplicitConstructorCall() : ICallEdge.Info.makeImplicitCall();
-            }
-        };
+        FunctionCalls.CallInfo callinfo = createCallInfo(receiver, isConstructorCall, arguments, restArgs, restArgType, c.getNode());
 
         for (ObjectLabel l : function.getAllObjectLabels()) {
-            Value returnedValue;
-
-            if (l.getHostObject() != null && l.getHostObject().getAPI() == HostAPIs.SPEC) {
-                returnedValue = tajsTypeTester.evaluateCallToSymbolicFunction(l.getHostObject(), callinfo, c);
-                // this is only needed, because we have an invariant that higher-order methods are called when control is returned to TAJS. Here that is not the case, so if we didn't do this, we wouldn't save all the feedback-values we need (because they are cleared at the end of the inner for-loop).
-                tajsTypeTester.addEndOfInnerLoopCallback(() -> tajsTypeTester.evaluateCallToSymbolicFunction(l.getHostObject(), callinfo, c));
-            } else {
-                BasicBlock implicitAfterCall = UserFunctionCalls.implicitUserFunctionCall(l, callinfo, c);
-
-                returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), true, implicitAfterCall, c);
-            }
-
-            returnedValue = UnknownValueResolver.getRealValue(returnedValue, c.getState());
-
-            if (isConstructorCall) {
-                tajsTypeTester.addCertificate(new TestCertificate(test, "Function [0] has been called as constructor and returned [1]", new Value[]{function, returnedValue}, c.getState()), c);
-            } else {
-                tajsTypeTester.addCertificate(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{function, receiver, returnedValue}, c.getState()), c);
-            }
-
-            if (returnedValue.isNone() && !(test.getReturnType() instanceof SimpleType && ((SimpleType) test.getReturnType()).getKind() == SimpleTypeKind.Never)) {
-                TypeViolation violation = new TypeViolation("Function " + function + " always returns exceptionally", test.getPath());
-                if (c.isScanning()) {
-                    if (!tajsTypeTester.getRetractionPolicy().isTimeout(test)) {
-                        tajsTypeTester.addViolation(violation, c); // only a violation if we are sure.
-                    }
-                } else {
-                    tajsTypeTester.addWarning(violation, c);
-                }
-            }
+            Value returnedValue = callFunction(test, receiver, function, isConstructorCall, callinfo, l);
             typeChecked &= tajsTypeTester.attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test.getPath(), c, typeChecker, test);
         }
 
         return typeChecked;
+    }
+
+    private Value callFunction(FunctionTest test, Value receiver, Value function, boolean isConstructorCall, FunctionCalls.CallInfo callinfo, ObjectLabel l) {
+        Value returnedValue;
+
+        if (l.getHostObject() != null && l.getHostObject().getAPI() == HostAPIs.SPEC) {
+            returnedValue = tajsTypeTester.evaluateCallToSymbolicFunction(l.getHostObject(), callinfo, c);
+            // this is only needed, because we have an invariant that higher-order methods are called when control is returned to TAJS. Here that is not the case, so if we didn't do this, we wouldn't save all the feedback-values we need (because they are cleared at the end of the inner for-loop).
+            tajsTypeTester.addEndOfInnerLoopCallback(() -> tajsTypeTester.evaluateCallToSymbolicFunction(l.getHostObject(), callinfo, c));
+        } else {
+            BasicBlock implicitAfterCall = UserFunctionCalls.implicitUserFunctionCall(l, callinfo, c);
+
+            returnedValue = UserFunctionCalls.implicitUserFunctionReturn(newList(), true, implicitAfterCall, c);
+        }
+
+        returnedValue = UnknownValueResolver.getRealValue(returnedValue, c.getState());
+
+        if (isConstructorCall) {
+            tajsTypeTester.addCertificate(new TestCertificate(test, "Function [0] has been called as constructor and returned [1]", new Value[]{function, returnedValue}, c.getState()), c);
+        } else {
+            tajsTypeTester.addCertificate(new TestCertificate(test, "Function [0] has been called as method with receiver [1] and returned [2]", new Value[]{function, receiver, returnedValue}, c.getState()), c);
+        }
+
+        if (returnedValue.isNone() && !(test.getReturnType() instanceof SimpleType && ((SimpleType) test.getReturnType()).getKind() == SimpleTypeKind.Never)) {
+            TypeViolation violation = new TypeViolation("Function " + function + " always returns exceptionally", test.getPath());
+            if (c.isScanning()) {
+                if (!tajsTypeTester.getRetractionPolicy().isTimeout(test)) {
+                    tajsTypeTester.addViolation(violation, c); // only a violation if we are sure.
+                }
+            } else {
+                tajsTypeTester.addWarning(violation, c);
+            }
+        }
+        return returnedValue;
+    }
+
+    public static FunctionCalls.CallInfo createCallInfo(Value receiver, boolean isConstructorCall, List<Value> arguments, boolean restArgs, Value restArgType, AbstractNode node) {
+        return new FunctionCalls.CallInfo() {
+                @Override
+                public AbstractNode getSourceNode() {
+                    return node;
+                }
+
+                @Override
+                public AbstractNode getJSSourceNode() {
+                    return node;
+                }
+
+                @Override
+                public boolean isConstructorCall() {
+                    return isConstructorCall;
+                }
+
+                @Override
+                public Value getFunctionValue() {
+                    throw new AnalysisException();
+                }
+
+                @Override
+                public Value getThis() {
+                    return receiver;
+                }
+
+                @Override
+                public Value getArg(int i) {
+                    if (i >= arguments.size()) {
+                        if (restArgs) {
+                            return restArgType;
+                        } else {
+                            return Value.makeUndef();
+                        }
+                    }
+                    return arguments.get(i);
+                }
+
+                @Override
+                public int getNumberOfArgs() {
+                    return arguments.size();
+                }
+
+                @Override
+                public Value getUnknownArg() {
+                    assert restArgs;
+                    return restArgType.join(Value.makeUndef());
+                }
+
+                @Override
+                public boolean isUnknownNumberOfArgs() {
+                    return restArgs;
+                }
+
+                @Override
+                public int getResultRegister() {
+                    throw new AnalysisException();
+                }
+
+                @Override
+                public ExecutionContext getExecutionContext() {
+                    throw new AnalysisException();
+                }
+
+                @Override
+                public ICallEdge.Info toEdgeInfo() {
+                    return isConstructorCall ? ICallEdge.Info.makeImplicitConstructorCall() : ICallEdge.Info.makeImplicitCall();
+                }
+            };
     }
 
     @Override
@@ -295,7 +302,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
     public Boolean visit(PropertyWriteTest test) {
         Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(),test.getTypeContext()));
         for (ObjectLabel label : baseValue.getObjectLabels()) {
-            pv.writeProperty(label, test.getProperty(), typeValuesHandler.createValue(test.getToWrite(), test.getTypeContext()));
+            pv.writeProperty(label, test.getProperty(), valueHandler.createValue(test.getToWrite(), test.getTypeContext()));
         }
         return true;
     }
