@@ -42,7 +42,7 @@ public class LateExpansionToFunctionsWithConstructedArguments implements Expansi
 
         argumentsThatAreConstructedAnyway.addAll(fallbackExpansion.getParameters().stream().map(arg -> new TypeWithContext(arg, fallbackExpansion.getTypeContext().optimizeTypeParameters(arg))).collect(Collectors.toList()));
 
-       return Collections.singletonList(fallbackExpansion);
+        return Collections.singletonList(fallbackExpansion);
     }
 
     private boolean hasEasilyConstructedArguments(FunctionTest test, TajsTypeTester typeTester) {
