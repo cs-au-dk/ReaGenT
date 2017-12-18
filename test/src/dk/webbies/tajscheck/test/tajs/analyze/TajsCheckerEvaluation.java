@@ -15,6 +15,9 @@ public class TajsCheckerEvaluation {
     private static final List<String> benchmarksToEvaluate = Arrays.asList(
             "pathjs", // can analyze
             "Sortable", // can analyze
+            "async", // can analyze, takes a while and most gets retracted/timeouts.
+            "axios", // Lots of bugs in top level object, seems to be due to weak writes.
+            "Medium Editor", // Declaration is very stupid, they have declared an interface, that has a constructed method that returns the interface.
             "PleaseJS", // can analyze
             "reveal.js", // can analyze.
             "accounting.js", // ~4 minutes on my desktop.
