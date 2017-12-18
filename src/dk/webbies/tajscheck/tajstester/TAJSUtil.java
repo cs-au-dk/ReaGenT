@@ -255,6 +255,9 @@ public class TAJSUtil {
                             if (timeoutTests.contains(test)) {
                                 result += " (timeout)";
                             }
+                            if (exceptionsEncountered.containsKey(test)) {
+                                result += " (exception: " + exceptionsEncountered.get(test) + ")";
+                            }
                             return result;
                         }), "\n   "));
                 builder.append("\n");
