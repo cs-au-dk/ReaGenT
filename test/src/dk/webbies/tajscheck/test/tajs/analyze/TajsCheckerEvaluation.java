@@ -18,6 +18,8 @@ public class TajsCheckerEvaluation {
             "async", // can analyze, takes a while and most gets retracted/timeouts.
             "axios", // Lots of bugs in top level object, seems to be due to weak writes.
             "Medium Editor", // Declaration is very stupid, they have declared an interface, that has a constructed method that returns the interface.
+            "Redux", // Has "always returns exceptionally". Definitely false positive.
+            "Handlebars", // Error in top-level object.
             "PleaseJS", // can analyze
             "reveal.js", // can analyze.
             "accounting.js", // ~4 minutes on my desktop.

@@ -48,9 +48,11 @@ public class AnalyzeBenchmarks extends TestCase {
             "accounting.js", // ~4 minutes on my desktop.
             "PDF.js", // can analyze. (but lots of timeouts).
             "Hammer.js", // TODO: Seemingly have some false positives (like Hammer.TouchAction.preventDefaults).
+            "Handlebars", // TODO: Error in top-level object.
             "intro.js", // TODO: Why does MethodCallTest(introJs().setOptions(obj)) end up not being called.
             "axios", // Lots of bugs in top level object, seems to be due to weak writes.
             "Medium Editor", // Declaration is very stupid, they have declared an interface, that has a constructed method that returns the interface.
+            "Redux", // TODO: Has "always returns exceptionally". Definitely false positive.
 
             "Zepto.js", // can analyze. (TODO: Try to run with a lot of mem, it after rebase it seems different) (Before: Gets a useless spurious result after few minutes, because: We analyze the global object, is fine, we analyze some methods get some state, doing this a spurious write is performed on the global object, this causes everything except global object to be removed from type-to-test, and the single spurious error is reported.)
             "CodeMirror", // TODO: Crashes (after 6 minutes on my desktop) with "Reading undefined register v10).
@@ -58,9 +60,6 @@ public class AnalyzeBenchmarks extends TestCase {
 
             "Moment.js", // can analyze (requires lots of memory)
             "Jasmine", // has a lot of globals that it cannot find (because they aren't registered).
-            "Handlebars", // TODO: Error in top-level object.
-            "Redux", // TODO: Top level object not found (try to not have an exports object)
-            "PeerJS", // TODO: Top level constructor always returns exceptionally.
             "QUnit", // TODO: Takes a long time
             "Leaflet" // initialization crashes on line 2302, because TAJS thinks it is reading an undefined property.
     ));
@@ -68,6 +67,7 @@ public class AnalyzeBenchmarks extends TestCase {
     static final Set<String> blackList = new HashSet<>(Arrays.asList(
             "AngularJS",
             "MathJax",
+            "PeerJS", // TAJS does not support WebRTC
             "Chart.js",
             "PixiJS",
             "P2.js",
@@ -132,7 +132,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
     public void analyzeBenchmark() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options());
+        Benchmark benchmark = this.benchmark.withOptions(options().andThen(options -> options.setUseInspector(true)));
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
         System.out.println(result);
     }
