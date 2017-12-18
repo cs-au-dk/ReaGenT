@@ -78,7 +78,7 @@ public class RunBenchmarks {
         );
         register(underscore);
 
-        Benchmark handlebars = new Benchmark("Handlebars", ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", BROWSER, options);
+        Benchmark handlebars = new Benchmark("Handlebars", ParseDeclaration.Environment.ES6DOM, "test/benchmarks/handlebars/handlebars.js", "test/benchmarks/handlebars/handlebars.d.ts", NODE, options);
         register(handlebars);
 
         register(new Benchmark("Hammer.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", BROWSER, options));
