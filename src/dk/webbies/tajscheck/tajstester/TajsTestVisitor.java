@@ -73,6 +73,10 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
             case NODE:
                 ObjectLabel moduleObject = ObjectLabel.make(ECMAScriptObjects.MODULE, ObjectLabel.Kind.OBJECT);
                 v = UnknownValueResolver.getProperty(moduleObject, PKey.StringPKey.make("exports"), c.getState(), false);
+                if (v.getObjectLabels().size() > 1) {
+                    // TODO: Ugly hack, because the exports property is being written to weakly, and we therefore end up with both an empty exports, and the real one.
+                    v = Value.makeObject(v.getObjectLabels().stream().filter(label -> !label.toString().equals("@module.exports[native]")).collect(Collectors.toSet()));
+                }
                 break;
             case BROWSER:
                 ObjectLabel globalObject = InitialStateBuilder.GLOBAL;
