@@ -71,7 +71,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         Value v;
         switch (info.bench.run_method) {
             case NODE:
-                ObjectLabel moduleObject = ObjectLabel.make(ECMAScriptObjects.OBJECT_MODULE, ObjectLabel.Kind.OBJECT);
+                ObjectLabel moduleObject = ObjectLabel.make(ECMAScriptObjects.MODULE, ObjectLabel.Kind.OBJECT);
                 v = UnknownValueResolver.getProperty(moduleObject, PKey.StringPKey.make("exports"), c.getState(), false);
                 break;
             case BROWSER:

@@ -152,7 +152,7 @@ public class SpecInstantiator {
                     if (p.get(p.size() - 1).endsWith("instances")) {
                         return;
                     }
-                    if (Arrays.asList("Object", "module").equals(p)) {
+                    if (Arrays.asList("Object", "module").equals(p) || Arrays.asList("module", "exports").equals(p)) {
                         return;
                     }
                     if (p.get(0).equals("HTMLListIndexElement")) { // deprecated, and not actually a thing, but included in TAJS.

@@ -1245,6 +1245,26 @@ public class TAJSUnitTests {
                 .hasViolations();
     }
 
+    @Test
+    public void readPropertyFromProto() throws Exception {
+        TajsAnalysisResults result = run("readPropertyFromProto");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoWarnings()
+                .hasNoViolations();
+    }
+
+    @Test
+    public void directExport() throws Exception {
+        TajsAnalysisResults result = run("directExport", options().setUseInspector(false));
+
+        expect(result)
+                .performedAllTests()
+                .hasNoWarnings()
+                .hasNoViolations();
+    }
+
     // TODO: Kig på de 2 "most general client" artikler der er linket til i artiklen (kig i related work). Fokuser på construction af værdier / nedarvning / assumptions.
 
     // TODO: Example en declaration file that has class-type. Where it is obvious that it should be constructed by the library and not by the client (leaflet Point?). (for article)
