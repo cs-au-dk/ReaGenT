@@ -649,7 +649,7 @@ public class TypeChecker {
             List<TypeCheck> result = new ArrayList<>(Arrays.asList(
                     expectNotNull(),
                     new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "tuple"),
-                    // The numberLitteral
+                    // The numberLitteral // TODO: Check that this works as it should in TajsChecker.
                     new SimpleTypeCheck(Check.field("length", new TypeWithContext(new NumberLiteral(size), arg.typeContext), Check.expression((actualSize) ->
                             binary(actualSize, Operator.GREATER_THAN_EQUAL, number(size))
                     )), "tuple of " + size + " elements")
@@ -705,7 +705,7 @@ public class TypeChecker {
 
             if (parameter.getConstraint() == null || !(parameter.getConstraint() instanceof InterfaceType) || ((InterfaceType) parameter.getConstraint()).getDeclaredStringIndexType() == null) {
                 checks.add(new SimpleTypeCheck(
-                        Check.field(markerField, null, Check.equalTo(bool(true))),
+                        Check.field(markerField, new TypeWithContext(new BooleanLiteral(true), typeContext), Check.equalTo(bool(true))),
                         "a generic type marker (." + markerField + ")"
                 ));
             }
