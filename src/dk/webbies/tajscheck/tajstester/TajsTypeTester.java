@@ -187,7 +187,12 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
             progress |= c.withState(testState, () -> {
-                if (test.getDependsOn().stream().map(type -> valueHandler.createValue(type, test.getTypeContext())).anyMatch(Value::isNone)) {
+                try {
+                    if (test.getDependsOn().stream().map(type -> valueHandler.createValue(type, test.getTypeContext())).anyMatch(Value::isNone)) {
+                        return false;
+                    }
+                } catch (Exception e) {
+                    exceptionsEncountered.put(test, e);
                     return false;
                 }
 
