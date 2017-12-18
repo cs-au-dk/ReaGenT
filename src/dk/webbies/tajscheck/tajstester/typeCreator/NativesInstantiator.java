@@ -10,6 +10,7 @@ import dk.brics.tajs.analysis.dom.DOMFunctions;
 import dk.brics.tajs.analysis.dom.DOMObjects;
 import dk.brics.tajs.analysis.dom.DOMWindow;
 import dk.brics.tajs.analysis.dom.ajax.XmlHttpRequest;
+import dk.brics.tajs.analysis.dom.core.DOMNode;
 import dk.brics.tajs.analysis.dom.html.HTMLTextAreaElement;
 import dk.brics.tajs.analysis.js.UserFunctionCalls;
 import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
@@ -118,7 +119,17 @@ public class NativesInstantiator {
             case "HTMLTextAreaElement":
                 return Value.makeObject(HTMLTextAreaElement.INSTANCES);
             case "Uint8Array":
-                return evalConstructor(c, "Uint8Array", Value.makeAnyNumUInt());
+            case "Int8Array":
+            case "Uint8ClampedArray":
+            case "Int16Array":
+            case "Uint16Array":
+            case "Int32Array":
+            case "Uint32Array":
+            case "Float32Array":
+            case "Float64Array":
+                return evalConstructor(c, name, Value.makeAnyNumUInt());
+            case "Node":
+                return Value.makeObject(DOMNode.INSTANCES);
             default:
                 throw new RuntimeException("Yet unknown how to create native object: " + name);
         }
