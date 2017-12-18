@@ -109,7 +109,7 @@ public class StaticOptions implements OptionsI {
         }
 
         public Builder setUseInspector(boolean useInspector) {
-            outerBuilder.setUseInspector(true);
+            outerBuilder.setUseInspector(useInspector);
             return this;
         }
 
