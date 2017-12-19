@@ -137,7 +137,7 @@ public class TAJSUnitTests {
             List<dk.webbies.tajscheck.testcreator.test.Test> testsNot = results.testNot.stream().filter(test -> test.getPath().startsWith(path)).collect(Collectors.toList());
             MultiMap<String, TypeViolation> warnings = results.detectedWarnings.asMap().entrySet().stream().filter(entry -> entry.getKey().startsWith(path)).collect(ArrayListMultiMap.collector());
 
-            return new TAJSResultTester(new TajsAnalysisResults(detectedViolations, warnings, performedTest, testsNot, results.certificates, results.testTranfers, results.timers, results.timedout, results.retractedTests, results.timeoutTests, results.typeCheckedTests));
+            return new TAJSResultTester(new TajsAnalysisResults(detectedViolations, warnings, performedTest, testsNot, results.certificates, results.testTranfers, results.timers, results.timedout, results.retractedTests, results.timeoutTests, results.typeCheckedTests, results.detectedViolationsBeforeScan));
         }
 
         TAJSUnitTests.TAJSResultTester hasWarnings() {
@@ -1265,11 +1265,17 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
+    @Test
+    public void exceptionalFlow() throws Exception {
+        TajsAnalysisResults result = run("exceptionalFlow");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
+    // TODO: Note in article about exceptional flow.
     // TODO: Kig på de 2 "most general client" artikler der er linket til i artiklen (kig i related work). Fokuser på construction af værdier / nedarvning / assumptions.
 
-    // TODO: Example en declaration file that has class-type. Where it is obvious that it should be constructed by the library and not by the client (leaflet Point?). (for article)
-    // TODO: Example the other way around, where the client is supposed to construct a value, and not the library.
-    // TODO: Also example where the client is not supposed to construct something of an interface type.
-    // TODO: Example construction of function value.
     // TODO: Put de eksemler ind i artiklen.
 }

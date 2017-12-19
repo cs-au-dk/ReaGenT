@@ -138,13 +138,15 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         this.notDoneViolations = this.notDoneViolations.stream().distinct().collect(Collectors.toList());
 
 
-        TAJSUtil.TajsAnalysisResults partialResults = new TAJSUtil.TajsAnalysisResults(this, !c.isScanning());
-        try {
-            Gson gson = new Gson();
-            Util.writeFile(Paths.get(info.bench.dTSFile).getParent().resolve("partialResult.json").toAbsolutePath().toString(), gson.toJson(partialResults.summary()));
-            Util.writeFile("partialResult.txt", partialResults.toString());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (!c.isScanning()) {
+            TAJSUtil.TajsAnalysisResults partialResults = new TAJSUtil.TajsAnalysisResults(this, true);
+            try {
+                Gson gson = new Gson();
+                Util.writeFile(Paths.get(info.bench.dTSFile).getParent().resolve("partialResult.json").toAbsolutePath().toString(), gson.toJson(partialResults.summary()));
+                Util.writeFile("partialResult.txt", partialResults.toString());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         if (!c.getWorklist().isEmpty()) {

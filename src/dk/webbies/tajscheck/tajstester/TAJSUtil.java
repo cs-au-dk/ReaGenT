@@ -6,6 +6,7 @@ import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.flowgraph.FlowGraph;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
+import dk.brics.tajs.options.UnsoundnessOptionValues;
 import dk.brics.tajs.solver.SolverSynchronizer;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.AnalysisLimitationException;
@@ -23,6 +24,7 @@ import dk.webbies.tajscheck.util.Util;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -82,11 +84,13 @@ public class TAJSUtil {
         additionalOpts.enableTypeChecks();
 
         additionalOpts.getSoundnessTesterOptions().setTest(false);
-        //additionalOpts.enableTypeFilters();
+//        additionalOpts.enableTypeFilters();
 
         additionalOpts.getUnsoundness().setIgnoreSomePrototypesDuringDynamicPropertyReads(true);
         additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyReads(true);
         additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyWrites(true);
+        additionalOpts.getUnsoundness().setIgnoreMissingNativeModels(true);
+
 
         additionalOpts.enableUnevalizer();
         if (bench.options.useInspector) additionalOpts.enableInspector();
@@ -115,7 +119,13 @@ public class TAJSUtil {
             timedout = true;
         }
 
-        return new TajsAnalysisResults(typeTester, timedout);
+        TajsAnalysisResults results = new TajsAnalysisResults(typeTester, timedout);
+        try {
+            Util.writeFile("partialResult.txt", results.toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return results;
     }
 
     public static TajsAnalysisResults runNoDriver(Benchmark bench, int secondsTimeout) throws Exception {
@@ -137,6 +147,7 @@ public class TAJSUtil {
 
     public static class TajsAnalysisResults {
         public final MultiMap<String, TypeViolation> detectedViolations;
+        public final MultiMap<String, TypeViolation> detectedViolationsBeforeScan;
         public final MultiMap<String, TypeViolation> detectedWarnings;
         public final Collection<Test> testPerformed;
         public final List<Test> testNot;
@@ -161,9 +172,11 @@ public class TAJSUtil {
                                    boolean timedout,
                                    Set<Test> retractedTests,
                                    Set<Test> timeoutTests,
-                                   List<Test> typeCheckedTests) {
+                                   List<Test> typeCheckedTests,
+                                   MultiMap<String, TypeViolation> detectedViolationsBeforeScan) {
 
             this.detectedViolations = detectedViolations;
+            this.detectedViolationsBeforeScan = detectedViolationsBeforeScan;
             this.detectedWarnings = warnings;
             this.testPerformed = testPerformed;
             this.testNot = testNot;
@@ -200,6 +213,11 @@ public class TAJSUtil {
             this.timeoutTests = typeTester.getTimedOutTests();
 
             this.certificates = typeTester.getCertificates(timedout);
+
+            this.detectedViolationsBeforeScan = new ArrayListMultiMap<>();
+            typeTester.getViolations(true).stream().distinct().forEach(vio -> {
+                this.detectedViolationsBeforeScan.put(vio.path, vio);
+            });
 
             this.testTranfers = typeTester.getTransferMonitor().getTestTransfers();
 
