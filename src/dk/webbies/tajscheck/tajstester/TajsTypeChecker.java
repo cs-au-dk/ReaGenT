@@ -175,12 +175,6 @@ public class TajsTypeChecker {
         return split.stream().flatMap(splittenValue -> getTypeViolations(hasSubType.getSubType(), splittenValue, subChecks, newPath).stream()).collect(Collectors.toList());
     }
 
-    private String prettyValues(List<Value> vs, State s) {
-        if(vs.isEmpty()) return prettyValue(Value.makeNone(), s);
-        return prettyValue(vs.stream().reduce(vs.get(0), (a, v) -> a.join(v)), s);
-    }
-
-
     private class CheckChecker implements CheckVisitorWithArgument<Boolean, Value> {
         @Override
         public Boolean visit(OrCheck check, Value o) {
