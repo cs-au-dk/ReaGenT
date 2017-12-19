@@ -83,9 +83,9 @@ public class RunBenchmarks {
 
         register(new Benchmark("Hammer.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/hammer/hammer.js", "test/benchmarks/hammer/hammer.d.ts", BROWSER, options));
 
-        register(new Benchmark("Jasmine", ParseDeclaration.Environment.ES5Core, "test/benchmarks/jasmine/jasmine.js", "test/benchmarks/jasmine/jasmine.d.ts", BROWSER, options));
+        register(new Benchmark("Jasmine", ParseDeclaration.Environment.ES5Core, "test/benchmarks/jasmine/jasmine.js", "test/benchmarks/jasmine/jasmine.d.ts", NODE, options));
 
-        register(new Benchmark("Knockout", ParseDeclaration.Environment.ES5Core, "test/benchmarks/knockout/knockout.js", "test/benchmarks/knockout/knockout.d.ts", BROWSER, options));
+        register(new Benchmark("Knockout", ParseDeclaration.Environment.ES5Core, "test/benchmarks/knockout/knockout.js", "test/benchmarks/knockout/knockout.d.ts", NODE, options));
 
         register(new Benchmark("Fabric.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/fabric/fabric.js", "test/benchmarks/fabric/fabric.d.ts", BROWSER, options));
 
@@ -93,9 +93,9 @@ public class RunBenchmarks {
             .addDependencies(jQuery, handlebars)
         );
 
-        register(new Benchmark("D3.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", BROWSER, options.getBuilder()
+        register(new Benchmark("D3.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/d3/d3.js", "test/benchmarks/d3/d3.d.ts", NODE, options.getBuilder()
                 .setDisableGenerics(true)
-                .build()));
+                .build(), "\"d3\""));
 
         register(new Benchmark("MathJax", ParseDeclaration.Environment.ES5Core, "test/benchmarks/mathjax/mathjax.js", "test/benchmarks/mathjax/mathjax.d.ts", BROWSER, options));
 
@@ -105,8 +105,7 @@ public class RunBenchmarks {
         register(new Benchmark("Polymer", ParseDeclaration.Environment.ES5Core, "test/benchmarks/polymer/polymer.js", "test/benchmarks/polymer/polymer.d.ts", BROWSER, options).addDependencies(webcomponents));
         register(new Benchmark("q", ParseDeclaration.Environment.ES5Core, "test/benchmarks/q/q.js", "test/benchmarks/q/q.d.ts", NODE, options));
         register(new Benchmark("QUnit", ParseDeclaration.Environment.ES5Core, "test/benchmarks/qunit/qunit.js", "test/benchmarks/qunit/qunit.d.ts", BROWSER, options));
-        Benchmark react = new Benchmark("React", ParseDeclaration.Environment.ES5Core, "test/benchmarks/react/react.js", "test/benchmarks/react/react.d.ts", BROWSER, options);
-        register(react);
+        register(new Benchmark("React", ParseDeclaration.Environment.ES5Core, "test/benchmarks/react/react.js", "test/benchmarks/react/react.d.ts", NODE, options));
         register(new Benchmark("RequireJS", ParseDeclaration.Environment.ES5Core, "test/benchmarks/requirejs/require.js", "test/benchmarks/requirejs/requirejs.d.ts", BROWSER, options).addDependencies(jQuery));
         register(new Benchmark("Sugar", ParseDeclaration.Environment.ES6DOM, "test/benchmarks/sugar/sugar.js", "test/benchmarks/sugar/sugar.d.ts", NODE,
                 options.getBuilder()
@@ -171,9 +170,9 @@ public class RunBenchmarks {
 
         register(new Benchmark("PDF.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/pdf/pdf.js", "test/benchmarks/pdf/pdf.d.ts", BROWSER, options));
 
-        register(new Benchmark("highlight.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/highlight/highlight.js", "test/benchmarks/highlight/highlight.d.ts", BROWSER, options));
+        register(new Benchmark("highlight.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/highlight/highlight.js", "test/benchmarks/highlight/highlight.d.ts", NODE, options));
 
-        register(new Benchmark("intro.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/intro/intro.js", "test/benchmarks/intro/intro.d.ts", BROWSER, options));
+        register(new Benchmark("intro.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/intro/intro.js", "test/benchmarks/intro/intro.d.ts", NODE, options));
 
         register(new Benchmark("Swiper", ParseDeclaration.Environment.ES5Core, "test/benchmarks/swiper/swiper.js", "test/benchmarks/swiper/swiper.d.ts", BROWSER, options));
 
@@ -211,7 +210,8 @@ public class RunBenchmarks {
     public void runFullDriver() throws Exception {
         // Write the driver
         Benchmark b = benchmark
-                .withOptions(CheckOptions::errorFindingOptions);
+                .withOptions(CheckOptions::errorFindingOptions)
+                .withOptions(options -> options.setConstructAllTypes(true));
 //                .withOptions(CheckOptions::monitorUnknownPropertyAccesses);
         Main.writeFullDriver(b);
 
@@ -221,13 +221,16 @@ public class RunBenchmarks {
         // Parse and print the result
         OutputParser.RunResult result = OutputParser.parseDriverResult(out);
 
-        /*printErrors(b, result);
+        printErrors(b, result);
 
         for (String error: result.errors) {
+            if (error.contains("isUTCOffset")) {
+                continue;
+            }
             System.out.println(error);
         }
 
-        System.out.println();*/
+        System.out.println();
 
         assert !out.trim().isEmpty();
     }
