@@ -1,2 +1,2 @@
 
-export function foo(x: Date | {bar: boolean} | (() => boolean)): true;
+export function foo(x: Date | {bar: true} | (() => boolean)): true | Date;
