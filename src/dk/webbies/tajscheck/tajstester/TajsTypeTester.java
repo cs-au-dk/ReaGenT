@@ -84,15 +84,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             init(c);
         }
 
-        if(TesterContextSensitivity.isLocalTestContext(c.getState().getContext())) {
-            if(!c.isScanning()) {
-                if(DEBUG_VALUES) System.out.println("New flow for " + c.getState().getBasicBlock().getIndex() + ", " + c.getState().getContext());
-                // Then we can re-run the tests to see if more can be performed
-                enqueueTypeTester(c);
-            }
-            return;
-        }
-
         if (!c.getWorklist().isEmpty()) {
             enqueueTypeTester(c);
             return;
@@ -109,11 +100,16 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         do {
             progress = iterateAllNonPerformedTests(c);
 
+            if (progress) {
+                continue;
+            }
+
             for (Test test : expansionPolicy.getTestsToPerformAnyway(c)) {
                 previouslyExpandedTo.add(test);
                 if (performed.contains(test)) {
                     continue;
                 }
+                valueHandler.clearCreatedValueCache();
                 valueHandler.clearValuesForTest(test);
                 Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
                 propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT, allTestsBlock);
@@ -162,6 +158,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private boolean iterateAllNonPerformedTests(Solver.SolverInterface c) {
         boolean progress = false;
         for (Test test : tests) {
+            valueHandler.clearCreatedValueCache(); // TODO: Needed this much?
             if (performed.contains(test)) {
                 continue;
             }
@@ -189,17 +186,17 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
             progress |= c.withState(testState, () -> {
+                if (!previouslyExpandedTo.contains(test) && test instanceof FunctionTest && !expansionPolicy.expandTo((FunctionTest) test, this)) {
+                    if (DEBUG) System.out.println("Didn't expand to " + test);
+                    return false;
+                }
+
                 try {
                     if (test.getDependsOn().stream().map(type -> valueHandler.createValue(type, test.getTypeContext())).anyMatch(Value::isNone)) {
                         return false;
                     }
                 } catch (Exception e) {
                     exceptionsEncountered.put(test, e);
-                    return false;
-                }
-
-                if (!previouslyExpandedTo.contains(test) && test instanceof FunctionTest && !expansionPolicy.expandTo((FunctionTest) test, this)) {
-                    if (DEBUG) System.out.println("Didn't expand to " + test);
                     return false;
                 }
 
