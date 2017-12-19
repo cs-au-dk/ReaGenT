@@ -35,7 +35,6 @@ public class AnalyzeBenchmarks extends TestCase {
     public Benchmark benchmark = null;
 
     // Benchmarks that seem analyzeable.
-    // TODO: Most of these remarks are before the rebase to extended.
     static final Set<String> whitelist = new HashSet<>(Arrays.asList(
             "Sortable", // can analyze
             "async", // can analyze, takes a while and most gets retracted/timeouts.
@@ -47,62 +46,74 @@ public class AnalyzeBenchmarks extends TestCase {
             "reveal.js", // can analyze.
             "accounting.js", // ~4 minutes on my desktop.
             "PDF.js", // can analyze. (but lots of timeouts).
-            "Hammer.js", // TODO: Seemingly have some false positives (like Hammer.TouchAction.preventDefaults).
-            "Handlebars", // TODO: Error in top-level object.
-            "intro.js", // TODO: Why does MethodCallTest(introJs().setOptions(obj)) end up not being called.
+            "Hammer.js", // LOTS of errors in top level object (they should use "typeof [class]" a lot, but they don't).
+            "Handlebars", // plenty of bugs still.
             "axios", // Lots of bugs in top level object, seems to be due to weak writes.
             "Medium Editor", // Declaration is very stupid, they have declared an interface, that has a constructed method that returns the interface.
-            "Redux", // TODO: Has "always returns exceptionally". Definitely false positive.
+            "CreateJS", // lots of bugs in top-level object.
+            "QUnit", // lots of bugs in top-level object.
+            "RxJS", // lots of errors in top-level object.
+            "Knockout", // lots of errors in top-level code, due to exceptionalFlow.
+            "box2dweb", // ~20 minutes on my desktop. But terminates (we are talking 73 constructors, 85 methods, then it terminates).
+            "lunr.js", // can analyze. But plenty or errors in top-level constructors, meaning we skip a lot of tests.
+            "bluebird", // TODO: Sometimes the initialization crashes.
+            "QUnit", // Takes about 40 minutes on my laptop, and has plenty of timeouts.
+            "intro.js",
+            "Redux", //
 
-            "Zepto.js", // can analyze. (TODO: Try to run with a lot of mem, it after rebase it seems different) (Before: Gets a useless spurious result after few minutes, because: We analyze the global object, is fine, we analyze some methods get some state, doing this a spurious write is performed on the global object, this causes everything except global object to be removed from type-to-test, and the single spurious error is reported.)
+
             "CodeMirror", // TODO: Crashes (after 6 minutes on my desktop) with "Reading undefined register v10).
-            "highlight.js", // TODO: Takes a long time
+            "highlight.js", // Include any of the highlight functions, and it takes forever. Exclude them, done in 15 seconds.
 
-            "Moment.js", // can analyze (requires lots of memory)
-            "Jasmine", // has a lot of globals that it cannot find (because they aren't registered).
-            "QUnit", // TODO: Takes a long time
+            "Moment.js", // Timeout.
             "Leaflet" // initialization crashes on line 2302, because TAJS thinks it is reading an undefined property.
     ));
 
     static final Set<String> blackList = new HashSet<>(Arrays.asList(
-            "AngularJS",
-            "MathJax",
+            "AngularJS", // Includes jQuery
+            "jQuery", // is jQuery :)
+            "Zepto.js", // Call eval very imprecisely. (line 914)
             "PeerJS", // TAJS does not support WebRTC
-            "Chart.js",
-            "PixiJS",
-            "P2.js",
-            "bluebird",
-            "Foundation",
-            "Materialize",
-            "Backbone.js",
-            "Vue.js",
-            "D3.js",
-            "Modernizr",
+            "Underscore.js", // massive amount of overloads and generics, including recursively defined generic types.
+            "Ionic", // includes jQuery
+            "three.js", // simply massive, even TSTest has a hard time with it.
+            "Jasmine", // Nahhh. has a difficult structure, somewhat incompatible with everything else.
+            "pickadate.js", // includes jQuery
+            "Foundation", // includes jQuery
+            "Materialize", // includes jQuery
+            "RequireJS", // includes jQuery
+            "Ember.js", // includes jQuery
+            "Backbone.js", // includes jQuery
+            "Lodash", // massive amount of declared overloads and use of generics. Even TSTest has a hard time with it in its full size.
+            "PixiJS", // ~40000 lines of JS. Just the loading is a struggle.
+            "MathJax", // encounters "Unevalable eval: window" during initialization
+            "Backbone.js", // includes underscore AND jQuery
+            "Vue.js", // Unsupported Native Object. Proxy.
+            "React", // Lots of errors in the top-level object. Even if those are fixed, the full benchmarks is massive.
+            "D3.js", // Truly massive. Even TSTest struggles with this one. But i can actually get some partial results for it, if generics are disabled. (Last time i run, i crashed the JVM, likely out of mem).
+            "Modernizr", // Currently encounters "This function from WebGLRenderingContext is not yet supported: test/benchmarks/modernizr/modernizr.js:798:115" And will likely encounter many more after that one is fixed.
+            "Polymer", // "Too imprecise calls to Function" during initialization
+            "Sugar", // Too much mem, and too much time, just for the initialization.
+            "q",  // Uses require mechanism.
+
+            // TODO: Try on a proper machine.
+            "Ace", //
             "Fabric.js",
             "Video.js",
-            "q",
-            "RequireJS",
-            "CreateJS",
-            "Lodash",
-            "Sugar",
-            "Ace",
-            "Ember",
-            "QUnit",
-            "Polymer",
-            "Backbone.js",
-            "React",
-            "Knockout",
-            "q",
-            "jQuery",
-            "Underscore.js",
-            "RxJS",
-            "three.js",
-            "Ember.js",
-            "Ionic"
+            "P2.js", // Initialization takes too long.
+            "Chart.js" // Initialization alone takes too long (not that i blame TAJS, it is ~15000 lines of JS).
     ));
 
     @Parameterized.Parameters(name = "{0}")
     public static List<Benchmark> getBenchmarks() {
+        RunBenchmarks.getBenchmarks().stream().map(bench -> bench.name).forEach(name -> {
+            if (!whitelist.contains(name) && !blackList.contains(name)) {
+                throw new RuntimeException("Benchmark: " + name + " not contained in blacklist or whitelist. ");
+            }
+            if (whitelist.contains(name) && blackList.contains(name)) {
+                System.out.println("Benchmark: " + name + " contained in both blacklist and whitelist");
+            }
+        });
         return RunBenchmarks.getBenchmarks().stream()
                 .filter(bench -> whitelist.contains(bench.name))
                 .collect(Collectors.toList());
@@ -132,7 +143,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
     public void analyzeBenchmark() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options().andThen(options -> options.setUseInspector(true)));
+        Benchmark benchmark = this.benchmark.withOptions(options().andThen(options -> options.setUseInspector(false)));
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
         System.out.println(result);
     }
@@ -165,7 +176,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
     @Test(timeout = (int)(INIT_TIMEOUT * 1000 * 1.3))
     public void initialize() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options -> options().apply(options).getOuterBuilder().setOnlyInitialize(true));
+        Benchmark benchmark = this.benchmark.withOptions(options().andThen(options -> options.getOuterBuilder().setOnlyInitialize(true)));
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, INIT_TIMEOUT);
         System.out.println(result);
         assert(!result.timedout);
