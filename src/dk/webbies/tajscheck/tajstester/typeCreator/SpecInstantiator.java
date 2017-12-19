@@ -214,6 +214,9 @@ public class SpecInstantiator {
                 if (result == null && interfaceType.getDeclaredProperties().containsKey("prototype")) {
                     return interfaceType.getDeclaredProperties().get("prototype").accept(this);
                 }
+                if (result == null) {
+                    return null;
+                }
                 return new TypeWithContext(result, root.getTypeContext());
             }
 
@@ -283,7 +286,7 @@ public class SpecInstantiator {
             }
         });
         if (newRoot == null) {
-            throw new AnalysisException(String.format("Could not find type at step '%s' for root %s, with remaining path '%s'", step, root.toString(), path));
+            return null;
         }
         List<String> shorterPath = path.subList(1, path.size());
         return resolveType(newRoot, shorterPath);
@@ -312,7 +315,7 @@ public class SpecInstantiator {
 
     Value instantiate(Type type, MiscInfo info, String step) {
         Value feedbackValue = valueHandler.findFeedbackValue(new TypeWithContext(type, info.context));
-        if (!this.info.shouldConstructType(type)) {
+        if (!this.info.shouldConstructType(type) && !nativesInstantiator.shouldConstructAsNative(type)) {
             if (feedbackValue == null) {
                 throw new CannotConstructType(); // this will be catched by the top-most construction method.
             }
