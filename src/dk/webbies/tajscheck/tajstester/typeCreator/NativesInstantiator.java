@@ -11,7 +11,10 @@ import dk.brics.tajs.analysis.dom.DOMObjects;
 import dk.brics.tajs.analysis.dom.DOMWindow;
 import dk.brics.tajs.analysis.dom.ajax.XmlHttpRequest;
 import dk.brics.tajs.analysis.dom.core.DOMNode;
+import dk.brics.tajs.analysis.dom.html.HTMLImageElement;
 import dk.brics.tajs.analysis.dom.html.HTMLTextAreaElement;
+import dk.brics.tajs.analysis.dom.html5.CanvasRenderingContext2D;
+import dk.brics.tajs.analysis.dom.html5.HTMLCanvasElement;
 import dk.brics.tajs.analysis.js.UserFunctionCalls;
 import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
 import dk.brics.tajs.flowgraph.BasicBlock;
@@ -118,6 +121,12 @@ public class NativesInstantiator {
                 return Value.makeObject(XmlHttpRequest.INSTANCES);
             case "HTMLTextAreaElement":
                 return Value.makeObject(HTMLTextAreaElement.INSTANCES);
+            case "HTMLImageElement":
+                return Value.makeObject(HTMLImageElement.INSTANCES);
+            case "HTMLCanvasElement":
+                return Value.makeObject(HTMLCanvasElement.INSTANCES);
+            case "CanvasRenderingContext2D":
+                return Value.makeObject(CanvasRenderingContext2D.CONTEXT2D);
             case "Uint8Array":
             case "Int8Array":
             case "Uint8ClampedArray":
