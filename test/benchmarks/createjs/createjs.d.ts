@@ -122,23 +122,6 @@ declare namespace createjs {
 }
 
 
-// Type definitions for EaselJS 0.8.0
-// Project: http://www.createjs.com/#!/EaselJS
-// Definitions by: Pedro Ferreira <https://bitbucket.org/drk4>, Chris Smith <https://github.com/evilangelist>
-// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-
-/*
- Copyright (c) 2012 Pedro Ferreira
- Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-// Library documentation : http://www.createjs.com/Docs/EaselJS/modules/EaselJS.html
-
-/// <reference types="createjs-lib" />
-/// <reference types="tweenjs" />
-
 // rename the native MouseEvent, to avoid conflict with createjs's MouseEvent
 interface NativeMouseEvent extends MouseEvent {
 
@@ -175,6 +158,22 @@ declare namespace createjs {
 
         // methods
         clone(): Bitmap;
+    }
+
+    export class BitmapCache {
+        constructor();
+
+        // properties
+        cacheID: number;
+
+        // methods
+        static getFilterBounds(target: DisplayObject, output?: Rectangle): Rectangle;
+        toString(): string;
+        define(target: DisplayObject, x: number, y: number, width: number, height: number, scale?: number): void;
+        update(compositeOperation?: string): void;
+        release(): void;
+        getCacheDataURL(): string;
+        draw(ctx: CanvasRenderingContext2D): boolean;
     }
 
     export class ScaleBitmap extends DisplayObject {
@@ -335,6 +334,7 @@ declare namespace createjs {
 
         // properties
         alpha: number;
+        bitmapCache: BitmapCache;
         cacheCanvas: HTMLCanvasElement | Object;
         cacheID: number;
         compositeOperation: string;
@@ -859,6 +859,7 @@ declare namespace createjs {
         intersection(rect: Rectangle): Rectangle;
         intersects(rect: Rectangle): boolean;
         isEmpty(): boolean;
+        pad(top: number, left: number, bottom: number, right: number): Rectangle;
         setValues(x?: number, y?: number, width?: number, height?: number): Rectangle;
         toString(): string;
         union(rect: Rectangle): Rectangle;
@@ -1047,6 +1048,60 @@ declare namespace createjs {
 
     }
 
+    interface IStageGLOptions {
+        preserveBuffer?: boolean;
+        antialias?: boolean;
+        transparent?: boolean;
+        premultiply?: boolean;
+        autoPurge?: number;
+    }
+
+    export class StageGL extends Stage {
+        constructor(canvas: HTMLCanvasElement | string | Object, options?: IStageGLOptions);
+
+        // properties
+        static VERTEX_PROPERTY_COUNT: number;
+        static INDICIES_PER_CARD: number;
+        static DEFAULT_MAX_BATCH_SIZE: number;
+        static WEBGL_MAX_INDEX_NUM: number;
+        static UV_RECT: number;
+        static COVER_VERT: Float32Array;
+        static COVER_UV: Float32Array;
+        static COVER_UV_FLIP: Float32Array;
+        static REGULAR_VARYING_HEADER: string;
+        static REGULAR_VERTEX_HEADER: string;
+        static REGULAR_FRAGMENT_HEADER: string;
+        static REGULAR_VERTEX_BODY: string;
+        static REGULAR_FRAGMENT_BODY: string;
+        static REGULAR_FRAG_COLOR_NORMAL: string;
+        static REGULAR_FRAG_COLOR_PREMULTIPLY: string;
+        static PARTICLE_VERTEX_BODY: string;
+        static PARTICLE_FRAGMENT_BODY: string;
+        static COVER_VARYING_HEADER: string;
+        static COVER_VERTEX_HEADER: string;
+        static COVER_FRAGMENT_HEADER: string;
+        static COVER_VERTEX_BODY: string;
+        static COVER_FRAGMENT_BODY: string;
+        isWebGL: boolean;
+        autoPurge: number;
+        vocalDebug: boolean;
+
+        // methods
+        static buildUVRects(spritesheet: SpriteSheet, target?: number, onlyTarget?: boolean): Object;
+        static isWebGLActive(ctx: CanvasRenderingContext2D): boolean;
+        cacheDraw(target: DisplayObject, filters: Filter[], manager: BitmapCache): boolean;
+        getBaseTexture(w?: number, h?: number): WebGLTexture | null;
+        getFilterShader(filter: Filter | Object): WebGLProgram;
+        getRenderBufferTexture (w: number, h: number): WebGLTexture;
+        getTargetRenderTexture (target: DisplayObject, w: number, h: number): Object;
+        protectTextureSlot(id: number, lock?: boolean): void;
+        purgeTextures(count?: number): void;
+        releaseTexture(item: DisplayObject | WebGLTexture | HTMLImageElement | HTMLCanvasElement): void;
+        setTextureParams(gl: WebGLRenderingContext, isPOT?: boolean): void;
+        updateSimultaneousTextureCount(count?: number): void;
+        updateViewport(width: number, height: number): void;
+    }
+
 
     export class Text extends DisplayObject {
         constructor(text?: string, font?: string, color?: string);
@@ -1176,11 +1231,11 @@ declare namespace createjs {
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 /*
- Copyright (c) 2012 Pedro Ferreira
- Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+    Copyright (c) 2012 Pedro Ferreira
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 // Library documentation : http://www.createjs.com/Docs/TweenJS/modules/TweenJS.html
 
@@ -1248,24 +1303,24 @@ declare namespace createjs {
     }
 
     /*
-     NOTE: It is commented out because it conflicts with SamplePlugin Class of PreloadJS.
-     this class is mainly for documentation purposes.
-     http://www.createjs.com/Docs/TweenJS/classes/SamplePlugin.html
-     */
+        NOTE: It is commented out because it conflicts with SamplePlugin Class of PreloadJS.
+              this class is mainly for documentation purposes.
+        http://www.createjs.com/Docs/TweenJS/classes/SamplePlugin.html
+    */
     /*
-     export class SamplePlugin {
-     constructor();
+    export class SamplePlugin {
+        constructor();
 
-     // properties
-     static priority: any;
+        // properties
+        static priority: any;
 
-     //methods
-     static init(tween: Tween, prop: string, value: any): any;
-     static step(tween: Tween, prop: string, startValue: any, injectProps: Object, endValue: any): void;
-     static install(): void;
-     static tween(tween: Tween, prop: string, value: any, startValues: Object, endValues: Object, ratio: number, wait: boolean, end: boolean): any;
-     }
-     */
+        //methods
+        static init(tween: Tween, prop: string, value: any): any;
+        static step(tween: Tween, prop: string, startValue: any, injectProps: Object, endValue: any): void;
+        static install(): void;
+        static tween(tween: Tween, prop: string, value: any, startValues: Object, endValues: Object, ratio: number, wait: boolean, end: boolean): any;
+    }
+    */
 
     export class Timeline extends EventDispatcher {
         constructor (tweens: Tween[], labels: Object, props: Object);
@@ -1337,18 +1392,17 @@ declare namespace createjs {
     }
 }
 
-
 // Type definitions for PreloadJS 0.6.2
 // Project: http://www.createjs.com/#!/PreloadJS
 // Definitions by: Pedro Ferreira <https://bitbucket.org/drk4>, Endel Dreyer <https://github.com/endel>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 /*
- Copyright (c) 2012 Pedro Ferreira
- Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+    Copyright (c) 2012 Pedro Ferreira
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 // Library documentation : http://www.createjs.com/Docs/PreloadJS/modules/PreloadJS.html
 
@@ -1631,11 +1685,11 @@ declare namespace createjs {
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 /*
- Copyright (c) 2012 Pedro Ferreira
- Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+    Copyright (c) 2012 Pedro Ferreira
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 // Library documentation : http://www.createjs.com/Docs/SoundJS/modules/SoundJS.html
 
