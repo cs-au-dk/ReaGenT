@@ -3,14 +3,28 @@ package dk.webbies.tajscheck.tajstester.data;
 public class TypeViolation {
     final public String message;
     final public String path;
+    final public boolean definite;
+
     public TypeViolation(String message, String path){
         this.message = message;
         this.path = path;
+        this.definite = true;
+    }
+
+    private TypeViolation(String message, String path, boolean definite) {
+        this.message = message;
+        this.path = path;
+        this.definite = definite;
+    }
+
+    public TypeViolation asMaybeViolation() {
+        return new TypeViolation(this.message, this.path, false);
     }
 
     @Override
     public String toString() {
-        return message + " in test " + path;
+        String prefix = definite ? "Definite: " : "Maybe: ";
+        return prefix + message + " in test " + path;
     }
 
     @Override
