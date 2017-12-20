@@ -12,28 +12,28 @@ declare namespace L {
 
         export function pointToSegmentDistance(p: Point, p1: Point, p2: Point): number;
 
-        export function closestPointOnSegment(p: Point, p1: Point, p2: Point): Point;
+        // export function closestPointOnSegment(p: Point, p1: Point, p2: Point): Point; // TODO: Waiting for TajsUnitTests#feedbackValuesReadUndefined to be fixed.
     }
 
     export type PointTuple = [number, number];
 
     export class Point {
         constructor(x: number, y: number, round?: boolean);
-        // constructor(coords: PointTuple | {x: number, y: number});
-        // clone(): Point;
-        // add(otherPoint: PointExpression): Point; // investigate if this mutates or returns a new instance
+        // constructor(coords: PointTuple | {x: number, y: number}); // <- this is wrong.
+        clone(): Point;
+        add(otherPoint: PointExpression): Point; // investigate if this mutates or returns a new instance
 
-        // subtract(otherPoint: PointExpression): Point;
+        subtract(otherPoint: PointExpression): Point;
         divideBy(num: number): Point;
         multiplyBy(num: number): Point;
-        // scaleBy(scale: PointExpression): Point;
-        // unscaleBy(scale: PointExpression): Point;
+        scaleBy(scale: PointExpression): Point;
+        unscaleBy(scale: PointExpression): Point;
         round(): Point;
         floor(): Point;
         ceil(): Point;
-        // distanceTo(otherPoint: PointExpression): number;
-        // equals(otherPoint: PointExpression): boolean;
-        // contains(otherPoint: Point): boolean;
+        distanceTo(otherPoint: PointExpression): number;
+        equals(otherPoint: PointExpression): boolean;
+        contains(otherPoint: Point): boolean;
         toString(): string;
         x: number;
         y: number;
