@@ -68,6 +68,8 @@ public class TAJSUtil {
             }
         }
 
+        additionalOpts.setNodeModuleExportsEnabled(bench.run_method == Benchmark.RUN_METHOD.NODE);
+
         additionalOpts.enableTest();
         additionalOpts.enableDeterminacy();
 
