@@ -24,7 +24,11 @@ public class TypeViolation {
     @Override
     public String toString() {
         String prefix = definite ? "Definite: " : "Maybe: ";
-        return prefix + message + " in test " + path;
+        String result = prefix + message + " in test " + path;
+        if (result.length() > 1000) {
+            return result.substring(0, 1000) + "...";
+        }
+        return result;
     }
 
     @Override
