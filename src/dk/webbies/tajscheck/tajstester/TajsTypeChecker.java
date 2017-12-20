@@ -12,8 +12,6 @@ import dk.brics.tajs.util.Collections;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.buildprogram.TypeChecker;
-import dk.webbies.tajscheck.buildprogram.typechecks.FieldTypeCheck;
-import dk.webbies.tajscheck.buildprogram.typechecks.SimpleTypeCheck;
 import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
 import dk.webbies.tajscheck.paser.AST.*;
 import dk.webbies.tajscheck.paser.AstBuilder;
@@ -30,8 +28,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tajscheck.util.Util.prettyValue;
-
 public class TajsTypeChecker {
     private final Solver.SolverInterface c;
 
@@ -41,7 +37,7 @@ public class TajsTypeChecker {
 
     private final CheckChecker cc = new CheckChecker();
 
-    private final Map<Tuple3<Check, TypeWithContext, Value>, List<Tuple3<String, Value, TypeCheck>>> cache = new HashMap<>();
+    private final Map<Tuple3<Check, TypeWithContext, Value>, List<TypeViolation>> cache = new HashMap<>();
 
     @SuppressWarnings({"unused", "FieldCanBeLocal"})
     private final Test test; // Not used for anything, but this way we enforce that a TajsTypeChecker is constructed for every test, and thereby the cache's aren't mixed.
@@ -85,23 +81,29 @@ public class TajsTypeChecker {
         if (split.isEmpty()) {
             return Collections.singletonList(new TypeViolation("No value found", path));
         }
-        List<Tuple3<String, Value, TypeCheck>> violations = split.stream().flatMap(splittenValue -> getTypeViolations(new TypeWithContext(type, context), splittenValue, typeChecks, path).stream()).collect(Collectors.toList());
 
-        return violations.stream().map(tuple -> {
-            String violationPath = tuple.getA();
-            Value value = tuple.getB();
-            TypeCheck check = tuple.getC();
+        List<List<TypeViolation>> violationsForEachValue = split.stream().map(splittenValue -> getTypeViolations(new TypeWithContext(type, context), splittenValue, typeChecks, path)).collect(Collectors.toList());
 
-            split.stream().flatMap(splittenValue -> getTypeViolations(new TypeWithContext(type, context), splittenValue, typeChecks, path).stream()).collect(Collectors.toList());
-            return new TypeViolation("Expected " + check.getExpected() + " but found " + Util.prettyValue(value, c.getState()), violationPath);
-        }).collect(Collectors.toList());
+        boolean definiteViolation = violationsForEachValue.stream().allMatch(Util.not(Collection::isEmpty));
+
+        List<TypeViolation> violations = violationsForEachValue.stream().flatMap(Collection::stream).collect(Collectors.toList());
+
+        if (definiteViolation) {
+            return violations;
+        } else {
+            return violations.stream().map(TypeViolation::asMaybeViolation).collect(Collectors.toList());
+        }
     }
 
-    private List<Tuple3<String, Value, TypeCheck>> getTypeViolations(TypeWithContext typeWithContext, Value v, List<TypeCheck> typeChecks, String path) {
+    private TypeViolation violation(String violationPath, Value value, TypeCheck check) {
+        return new TypeViolation("Expected " + check.getExpected() + " but found " + Util.prettyValue(value, c.getState()), violationPath);
+    }
 
-        Function<TypeCheck, List<Tuple3<String, Value, TypeCheck>>> findTypeViolations = typeCheck -> {
+    private List<TypeViolation> getTypeViolations(TypeWithContext typeWithContext, Value v, List<TypeCheck> typeChecks, String path) {
+
+        Function<TypeCheck, List<TypeViolation>> findTypeViolations = typeCheck -> {
             Check check = typeCheck.getCheck();
-            Supplier<List<Tuple3<String, Value, TypeCheck>>> getForCache = () -> {
+            Supplier<List<TypeViolation>> getForCache = () -> {
                 if (check instanceof CanHaveSubTypeCheck) {
                     if (check instanceof FieldCheck) {
                         FieldCheck fieldCheck = (FieldCheck) check;
@@ -119,7 +121,7 @@ public class TajsTypeChecker {
                             return java.util.Collections.emptyList();
                         }
                         if (v.isMaybePrimitive()) {
-                            return Collections.singletonList(new Tuple3<>(path, v, typeCheck));
+                            return Collections.singletonList(violation(path, v, typeCheck));
                         }
                         return performSubTypeCheck(v, (StringIndexCheck)check, path + ".[stringIndexer]", Value.makeAnyStrUInt());
                     } else {
@@ -127,7 +129,7 @@ public class TajsTypeChecker {
                     }
                 } else {
                     if (!check.accept(cc, v)) {
-                        return Collections.singletonList(new Tuple3<>(path, v, typeCheck));
+                        return Collections.singletonList(violation(path, v, typeCheck));
                     } else {
                         return java.util.Collections.emptyList();
                     }
@@ -139,13 +141,13 @@ public class TajsTypeChecker {
                 return cache.get(key);
             } else {
                 cache.put(key, java.util.Collections.emptyList()); // coinductive assumption, if we hit the same check, it must be true.
-                List<Tuple3<String, Value, TypeCheck>> result = getForCache.get();
+                List<TypeViolation> result = getForCache.get();
                 cache.put(key, result);
                 return result;
             }
         };
 
-        List<Tuple3<String, Value, TypeCheck>> baseErrors = typeChecks.stream()
+        List<TypeViolation> baseErrors = typeChecks.stream()
                 .filter(typeCheck -> !CanHaveSubTypeCheck.class.isInstance(typeCheck.getCheck()))
                 .map(findTypeViolations)
                 .reduce(new ArrayList<>(), Util::reduceList);
@@ -159,7 +161,7 @@ public class TajsTypeChecker {
                 .reduce(new ArrayList<>(), Util::reduceList);
     }
 
-    private List<Tuple3<String, Value, TypeCheck>> performSubTypeCheck(Value v, CanHaveSubTypeCheck hasSubType, String newPath, Value field) {
+    private List<TypeViolation> performSubTypeCheck(Value v, CanHaveSubTypeCheck hasSubType, String newPath, Value field) {
         Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(v.getAllObjectLabels(), field, info.options.staticOptions.killGetters), c.getState());
         if(propertyValue.isMaybeAbsent()) {
             propertyValue = Value.join(propertyValue, Value.makeUndef());
@@ -172,7 +174,17 @@ public class TajsTypeChecker {
 
         List<TypeCheck> subChecks = TypeChecker.getTypeChecks(hasSubType.getSubType().getType(), hasSubType.getSubType().getTypeContext(), info, 1);
 
-        return split.stream().flatMap(splittenValue -> getTypeViolations(hasSubType.getSubType(), splittenValue, subChecks, newPath).stream()).collect(Collectors.toList());
+        List<List<TypeViolation>> violationsForEachValue = split.stream().map(splittenValue -> getTypeViolations(hasSubType.getSubType(), splittenValue, subChecks, newPath)).collect(Collectors.toList());
+
+        boolean definiteViolation = violationsForEachValue.stream().allMatch(Util.not(Collection::isEmpty));
+
+        List<TypeViolation> violations = violationsForEachValue.stream().flatMap(Collection::stream).collect(Collectors.toList());
+
+        if (!definiteViolation) {
+            violations = violations.stream().map(TypeViolation::asMaybeViolation).collect(Collectors.toList());
+        }
+
+        return violations;
     }
 
     private class CheckChecker implements CheckVisitorWithArgument<Boolean, Value> {
