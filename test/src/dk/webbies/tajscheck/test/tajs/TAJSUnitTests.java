@@ -1345,9 +1345,14 @@ public class TAJSUnitTests {
         assertThat(result.detectedViolations.get("module.foo5().foo").iterator().next().definite, is(false));
     }
 
-    // TODO: See if a violation can be reported as definite.
+    @Test
+    public void constructBasicIntersection() throws Exception {
+        TajsAnalysisResults result = run("constructBasicIntersection");
 
-    // TODO: Kig på de 2 "most general client" artikler der er linket til i artiklen (kig i related work). Fokuser på construction af værdier / nedarvning / assumptions.
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 
     // TODO: Put de eksemler ind i artiklen.
 }

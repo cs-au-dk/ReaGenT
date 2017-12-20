@@ -6,7 +6,6 @@ import dk.brics.tajs.analysis.HostAPIs;
 import dk.brics.tajs.analysis.InitialStateBuilder;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.*;
-import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
@@ -19,6 +18,7 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.*;
@@ -592,9 +592,11 @@ public class SpecInstantiator {
                     return instantiate(unboundTypeParameter, info, null);
                 } else {
                     System.err.println("Not returning anything that actually extends a typeParameter"); // TODO:
-                    IntersectionType intersection = new IntersectionType();
-                    intersection.setElements(Arrays.asList(unboundTypeParameter, t.getConstraint()));
-                    return instantiate(intersection, info, null);
+                    return convertType(t, info, () -> {
+                        IntersectionType intersection = new IntersectionType();
+                        intersection.setElements(Arrays.asList(unboundTypeParameter, t.getConstraint()));
+                        return new TypeWithContext(intersection, info.context);
+                    });
                 }
             }
         }
@@ -619,9 +621,37 @@ public class SpecInstantiator {
             return Value.makeNum(t.getValue());
         }
 
+
+        private final Map<TypeWithContext, TypeWithContext> typeConversionCache = new HashMap<>();
+
+        private Value convertType(Type type, MiscInfo info, Supplier<TypeWithContext> converter) {
+            TypeWithContext key = new TypeWithContext(type, info.context);
+            if (typeConversionCache.containsKey(key)) {
+                TypeWithContext result = typeConversionCache.get(key);
+                return instantiate(result.getType(), info.withContext(result.getTypeContext()), null);
+            } else {
+                TypeWithContext converted = converter.get();
+                typeConversionCache.put(key, converted);
+                return instantiate(converted.getType(), info.withContext(converted.getTypeContext()), null);
+            }
+        }
+
         @Override
         public Value visit(IntersectionType t, MiscInfo miscInfo) {
-            throw new RuntimeException("Cannot construct IntersectionType");
+            return convertType(t, miscInfo, () -> {
+                if (t.getElements().stream().allMatch(InterfaceType.class::isInstance)) {
+
+                    List<Type> subTypes = t.getElements();
+
+                    InterfaceType combined = SpecReader.makeEmptySyntheticInterfaceType();
+                    combined.setBaseTypes(subTypes);
+
+                    Pair<InterfaceType, Map<TypeParameterType, Type>> syntheticInterface = info.typesUtil.constructSyntheticInterfaceWithBaseTypes(combined);
+                    return new TypeWithContext(syntheticInterface.getLeft(), miscInfo.context.append(syntheticInterface.getRight()));
+                } else {
+                    throw new RuntimeException("Cannot construct IntersectionType");
+                }
+            });
         }
 
         @Override
