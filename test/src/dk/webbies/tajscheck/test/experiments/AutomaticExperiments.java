@@ -390,11 +390,9 @@ public class AutomaticExperiments {
 
         experiment.addSingleExperiment(type);
 
-        String result = experiment.calculate(THREADS).toCSV();
+        String result = experiment.calculate(THREADS, "experiment.csv").toCSV();
         System.out.println("\n\n\nResult: \n");
         System.out.println(result);
-
-        Util.writeFile("experiment.csv", result);
 
         System.exit(0); // It would shut down by itself after a little, but I don't wanna wait.
     }

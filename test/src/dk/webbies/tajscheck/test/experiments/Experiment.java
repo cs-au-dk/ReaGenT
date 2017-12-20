@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.test.experiments;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
+import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -94,11 +95,11 @@ public class Experiment {
 
 
 
-    public Table calculate() {
-        return calculate(1);
+    public Table calculate(String saveFile) {
+        return calculate(1, saveFile);
     }
 
-    public Table calculate(int threads) {
+    public Table calculate(int threads, String saveFile) {
         Table table = new Table();
 
         List<String> header = new ArrayList<>();
@@ -155,6 +156,9 @@ public class Experiment {
                         System.out.println("\nSub result ready:");
                         System.out.println(table.toCSV());
                         System.out.println();
+                        if (saveFile != null) {
+                            Util.writeFile(saveFile, table.toCSV());
+                        }
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();

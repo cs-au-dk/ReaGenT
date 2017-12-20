@@ -8,6 +8,7 @@ import dk.webbies.tajscheck.test.experiments.AutomaticExperiments;
 import dk.webbies.tajscheck.test.experiments.Experiment;
 import dk.webbies.tajscheck.util.Util;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -15,29 +16,29 @@ import java.util.stream.Collectors;
 
 public class TajsCheckerEvaluation {
     private static final List<String> benchmarksToEvaluate = Arrays.asList(
+            "PDF.js",
+            "box2dweb",
             "pathjs",
-            "Sortable",
             "async",
             "axios",
-            "Medium Editor",
-            "Redux",
             "Handlebars",
-            "PleaseJS",
-            "reveal.js",
-            "accounting.js",
-            "lunr.js",
-            "intro.js",
-            "PDF.js",
-            "Hammer.js",
-            "box2dweb",
-            "Knockout",
-            "PhotoSwipe",
-            "Swiper",
             "CreateJS",
             "QUnit",
             "RxJS",
             "bluebird",
-            "highlight.js"
+            "highlight.js",
+            "accounting.js",
+            "reveal.js",
+            "PhotoSwipe",
+            "Swiper",
+            "Medium Editor", // cheap
+            "Redux", // cheap
+            "PleaseJS", // cheap
+            "lunr.js", // cheap
+            "intro.js", // cheap
+            "Hammer.js", // cheap
+            "Knockout", // cheap
+            "Sortable" // cheap
     );
 
     /*
@@ -73,11 +74,11 @@ public class TajsCheckerEvaluation {
     public static void main(String[] args) throws IOException {
         {
             // warmup.
-            new Experiment("Sortable").addExperiment(experiment()).calculate();
+            new Experiment("Sortable").addExperiment(experiment()).calculate(null);
         }
         Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(bench -> {
             if (AnalyzeBenchmarks.getPatchedBenchmark(bench) != null) {
-                return bench.withName(bench.name + " (patched)");
+                return bench.withName(bench.name + " patched");
             } else {
                 return bench;
             }
@@ -86,13 +87,7 @@ public class TajsCheckerEvaluation {
         experiment.addSingleExperiment(AutomaticExperiments.type);
         experiment.addExperiment(experiment());
 
-        String result = experiment.calculate().toCSV();
-
-
-        System.out.println("\n\n\nResult: \n");
-        System.out.println(result);
-
-        Util.writeFile("experiment.csv", result);
+        experiment.calculate("experiment.csv");
 
         System.exit(0); // It would shut down by itself after a little, but I don't wanna wait.
     }
@@ -113,7 +108,7 @@ public class TajsCheckerEvaluation {
 
             TAJSUtil.TajsAnalysisResults result;
             try {
-                result = TAJSUtil.runNoDriver(benchmark, 60 * 60);
+                result = TAJSUtil.runNoDriver(benchmark, 3 * 60 * 60);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -135,6 +130,15 @@ public class TajsCheckerEvaluation {
             register.accept("test-exceptions", result.exceptionsEncountered.size() + "");
             register.accept("retractions", result.retractedTests.size() + "");
             register.accept("time", time + "s");
+
+            //noinspection ResultOfMethodCallIgnored
+            new File("results").mkdir();
+
+            try {
+                Util.writeFile("results/" + benchmark.name + ".txt", result.toString());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         };
     }
 }
