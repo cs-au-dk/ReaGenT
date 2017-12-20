@@ -28,16 +28,15 @@ public class Experiment {
     private final List<Pair<String, Benchmark>> benchmarks;
     private final List<BiConsumer<Benchmark, BiConsumer<String, String>>> experiments = new ArrayList<>();
 
-    public Experiment(List<Pair<String, Benchmark>> benchmarks) {
-        this.benchmarks = benchmarks.stream().sorted(Comparator.comparing(Pair::getLeft)).collect(Collectors.toList());
-        Collections.sort(this.benchmarks, Comparator.comparing(Pair::getLeft));
+    public Experiment(List<Benchmark> benchmarks) {
+        this.benchmarks = benchmarks.stream().map(bench -> new Pair<>(bench.name, bench)).sorted(Comparator.comparing(Pair::getLeft)).collect(Collectors.toList());
     }
 
     public Experiment(Collection<String> names) {
         this(
                 names.stream()
                         .peek(name -> {assert RunBenchmarks.benchmarks.containsKey(name);})
-                        .map(name -> new Pair<>(name, RunBenchmarks.benchmarks.get(name)))
+                        .map(RunBenchmarks.benchmarks::get)
                         .collect(Collectors.toList())
         );
     }
@@ -47,11 +46,7 @@ public class Experiment {
     }
 
     public Experiment() {
-        this(RunBenchmarks.benchmarks);
-    }
-
-    public Experiment(Map<String, Benchmark> benchmarks) {
-        this(benchmarks.entrySet().stream().map(entry -> new Pair<>(entry.getKey(), entry.getValue())).collect(Collectors.toList()));
+        this(new ArrayList<Benchmark>(RunBenchmarks.benchmarks.values()));
     }
 
     public void addSingleExperiment(String name, ExperimentSingleRunner calculator) {

@@ -157,6 +157,20 @@ public class Benchmark {
         );
     }
 
+    public Benchmark withName(String name) {
+        return new Benchmark(
+                name,
+                this.environment,
+                this.jsFile,
+                this.dTSFile,
+                this.run_method,
+                this.pathsToTest,
+                this.options,
+                this.dependencies,
+                this.exportName
+        );
+    }
+
     public Benchmark withJsFile(String jsFile) {
         return new Benchmark(
                 this.name,
