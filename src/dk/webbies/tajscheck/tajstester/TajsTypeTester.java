@@ -84,6 +84,15 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             init(c);
         }
 
+        if(TesterContextSensitivity.isLocalTestContext(c.getState().getContext())) {
+            if(!c.isScanning()) {
+                if(DEBUG_VALUES) System.out.println("New flow for " + c.getState().getBasicBlock().getIndex() + ", " + c.getState().getContext());
+                // Then we can re-run the tests to see if more can be performed
+                enqueueTypeTester(c);
+            }
+            return;
+        }
+
         if (!c.getWorklist().isEmpty()) {
             enqueueTypeTester(c);
             return;
