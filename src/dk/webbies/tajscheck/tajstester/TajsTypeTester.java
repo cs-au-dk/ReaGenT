@@ -11,6 +11,7 @@ import dk.brics.tajs.solver.WorkList;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ConsistencyKeepingExpansionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpansionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.RetractionPolicy;
 import dk.webbies.tajscheck.tajstester.data.TestCertificate;
@@ -35,7 +36,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private final List<Test> tests;
     private final BenchmarkInfo info;
     private final ExpansionPolicy expansionPolicy;
-    private final Set<Test> previouslyExpandedTo = new HashSet<>();
     private TypeValuesHandler valueHandler = null;
 
     final private List<TypeViolation> violations = newList();
@@ -70,7 +70,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }).collect(Collectors.toList());
         this.info = info;
         this.retractionPolicy = this.info.options.staticOptions.retractionPolicy;
-        this.expansionPolicy = this.info.options.staticOptions.expansionPolicy;
+        this.expansionPolicy = new ConsistencyKeepingExpansionPolicy(this.info.options.staticOptions.expansionPolicy);
         this.transferMonitor = new TestTransfersMonitor(this, retractionPolicy::notifyTestTransfer);
         this.suspiciousMonitor = new SuspiciousnessMonitor(this, retractionPolicy::notifySuspiciousLocation);
     }
@@ -105,7 +105,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
 
             for (Test test : expansionPolicy.getTestsToPerformAnyway(c)) {
-                previouslyExpandedTo.add(test);
                 if (performed.contains(test)) {
                     continue;
                 }
@@ -186,7 +185,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
             progress |= c.withState(testState, () -> {
-                if (!previouslyExpandedTo.contains(test) && test instanceof FunctionTest && !expansionPolicy.expandTo((FunctionTest) test, this)) {
+                if (test instanceof FunctionTest && !expansionPolicy.expandTo((FunctionTest) test, this)) {
                     if (DEBUG) System.out.println("Didn't expand to " + test);
                     return false;
                 }
@@ -199,8 +198,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     exceptionsEncountered.put(test, e);
                     return false;
                 }
-
-                previouslyExpandedTo.add(test);
 
                 performTest(c, test, newc);
                 return true;
