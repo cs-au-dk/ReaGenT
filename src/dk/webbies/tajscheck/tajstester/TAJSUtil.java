@@ -162,7 +162,7 @@ public class TAJSUtil {
         public final Timers timers;
 
         private boolean VERBOSE = true;
-        private Map<Test, Exception> exceptionsEncountered;
+        public Map<Test, Exception> exceptionsEncountered;
 
         public TajsAnalysisResults(MultiMap<String, TypeViolation> detectedViolations,
                                    MultiMap<String, TypeViolation> warnings,
