@@ -117,8 +117,7 @@ public class TajsCheckerEvaluation {
 
             String time = Util.toFixed((endTime - startTime) / 1000.0, 1);
 
-            assert !result.timedout;
-
+            register.accept("timedout", Boolean.toString(result.timedout));
             register.accept("certificates", result.certificates.size() + "");
             register.accept("violationPaths", result.detectedViolations.size() + "");
             register.accept("violations", result.detectedViolations.asMap().entrySet().stream().reduce(0, (acc, entry) -> entry.getValue().size() + acc, Math::addExact) + "");
