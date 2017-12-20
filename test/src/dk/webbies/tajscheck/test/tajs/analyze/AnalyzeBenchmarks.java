@@ -122,7 +122,7 @@ public class AnalyzeBenchmarks extends TestCase {
                 .setCombineNullAndUndefined(true) // because no-one cares.
 
                 // same as default, but just to be explicit about it.
-                .setConstructClassInstances(false)
+                .setConstructClassInstances(true) // due to our expansion-policy, this should only happen rarely.
                 .setConstructClassTypes(false)
                 .setConstructAllTypes(false)
 
