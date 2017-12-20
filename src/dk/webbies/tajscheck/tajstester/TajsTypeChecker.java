@@ -79,7 +79,7 @@ public class TajsTypeChecker {
 
         List<Value> split = split(v);
         if (split.isEmpty()) {
-            return Collections.singletonList(new TypeViolation("No value found", path));
+            return Collections.singletonList(TypeViolation.definite("No value found", path));
         }
 
         List<List<TypeViolation>> violationsForEachValue = split.stream().map(splittenValue -> getTypeViolations(new TypeWithContext(type, context), splittenValue, typeChecks, path)).collect(Collectors.toList());
@@ -95,8 +95,8 @@ public class TajsTypeChecker {
         }
     }
 
-    private TypeViolation violation(String violationPath, Value value, TypeCheck check) {
-        return new TypeViolation("Expected " + check.getExpected() + " but found " + Util.prettyValue(value, c.getState()), violationPath);
+    private TypeViolation definiteViolation(String violationPath, Value value, TypeCheck check) {
+        return TypeViolation.definite("Expected " + check.getExpected() + " but found " + Util.prettyValue(value, c.getState()), violationPath);
     }
 
     private List<TypeViolation> getTypeViolations(TypeWithContext typeWithContext, Value v, List<TypeCheck> typeChecks, String path) {
@@ -121,7 +121,7 @@ public class TajsTypeChecker {
                             return java.util.Collections.emptyList();
                         }
                         if (v.isMaybePrimitive()) {
-                            return Collections.singletonList(violation(path, v, typeCheck));
+                            return Collections.singletonList(definiteViolation(path, v, typeCheck));
                         }
                         return performSubTypeCheck(v, (StringIndexCheck)check, path + ".[stringIndexer]", Value.makeAnyStrUInt());
                     } else {
@@ -129,7 +129,7 @@ public class TajsTypeChecker {
                     }
                 } else {
                     if (!check.accept(cc, v)) {
-                        return Collections.singletonList(violation(path, v, typeCheck));
+                        return Collections.singletonList(definiteViolation(path, v, typeCheck));
                     } else {
                         return java.util.Collections.emptyList();
                     }
@@ -273,6 +273,9 @@ public class TajsTypeChecker {
                         return o.getObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.FUNCTION;
                     default:
                         Value clazz = UnknownValueResolver.getProperty(InitialStateBuilder.GLOBAL, PKey.make(Value.makeStr(name)), c.getState(), false);
+                        if (clazz.getObjectLabels().size() != 1) {
+                            System.out.println();
+                        }
                         assert clazz.getObjectLabels().size() == 1;
                         Value instanceOf = Operators.instof(o, clazz, c);
                         return !instanceOf.isMaybeFalse();

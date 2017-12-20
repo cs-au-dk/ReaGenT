@@ -86,7 +86,7 @@ public class TypedSymbolicFunctionEvaluator {
         }
 
         if (signatures.size() == 0) {
-            tajsTypeTester.addViolation(new TypeViolation("Called a non function", path.apply("")), c);
+            tajsTypeTester.addViolation(TypeViolation.definite("Called a non function", path.apply("")), c);
             return Value.makeNone();
         }
 
@@ -108,18 +108,18 @@ public class TypedSymbolicFunctionEvaluator {
                     // it is ok for the number of arguments to be unknown if rest args, when we try to add the arguments we will find potential errors anyway.
 //                    tajsTypeTester.addViolation(new TypeViolation("Expected a minimum of " + parameters.size() + " arguments, got an unknown number of arguments", path), c);
                 } else if (!call.isUnknownNumberOfArgs() && call.getNumberOfArgs() < parameters.size()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Expected a minimum of " + parameters.size() + " arguments, got " + call.getNumberOfArgs(), path.apply("")), c);
+                    tajsTypeTester.addViolation(TypeViolation.definite("Expected a minimum of " + parameters.size() + " arguments, got " + call.getNumberOfArgs(), path.apply("")), c);
                 }
             } else {
                 if (call.isUnknownNumberOfArgs()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Expected  " + parameters.size() + " arguments, got an unknown number of arguments", path.apply("")), c);
+                    tajsTypeTester.addViolation(TypeViolation.definite("Expected  " + parameters.size() + " arguments, got an unknown number of arguments", path.apply("")), c);
                 } else if (parameters.size() != call.getNumberOfArgs()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Expected  " + parameters.size() + " arguments, got " + call.getNumberOfArgs(), path.apply("")), c);
+                    tajsTypeTester.addViolation(TypeViolation.definite("Expected  " + parameters.size() + " arguments, got " + call.getNumberOfArgs(), path.apply("")), c);
                 }
             }
             if (call.isUnknownNumberOfArgs()) {
                 if (!signature.isHasRestParameter()) {
-                    tajsTypeTester.addViolation(new TypeViolation("Function was called with an unknown number of args, but it doesn't have a restArgs parameter", path.apply("")), c);
+                    tajsTypeTester.addViolation(TypeViolation.definite("Function was called with an unknown number of args, but it doesn't have a restArgs parameter", path.apply("")), c);
                 }
                 if (signature.isHasRestParameter()) {
                     // restricting to not undef, because rest-args must be possibly undef.
@@ -148,14 +148,14 @@ public class TypedSymbolicFunctionEvaluator {
             List<Signature> matchingSignatures = signatures.stream().filter(sig -> sigMatches(sig, context, call, c, path.apply(""), tajsTypeChecker)).collect(Collectors.toList());
 
             if (matchingSignatures.isEmpty()) {
-                tajsTypeTester.addViolation(new TypeViolation("None of the overloads matched how the callback was called", path.apply("")), c);
+                tajsTypeTester.addViolation(TypeViolation.definite("None of the overloads matched how the callback was called", path.apply("")), c);
             }
 
             if (matchingSignatures.size() < signatures.size()) {
                 ArrayList<Signature> nonMatchingSignatures = new ArrayList<>(signatures);
                 nonMatchingSignatures.removeAll(matchingSignatures);
                 for (Signature nonMatchingSignature : nonMatchingSignatures) {
-                    tajsTypeTester.addWarning(new TypeViolation("Signatures with args " + PrettyTypes.parameters(nonMatchingSignature.getParameters()) + " was never called", path.apply("")), c);
+                    tajsTypeTester.addWarning(TypeViolation.definite("Signatures with args " + PrettyTypes.parameters(nonMatchingSignature.getParameters()) + " was never called", path.apply("")), c);
                 }
             }
 

@@ -290,7 +290,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 typeChecked &= violations.isEmpty();
 
                 for (TypeViolation violation : violations) {
-                    addViolation(new TypeViolation("Violation after FunctionCall: \"" + violation.toString() + "\"", testToBlame.getPath()), c);
+                    addViolation(violation.withMessage("Violation after FunctionCall: \"" + violation.toString() + "\"").withPath(testToBlame.getPath()), c);
                 }
             }
 

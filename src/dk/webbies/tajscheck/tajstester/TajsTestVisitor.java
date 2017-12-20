@@ -89,7 +89,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         tajsTypeTester.addCertificate(new TestCertificate(test, "Module has been loaded, its value is: [0]", new Value[]{v}, c.getState()), c);
 
         if (v.isNone()) {
-            tajsTypeTester.addViolation(new TypeViolation("Module could not be found", test.getPath()), c);
+            tajsTypeTester.addViolation(TypeViolation.definite("Module could not be found", test.getPath()), c);
         }
 
         return tajsTypeTester.attemptAddValue(v, new TypeWithContext(test.getModuleType(), test.getTypeContext()), test.getPath(), c, typeChecker, test);
@@ -152,7 +152,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         }
 
         if (returnedValue.isNone() && !(test.getReturnType() instanceof SimpleType && ((SimpleType) test.getReturnType()).getKind() == SimpleTypeKind.Never)) {
-            TypeViolation violation = new TypeViolation("Function " + function + " always returns exceptionally", test.getPath());
+            TypeViolation violation = TypeViolation.definite("Function " + function + " always returns exceptionally", test.getPath());
             if (c.isScanning()) {
                 if (!tajsTypeTester.getRetractionPolicy().isTimeout(test)) {
                     tajsTypeTester.addViolation(violation, c); // only a violation if we are sure.
@@ -269,7 +269,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
             }).collect(Collectors.toList());
 
             if (matchingTypes.isEmpty()) {
-                TypeViolation violation = new TypeViolation("Values matched none of the unions", test.getPath());
+                TypeViolation violation = TypeViolation.definite("Values matched none of the unions", test.getPath());
                 violationsAdded.add(violation);
                 typeChecked = false;
             } else {
@@ -285,7 +285,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         }
 
         for (Type nonMatchedType : nonMatchedTypes) {
-            tajsTypeTester.addWarning(new TypeViolation("No value matches the type: " + nonMatchedType + " in union " + test.getGetUnionType(), test.getPath()), c);
+            tajsTypeTester.addWarning(TypeViolation.definite("No value matches the type: " + nonMatchedType + " in union " + test.getGetUnionType(), test.getPath()), c);
         }
 
         return typeChecked;

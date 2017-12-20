@@ -5,16 +5,26 @@ public class TypeViolation {
     final public String path;
     final public boolean definite;
 
-    public TypeViolation(String message, String path){
-        this.message = message;
-        this.path = path;
-        this.definite = true;
-    }
-
     private TypeViolation(String message, String path, boolean definite) {
         this.message = message;
         this.path = path;
         this.definite = definite;
+    }
+
+    public static TypeViolation definite(String message, String path) {
+        return new TypeViolation(message, path, true);
+    }
+
+    public static TypeViolation maybe(String message, String path) {
+        return new TypeViolation(message, path, false);
+    }
+
+    public TypeViolation withMessage(String message) {
+        return new TypeViolation(message, path, definite);
+    }
+
+    public TypeViolation withPath(String path) {
+        return new TypeViolation(message, path, definite);
     }
 
     public TypeViolation asMaybeViolation() {
