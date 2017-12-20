@@ -19,10 +19,7 @@ import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.newList;
@@ -260,6 +257,8 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
         boolean typeChecked = true;
 
+        List<TypeViolation> violationsAdded = new ArrayList<>();
+        boolean definiteViolation = true;
         for (Value splitValue : TajsTypeChecker.split(value)) {
             List<Type> matchingTypes = test.getGetUnionType().getElements().stream().filter(subType -> {
                 boolean matched = typeChecker.typeCheck(splitValue, subType, test.getTypeContext(), info, test.getPath()).isEmpty();
@@ -270,11 +269,19 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
             }).collect(Collectors.toList());
 
             if (matchingTypes.isEmpty()) {
-                tajsTypeTester.addViolation(new TypeViolation("Values matched none of the unions", test.getPath()), c);
+                TypeViolation violation = new TypeViolation("Values matched none of the unions", test.getPath());
+                violationsAdded.add(violation);
                 typeChecked = false;
+            } else {
+                definiteViolation = false;
             }
 
             matchingTypes.forEach(subType -> tajsTypeTester.attemptAddValue(splitValue, new TypeWithContext(subType, test.getTypeContext()), test.getPath(), c, typeChecker, test));
+        }
+        if (definiteViolation) {
+            violationsAdded.forEach(violation -> tajsTypeTester.addViolation(violation, c));
+        } else {
+            violationsAdded.stream().map(TypeViolation::asMaybeViolation).forEach(violation -> tajsTypeTester.addViolation(violation, c));
         }
 
         for (Type nonMatchedType : nonMatchedTypes) {
