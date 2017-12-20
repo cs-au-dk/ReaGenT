@@ -132,6 +132,7 @@ public class TajsCheckerEvaluation {
             register.accept("typeCheckedTests", result.typeCheckedTests.size() + "");
             register.accept("testSkipped", result.testNot.size() + "");
             register.accept("timeouts", result.timeoutTests.size() + "");
+            register.accept("test-exceptions", result.exceptionsEncountered.size() + "");
             register.accept("retractions", result.retractedTests.size() + "");
             register.accept("time", time + "s");
         };
