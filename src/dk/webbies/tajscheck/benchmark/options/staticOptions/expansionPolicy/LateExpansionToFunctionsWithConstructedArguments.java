@@ -92,7 +92,7 @@ public class LateExpansionToFunctionsWithConstructedArguments implements Expansi
 
         @Override
         public Boolean visit(GenericType t) {
-            return inWhiteList.test(t) || inWhiteList.test(t.toInterface());
+            return inWhiteList.test(t) || t.toInterface().accept(this);
         }
 
         @Override
