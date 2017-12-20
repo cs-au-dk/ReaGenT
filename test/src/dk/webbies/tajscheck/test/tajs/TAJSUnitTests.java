@@ -1354,5 +1354,13 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
-    // TODO: Put de eksemler ind i artiklen.
+    @Test
+    public void recursiveFeedback() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("recursiveFeedback", options().staticOptions
+                .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
+                .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
+            , Benchmark.RUN_METHOD.BROWSER));
+
+        assertThat(result.exceptionsEncountered.entrySet(), is(empty()));
+    }
 }
