@@ -423,13 +423,10 @@ public class SpecInstantiator {
         // keep the object a singleton during instantiation, we create a summary later.
 
         effects.newObject(label, info);
-        if (this.info.options.staticOptions.createSingletonObjects) {// if we keep it as singleton, create summary now.
-            effects.summarize(label);
-        }
-        initializer.accept(label); // TODO: This might be too strong, it should be summarized at some point.
+        initializer.accept(label);
 
         Obj object = c.getState().getObject(label, true);
-        object.setDefaultNonArrayProperty(Value.join(object.getDefaultNonArrayProperty(), Value.makeUndef(), Value.makeAbsent()));// TODO: Try to instead have an special (function) object-label, that summerizes "any". When called it returns itself (and throws exceptions).
+        object.setDefaultNonArrayProperty(Value.join(object.getDefaultNonArrayProperty(), Value.makeUndef(), Value.makeAbsent()));
         return Value.makeObject(label);
     }
 
