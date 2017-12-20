@@ -123,6 +123,21 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT, allTestsBlock);
                 State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
+                boolean argsNotAvailable = false;
+                try {
+                    if (test.getDependsOn().stream().map(type -> valueHandler.createValue(type, test.getTypeContext())).anyMatch(Value::isNone)) {
+                        argsNotAvailable = true;
+                    }
+                } catch (Exception e) {
+                    exceptionsEncountered.put(test, e);
+                    argsNotAvailable = true;
+                }
+                if (argsNotAvailable) {
+                    expansionPolicy.nextRound();
+                    progress = true;
+                    continue;
+                }
+
                 c.withState(testState, () -> performTest(c, test, newc));
             }
         } while (progress);
