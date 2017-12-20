@@ -60,6 +60,7 @@ public class AnalyzeBenchmarks extends TestCase {
             "Redux", //
             "highlight.js", // Include any of the highlight functions, and it takes forever. Exclude them, done in 15 seconds.
 
+            // below is not included in TajsCheckerEvaluation. 
 
             "CodeMirror", // TODO: Crashes (after 6 minutes on my desktop) with "Reading undefined register v10).
 
