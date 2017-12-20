@@ -40,7 +40,6 @@ public class AnalyzeBenchmarks extends TestCase {
             "async", // can analyze, takes a while and most gets retracted/timeouts.
             "PleaseJS", // can analyze
             "PhotoSwipe", // encounters (cannot construct intersectionType) at top-level constructor.
-            "Knockout", // 48 violations in the top-level object. So no methods are called.
             "Swiper", // Top level constructor gets retracted (takes way to long).
             "pathjs", // can analyze.
             "reveal.js", // can analyze.
@@ -51,7 +50,6 @@ public class AnalyzeBenchmarks extends TestCase {
             "axios", // Lots of bugs in top level object, seems to be due to weak writes.
             "Medium Editor", // Declaration is very stupid, they have declared an interface, that has a constructed method that returns the interface.
             "CreateJS", // lots of bugs in top-level object.
-            "QUnit", // lots of bugs in top-level object.
             "RxJS", // lots of errors in top-level object.
             "Knockout", // lots of errors in top-level code, due to exceptionalFlow.
             "box2dweb", // ~20 minutes on my desktop. But terminates (we are talking 73 constructors, 85 methods, then it terminates).
@@ -60,10 +58,10 @@ public class AnalyzeBenchmarks extends TestCase {
             "QUnit", // Takes about 40 minutes on my laptop, and has plenty of timeouts.
             "intro.js",
             "Redux", //
+            "highlight.js", // Include any of the highlight functions, and it takes forever. Exclude them, done in 15 seconds.
 
 
             "CodeMirror", // TODO: Crashes (after 6 minutes on my desktop) with "Reading undefined register v10).
-            "highlight.js", // Include any of the highlight functions, and it takes forever. Exclude them, done in 15 seconds.
 
             "Moment.js", // Timeout.
             "Leaflet" // initialization crashes on line 2302, because TAJS thinks it is reading an undefined property.
