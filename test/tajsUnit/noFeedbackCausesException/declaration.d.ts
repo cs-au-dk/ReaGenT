@@ -1,0 +1,1 @@
+export function useBar(foo: { bar: true; }): true; // uses constructed

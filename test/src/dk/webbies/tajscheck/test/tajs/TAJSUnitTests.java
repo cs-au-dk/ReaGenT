@@ -638,8 +638,6 @@ public class TAJSUnitTests {
 
     }
 
-    // TODO: If you pass a function to the "any" value, you can expect it to be potentially called with any value.
-    // TODO: Any can be equal to any other object.
     @Test
     public void any() throws Exception {
         TajsAnalysisResults result = run("any");
@@ -819,7 +817,7 @@ public class TAJSUnitTests {
                 options()
                         .setConstructAllTypes(true)
                         .setUseInspector(false)
-                        .setSplitUnions(true) // TODO:
+                        .setSplitUnions(true)
                         .staticOptions
                             .setCreateSingletonObjects(true)
                             .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
@@ -1196,6 +1194,19 @@ public class TAJSUnitTests {
                 .forPath("module.useFoo(obj)")
                 .hasNoViolations()
                 .hasNoWarnings();
+    }
+
+    @Test
+    public void noFeedbackCausesException() throws Exception {
+        TajsAnalysisResults result = run("noFeedbackCausesException", options()
+                .setUseInspector(false)
+                .staticOptions
+                    .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
+                    .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
+        );
+
+        expect(result)
+                .hasNoViolations();
     }
 
     @Test

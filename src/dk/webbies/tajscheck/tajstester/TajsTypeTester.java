@@ -117,28 +117,30 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 if (performed.contains(test)) {
                     continue;
                 }
+                progress = true;
                 valueHandler.clearCreatedValueCache();
                 valueHandler.clearValuesForTest(test);
                 Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
                 propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT, allTestsBlock);
                 State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
-                boolean argsNotAvailable = false;
-                try {
-                    if (test.getDependsOn().stream().map(type -> valueHandler.createValue(type, test.getTypeContext())).anyMatch(Value::isNone)) {
+                c.withState(testState, () -> {
+                    boolean argsNotAvailable = false;
+                    try {
+                        if (test.getDependsOn().stream().map(type -> valueHandler.createValue(type, test.getTypeContext())).anyMatch(Value::isNone)) {
+                            argsNotAvailable = true;
+                        }
+                    } catch (Exception e) {
+                        exceptionsEncountered.put(test, e);
                         argsNotAvailable = true;
                     }
-                } catch (Exception e) {
-                    exceptionsEncountered.put(test, e);
-                    argsNotAvailable = true;
-                }
-                if (argsNotAvailable) {
-                    expansionPolicy.nextRound();
-                    progress = true;
-                    continue;
-                }
+                    if (argsNotAvailable) {
+                        expansionPolicy.nextRound();
+                        return;
+                    }
 
-                c.withState(testState, () -> performTest(c, test, newc));
+                    performTest(c, test, newc);
+                });
             }
         } while (progress);
 
