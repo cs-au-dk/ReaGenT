@@ -359,7 +359,14 @@ public class SpecInstantiator {
                 }
 
                 if (value.isMaybeObject() && !this.info.options.staticOptions.createSingletonObjects) {
-                    value = value.restrictToNotObject().join(Value.makeObject(value.getObjectLabels().stream().map(effects::summarize).collect(Collectors.toSet())));
+                    value = value.restrictToNotObject().join(
+                            Value.makeObject(
+                                    value.getObjectLabels()
+                                            .stream()
+                                            .filter(subLabel -> subLabel.getHostObject() instanceof SpecObjects.TypedObject)
+                                            .map(effects::summarize)
+                                            .collect(Collectors.toSet()))
+                    );
                 }
             }
 

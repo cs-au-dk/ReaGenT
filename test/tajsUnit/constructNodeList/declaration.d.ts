@@ -1,0 +1,1 @@
+declare function foobar(elements: NodeListOf<Node>): void;

@@ -1374,4 +1374,14 @@ public class TAJSUnitTests {
 
         assertThat(result.exceptionsEncountered.entrySet(), is(empty()));
     }
+
+    @Test
+    public void constructNodeList() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("constructNodeList", options(), Benchmark.RUN_METHOD.BROWSER));
+
+        expect(result)
+                .hasNoViolations()
+                .performedAllTests()
+                .hasNoWarnings();
+    }
 }
