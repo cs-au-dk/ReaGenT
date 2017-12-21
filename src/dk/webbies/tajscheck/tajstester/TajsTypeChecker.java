@@ -274,6 +274,10 @@ public class TajsTypeChecker {
                         return o.getObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.FUNCTION;
                     default:
                         Value clazz = UnknownValueResolver.getProperty(InitialStateBuilder.GLOBAL, PKey.make(Value.makeStr(name)), c.getState(), false);
+                        if (!clazz.isNotAbsent()) {
+                            System.err.println("Cannot check prototype of: " + name); // TODO: At Least MouseEvent and similar.
+                            return true;
+                        }
                         if (clazz.getObjectLabels().size() != 1) {
                             System.out.println();
                         }
