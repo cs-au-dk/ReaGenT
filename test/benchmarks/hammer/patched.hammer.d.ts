@@ -40,23 +40,23 @@ interface HammerStatic
     DIRECTION_ALL:        number;
 
     Manager:     HammerManagerConstructor;
-    Input:       HammerInput;
-    TouchAction: TouchAction;
+    Input:       typeof HammerInput;
+    TouchAction: typeof TouchAction;
 
-    TouchInput:        TouchInput;
-    MouseInput:        MouseInput;
-    PointerEventInput: PointerEventInput;
-    TouchMouseInput:   TouchMouseInput;
-    SingleTouchInput:  SingleTouchInput;
+    TouchInput:        typeof TouchInput;
+    MouseInput:        typeof MouseInput;
+    PointerEventInput: typeof PointerEventInput;
+    TouchMouseInput:   typeof TouchMouseInput;
+    SingleTouchInput:  typeof SingleTouchInput;
 
-    Recognizer:     RecognizerStatic;
-    AttrRecognizer: AttrRecognizerStatic;
-    Tap:            TapRecognizerStatic;
-    Pan:            PanRecognizerStatic;
-    Swipe:          SwipeRecognizerStatic;
-    Pinch:          PinchRecognizerStatic;
-    Rotate:         RotateRecognizerStatic;
-    Press:          PressRecognizerStatic;
+    Recognizer:     typeof Recognizer;
+    AttrRecognizer: typeof AttrRecognizer;
+    Tap:            typeof TapRecognizer;
+    Pan:            typeof PanRecognizer;
+    Swipe:          typeof SwipeRecognizer;
+    Pinch:          typeof PinchRecognizer;
+    Rotate:         typeof RotateRecognizer;
+    Press:          typeof PressRecognizer;
 
     on( target:EventTarget, types:string, handler:Function ):void;
     off( target:EventTarget, types:string, handler:Function ):void;
@@ -69,10 +69,10 @@ interface HammerStatic
 }
 
 type RecognizerTuple =
-    [RecognizerStatic]
-        | [RecognizerStatic, RecognizerOptions]
-        | [RecognizerStatic, RecognizerOptions, string | string[]]
-        | [RecognizerStatic, RecognizerOptions, string | string[], (string | Recognizer) | (string | Recognizer)[]];
+    [typeof Recognizer]
+        | [typeof Recognizer, RecognizerOptions]
+        | [typeof Recognizer, RecognizerOptions, string | string[]]
+        | [typeof Recognizer, RecognizerOptions, string | string[], (string | Recognizer) | (string | Recognizer)[]];
 
 interface HammerDefaults extends HammerOptions
 {
@@ -83,7 +83,7 @@ interface HammerDefaults extends HammerOptions
     cssProps:CssProps;
 
     inputClass?:HammerInput;
-    inputTarget:EventTarget;
+    inputTarget?:EventTarget;
 }
 
 interface CssProps
@@ -252,13 +252,9 @@ interface RecognizerOptions {
     velocity?: number;
 }
 
-interface RecognizerStatic
-{
-    new( options?:RecognizerOptions ):Recognizer;
-}
+declare class Recognizer {
+    constructor( options?:RecognizerOptions );
 
-interface Recognizer
-{
     defaults:any;
 
     canEmit():boolean;
@@ -281,69 +277,36 @@ interface Recognizer
     tryEmit( input:HammerInput ):void;
 }
 
-interface AttrRecognizerStatic
+declare class AttrRecognizer extends Recognizer
 {
+    new( options?:RecognizerOptions ):AttrRecognizer;
     attrTest( input:HammerInput ):boolean;
     process( input:HammerInput ):any;
 }
 
-interface AttrRecognizer extends Recognizer
-{
-    new( options?:RecognizerOptions ):AttrRecognizer;
+declare class PanRecognizer extends AttrRecognizer {
+    constructor( options?:RecognizerOptions );
 }
 
-interface PanRecognizerStatic
-{
-    new( options?:RecognizerOptions ):PanRecognizer;
+declare class PinchRecognizer extends AttrRecognizer {
+    constructor( options?:RecognizerOptions );
 }
 
-interface PanRecognizer extends AttrRecognizer
-{
+declare class PressRecognizer extends AttrRecognizer {
+    constructor( options?:RecognizerOptions );
 }
 
-interface PinchRecognizerStatic
-{
-    new( options?:RecognizerOptions ):PinchRecognizer;
+declare class RotateRecognizer extends AttrRecognizer {
+    constructor( options?:RecognizerOptions );
 }
 
-interface PinchRecognizer extends AttrRecognizer
-{
+declare class SwipeRecognizer extends AttrRecognizer {
+    constructor( options?:RecognizerOptions );
 }
 
-interface PressRecognizerStatic
-{
-    new( options?:RecognizerOptions ):PressRecognizer;
-}
 
-interface PressRecognizer extends AttrRecognizer
-{
-}
-
-interface RotateRecognizerStatic
-{
-    new( options?:RecognizerOptions ):RotateRecognizer;
-}
-
-interface RotateRecognizer extends AttrRecognizer
-{
-}
-
-interface SwipeRecognizerStatic
-{
-    new( options?:RecognizerOptions ):SwipeRecognizer;
-}
-
-interface SwipeRecognizer extends AttrRecognizer
-{
-}
-
-interface TapRecognizerStatic
-{
-    new( options?:RecognizerOptions ):TapRecognizer;
-}
-
-interface TapRecognizer extends AttrRecognizer
-{
+declare class TapRecognizer extends AttrRecognizer {
+    constructor( options?:RecognizerOptions );
 }
 
 declare class TouchAction
