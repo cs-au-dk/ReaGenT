@@ -389,14 +389,6 @@ public class SpecInstantiator {
         return type.accept(new LateExpansionToFunctionsWithConstructedArguments.CanEasilyConstructVisitor(context, info, subType -> nativesInstantiator.shouldConstructAsNative(subType.getType())));
     }
 
-    private Value constructArray(MiscInfo info, Type indexType) {
-        ObjectLabel array = info.labelToUse;
-        Value indexValue = instantiate(indexType, info, "[numberindexer]");
-        c.getAnalysis().getPropVarOperations().writeProperty(Collections.singleton(array), Value.makeAnyStrUInt(), indexValue);
-        c.getAnalysis().getPropVarOperations().writeProperty(array, "length", Value.makeAnyNumUInt());
-        return Value.makeObject(array);
-    }
-
     public Value createValue(TypeWithContext type, String path) {
         try {
             MiscInfo misc = new MiscInfo(path, type.getTypeContext(), null);
@@ -514,10 +506,6 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(ReferenceType t, MiscInfo info) {
-            if ("Array".equals(SpecInstantiator.this.info.typeNames.get(t.getTarget()))) {
-                Type indexType = t.getTypeArguments().iterator().next();
-                return constructArray(info, indexType);
-            }
             info = info.withContext(SpecInstantiator.this.info.typesUtil.generateParameterMap(t, info.context));
             return t.getTarget().accept(this, info);
         }

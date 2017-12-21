@@ -10,6 +10,7 @@ import dk.brics.tajs.analysis.dom.DOMFunctions;
 import dk.brics.tajs.analysis.dom.DOMObjects;
 import dk.brics.tajs.analysis.dom.DOMWindow;
 import dk.brics.tajs.analysis.dom.ajax.XmlHttpRequest;
+import dk.brics.tajs.analysis.dom.core.DOMDocument;
 import dk.brics.tajs.analysis.dom.core.DOMNode;
 import dk.brics.tajs.analysis.dom.core.DOMNodeList;
 import dk.brics.tajs.analysis.dom.html.HTMLCollection;
@@ -142,6 +143,8 @@ public class NativesInstantiator {
             case "NodeList":
             case "NodeListOf":
                 return Value.makeObject(DOMNodeList.INSTANCES);
+            case "Document":
+                return Value.makeObject(DOMDocument.INSTANCES);
             case "Uint8Array":
             case "Int8Array":
             case "Uint8ClampedArray":
@@ -154,9 +157,20 @@ public class NativesInstantiator {
                 return evalConstructor(c, name, Value.makeAnyNumUInt());
             case "Node":
                 return Value.makeObject(DOMNode.INSTANCES);
+            case "Array":
+                //noinspection ConstantConditions
+                return constructArray(info, ((ReferenceType) type).getTypeArguments().iterator().next(), c);
             default:
                 throw new RuntimeException("Yet unknown how to create native object: " + name);
         }
+    }
+
+    private Value constructArray(SpecInstantiator.MiscInfo info, Type indexType, Solver.SolverInterface c) {
+        ObjectLabel array = info.labelToUse;
+        Value indexValue = specInstantiator.instantiate(indexType, info, "[numberindexer]");
+        c.getAnalysis().getPropVarOperations().writeProperty(Collections.singleton(array), Value.makeAnyStrUInt(), indexValue);
+        c.getAnalysis().getPropVarOperations().writeProperty(array, "length", Value.makeAnyNumUInt());
+        return Value.makeObject(array);
     }
 
     private Value evalConstructor(Solver.SolverInterface c, String name, Value... args) {
