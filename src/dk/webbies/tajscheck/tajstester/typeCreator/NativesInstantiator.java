@@ -11,6 +11,8 @@ import dk.brics.tajs.analysis.dom.DOMObjects;
 import dk.brics.tajs.analysis.dom.DOMWindow;
 import dk.brics.tajs.analysis.dom.ajax.XmlHttpRequest;
 import dk.brics.tajs.analysis.dom.core.DOMNode;
+import dk.brics.tajs.analysis.dom.core.DOMNodeList;
+import dk.brics.tajs.analysis.dom.html.HTMLCollection;
 import dk.brics.tajs.analysis.dom.html.HTMLImageElement;
 import dk.brics.tajs.analysis.dom.html.HTMLTextAreaElement;
 import dk.brics.tajs.analysis.dom.html5.CanvasRenderingContext2D;
@@ -40,6 +42,9 @@ public class NativesInstantiator {
     }
 
     public boolean shouldConstructAsNative(Type type) {
+        if (type instanceof ReferenceType) {
+            type = ((ReferenceType) type).getTarget();
+        }
         return
                 info.nativeTypes.contains(type) &&
                 !nativesToConstructStructurally.contains(info.typeNames.get(type)) &&
@@ -71,8 +76,13 @@ public class NativesInstantiator {
         return result;
     }
 
-    private Value constructNoCache(Type type, SpecInstantiator.MiscInfo info, String step, GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
-        String name = this.info.typeNames.get(type);
+    private Value constructNoCache(Type type, SpecInstantiator.MiscInfo info, String step, Solver.SolverInterface c) {
+        String name;
+        if (type instanceof ReferenceType) {
+            name = this.info.typeNames.get(((ReferenceType) type).getTarget());
+        } else {
+            name = this.info.typeNames.get(type);
+        }
         switch (name) {
             case "Element":
             case "HTMLElement": {
@@ -127,6 +137,11 @@ public class NativesInstantiator {
                 return Value.makeObject(HTMLCanvasElement.INSTANCES);
             case "CanvasRenderingContext2D":
                 return Value.makeObject(CanvasRenderingContext2D.CONTEXT2D);
+            case "HTMLCollection":
+                return Value.makeObject(HTMLCollection.INSTANCES);
+            case "NodeList":
+            case "NodeListOf":
+                return Value.makeObject(DOMNodeList.INSTANCES);
             case "Uint8Array":
             case "Int8Array":
             case "Uint8ClampedArray":
