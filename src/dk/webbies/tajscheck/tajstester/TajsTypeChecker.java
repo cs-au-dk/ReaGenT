@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.tajstester;
 
+import dk.au.cs.casa.typescript.types.SimpleType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.brics.tajs.analysis.HostAPIs;
 import dk.brics.tajs.analysis.InitialStateBuilder;
@@ -137,7 +138,7 @@ public class TajsTypeChecker {
             };
 
             Tuple3<Check, TypeWithContext, Value> key = new Tuple3<>(check, typeWithContext, v);
-            if (cache.containsKey(key)) {
+            if (cache.containsKey(key) && !(typeWithContext.getType() instanceof SimpleType || typeWithContext.getType() instanceof BooleanLiteral || typeWithContext.getType() instanceof NumberLiteral || typeWithContext.getType() instanceof StringLiteral)) {
                 return cache.get(key);
             } else {
                 cache.put(key, java.util.Collections.emptyList()); // coinductive assumption, if we hit the same check, it must be true.
