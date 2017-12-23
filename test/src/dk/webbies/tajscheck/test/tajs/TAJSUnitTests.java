@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.test.tajs;
 
+import dk.brics.tajs.options.Options;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
@@ -1294,7 +1295,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore
     public void exceptionalFlow() throws Exception {
         TajsAnalysisResults result = run("exceptionalFlow");
 

@@ -92,6 +92,7 @@ public class TAJSUtil {
         additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyReads(true);
         additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyWrites(true);
         additionalOpts.getUnsoundness().setIgnoreMissingNativeModels(true);
+        additionalOpts.getUnsoundness().setKeepExceptionalFlowAwayFromEvents(true);
 
 
         additionalOpts.enableUnevalizer();
