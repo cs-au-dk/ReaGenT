@@ -205,17 +205,14 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             // Generating one local context per test
             Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
-            if (test instanceof FunctionTest && !expansionPolicy.expandTo((FunctionTest) test, this)) { // placed before the propagateStateToContext, to avoid an infinite loop.
-                if (DEBUG) System.out.println("Didn't expand to " + test);
-                continue;
-            }
+            State previousState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext == null ? c.getState().getContext() : previousTestContext);
 
-            // Propagate previous state into this, chaining the flow
-            propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT, allTestsBlock);
+            progress |= c.withState(previousState, () -> {
+                if (test instanceof FunctionTest && !expansionPolicy.expandTo((FunctionTest) test, this)) { // placed before the propagateStateToContext, to avoid an infinite loop.
+                    if (DEBUG) System.out.println("Didn't expand to " + test);
+                    return false;
+                }
 
-            State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
-
-            progress |= c.withState(testState, () -> {
                 try {
                     if (test.getDependsOn().stream().map(type -> valueHandler.createValue(type, test.getTypeContext())).anyMatch(Value::isNone)) {
                         return false;
@@ -225,20 +222,29 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     return false;
                 }
 
-                performTest(c, test, newc);
-                return true;
+                // Propagate previous state into this, chaining the flow
+                propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT, allTestsBlock);
+
+                State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
+
+                return c.withState(testState, () -> {
+                    performTest(c, test, newc);
+                    return true;
+                });
             });
         }
         return progress;
     }
 
     private void propagateStateToContext(Solver.SolverInterface c, Context newc, Timers.Tags propagatingToThisContext, BasicBlock allTestsBlock) {
+        timers.start(propagatingToThisContext);
         if (previousTestContext != null) {
-            timers.start(propagatingToThisContext);
             State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
             c.propagateToBasicBlock(preState, allTestsBlock, newc);
-            timers.stop(propagatingToThisContext);
+        } else {
+            c.propagateToBasicBlock(c.getState(), allTestsBlock, newc);
         }
+        timers.stop(propagatingToThisContext);
     }
 
     private void performTest(Solver.SolverInterface c, Test test, Context newc) {
