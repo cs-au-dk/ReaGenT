@@ -205,17 +205,17 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             // Generating one local context per test
             Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
+            if (test instanceof FunctionTest && !expansionPolicy.expandTo((FunctionTest) test, this)) { // placed before the propagateStateToContext, to avoid an infinite loop.
+                if (DEBUG) System.out.println("Didn't expand to " + test);
+                continue;
+            }
+
             // Propagate previous state into this, chaining the flow
             propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT, allTestsBlock);
 
             State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
             progress |= c.withState(testState, () -> {
-                if (test instanceof FunctionTest && !expansionPolicy.expandTo((FunctionTest) test, this)) {
-                    if (DEBUG) System.out.println("Didn't expand to " + test);
-                    return false;
-                }
-
                 try {
                     if (test.getDependsOn().stream().map(type -> valueHandler.createValue(type, test.getTypeContext())).anyMatch(Value::isNone)) {
                         return false;
