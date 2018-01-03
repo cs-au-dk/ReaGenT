@@ -239,8 +239,6 @@ interface KnockoutUtils {
 
         set (node: Element, key: string, value: any): void;
 
-        getAll(node: Element, createIfNotFound: boolean): any;
-
         clear(node: Element): boolean;
     };
 
@@ -378,6 +376,18 @@ interface KnockoutNativeTemplateEngine {
 }
 
 //////////////////////////////////
+// jqueryTmplTemplateEngine.js
+//////////////////////////////////
+
+interface KnockoutJQueryTemplateEngine {
+    renderTemplateSource(templateSource: Object, bindingContext: KnockoutBindingContext, options: Object): Node[];
+
+    createJavaScriptEvaluatorBlock(script: string): string;
+
+    addTemplate(templateName: string, templateMarkup: string): void;
+}
+
+//////////////////////////////////
 // templateEngine.js
 //////////////////////////////////
 
@@ -499,15 +509,8 @@ interface KnockoutStatic {
     //////////////////////////////////
 
     jqueryTmplTemplateEngine: {
-
-        prototype: KnockoutTemplateEngine;
-
-        renderTemplateSource(templateSource: Object, bindingContext: KnockoutBindingContext, options: Object): Node[];
-
-        createJavaScriptEvaluatorBlock(script: string): string;
-
-        addTemplate(templateName: string, templateMarkup: string): void;
-    };
+        new(): KnockoutJQueryTemplateEngine;
+    }
 
     //////////////////////////////////
     // templating.js
@@ -598,15 +601,14 @@ interface KnockoutStatic {
 }
 
 interface KnockoutBindingProvider {
-    nodeHasBindings(node: Node): boolean;
-    getBindings(node: Node, bindingContext: KnockoutBindingContext): {};
-    getBindingAccessors?(node: Node, bindingContext: KnockoutBindingContext): { [key: string]: string; };
+    nodeHasBindings?(node: Node): boolean; // <- According to TAJS this might be undefined, but i don't know (unsoundness?)
+    getBindings?(node: Node, bindingContext: KnockoutBindingContext): {};// // <- According to TAJS this might be undefined, but i don't know (unsoundness?)
+    getBindingAccessors?(node: Node, bindingContext: KnockoutBindingContext): { [key: string]: string; }; // <- No idea why this already had a "?"
 }
 
 interface KnockoutComputedContext {
     getDependenciesCount(): number;
     isInitial: () => boolean;
-    isSleeping: boolean;
 }
 
 //
