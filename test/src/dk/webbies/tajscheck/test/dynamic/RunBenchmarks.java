@@ -178,7 +178,7 @@ public class RunBenchmarks {
 
         register(new Benchmark("axios", ParseDeclaration.Environment.ES5Core, "test/benchmarks/axios/axios.js", "test/benchmarks/axios/axios.d.ts", NODE, options));
 
-        register(new Benchmark("Medium Editor", ParseDeclaration.Environment.ES5Core, "test/benchmarks/medium-editor/medium-editor.js", "test/benchmarks/medium-editor/medium-editor.d.ts", NODE, options));
+        register(new Benchmark("Medium Editor", ParseDeclaration.Environment.ES5Core, "test/benchmarks/medium-editor/medium-editor.js", "test/benchmarks/medium-editor/medium-editor.d.ts", BROWSER, options));
 
         register(new Benchmark("Sortable", ParseDeclaration.Environment.ES5Core, "test/benchmarks/sortable/sortable.js", "test/benchmarks/sortable/sortable.d.ts", BROWSER, options));
 
