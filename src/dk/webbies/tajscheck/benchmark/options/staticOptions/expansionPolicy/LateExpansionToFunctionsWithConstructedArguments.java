@@ -103,12 +103,12 @@ public class LateExpansionToFunctionsWithConstructedArguments implements Expansi
 
         @Override
         public Boolean visit(ReferenceType t) {
-            if (inWhiteList.test(t)) {
-                return true;
-            }
             if ("Array".equals(info.typeNames.get(t.getTarget()))) {
                 Type indexType = t.getTypeArguments().iterator().next();
                 return indexType.accept(this);
+            }
+            if (inWhiteList.test(t)) {
+                return true;
             }
             return t.getTarget().accept(new CanEasilyConstructVisitor(info.typesUtil.generateParameterMap(t, typeContext), info, whiteList));
         }

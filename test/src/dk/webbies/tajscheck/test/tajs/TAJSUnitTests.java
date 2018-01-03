@@ -1384,4 +1384,32 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoWarnings();
     }
+
+    @Test
+    @Ignore // TODO: Something with Object.assign.
+    public void emptyValueException() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("emptyValueException", options(), Benchmark.RUN_METHOD.BROWSER));
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
+    public void constructArrayElements() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder(
+                "constructArrayElements",
+                    options()
+                        .setConstructAllTypes(true)
+                        .staticOptions
+                            .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
+                            .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments()
+                        )
+                , Benchmark.RUN_METHOD.BROWSER));
+
+        expect(result)
+                .hasNoViolations()
+                .hasNoWarnings()
+                .performedAllTests();
+    }
 }
