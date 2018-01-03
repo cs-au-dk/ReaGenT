@@ -180,9 +180,14 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         c.addToWorklist(allTestsBlock, allTestsContext); // Making sure the TypeTester runs when the worklist is otherwise empty.
     }
 
+    private final Set<Test> hasFailed = new HashSet<>();
+
     private boolean iterateAllNonPerformedTests(Solver.SolverInterface c) {
         boolean progress = false;
         for (Test test : tests) {
+            if (hasFailed.contains(test) && !c.isScanning() && !info.options.staticOptions.propagateStateFromFailingTest) {
+                continue; // fail once, fail always. And we can sometimes get an infinite loop cause we stop the state-propagation. However, since since we stop the state-propagation, we can soundly skip this, as it is effectively a noop.
+            }
             valueHandler.clearCreatedValueCache(); // TODO: Needed this much?
             if (performed.contains(test)) {
                 continue;
@@ -227,10 +232,14 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
                 State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
-                return c.withState(testState, () -> {
+                boolean hasProgress = c.withState(testState, () -> {
                     performTest(c, test, newc);
                     return true;
                 });
+                if (!hasProgress) {
+                    hasFailed.add(test);
+                }
+                return hasProgress;
             });
         }
         return progress;
