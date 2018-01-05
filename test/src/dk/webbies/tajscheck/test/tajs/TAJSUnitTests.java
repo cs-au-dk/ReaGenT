@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck.test.tajs;
 
-import dk.brics.tajs.options.Options;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
@@ -28,7 +27,6 @@ import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE;
 import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED;
-import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED;
 import static dk.webbies.tajscheck.tajstester.TAJSUtil.*;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
 import static dk.webbies.tajscheck.util.Util.mkString;
@@ -1411,5 +1409,10 @@ public class TAJSUnitTests {
                 .hasNoViolations()
                 .hasNoWarnings()
                 .performedAllTests();
+    }
+
+    @Test // smoke test, it just shouldn't crash.
+    public void undefinedRegisterException() throws Exception {
+        run("undefinedRegisterException");
     }
 }
