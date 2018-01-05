@@ -252,10 +252,6 @@ public class TAJSUtil {
             builder.append("Tests performed (").append(testPerformed.size()).append(")").append("\n");
             for (Test performed : testPerformed) {
                 builder.append("   ").append(performed).append("\n");
-                if (retractedTests.contains(performed) || exceptionsEncountered.containsKey(performed)) {
-                    System.err.println("Not sure this is supposed to happen");
-//                    throw new RuntimeException();
-                }
             }
 
             printTypeViolations(builder, this.detectedViolations, "Violations");

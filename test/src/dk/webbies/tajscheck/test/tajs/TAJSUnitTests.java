@@ -1224,7 +1224,7 @@ public class TAJSUnitTests {
     @Test
     public void harmfulSideEffectsAreCatched() throws Exception {
         TajsAnalysisResults result = run("harmfulSideEffectsAreCatched", options().staticOptions
-                .setCheckAllPropertiesAreFunctionCall(true)
+                .setCheckAllPropertiesAfterFunctionCall(true)
                 .setPropagateStateFromFailingTest(false) // <- default, but to be explicit.
         );
 

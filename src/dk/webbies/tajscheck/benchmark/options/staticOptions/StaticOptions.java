@@ -23,7 +23,7 @@ public class StaticOptions implements OptionsI {
     public final boolean propagateStateFromFailingTest;
     public final boolean properWidthSubtyping;
     public final ArgumentValuesStrategy argumentValuesStrategy;
-    public final boolean checkAllPropertiesAreFunctionCall;
+    public final boolean checkAllPropertiesAfterFunctionCall;
 
     public enum ArgumentValuesStrategy {
         MIX_FEEDBACK_AND_CONSTRUCTED,
@@ -43,7 +43,7 @@ public class StaticOptions implements OptionsI {
         this.propagateStateFromFailingTest = builder.propagateStateFromFailingTest;
         this.argumentValuesStrategy = builder.argumentValuesStrategy;
         this.properWidthSubtyping = builder.properWidthSubtyping;
-        this.checkAllPropertiesAreFunctionCall = builder.checkAllPropertiesAreFunctionCall;
+        this.checkAllPropertiesAfterFunctionCall = builder.checkAllPropertiesAfterFunctionCall;
         this.builder = builder;
     }
 
@@ -61,7 +61,7 @@ public class StaticOptions implements OptionsI {
         private boolean propagateStateFromFailingTest = false;
         private ArgumentValuesStrategy argumentValuesStrategy = ONLY_CONSTRUCTED;
         private boolean properWidthSubtyping = false;
-        private boolean checkAllPropertiesAreFunctionCall = false;
+        private boolean checkAllPropertiesAfterFunctionCall = false; // then we run through all the PropertyReadTests after a function-call, to see if it had any harmful side-effects.
 
         private final CheckOptions.Builder outerBuilder;
 
@@ -78,8 +78,8 @@ public class StaticOptions implements OptionsI {
             return outerBuilder;
         }
 
-        public Builder setCheckAllPropertiesAreFunctionCall(boolean checkAllPropertiesAreFunctionCall) {
-            this.checkAllPropertiesAreFunctionCall = checkAllPropertiesAreFunctionCall;
+        public Builder setCheckAllPropertiesAfterFunctionCall(boolean checkAllPropertiesAfterFunctionCall) {
+            this.checkAllPropertiesAfterFunctionCall = checkAllPropertiesAfterFunctionCall;
             return this;
         }
 

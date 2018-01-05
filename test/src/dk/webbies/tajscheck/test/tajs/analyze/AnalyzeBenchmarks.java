@@ -122,8 +122,8 @@ public class AnalyzeBenchmarks extends TestCase {
         return options -> options
                 .setCombineNullAndUndefined(true) // because no-one cares.
 
-                // same as default, but just to be explicit about it.
                 .setConstructClassInstances(true) // due to our expansion-policy, this should only happen rarely.
+                // same as default, but just to be explicit about it.
                 .setConstructClassTypes(false)
                 .setConstructAllTypes(false)
 
@@ -132,7 +132,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
                     .setRetractionPolicy(new LimitTransfersRetractionPolicy(10000, 0))
 
-                    .setCheckAllPropertiesAreFunctionCall(true)
+                    .setCheckAllPropertiesAfterFunctionCall(true)
                     .setPropagateStateFromFailingTest(false)
 
                     .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)

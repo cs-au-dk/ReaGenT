@@ -272,7 +272,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             exceptionsEncountered.put(test, e);
         }
 
-        if (test instanceof FunctionTest && info.options.staticOptions.checkAllPropertiesAreFunctionCall) {
+        if (test instanceof FunctionTest && info.options.staticOptions.checkAllPropertiesAfterFunctionCall) {
             typeChecked &= checkPropertyReads(test, typeCheckedTests.stream().filter(PropertyReadTest.class::isInstance).map(PropertyReadTest.class::cast).collect(Collectors.toList()), c);
         }
 
