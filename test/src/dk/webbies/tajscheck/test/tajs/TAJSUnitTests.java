@@ -1371,7 +1371,7 @@ public class TAJSUnitTests {
                 .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
             , Benchmark.RUN_METHOD.BROWSER));
 
-        assertThat(result.exceptionsEncountered.entrySet(), is(empty()));
+        assertThat(result.exceptionsEncountered.asMap().entrySet(), is(empty()));
     }
 
     @Test

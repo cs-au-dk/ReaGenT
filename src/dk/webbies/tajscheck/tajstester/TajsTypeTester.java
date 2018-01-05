@@ -20,6 +20,8 @@ import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.tajstester.monitors.SuspiciousnessMonitor;
 import dk.webbies.tajscheck.tajstester.monitors.TestTransfersMonitor;
 import dk.webbies.tajscheck.testcreator.test.*;
+import dk.webbies.tajscheck.util.ArrayListMultiMap;
+import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
@@ -50,7 +52,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private final Set<Test> performed = new LinkedHashSet<>();
 
     private final RetractionPolicy retractionPolicy;
-    private final Map<Test, Exception> exceptionsEncountered = new HashMap<>();
+    private final MultiMap<Test, Exception> exceptionsEncountered = new ArrayListMultiMap<>();
 
     private BasicBlock allTestsBlock;
     private Context allTestsContext;
@@ -396,7 +398,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             exceptionsEncountered.put(test, e);
             return true;
         }
-        return false;
+        exceptionsEncountered.put(null, e);
+        return true; // Still try to recover.
     }
 
     /*
@@ -457,7 +460,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
     }
 
-    public Map<Test, Exception> getExceptionsEncountered() {
+    public MultiMap<Test, Exception> getExceptionsEncountered() {
         return exceptionsEncountered;
     }
 

@@ -163,7 +163,7 @@ public class TAJSUtil {
         public final Timers timers;
 
         private boolean VERBOSE = true;
-        public Map<Test, Exception> exceptionsEncountered;
+        public MultiMap<Test, Exception> exceptionsEncountered;
 
         public TajsAnalysisResults(MultiMap<String, TypeViolation> detectedViolations,
                                    MultiMap<String, TypeViolation> warnings,
@@ -279,6 +279,11 @@ public class TAJSUtil {
                         }), "\n   "));
                 builder.append("\n");
                 builder.append(timers.toString());
+
+                if (!exceptionsEncountered.get(null).isEmpty()) {
+                    builder.append("Exceptions outside test-context: \n");
+                    exceptionsEncountered.get(null).stream().map(Object::toString).map(str -> "   " + str + "\n").distinct().forEach(builder::append);
+                }
             }
             return builder.toString();
         }
