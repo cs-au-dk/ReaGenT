@@ -129,8 +129,13 @@ public class TajsTypeChecker {
                         throw new RuntimeException(check.getClass().getSimpleName());
                     }
                 } else {
-                    if (!check.accept(cc, v)) {
-                        return Collections.singletonList(definiteViolation(path, v, typeCheck));
+                    Bool resultBool = check.accept(cc, v);
+                    if (resultBool.isMaybeFalse()) {
+                        TypeViolation violation = definiteViolation(path, v, typeCheck);
+                        if (resultBool.isMaybeAnyBool()) {
+                            violation = violation.asMaybeViolation();
+                        }
+                        return Collections.singletonList(violation);
                     } else {
                         return java.util.Collections.emptyList();
                     }
@@ -188,18 +193,50 @@ public class TajsTypeChecker {
         return violations;
     }
 
-    private class CheckChecker implements CheckVisitorWithArgument<Boolean, Value> {
+    private static Bool or(Bool a, Bool b) {
+        if (a.isMaybeTrueButNotFalse() || b.isMaybeTrueButNotFalse()) {
+            return Value.makeBool(true);
+        }
+        if (a.isMaybeFalseButNotTrue() && b.isMaybeFalseButNotTrue()) {
+            return Value.makeBool(false);
+        }
+        return Value.makeAnyBool();
+    }
+
+    private static Bool not(Bool x) {
+        if (x.isMaybeTrueButNotFalse()) {
+            return Value.makeBool(false);
+        }
+        if (x.isMaybeFalseButNotTrue()) {
+            return Value.makeBool(true);
+        }
+        return Value.makeAnyBool();
+    }
+
+    private static Bool and(Bool a, Bool b) {
+        if (a.isMaybeFalseButNotTrue() || b.isMaybeFalseButNotTrue()) {
+            return Value.makeBool(false);
+        }
+        if (a.isMaybeTrueButNotFalse() && b.isMaybeTrueButNotFalse()) {
+            return Value.makeBool(true);
+        }
+        return Value.makeAnyBool();
+    }
+
+    private class CheckChecker implements CheckVisitorWithArgument<Bool, Value> {
+
+
         @Override
-        public Boolean visit(OrCheck check, Value o) {
-            return check.getChecks().stream().map(c -> c.accept(this, o)).reduce(false, (x, y) -> x || y);
+        public Bool visit(OrCheck check, Value o) {
+            return check.getChecks().stream().map(c -> c.accept(this, o)).reduce(Value.makeBool(false), TajsTypeChecker::or);
         }
 
         @Override
-        public Boolean visit(TypeOfCheck check, Value o) {
+        public Bool visit(TypeOfCheck check, Value o) {
             switch(check.getTypeString()) {
                 case "object":
-                    if (o.isMaybeNull() && o.restrictToNotNull().isNone()) return true;
-                    if (o.getAllObjectLabels().isEmpty()) return false;
+                    if (o.isMaybeNull() && o.restrictToNotNull().isNone()) return Value.makeBool(true);
+                    if (o.getAllObjectLabels().isEmpty()) return Value.makeBool(false);
                     ObjectLabel.Kind kind = o.getAllObjectLabels().iterator().next().getKind();
                     switch (kind) {
                         case OBJECT:
@@ -208,56 +245,59 @@ public class TajsTypeChecker {
                         case DATE:
                         case MATH:
                         case ARGUMENTS:
-                            return true;
+                            return Value.makeBool(true);
                         case FUNCTION:
                         case SYMBOL:
                         case BOOLEAN:
                         case STRING:
                         case NUMBER:
-                            return false;
+                            return Value.makeBool(false);
                         default:
                             throw new RuntimeException("Didn't consider: " + kind);
                     }
-                case "string":
-                    return !o.restrictToStr().isNone();
-                case "undefined":
-                    return !o.restrictToUndef().isNone();
-                case "function":
-                    if(o.getAllObjectLabels().isEmpty()) return false;
-                    return o.getAllObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.FUNCTION;
+                case "string":{
+                    return Value.makeBool(!o.restrictToStr().isNone());
+                }
+                case "undefined": {
+                    return Value.makeBool(!o.restrictToUndef().isNone());
+                }
+                case "function": {
+                    if(o.getAllObjectLabels().isEmpty()) return Value.makeBool(false);
+                    return Value.makeBool(o.getAllObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.FUNCTION);
+                }
                 case "number":
-                    return !o.restrictToNum().isNone();
+                    return Value.makeBool(!o.restrictToNum().isNone());
                 case "boolean":
-                    return !o.restrictToBool().isNone();
+                    return Value.makeBool(!o.restrictToBool().isNone());
                 case "symbol":
-                    if (o.getAllObjectLabels().isEmpty()) return false;
-                    return o.getAllObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.SYMBOL;
+                    if (o.getAllObjectLabels().isEmpty()) return Value.makeBool(false);
+                    return Value.makeBool(o.getAllObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.SYMBOL);
                 default:
                     throw new RuntimeException("Unexpected " + check.getTypeString());
             }
         }
 
         @Override
-        public Boolean visit(NotCheck check, Value o) {
-            return !check.getCheck().accept(this, o);
+        public Bool visit(NotCheck check, Value o) {
+            return not(check.getCheck().accept(this, o));
         }
 
         @Override
-        public Boolean visit(AndCheck check, Value o) {
-            return check.getChecks().stream().map(c -> c.accept(this, o)).reduce(true, (x, y) -> x && y);
+        public Bool visit(AndCheck check, Value o) {
+            return check.getChecks().stream().map(c -> c.accept(this, o)).reduce(Value.makeBool(true), TajsTypeChecker::and);
         }
 
         @Override
-        public Boolean visit(EqualityCheck check, Value o) {
-            Boolean result = check.getExpression().accept(new CheckEqualityVisitor(o));
+        public Bool visit(EqualityCheck check, Value o) {
+            Bool result = check.getExpression().accept(new CheckEqualityVisitor(o));
             assert result != null;
             return result;
         }
 
         @Override
-        public Boolean visit(InstanceOfCheck check, Value o) {
+        public Bool visit(InstanceOfCheck check, Value o) {
             if (!o.restrictToNotObject().isNone()) {
-                return false;
+                return Value.makeBool(false);
             }
             assert o.getObjectLabels().size() == 1;
             if (check.getExp() instanceof Identifier) {
@@ -267,65 +307,85 @@ public class TajsTypeChecker {
                 }
                 switch (name) {
                     case "Array":
-                        return o.getObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.ARRAY;
+                        return Value.makeBool(o.getObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.ARRAY);
                     case "RegExp":
-                        return o.getObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.REGEXP;
+                        return Value.makeBool(o.getObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.REGEXP);
                     case "Function":
-                        return o.getObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.FUNCTION;
+                        return Value.makeBool(o.getObjectLabels().iterator().next().getKind() == ObjectLabel.Kind.FUNCTION);
                     default:
                         Value clazz = UnknownValueResolver.getProperty(InitialStateBuilder.GLOBAL, PKey.make(Value.makeStr(name)), c.getState(), false);
                         if (!clazz.isNotAbsent()) {
                             System.err.println("Cannot check prototype of: " + name); // TODO: At Least MouseEvent and similar.
-                            return true;
+                            return Value.makeBool(true);
                         }
                         if (clazz.getObjectLabels().size() != 1) {
                             System.out.println();
                         }
                         assert clazz.getObjectLabels().size() == 1;
-                        Value instanceOf = Operators.instof(o, clazz, c);
-                        return !instanceOf.isMaybeFalse();
+                        return Operators.instof(o, clazz, c);
                 }
             }
             throw new RuntimeException("Instanceof check" + check + " against " + o);
         }
 
         @Override
-        public Boolean visit(FieldCheck check, Value o) {
+        public Bool visit(FieldCheck check, Value o) {
             String field = check.getField();
 
-            return performSubTypeCheck(o, check, "fakeFieldPath", Value.makeStr(field)).isEmpty();
+            List<TypeViolation> subViolations = performSubTypeCheck(o, check, "fakeFieldPath", Value.makeStr(field));
+            if (subViolations.isEmpty()) {
+                return Value.makeBool(true);
+            }
+            if (subViolations.stream().anyMatch(violation -> !violation.definite)) {
+                return Value.makeAnyBool();
+            }
+            return Value.makeBool(false);
         }
 
         @Override
-        public Boolean visit(NumberIndexCheck check, Value o) {
-            return performSubTypeCheck(o, check, "fakeNumberIndexPath", Value.makeAnyStrUInt()).isEmpty();
+        public Bool visit(NumberIndexCheck check, Value o) {
+            List<TypeViolation> subViolations = performSubTypeCheck(o, check, "fakeNumberIndexPath", Value.makeAnyStrUInt());
+            if (subViolations.isEmpty()) {
+                return Value.makeBool(true);
+            }
+            if (subViolations.stream().anyMatch(violation -> !violation.definite)) {
+                return Value.makeAnyBool();
+            }
+            return Value.makeBool(false);
         }
 
         @Override
-        public Boolean visit(StringIndexCheck check, Value o) {
-            if (o.isMaybeUndef() && o.restrictToNotUndef().isNone()) {
-                return true;
+        public Bool visit(StringIndexCheck check, Value o) {
+            if (o.isMaybeUndef()) {
+                return Value.makeBool(true);
             }
             if (!o.isNotBool()) {
-                return false;
+                return Value.makeBool(false);
             }
-            return performSubTypeCheck(o, check, "fakeStringIndexPath", Value.makeAnyStr()).isEmpty();
+            List<TypeViolation> subViolations = performSubTypeCheck(o, check, "fakeStringIndexPath", Value.makeAnyStr());
+            if (subViolations.isEmpty()) {
+                return Value.makeBool(true);
+            }
+            if (subViolations.stream().anyMatch(violation -> !violation.definite)) {
+                return Value.makeAnyBool();
+            }
+            return Value.makeBool(false);
         }
 
         @Override
-        public Boolean visit(ExpressionCheck check, Value o) { // TODO: This is very rarely used, and we should be able to switch-case us out of every case where it is used.
+        public Bool visit(ExpressionCheck check, Value o) { // TODO: This is very rarely used, and we should be able to switch-case us out of every case where it is used.
             Expression exp = check.getGenerator().apply(AstBuilder.number(1337));
             if (exp instanceof BooleanLiteral) {
-                return ((BooleanLiteral) exp).getBooleanValue();
+                return Value.makeBool(((BooleanLiteral) exp).getBooleanValue());
             }
             System.err.println("Skipping check" + check + " against " + o);
-            return true;
+            return Value.makeBool(true);
         }
 
 
     }
 
-    private class CheckEqualityVisitor implements ExpressionVisitor<Boolean> {
+    private class CheckEqualityVisitor implements ExpressionVisitor<Bool> {
         private Value o;
 
         public CheckEqualityVisitor(Value o) {
@@ -333,93 +393,101 @@ public class TajsTypeChecker {
         }
 
         @Override
-        public Boolean visit(BinaryExpression binOp) {
+        public Bool visit(BinaryExpression binOp) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(BooleanLiteral bool) {
+        public Bool visit(BooleanLiteral bool) {
+            if (o.isNotBool()) {
+                return Value.makeBool(false);
+            }
             if (o.isMaybeAnyBool()) {
-                return false;
+                return Value.makeAnyBool();
             }
-            if (bool.getBooleanValue()) {
-                return o.isMaybeTrue();
-            } else {
-                return o.isMaybeFalse();
-            }
+            return Value.makeBool(bool.getBooleanValue() && o.isMaybeTrueButNotFalse() || !bool.getBooleanValue() && o.isMaybeFalseButNotTrue());
         }
 
         @Override
-        public Boolean visit(CallExpression callExpression) {
+        public Bool visit(CallExpression callExpression) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(CommaExpression commaExpression) {
+        public Bool visit(CommaExpression commaExpression) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(ConditionalExpression conditionalExpression) {
+        public Bool visit(ConditionalExpression conditionalExpression) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(FunctionExpression functionExpression) {
+        public Bool visit(FunctionExpression functionExpression) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(Identifier identifier) {
+        public Bool visit(Identifier identifier) {
             switch (identifier.getName()) {
                 case "Array":
                 case "String": {
                     if (!o.isMaybeObject()) {
-                        return false;
+                        return Value.makeBool(false);
                     }
                     ObjectLabel label = o.getObjectLabels().iterator().next();
                     if (label.getHostObject().getAPI() != HostAPIs.ECMASCRIPT_NATIVE) {
-                        return false;
+                        return Value.makeBool(false);
                     }
                     ECMAScriptObjects nativeObj = (ECMAScriptObjects) label.getHostObject();
-                    return nativeObj.toString().equals(identifier.getName());
+                    return Value.makeBool(nativeObj.toString().equals(identifier.getName()));
                 }
             }
             throw new RuntimeException("Identifier: " + identifier.getName());
         }
 
         @Override
-        public Boolean visit(MemberExpression memberExpression) {
+        public Bool visit(MemberExpression memberExpression) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(DynamicAccessExpression memberLookupExpression) {
+        public Bool visit(DynamicAccessExpression memberLookupExpression) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(MethodCallExpression methodCallExpression) {
+        public Bool visit(MethodCallExpression methodCallExpression) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(NewExpression newExpression) {
+        public Bool visit(NewExpression newExpression) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(NullLiteral nullLiteral) {
-            return o.isMaybeNull();
+        public Bool visit(NullLiteral nullLiteral) {
+            return Value.makeBool(o.isMaybeNull());
         }
 
         @Override
-        public Boolean visit(NumberLiteral numberLiteral) {
-            return !o.isMaybeAnyNum() && o.isMaybeNum(numberLiteral.getNumber());
+        public Bool visit(NumberLiteral numberLiteral) {
+            if (o.isNotNum()) {
+                return Value.makeBool(false);
+            }
+            if (!o.isMaybeNum(numberLiteral.getNumber())) {
+                return Value.makeBool(false);
+            }
+            if (!o.isMaybeFuzzyNum()) {
+                return Value.makeBool(true);
+            }
+            return Value.makeAnyBool();
         }
 
         @Override
-        public Boolean visit(ObjectLiteral objectLiteral) {
+        public Bool visit(ObjectLiteral objectLiteral) {
             if (objectLiteral.getProperties().isEmpty()) {
                 return Check.typeOf("object").accept(new CheckChecker(), this.o);
             }
@@ -427,42 +495,51 @@ public class TajsTypeChecker {
         }
 
         @Override
-        public Boolean visit(StringLiteral stringLiteral) {
-            return !o.isMaybeAnyStr() && o.isMaybeStr(stringLiteral.getString());
+        public Bool visit(StringLiteral stringLiteral) {
+            if (o.isNotStr()) {
+                return Value.makeBool(false);
+            }
+            if (!o.isMaybeStr(stringLiteral.getString())) {
+                return Value.makeBool(false);
+            }
+            if (!o.isMaybeFuzzyStr()) {
+                return Value.makeBool(true);
+            }
+            return Value.makeAnyBool();
         }
 
         @Override
-        public Boolean visit(ThisExpression thisExpression) {
+        public Bool visit(ThisExpression thisExpression) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(UnaryExpression unaryExpression) {
+        public Bool visit(UnaryExpression unaryExpression) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(UndefinedLiteral undefinedLiteral) {
+        public Bool visit(UndefinedLiteral undefinedLiteral) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(GetterExpression getter) {
+        public Bool visit(GetterExpression getter) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(SetterExpression setter) {
+        public Bool visit(SetterExpression setter) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(ArrayLiteral arrayLiteral) {
+        public Bool visit(ArrayLiteral arrayLiteral) {
             throw new RuntimeException();
         }
 
         @Override
-        public Boolean visit(RegExpExpression regExp) {
+        public Bool visit(RegExpExpression regExp) {
             throw new RuntimeException();
         }
     }

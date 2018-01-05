@@ -22,7 +22,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -38,8 +40,7 @@ import static org.junit.Assert.assertTrue;
 
 public class TAJSUnitTests {
     private static TajsAnalysisResults run(String folderName) throws Exception {
-        TajsAnalysisResults result = run(benchFromFolder(folderName, options()));
-        return result;
+        return run(benchFromFolder(folderName, options()));
     }
 
     private static TajsAnalysisResults run(String folderName, OptionsI.Builder options) throws Exception {
@@ -1434,5 +1435,17 @@ public class TAJSUnitTests {
             assertThat(result.detectedViolations.get("\"axios\".request").size(), is(1));
             assertThat(result.detectedViolations.get("\"axios\".request").iterator().next().definite, is(false));
         }
+    }
+
+    @Test
+    public void maybeViolationsOnLiterals() throws Exception {
+        TajsAnalysisResults result = run("maybeViolationsOnLiterals");
+
+        assertThat(result.detectedViolations.asMap().entrySet(), hasSize(3));
+
+        result.detectedViolations.asMap().entrySet().stream().map(Map.Entry::getValue).flatMap(Collection::stream).forEach(violation -> {
+            System.out.println(violation.path);
+            assertThat(violation.definite, is(false));
+        });
     }
 }
