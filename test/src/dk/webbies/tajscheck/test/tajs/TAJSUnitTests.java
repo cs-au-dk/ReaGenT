@@ -15,6 +15,7 @@ import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
+import dk.webbies.tajscheck.util.Util;
 import org.hamcrest.MatcherAssert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1414,5 +1415,24 @@ public class TAJSUnitTests {
     @Test // smoke test, it just shouldn't crash.
     public void undefinedRegisterException() throws Exception {
         run("undefinedRegisterException");
+    }
+
+    @Test
+    @Ignore  // https://github.com/cs-au-dk/TAJS-private/issues/523
+    public void forInOnPrototypeProperties() throws Exception {
+        String out = Util.runNodeScript("test/tajsUnit/forInOnPrototypeProperties/testImpl.js");
+
+        // Precondition: When concretely executed, it works fine.
+        assertThat(out.trim(), is("[Function: wrap]"));
+
+        // When TAJS executes it, it does not.
+        TajsAnalysisResults result = run("forInOnPrototypeProperties");
+        System.out.println(result);
+
+        // If there is an exception, is must not be definite.
+        if (result.detectedViolations.containsKey("\"axios\".request")) {
+            assertThat(result.detectedViolations.get("\"axios\".request").size(), is(1));
+            assertThat(result.detectedViolations.get("\"axios\".request").iterator().next().definite, is(false));
+        }
     }
 }
