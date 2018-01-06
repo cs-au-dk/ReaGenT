@@ -127,7 +127,10 @@ public class NativesInstantiator {
             case "WebGLRenderingContext":
                 return constructFromPrototype(info, DOMObjects.WEBGLRENDERINGCONTEXT_PROTOTYPE, c);
             case "Object":
-                return specInstantiator.instantiate(SpecReader.makeEmptySyntheticInterfaceType(), info, step);
+                ObjectLabel ex = ObjectLabel.make(c.getNode(), ObjectLabel.Kind.OBJECT);
+                c.getState().newObject(ex);
+                c.getState().writeInternalPrototype(ex, Value.makeObject(InitialStateBuilder.OBJECT_PROTOTYPE));
+                return Value.makeObject(ex);
             case "XMLHttpRequest":
                 return Value.makeObject(XmlHttpRequest.INSTANCES);
             case "HTMLTextAreaElement":

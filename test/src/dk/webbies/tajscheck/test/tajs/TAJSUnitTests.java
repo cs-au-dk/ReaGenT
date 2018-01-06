@@ -1448,4 +1448,9 @@ public class TAJSUnitTests {
             assertThat(violation.definite, is(false));
         });
     }
+
+    @Test(timeout = 20000)
+    public void creatingObjectResultsInInfiniteLoop() throws Exception {
+        TajsAnalysisResults result = run("creatingObjectResultsInInfiniteLoop");
+    }
 }
