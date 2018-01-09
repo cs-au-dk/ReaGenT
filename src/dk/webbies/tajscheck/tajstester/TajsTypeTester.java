@@ -123,7 +123,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 valueHandler.clearCreatedValueCache();
                 valueHandler.clearValuesForTest(test);
                 Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
-                propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT, allTestsBlock);
+                propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT);
                 State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
                 c.withState(testState, () -> {
@@ -148,7 +148,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         valueHandler.clearValuesForTest(null); // null is the special test used for saved arguments from higher-order-functions.
 
-        propagateStateToContext(c, allTestsContext, Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY, allTestsBlock);
+        propagateStateToContext(c, allTestsContext, Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
 
         endOfInnerLoopCallbacks.forEach(Runnable::run);
         endOfInnerLoopCallbacks.clear();
@@ -230,7 +230,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 }
 
                 // Propagate previous state into this, chaining the flow
-                propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT, allTestsBlock);
+                propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT);
 
                 State testState = c.getAnalysisLatticeElement().getState(allTestsBlock, newc);
 
@@ -247,7 +247,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         return progress;
     }
 
-    private void propagateStateToContext(Solver.SolverInterface c, Context newc, Timers.Tags propagatingToThisContext, BasicBlock allTestsBlock) {
+    private void propagateStateToContext(Solver.SolverInterface c, Context newc, Timers.Tags propagatingToThisContext) {
         timers.start(propagatingToThisContext);
         if (previousTestContext != null) {
             State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
@@ -343,7 +343,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
         timers.stop(Timers.Tags.INITIAL_STATE_PROPAGATION_TO_TEST_ENTRY);
         if(valueHandler == null) {
-            valueHandler = new TypeValuesHandler(info.typeNames, c, info);
+            valueHandler = new TypeValuesHandler(info.typeNames, c, info, this);
         }
     }
 
@@ -492,5 +492,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public BenchmarkInfo getBenchmarkInfo() {
         return info;
+    }
+
+    public BasicBlock getAllTestsBlock() {
+        return allTestsBlock;
+    }
+
+    public Context getAllTestsContext() {
+        return allTestsContext;
     }
 }

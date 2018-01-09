@@ -9,6 +9,7 @@ import dk.brics.tajs.lattice.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
+import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.tajstester.TypeValuesHandler;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -40,8 +41,6 @@ public class SpecInstantiator {
 
     private final ObjectLabelKindDecider objectLabelKindDecider;
 
-    private final CanonicalHostObjectLabelPaths canonicalHostObjectLabelPaths;
-
     private final Effects effects;
     private final BenchmarkInfo info;
 
@@ -55,21 +54,18 @@ public class SpecInstantiator {
     private Value defaultAnyString;
     private NativesInstantiator nativesInstantiator;
 
-    public SpecInstantiator(Solver.SolverInterface c, BenchmarkInfo info, TypeValuesHandler valueHandler) {
+    public SpecInstantiator(Solver.SolverInterface c, BenchmarkInfo info, TypeValuesHandler valueHandler, TajsTypeTester tajsTypeTester) {
         this.global = info.getSpec().getGlobal();
         this.valueHandler = valueHandler;
         this.visitor = new InstantiatorVisitor();
         this.objectLabelKindDecider = new ObjectLabelKindDecider();
-        this.canonicalHostObjectLabelPaths = new CanonicalHostObjectLabelPaths(c.getState().getStore().keySet()); // TODO: See what is inside this thing.
         this.labelCache = newMap();
         this.valueCache = newMap();
         this.processing = newSet();
         this.effects = new Effects(c);
-        this.nativesInstantiator = new NativesInstantiator(info, this);
+        this.nativesInstantiator = new NativesInstantiator(info, this, tajsTypeTester);
         this.info = info;
         this.c = c;
-
-        initializeLabelsCacheWithCanonicals();
     }
 
     private void initAnyStr() {
@@ -135,39 +131,6 @@ public class SpecInstantiator {
         info.typeNames.put(any, "any");
 
         this.any = instantiate(any, new MiscInfo("any", TypeContext.create(info), null), "theAny");
-    }
-
-    /**
-     * Ensures that whenever a type T with a canonical representation is encountered, the canonical version is used.
-     */
-    private void initializeLabelsCacheWithCanonicals() {
-        canonicalHostObjectLabelPaths.getPaths().forEach(p -> {
-                    if (singletonList("print").equals(p) || singletonList("alert").equals(p) || singletonList("unescape").equals(p) || singletonList("escape").equals(p) || p.get(p.size() - 1).equals("toString")) {
-                        return;
-                    }
-
-                    if (!p.isEmpty() && p.iterator().next().equals("Symbol")) {
-                        return;
-                    }
-                    if (p.get(p.size() - 1).endsWith("instances")) {
-                        return;
-                    }
-                    if (Arrays.asList("Object", "module").equals(p) || Arrays.asList("module", "exports").equals(p) || Collections.singletonList("module").equals(p)) {
-                        return;
-                    }
-                    if (p.get(0).equals("HTMLListIndexElement")) { // deprecated, and not actually a thing, but included in TAJS.
-                        return;
-                    }
-
-                    TypeWithContext type = resolveType(p);
-                    if (type == null) {
-                        return;
-                    }
-                    Stack<String> stack = new Stack<>();
-                    stack.addAll(p);
-                    labelCache.put(type, canonicalHostObjectLabelPaths.get(stack));
-                }
-        );
     }
 
     private TypeWithContext resolveType(List<String> path) {
@@ -295,10 +258,9 @@ public class SpecInstantiator {
     private ObjectLabel getObjectLabel(Type type, MiscInfo info) {
         TypeWithContext key = new TypeWithContext(type, info.context);
         if (!labelCache.containsKey(key)) {
-            // (this call should not lead to recursion)
-            final ObjectLabel label;
-            if (canonicalHostObjectLabelPaths.has(info.path)) {
-                label = canonicalHostObjectLabelPaths.get(info.path);
+            ObjectLabel label;
+            if (nativesInstantiator.shouldConstructAsNative(type)) {
+                label = nativesInstantiator.createObjectLabel(type, SpecObjects.getObjectAbstraction(info.path, key));
             } else {
                 label = makeObjectLabel(type, info);
             }
@@ -340,9 +302,7 @@ public class SpecInstantiator {
             Value value;
             ObjectLabel label = getObjectLabel(type, info);
             info = info.withlabel(label);
-            if (nativesInstantiator.shouldConstructAsNative(type)) {
-                value = nativesInstantiator.instantiateNative(type, info, step, c);
-            } else if (processing.contains(key) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
+            if (processing.contains(key) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
                 // trying to instantiate a (recursive) type that is already being instantiated
                 assert labelCache.containsKey(new TypeWithContext(type, info.context));
                 if (label == null) {
@@ -353,7 +313,11 @@ public class SpecInstantiator {
                 processing.add(key);
                 try {
                     log.debug("Visiting: " + info.path.toString());
-                    value = type.accept(visitor, info);
+                    if (nativesInstantiator.shouldConstructAsNative(type)) {
+                        value = nativesInstantiator.instantiateNative(type, info, c);
+                    } else {
+                        value = type.accept(visitor, info);
+                    }
                 } finally {
                     processing.remove(key);
                 }
@@ -363,8 +327,13 @@ public class SpecInstantiator {
                             Value.makeObject(
                                     value.getObjectLabels()
                                             .stream()
-                                            .filter(subLabel -> subLabel.getHostObject() instanceof SpecObjects.TypedObject)
-                                            .map(effects::summarize)
+                                            .map(subLabel -> {
+                                                if (subLabel.getHostObject() instanceof SpecObjects.TypedObject) {
+                                                    return effects.summarize(subLabel);
+                                                } else {
+                                                    return subLabel;
+                                                }
+                                            })
                                             .collect(Collectors.toSet()))
                     );
                 }
@@ -410,7 +379,7 @@ public class SpecInstantiator {
         return label;
     }
 
-    private Value withNewObject(MiscInfo info, Consumer<ObjectLabel> initializer) {
+    Value withNewObject(MiscInfo info, Consumer<ObjectLabel> initializer) {
         ObjectLabel label = info.labelToUse;
         if (label == null) {
             throw new NullPointerException();
@@ -438,6 +407,20 @@ public class SpecInstantiator {
 
     public void clearValueCache() {
         valueCache.clear();
+    }
+
+    private final Map<TypeWithContext, TypeWithContext> typeConversionCache = new HashMap<>();
+
+    Value convertType(Type type, MiscInfo info, Supplier<TypeWithContext> converter) {
+        TypeWithContext key = new TypeWithContext(type, info.context);
+        if (typeConversionCache.containsKey(key)) {
+            TypeWithContext result = typeConversionCache.get(key);
+            return instantiate(result.getType(), info.withContext(result.getTypeContext()), null);
+        } else {
+            TypeWithContext converted = converter.get();
+            typeConversionCache.put(key, converted);
+            return instantiate(converted.getType(), info.withContext(converted.getTypeContext()), null);
+        }
     }
 
     private class InstantiatorVisitor implements TypeVisitorWithArgument<Value, MiscInfo> {
@@ -614,21 +597,6 @@ public class SpecInstantiator {
         @Override
         public Value visit(NumberLiteral t, MiscInfo miscInfo) {
             return Value.makeNum(t.getValue());
-        }
-
-
-        private final Map<TypeWithContext, TypeWithContext> typeConversionCache = new HashMap<>();
-
-        private Value convertType(Type type, MiscInfo info, Supplier<TypeWithContext> converter) {
-            TypeWithContext key = new TypeWithContext(type, info.context);
-            if (typeConversionCache.containsKey(key)) {
-                TypeWithContext result = typeConversionCache.get(key);
-                return instantiate(result.getType(), info.withContext(result.getTypeContext()), null);
-            } else {
-                TypeWithContext converted = converter.get();
-                typeConversionCache.put(key, converted);
-                return instantiate(converted.getType(), info.withContext(converted.getTypeContext()), null);
-            }
         }
 
         @Override

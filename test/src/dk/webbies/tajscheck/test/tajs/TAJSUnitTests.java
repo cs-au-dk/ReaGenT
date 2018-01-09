@@ -759,7 +759,7 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
-    @Test
+    @Test(timeout = 20000)
     public void createWeakObjects() throws Exception {
         run("createWeakObjects");
     }
@@ -1452,5 +1452,36 @@ public class TAJSUnitTests {
     @Test(timeout = 20000)
     public void creatingObjectResultsInInfiniteLoop() throws Exception {
         TajsAnalysisResults result = run("creatingObjectResultsInInfiniteLoop");
+    }
+
+    @Test
+    public void useNativeTwice() throws Exception {
+        TajsAnalysisResults result = run("useNativeTwice");
+
+        expect(result)
+                .performedAllTests();
+
+        assertThat(result.detectedViolations.asMap().entrySet(), hasSize(1));
+
+        expect(result)
+                .forPath("module.foo(obj)")
+                .hasNoViolations()
+                .hasNoWarnings();
+
+        expect(result)
+                .forPath("module.bar(obj)")
+                .hasViolations();
+    }
+
+    @Test
+    public void createNatives() throws Exception {
+        TajsAnalysisResults result = run("createNatives", options().setUseInspector(false));
+
+        System.out.println(result);
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
     }
 }
