@@ -7,6 +7,8 @@ import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.experiments.AutomaticExperiments;
 import dk.webbies.tajscheck.test.experiments.Experiment;
 import dk.webbies.tajscheck.util.Util;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,59 +21,72 @@ public class TajsCheckerEvaluation {
             "PDF.js",
             "box2dweb",
             "pathjs",
-            "async",
-            "axios",
             "Handlebars",
             "CreateJS",
             "QUnit",
-            "RxJS",
-            "bluebird",
             "highlight.js",
-            "accounting.js",
-            "reveal.js",
-            "PhotoSwipe",
-            "Swiper",
-            "Medium Editor", // cheap
             "Redux", // cheap
-            "PleaseJS", // cheap
-            "lunr.js", // cheap
-            "intro.js", // cheap
             "Hammer.js", // cheap
+            "PleaseJS", // cheap
+            "Sortable", // cheap
+            "accounting.js",
+            "PhotoSwipe", // (timeout in global constructor)
+            "Swiper", // (timeout in global constructor)
             "Knockout", // cheap
-            "Sortable" // cheap
+            "RxJS",
+            "lunr.js", // cheap
+            "axios", // https://github.com/cs-au-dk/TAJS-private/issues/523 / TAJSUnitTests.forInOnPrototypeProperties
+            "Medium Editor", // TAJS never terminates on the global constructor
+            "async",
+            "intro.js",
+//
+            "bluebird",
+            "reveal.js"
     );
 
     /*
+    // List of patches where filtering might have helped.
+    In knockout, i had to put that KnockoutBindingProvider.nodeHasBindings and KnockoutBindingProvider.getBindings could be undefined, as TAJS reported it.
+    In CreateJS, i had to make Ticker.framerate and Ticker.interval as potentially undefined, this might be spurious.
+     */
+
+    /*
     Current status (run on my laptop):
-    Benchmark	type	certificates	violationPaths	violations	totalTests	testsPerformed	typeCheckedTests	testSkipped	timeouts	retractions	time
-    CreateJS	BROWSER	6746	24	24	6745	1	0	6744	0	0	853,3s
-    Hammer.js (patched)	BROWSER	4952	25	26	618	8	0	610	0	0	36,2s
-    Handlebars (patched)	NODE	26469	29	29	172	98	92	74	0	0	217,3s
-    Knockout (patched)	NODE	1017	48	48	1016	1	0	1015	0	0	40,3s
-    Medium Editor	NODE	167	32	32	166	1	0	165	0	0	6,0s
-    PDF.js (patched)	BROWSER	11016	21	21	323	36	23	287	12	0	87,8s
-    PhotoSwipe	BROWSER	268	2	2	133	2	0	131	0	0	1,5s
-    PleaseJS (patched)	BROWSER	28	1	1	27	1	0	26	0	0	0,9s
-    QUnit (patched)	BROWSER	10480	32	32	130	87	56	43	13	1	3141,0s
-    Redux	NODE	20	1	1	4	4	4	0	0	0	2,1s
-    RxJS	NODE	1728	47	48	1727	1	0	1726	0	0	103,1s
-    Sortable (patched)	BROWSER	110	2	2	54	2	0	52	0	0	1,1s
-    Swiper	BROWSER	290	1	1	144	2	1	142	0	0	2,2s
-    accounting.js	BROWSER	86	1	1	85	1	0	84	0	0	1,0s
-    async (patched)	BROWSER	516	1	1	515	1	0	514	0	0	6,0s
-    axios	NODE	1050	10	10	1049	1	0	1048	0	0	27,1s
-    bluebird	NODE	6741	37	37	6740	1	0	6739	0	0	761,0s
-    box2dweb (patched)	BROWSER	2135074	619	655	1765	370	296	1395	0	0	17092,0s
-    highlight.js (patched)	NODE	41238	2	2	86	62	61	24	0	0	24,7s
-    intro.js	NODE	2	0	0	1	1	1	0	0	0	1,3s
-    lunr.js (patched)	BROWSER	374	1	1	373	1	0	372	0	0	3,6s
-    pathjs (patched)	BROWSER	2688	2	3	47	45	44	2	5	0	150,5s
-    reveal.js	BROWSER	155	1	1	154	1	0	153	0	0	1,7s
-    Total	-	2251215	939	978	22074	728	578	21346	30	1	22561,7
+    Benchmark	type	timedout	certificates	violationPaths	violations	totalTests	testsPerformed	typeCheckedTests	testSkipped	timeouts	test-exceptions	retractions	time
+    CreateJS patched	BROWSER
+    Hammer.js patched	BROWSER	false	216	185	1646	700	170	144	530	0	14	0	36,0s
+    Handlebars patched	NODE	true	133	26	26	172	90	87	82	0	10	0	10801,1s
+    Medium Editor patched	BROWSER	true	2	0	0	86	2	2	84	0	0	0	10801,0s
+    PDF.js patched	BROWSER	false	29	22	22	323	30	20	293	8	0	0	38,0s
+    PhotoSwipe	BROWSER	false	3	1	1	133	3	1	130	1	0	0	241,4s
+    PleaseJS patched	BROWSER	false	34	4	6	27	27	26	0	0	0	0	3,4s
+    QUnit patched	BROWSER	false	80	43	43	130	87	56	43	9	6	1	1828,8s
+    Redux	NODE	false	80	26	33	74	58	51	16	0	2	0	38,0s
+    RxJS patched	NODE	false	141	6232	6232	1148	141	35	1007	0	0	0	851,7s
+    Sortable patched	BROWSER	false	48	2	6	54	43	41	11	0	0	0	57,8s
+    Swiper	BROWSER	false	3	1	1	144	3	1	141	1	0	0	22,0s
+    accounting.js	BROWSER	false	77	26	110	85	81	44	4	0	0	0	381,1s
+    async patched	BROWSER	false	311	108	198	515	270	260	245	5	114	38	2326,7s
+    axios patched	NODE	false	1	1	1	3	1	0	2	0	0	0	0,9s
+    bluebird patched	NODE	true	100	0	0	6738	55	55	6683	1	28	0	10801,4s
+    box2dweb patched	BROWSER	false	3060	878	1147	1765	857	768	908	0	3	0	3729,4s
+    highlight.js patched	NODE	true	74	1	1	86	60	60	26	1	0	0	10800,6s
+    intro.js patched	NODE	false	115	6	9	54	49	49	5	12	0	0	1106,0s
+    lunr.js patched	BROWSER	false	105	102	140	373	96	61	277	0	1	0	62,5s
+    pathjs patched	BROWSER	false	56	2	3	47	45	44	2	5	0	0	149,3s
+    reveal.js	BROWSER	false	130	30	31	154	139	110	15	1	0	0	177,2s
+    Total	-	-	4798	7696	9656	12811	2307	1915	10504	44	178	39	54254,3
 
      */
 
-    public static void main(String[] args) throws IOException {
+    @Test
+    @Ignore
+    public void tmpStuff() throws Exception {
+        new Experiment("CreateJS").addExperiment(experiment()).calculate(null);
+    }
+
+    @Test
+    public void doEvaluation() throws IOException {
         {
             // warmup.
             new Experiment("Sortable").addExperiment(experiment()).calculate(null);
