@@ -7,4 +7,5 @@ export module module {
     function stringCons(x: StringConstructor) : true;
     function image(x: HTMLImageElement) : true;
     function UInt8Array(x: Uint8Array) : true;
+    function eventTarget(target:EventTarget): void;
 }

@@ -120,11 +120,9 @@ public class NativesInstantiator {
                 return Value.makeObject(ex);
             }
             case "StringConstructor":
-                return Value.makeObject(ObjectLabel.make(ECMAScriptObjects.STRING, ObjectLabel.Kind.FUNCTION));
             case "DateConstructor":
-                return Value.makeObject(ObjectLabel.make(ECMAScriptObjects.DATE, ObjectLabel.Kind.FUNCTION));
             case "ArrayConstructor":
-                return Value.makeObject(ObjectLabel.make(ECMAScriptObjects.ARRAY, ObjectLabel.Kind.FUNCTION));
+                return specInstantiator.withNewObject(info, (label) -> {});
             case "String":
                 return specInstantiator.convertType(type, info, () -> new TypeWithContext(new SimpleType(SimpleTypeKind.String), TypeContext.create(this.info)));
             case "Window":
@@ -230,11 +228,15 @@ public class NativesInstantiator {
     }
 
 
+    private Map<HostObject, ObjectLabel> prototypeCache = new HashMap<>();
     private Value constructFromPrototype(SpecInstantiator.MiscInfo info, HostObject prototype, Solver.SolverInterface c) {
-        ObjectLabel prototypeLabel = ObjectLabel.make(prototype, ObjectLabel.Kind.OBJECT);
-        c.getState().newObject(prototypeLabel);
-        c.getState().writeInternalPrototype(info.labelToUse, Value.makeObject(prototypeLabel));
-        return Value.makeObject(info.labelToUse);
+        return specInstantiator.withNewObject(info, label -> {
+            ObjectLabel prototypeLabel = prototypeCache.getOrDefault(prototype, ObjectLabel.make(prototype, ObjectLabel.Kind.OBJECT));
+            if (!c.getState().getStore().containsKey(prototypeLabel)) {
+                c.getState().newObject(prototypeLabel);
+            }
+            c.getState().writeInternalPrototype(info.labelToUse, Value.makeObject(prototypeLabel));
+        });
     }
 
     public ObjectLabel createObjectLabel(Type type, HostObject hostObject) {
@@ -257,6 +259,10 @@ public class NativesInstantiator {
                 return ObjectLabel.make(hostObject, ObjectLabel.Kind.ERROR);
             case "Array":
                 return ObjectLabel.make(hostObject, ObjectLabel.Kind.ARRAY);
+            case "ArrayConstructor":
+            case "StringConstructor":
+            case "DateConstructor":
+                return ObjectLabel.make(hostObject, ObjectLabel.Kind.FUNCTION);
         }
         return null;
     }

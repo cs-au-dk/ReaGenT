@@ -8,7 +8,7 @@ export module module {
     function stringCons(x: StringConstructor) : true;
     function image(x: HTMLImageElement) : true;
     function UInt8Array(x: Uint8Array) : true;
-
+    function eventTarget(target:EventTarget): void;
 }*/
 
 
@@ -33,5 +33,8 @@ module.exports = {
     },
     UInt8Array: function (x) {
         return x instanceof Uint8Array;
+    },
+    eventTarget: function (x) {
+        return x;
     }
 };
