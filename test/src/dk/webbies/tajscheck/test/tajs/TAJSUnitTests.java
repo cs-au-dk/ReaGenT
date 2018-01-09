@@ -1474,6 +1474,26 @@ public class TAJSUnitTests {
     }
 
     @Test
+    @Ignore // goes into infinite loop. Because somehow the bar property keeps getting new data-flow (likely because i forget to propagate something, I just cant find it).
+    public void useNativeTwiceUint8Array() throws Exception {
+        TajsAnalysisResults result = run("useNativeTwiceUint8Array");
+
+        expect(result)
+                .performedAllTests();
+
+        assertThat(result.detectedViolations.asMap().entrySet(), hasSize(1));
+
+        expect(result)
+                .forPath("module.foo(obj)")
+                .hasNoViolations()
+                .hasNoWarnings();
+
+        expect(result)
+                .forPath("module.bar(obj)")
+                .hasViolations();
+    }
+
+    @Test
     public void createNatives() throws Exception {
         TajsAnalysisResults result = run("createNatives", options().setUseInspector(false));
 
