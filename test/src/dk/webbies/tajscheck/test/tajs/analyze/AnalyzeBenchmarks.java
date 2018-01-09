@@ -93,11 +93,11 @@ public class AnalyzeBenchmarks extends TestCase {
             "Modernizr", // Currently encounters "This function from WebGLRenderingContext is not yet supported: test/benchmarks/modernizr/modernizr.js:798:115" And will likely encounter many more after that one is fixed.
             "Polymer", // "Too imprecise calls to Function" during initialization
             "Sugar", // Too much mem, and too much time, just for the initialization.
-            "q",  // Uses require mechanism.
+            "q",  // Uses require mechanism to fetch dependencies.
+            "Ace", // Has catastrophic precision-loos when calling the top-level constructor.
 
             // TODO: Try on a proper machine.
-            "Ace", //
-            "Fabric.js",
+            "Fabric.js", // initialization crashes TAJS
             "Video.js",
             "P2.js", // Initialization takes too long.
             "Chart.js" // Initialization alone takes too long (not that i blame TAJS, it is ~15000 lines of JS).
