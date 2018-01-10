@@ -22,7 +22,6 @@ public class TajsCheckerEvaluation {
             "box2dweb",
             "pathjs",
             "Handlebars",
-            "CreateJS",
             "QUnit",
             "highlight.js",
             "Redux", // cheap
@@ -38,7 +37,8 @@ public class TajsCheckerEvaluation {
             "axios", // https://github.com/cs-au-dk/TAJS-private/issues/523 / TAJSUnitTests.forInOnPrototypeProperties
             "Medium Editor", // TAJS never terminates on the global constructor
             "async",
-            "intro.js",
+            "Intro.js",
+            "CreateJS",
 //
             "bluebird",
             "reveal.js"
@@ -53,7 +53,7 @@ public class TajsCheckerEvaluation {
     /*
     Current status (run on my laptop):
     Benchmark	type	timedout	certificates	violationPaths	violations	totalTests	testsPerformed	typeCheckedTests	testSkipped	timeouts	test-exceptions	retractions	time
-    CreateJS patched	BROWSER
+    CreateJS patched	BROWSER	true	2743	735	881	5821	1836	1752	3985	1	29	84	10829,5s
     Hammer.js patched	BROWSER	false	216	185	1646	700	170	144	530	0	14	0	36,0s
     Handlebars patched	NODE	true	133	26	26	172	90	87	82	0	10	0	10801,1s
     Medium Editor patched	BROWSER	true	2	0	0	86	2	2	84	0	0	0	10801,0s
@@ -71,7 +71,7 @@ public class TajsCheckerEvaluation {
     bluebird patched	NODE	true	100	0	0	6738	55	55	6683	1	28	0	10801,4s
     box2dweb patched	BROWSER	false	3060	878	1147	1765	857	768	908	0	3	0	3729,4s
     highlight.js patched	NODE	true	74	1	1	86	60	60	26	1	0	0	10800,6s
-    intro.js patched	NODE	false	115	6	9	54	49	49	5	12	0	0	1106,0s
+    Intro.js patched	NODE	false	115	6	9	54	49	49	5	12	0	0	1106,0s
     lunr.js patched	BROWSER	false	105	102	140	373	96	61	277	0	1	0	62,5s
     pathjs patched	BROWSER	false	56	2	3	47	45	44	2	5	0	0	149,3s
     reveal.js	BROWSER	false	130	30	31	154	139	110	15	1	0	0	177,2s

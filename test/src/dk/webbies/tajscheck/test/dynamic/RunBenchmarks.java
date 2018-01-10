@@ -172,7 +172,7 @@ public class RunBenchmarks {
 
         register(new Benchmark("highlight.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/highlight/highlight.js", "test/benchmarks/highlight/highlight.d.ts", NODE, options));
 
-        register(new Benchmark("intro.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/intro/intro.js", "test/benchmarks/intro/intro.d.ts", NODE, options));
+        register(new Benchmark("Intro.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/intro/intro.js", "test/benchmarks/intro/intro.d.ts", NODE, options));
 
         register(new Benchmark("Swiper", ParseDeclaration.Environment.ES5Core, "test/benchmarks/swiper/swiper.js", "test/benchmarks/swiper/swiper.d.ts", BROWSER, options));
 

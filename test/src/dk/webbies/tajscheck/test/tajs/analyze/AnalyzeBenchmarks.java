@@ -56,7 +56,7 @@ public class AnalyzeBenchmarks extends TestCase {
             "lunr.js", // can analyze. But plenty or errors in top-level constructors, meaning we skip a lot of tests.
             "bluebird", // TODO: Sometimes the initialization crashes.
             "QUnit", // Takes about 40 minutes on my laptop, and has plenty of timeouts.
-            "intro.js",
+            "Intro.js",
             "Redux", //
             "highlight.js", // Include any of the highlight functions, and it takes forever. Exclude them, done in 15 seconds.
 
