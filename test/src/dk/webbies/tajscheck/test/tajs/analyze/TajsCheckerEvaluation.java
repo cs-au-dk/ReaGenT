@@ -18,30 +18,56 @@ import java.util.stream.Collectors;
 
 public class TajsCheckerEvaluation {
     private static final List<String> benchmarksToEvaluate = Arrays.asList(
-            "PDF.js",
-            "box2dweb",
-            "pathjs",
-            "QUnit",
-            "Redux", // cheap
-            "Hammer.js", // cheap
-            "PleaseJS", // cheap
-            "Sortable", // cheap
-            "accounting.js",
-            "PhotoSwipe", // (timeout in global constructor)
-            "Swiper", // (timeout in global constructor)
-            "Knockout", // cheap
-            "RxJS",
-            "lunr.js", // cheap
-            "axios", // https://github.com/cs-au-dk/TAJS-private/issues/523 / TAJSUnitTests.forInOnPrototypeProperties
-            "async",
-            "Intro.js",
+            "Hammer.js", // 36,0s
+            "PDF.js", // 38,0s
+            "lunr.js", // 62,5s
+
+            "PhotoSwipe", // 241,4s
+            "accounting.js", // 381,1s
+            "pathjs", // 149,3s
+            "reveal.js" // 177,2s
+            /*
+                QUnit patched	BROWSER	false	80	43	43	130	87	56	43	9	6	1	1828,8s
+    Hammer.js patched	BROWSER	false	216	185	1646	700	170	144	530	0	14	0	36,0s
+    PDF.js patched	BROWSER	false	29	22	22	323	30	20	293	8	0	0	38,0s
+    PhotoSwipe	BROWSER	false	3	1	1	133	3	1	130	1	0	0	241,4s
+    PleaseJS patched	BROWSER	false	34	4	6	27	27	26	0	0	0	0	3,4s
+    Redux	NODE	false	80	26	33	74	58	51	16	0	2	0	38,0s
+    Sortable patched	BROWSER	false	48	2	6	54	43	41	11	0	0	0	57,8s
+    Swiper	BROWSER	false	3	1	1	144	3	1	141	1	0	0	22,0s
+    accounting.js	BROWSER	false	77	26	110	85	81	44	4	0	0	0	381,1s
+    axios patched	NODE	false	1	1	1	3	1	0	2	0	0	0	0,9s
+    lunr.js patched	BROWSER	false	105	102	140	373	96	61	277	0	1	0	62,5s
+    pathjs patched	BROWSER	false	56	2	3	47	45	44	2	5	0	0	149,3s
+    reveal.js	BROWSER	false	130	30	31	154	139	110	15	1	0	0	177,2s
+    async patched	BROWSER	false	311	108	198	515	270	260	245	5	114	38	2326,7s
+             */
+
+
+//            "PDF.js",
+//            "box2dweb",
+//            "pathjs",
+//            "QUnit",
+//            "Redux", // cheap
+//            "Hammer.js", // cheap
+//            "PleaseJS", // cheap
+//            "Sortable", // cheap
+//            "accounting.js",
+//            "PhotoSwipe", // (timeout in global constructor)
+//            "Swiper", // (timeout in global constructor)
+//            "Knockout", // cheap
+//            "RxJS",
+//            "lunr.js", // cheap
+//            "axios", // https://github.com/cs-au-dk/TAJS-private/issues/523 / TAJSUnitTests.forInOnPrototypeProperties
+//            "async",
+//            "Intro.js",
 //            "CreateJS", // TODO: Comment in.
 //            "Handlebars",
 //            "highlight.js",
 //            "Medium Editor", // TAJS never terminates on the global constructor
 //            "bluebird",
 
-            "reveal.js"
+//            "reveal.js"
     );
 
     /*
@@ -58,23 +84,23 @@ public class TajsCheckerEvaluation {
     highlight.js patched	NODE	true	74	1	1	86	60	60	26	1	0	0	10800,6s
     Medium Editor patched	BROWSER	true	2	0	0	86	2	2	84	0	0	0	10801,0s
     bluebird patched	NODE	true	100	0	0	6738	55	55	6683	1	28	0	10801,4s
+    QUnit patched	BROWSER	false	80	43	43	130	87	56	43	9	6	1	1828,8s
     Hammer.js patched	BROWSER	false	216	185	1646	700	170	144	530	0	14	0	36,0s
     PDF.js patched	BROWSER	false	29	22	22	323	30	20	293	8	0	0	38,0s
     PhotoSwipe	BROWSER	false	3	1	1	133	3	1	130	1	0	0	241,4s
     PleaseJS patched	BROWSER	false	34	4	6	27	27	26	0	0	0	0	3,4s
-    QUnit patched	BROWSER	false	80	43	43	130	87	56	43	9	6	1	1828,8s
     Redux	NODE	false	80	26	33	74	58	51	16	0	2	0	38,0s
-    RxJS patched	NODE	false	141	6232	6232	1148	141	35	1007	0	0	0	851,7s
     Sortable patched	BROWSER	false	48	2	6	54	43	41	11	0	0	0	57,8s
     Swiper	BROWSER	false	3	1	1	144	3	1	141	1	0	0	22,0s
     accounting.js	BROWSER	false	77	26	110	85	81	44	4	0	0	0	381,1s
-    async patched	BROWSER	false	311	108	198	515	270	260	245	5	114	38	2326,7s
     axios patched	NODE	false	1	1	1	3	1	0	2	0	0	0	0,9s
-    box2dweb patched	BROWSER	false	3060	878	1147	1765	857	768	908	0	3	0	3729,4s
-    Intro.js patched	NODE	false	115	6	9	54	49	49	5	12	0	0	1106,0s
     lunr.js patched	BROWSER	false	105	102	140	373	96	61	277	0	1	0	62,5s
     pathjs patched	BROWSER	false	56	2	3	47	45	44	2	5	0	0	149,3s
     reveal.js	BROWSER	false	130	30	31	154	139	110	15	1	0	0	177,2s
+    async patched	BROWSER	false	311	108	198	515	270	260	245	5	114	38	2326,7s
+    Intro.js patched	NODE	false	115	6	9	54	49	49	5	12	0	0	1106,0s
+    RxJS patched	NODE	false	141	6232	6232	1148	141	35	1007	0	0	0	851,7s
+    box2dweb patched	BROWSER	false	3060	878	1147	1765	857	768	908	0	3	0	3729,4s
     Total	-	-	4798	7696	9656	12811	2307	1915	10504	44	178	39	54254,3
 
      */
@@ -82,7 +108,7 @@ public class TajsCheckerEvaluation {
     @Test
     @Ignore
     public void tmpStuff() throws Exception {
-        new Experiment("CreateJS").addExperiment(experiment()).calculate(null);
+        new Experiment("PDF.js").addExperiment(experiment()).calculate(null);
     }
 
     @Test

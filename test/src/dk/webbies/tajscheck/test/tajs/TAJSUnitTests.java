@@ -1521,6 +1521,12 @@ public class TAJSUnitTests {
 
     }
 
+    @Test
+    public void constructAnyUnion() throws Exception {
+        run("constructAnyUnion");
+    }
+
+    // TODO: Consider a "hasReturnedNone" flag in SpecInstantiator.
     // TODO: Make include comparison with TSTest (just standard settings).
     // TODO: Create a manual experiment (possibly with automatic delta-debugging).
 

@@ -36,13 +36,24 @@ import static dk.brics.tajs.util.Collections.singleton;
 
 public class NativesInstantiator {
     private final BenchmarkInfo info;
+    private final Context initialContext;
+    private final BasicBlock initialBlock;
     private SpecInstantiator specInstantiator;
     private TajsTypeTester tajsTypeTester;
 
-    public NativesInstantiator(BenchmarkInfo info, SpecInstantiator specInstantiator, TajsTypeTester tajsTypeTester) {
+    public NativesInstantiator(BenchmarkInfo info, SpecInstantiator specInstantiator, TajsTypeTester tajsTypeTester, Solver.SolverInterface c) {
         this.info = info;
         this.specInstantiator = specInstantiator;
         this.tajsTypeTester = tajsTypeTester;
+
+        // by doing this, i add the call to the constructor here, and i then access the same call later. Meaning there will be a value ready
+        this.initialContext = c.getState().getContext();
+        this.initialBlock = c.getState().getBasicBlock();
+
+        evalConstructorMap.forEach((name, args) -> {
+            evalConstructor(c, name, args.toArray(new Value[0]));
+        });
+
     }
 
     public boolean shouldConstructAsNative(Type type) {
@@ -78,6 +89,17 @@ public class NativesInstantiator {
     }
 
     private Value constructFromName(Type type, SpecInstantiator.MiscInfo info, Solver.SolverInterface c, String name) {
+        if (evalConstructorMap.containsKey(name)) {
+            Value result = evalConstructor(c, name, evalConstructorMap.get(name).toArray(new Value[0]));
+            if (result.isNone()) {
+                // so i at least return the right object-label. The properties will get added from the worklist.
+                return c.withState(c.getAnalysisLatticeElement().getState(initialBlock, initialContext),() -> {
+                    return evalConstructor(c, name, evalConstructorMap.get(name).toArray(new Value[0]));
+                });
+            } else {
+                return result;
+            }
+        }
         switch (name) {
             case "Object":
                 return specInstantiator.convertType(type, info, () -> new TypeWithContext(SpecReader.makeEmptySyntheticInterfaceType(), TypeContext.create(this.info)));
@@ -148,16 +170,6 @@ public class NativesInstantiator {
                 return Value.makeObject(DOMNodeList.INSTANCES);
             case "Document":
                 return Value.makeObject(DOMDocument.INSTANCES);
-            case "Uint8Array":
-            case "Int8Array":
-            case "Uint8ClampedArray":
-            case "Int16Array":
-            case "Uint16Array":
-            case "Int32Array":
-            case "Uint32Array":
-            case "Float32Array":
-            case "Float64Array":
-                return evalConstructor(c, name, Value.makeAnyNumUInt());
             case "CanvasGradient":
                 return Value.makeObject(CanvasRenderingContext2D.GRADIENT);
             case "CanvasPattern":
@@ -177,6 +189,18 @@ public class NativesInstantiator {
             c.getAnalysis().getPropVarOperations().writeProperty(Collections.singleton(label), Value.makeAnyStrUInt(), indexValue);
             c.getAnalysis().getPropVarOperations().writeProperty(label, "length", Value.makeAnyNumUInt());
         });
+    }
+
+    private final Map<String, List<Value>> evalConstructorMap = new HashMap<>(); {
+        evalConstructorMap.put("Uint8Array", Collections.singletonList(Value.makeAnyNum()));
+        evalConstructorMap.put("Int8Array", Collections.singletonList(Value.makeAnyNum()));
+        evalConstructorMap.put("Uint8ClampedArray", Collections.singletonList(Value.makeAnyNum()));
+        evalConstructorMap.put("Int16Array", Collections.singletonList(Value.makeAnyNum()));
+        evalConstructorMap.put("Uint16Array", Collections.singletonList(Value.makeAnyNum()));
+        evalConstructorMap.put("Int32Array", Collections.singletonList(Value.makeAnyNum()));
+        evalConstructorMap.put("Uint32Array", Collections.singletonList(Value.makeAnyNum()));
+        evalConstructorMap.put("Float32Array", Collections.singletonList(Value.makeAnyNum()));
+        evalConstructorMap.put("Float64Array", Collections.singletonList(Value.makeAnyNum()));
     }
 
     private static final Map<String, Value> cachedConstructed = new HashMap<>();

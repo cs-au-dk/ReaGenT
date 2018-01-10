@@ -63,10 +63,9 @@ public class SpecInstantiator {
         this.valueCache = newMap();
         this.processing = newSet();
         this.effects = new Effects(c);
-        this.nativesInstantiator = new NativesInstantiator(info, this, tajsTypeTester);
+        this.nativesInstantiator = new NativesInstantiator(info, this, tajsTypeTester, c);
         this.info = info;
         this.c = c;
-        initAny();
     }
 
     private void initAnyStr() {
@@ -94,7 +93,7 @@ public class SpecInstantiator {
         }
     }
 
-    private Type any = null;
+    private Value any = null;
     private void initAny() {
         InterfaceType anyObj = SpecReader.makeEmptySyntheticInterfaceType();
 
@@ -131,7 +130,7 @@ public class SpecInstantiator {
         info.typeNames.put(anyObj, "any-obj");
         info.typeNames.put(any, "any");
 
-        this.any = any;
+        this.any = instantiate(any, new MiscInfo("any", TypeContext.create(info), null), "theAny");
     }
 
     private TypeWithContext resolveType(List<String> path) {
@@ -330,9 +329,6 @@ public class SpecInstantiator {
                                             .stream()
                                             .map(subLabel -> {
                                                 if (subLabel.getHostObject() instanceof SpecObjects.TypedObject) {
-                                                    if (c.getState().getObject(subLabel, false).getProperties().values().stream().anyMatch(Value::isNone)) {
-                                                        return subLabel; // This will be hit later, when the properties are non-null.
-                                                    }
                                                     return effects.summarize(subLabel);
                                                 } else {
                                                     return subLabel;
@@ -348,6 +344,8 @@ public class SpecInstantiator {
 
 
         Value result = valueCache.get(key);
+
+        assert !result.isNone();
 
         if (this.info.options.staticOptions.argumentValuesStrategy == MIX_FEEDBACK_AND_CONSTRUCTED) {
             if (feedbackValue != null) {
@@ -402,9 +400,11 @@ public class SpecInstantiator {
         return Value.makeObject(label);
     }
 
-    public Value getTheAny(MiscInfo info) {
-        assert any != null;
-        return instantiate(any, info, "theAny");
+    public Value getTheAny() {
+        if (any == null) {
+            initAny();
+        }
+        return any;
     }
 
     public void clearValueCache() {
@@ -467,7 +467,7 @@ public class SpecInstantiator {
                 writeProperties(label, declaredProperties, info);
 
                 if (type.getDeclaredStringIndexType() == null && SpecInstantiator.this.info.options.staticOptions.properWidthSubtyping) {
-                    effects.writeStringIndexer(label, getTheAny(info));
+                    effects.writeStringIndexer(label, getTheAny());
                 }
             });
         }
@@ -499,7 +499,7 @@ public class SpecInstantiator {
         public Value visit(SimpleType t, MiscInfo info) {
             switch (t.getKind()) {
                 case Any:
-                    return getTheAny(info);
+                    return getTheAny();
                 case String:
                     return makeString();
                 case Enum:
@@ -647,13 +647,13 @@ public class SpecInstantiator {
 
     }
 
-    public class MiscInfo {
+    class MiscInfo {
 
         public final List<String> path;
         public final TypeContext context;
         public final ObjectLabel labelToUse;
 
-        public MiscInfo(String initialPath, TypeContext context, ObjectLabel labelToUse) {
+        MiscInfo(String initialPath, TypeContext context, ObjectLabel labelToUse) {
             this(Arrays.asList(initialPath.split("\\.")), context, labelToUse);
         }
 
