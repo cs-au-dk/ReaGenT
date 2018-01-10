@@ -326,7 +326,9 @@ public class TAJSUtil {
         }
 
         private static ResultIndex loadOrWipe() {
-            new ResultIndex();
+            if (defaultIndexPath == null) {
+                return new ResultIndex();
+            }
             Gson gson = new Gson();
             try {
                 return gson.fromJson(Util.readFile(defaultIndexPath.toString()), ResultIndex.class);
