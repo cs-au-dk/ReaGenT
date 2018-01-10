@@ -1504,4 +1504,20 @@ public class TAJSUnitTests {
                 .hasNoViolations()
                 .hasNoWarnings();
     }
+
+    @Test
+    public void introMotivating() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("introMotivating", options(), Benchmark.RUN_METHOD.BROWSER));
+
+        System.out.println(result);
+
+        assertThat(result.detectedViolations.asMap().entrySet(), hasSize(1));
+
+        assertThat(result.detectedViolations.asMap().keySet().iterator().next(), startsWith("window.introJs.().onhintclose.[arg0].[arg0]"));
+
+        Collection<TypeViolation> violations = result.detectedViolations.asMap().values().iterator().next();
+
+        assert violations.stream().map(Object::toString).anyMatch(violation -> violation.startsWith("Definite: Expected number but found Str in test window.introJs.().onhintclose.[arg0].[arg0]"));
+
+    }
 }
