@@ -66,6 +66,7 @@ public class SpecInstantiator {
         this.nativesInstantiator = new NativesInstantiator(info, this, tajsTypeTester);
         this.info = info;
         this.c = c;
+        initAny();
     }
 
     private void initAnyStr() {
@@ -93,7 +94,7 @@ public class SpecInstantiator {
         }
     }
 
-    private Value any = null;
+    private Type any = null;
     private void initAny() {
         InterfaceType anyObj = SpecReader.makeEmptySyntheticInterfaceType();
 
@@ -130,7 +131,7 @@ public class SpecInstantiator {
         info.typeNames.put(anyObj, "any-obj");
         info.typeNames.put(any, "any");
 
-        this.any = instantiate(any, new MiscInfo("any", TypeContext.create(info), null), "theAny");
+        this.any = any;
     }
 
     private TypeWithContext resolveType(List<String> path) {
@@ -329,6 +330,9 @@ public class SpecInstantiator {
                                             .stream()
                                             .map(subLabel -> {
                                                 if (subLabel.getHostObject() instanceof SpecObjects.TypedObject) {
+                                                    if (c.getState().getObject(subLabel, false).getProperties().values().stream().anyMatch(Value::isNone)) {
+                                                        return subLabel; // This will be hit later, when the properties are non-null.
+                                                    }
                                                     return effects.summarize(subLabel);
                                                 } else {
                                                     return subLabel;
@@ -398,11 +402,9 @@ public class SpecInstantiator {
         return Value.makeObject(label);
     }
 
-    public Value getTheAny() {
-        if (any == null) {
-            initAny();
-        }
-        return any;
+    public Value getTheAny(MiscInfo info) {
+        assert any != null;
+        return instantiate(any, info, "theAny");
     }
 
     public void clearValueCache() {
@@ -465,7 +467,7 @@ public class SpecInstantiator {
                 writeProperties(label, declaredProperties, info);
 
                 if (type.getDeclaredStringIndexType() == null && SpecInstantiator.this.info.options.staticOptions.properWidthSubtyping) {
-                    effects.writeStringIndexer(label, getTheAny());
+                    effects.writeStringIndexer(label, getTheAny(info));
                 }
             });
         }
@@ -497,7 +499,7 @@ public class SpecInstantiator {
         public Value visit(SimpleType t, MiscInfo info) {
             switch (t.getKind()) {
                 case Any:
-                    return getTheAny();
+                    return getTheAny(info);
                 case String:
                     return makeString();
                 case Enum:
@@ -516,8 +518,7 @@ public class SpecInstantiator {
                     log.error("Symbols should be imprecise, they are not."); // TODO:
                     SpecObjects hostObject = SpecObjects.getObjectAbstraction(info.path, new TypeWithContext(t, info.context));
                     ObjectLabel l = ObjectLabel.make(hostObject, ObjectLabel.Kind.SYMBOL);
-                    effects.newObject(l, info);
-                    return Value.makeObject(l);
+                    return withNewObject(info.withlabel(l), (label) -> {});
                 case Object:
                     return instantiate(emptyObjectType, info, "-object");
                 default:
@@ -646,13 +647,13 @@ public class SpecInstantiator {
 
     }
 
-    class MiscInfo {
+    public class MiscInfo {
 
         public final List<String> path;
         public final TypeContext context;
         public final ObjectLabel labelToUse;
 
-        MiscInfo(String initialPath, TypeContext context, ObjectLabel labelToUse) {
+        public MiscInfo(String initialPath, TypeContext context, ObjectLabel labelToUse) {
             this(Arrays.asList(initialPath.split("\\.")), context, labelToUse);
         }
 

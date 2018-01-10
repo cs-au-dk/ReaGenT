@@ -32,7 +32,7 @@ public class TypeValuesHandler {
     }
 
     public Value getTheAny() {
-        return instantiator.getTheAny();
+        return instantiator.getTheAny(instantiator.new MiscInfo("any", TypeContext.create(info), null));
     }
 
     public Value findFeedbackValue(TypeWithContext t) {

@@ -179,7 +179,12 @@ public class NativesInstantiator {
         });
     }
 
+    private static final Map<String, Value> cachedConstructed = new HashMap<>();
+
     private Value evalConstructor(Solver.SolverInterface c, String name, Value... args) {
+        if (cachedConstructed.containsKey(name) && c.getState().getStore().containsKey(cachedConstructed.get(name).getObjectLabels().iterator().next())) {
+            return cachedConstructed.get(name);
+        }
         Context newc = makeConstructionContext(c.getState().getContext(), name);
 
         BasicBlock block = c.getState().getBasicBlock();
@@ -200,6 +205,9 @@ public class NativesInstantiator {
         });
 
         c.propagateToBasicBlock(testState.clone(), block, c.getState().getContext());
+        if (!result.isNone()) {
+            cachedConstructed.put(name, result);
+        }
 
         return result;
     }
@@ -239,7 +247,7 @@ public class NativesInstantiator {
         });
     }
 
-    public ObjectLabel createObjectLabel(Type type, HostObject hostObject) {
+    ObjectLabel createObjectLabel(Type type, HostObject hostObject) {
         String name;
         if ((type instanceof ReferenceType)) {
             name = this.info.typeNames.get(((ReferenceType) type).getTarget());

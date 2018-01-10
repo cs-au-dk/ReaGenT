@@ -1,4 +1,8 @@
 
+interface Foo {
+    bar: Uint8Array;
+}
+
 export module module {
-    function id(x: Uint8Array): Uint8Array;
+    function id(x: Foo): Foo;
 }
