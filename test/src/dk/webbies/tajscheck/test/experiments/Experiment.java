@@ -30,7 +30,7 @@ public class Experiment {
     private final List<BiConsumer<Benchmark, BiConsumer<String, String>>> experiments = new ArrayList<>();
 
     public Experiment(List<Benchmark> benchmarks) {
-        this.benchmarks = benchmarks.stream().map(bench -> new Pair<>(bench.name, bench)).sorted(Comparator.comparing(Pair::getLeft)).collect(Collectors.toList());
+        this.benchmarks = benchmarks.stream().map(bench -> new Pair<>(bench.name, bench)).sorted(Comparator.comparing(pair -> pair.getLeft().toLowerCase())).collect(Collectors.toList());
     }
 
     public Experiment(Collection<String> names) {
