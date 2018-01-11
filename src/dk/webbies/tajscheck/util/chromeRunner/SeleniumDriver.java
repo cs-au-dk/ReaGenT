@@ -15,7 +15,9 @@ import java.net.HttpURLConnection;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -43,7 +45,8 @@ public class SeleniumDriver {
             //noinspection finally
             try {
                 Thread.sleep(100);
-                driver.quit();
+
+                quit(driver);
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             } finally {
@@ -70,7 +73,7 @@ public class SeleniumDriver {
             }
             if (!gotPage.get()) {
                 killed.set(true);
-                driver.quit();
+                quit(driver);
                 try {
                     socket.close();
                 } catch (IOException ignored) { }
@@ -86,7 +89,7 @@ public class SeleniumDriver {
             }
             if (!finished.get()) {
                 killed.set(true);
-                driver.quit();
+                quit(driver);
                 try {
                     socket.close();
                 } catch (IOException ignored) { }
@@ -103,7 +106,7 @@ public class SeleniumDriver {
         } catch (org.openqa.selenium.TimeoutException e) {
             System.err.println("Selenium driver had a timeout loading the index page, trying again!");
             try {
-                driver.quit();
+                quit(driver);
                 socket.close();
             } catch (Exception ignored) {
             }
@@ -120,12 +123,45 @@ public class SeleniumDriver {
         String message = String.join("\n", server.awaitMessages());
 
         try {
-            driver.quit();
+            quit(driver);
         } catch (Exception e) {
             System.err.println("Had an error while quiting the chrome driver, continueing anyway");
         }
 
         return message;
+    }
+
+    private static void quit(ChromeDriver driver) {
+        Set<ProcessHandle> allChildren = getAllChildren(ProcessHandle.current(), new HashSet<>());
+        driver.quit();
+        // kill all orphans. This is THE reason why this project requires Java9.
+        new Thread(() -> {
+            try {
+                killAllOrphans(allChildren);
+                Thread.sleep(1000);
+                killAllOrphans(allChildren);
+                Thread.sleep(10 * 1000);
+                killAllOrphans(allChildren);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
+    }
+
+    private static void killAllOrphans(Set<ProcessHandle> allChildren) {
+        Set<ProcessHandle> newSnapshot = getAllChildren(ProcessHandle.current(), new HashSet<>());
+        allChildren.forEach(child -> {
+            if (newSnapshot.contains(child) || !child.isAlive()) {
+                return;
+            }
+            child.destroyForcibly();
+        });
+    }
+
+    private static Set<ProcessHandle> getAllChildren(ProcessHandle parent, Set<ProcessHandle> acc) {
+        acc.add(parent);
+        parent.children().forEach(child -> getAllChildren(child, acc));
+        return acc;
     }
 
     public static int get(String url) throws IOException {
@@ -180,6 +216,8 @@ public class SeleniumDriver {
         options.addArguments("disable-gpu");
         options.addArguments("no-default-browser-check");
         options.addArguments("user-data-dir=./chromedir");
+        options.addArguments("no-sandbox");
+
 
         DesiredCapabilities capabilities = DesiredCapabilities.chrome();
         LoggingPreferences loggingPreferences = new LoggingPreferences();
