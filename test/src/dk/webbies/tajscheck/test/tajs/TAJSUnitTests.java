@@ -1526,6 +1526,20 @@ public class TAJSUnitTests {
         run("constructAnyUnion");
     }
 
+    @Test
+    public void arrayTakesToLong() throws Exception {
+        // the implementation in this is a straight copy from accounting.js.
+        TajsAnalysisResults result = run(benchFromFolder("arrayTakesToLong", options().staticOptions.setRetractionPolicy(new LimitTransfersRetractionPolicy(1000, 0)), Benchmark.RUN_METHOD.BROWSER));
+
+        System.out.println(result);
+
+        expect(result)
+                .hasNoWarnings()
+                .hasNoViolations();
+
+        assertThat(result.timeoutTests, is(empty()));
+    }
+
     // TODO: Consider a "hasReturnedNone" flag in SpecInstantiator.
     // TODO: Make include comparison with TSTest (just standard settings).
     // TODO: Create a manual experiment (possibly with automatic delta-debugging).

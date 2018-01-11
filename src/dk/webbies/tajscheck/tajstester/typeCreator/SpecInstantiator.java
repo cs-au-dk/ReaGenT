@@ -386,17 +386,12 @@ public class SpecInstantiator {
         if (label == null) {
             throw new NullPointerException();
         }
-        if (label.getHostObject().getAPI() != HostAPIs.SPEC) {
-            initializer.accept(label);
-            return Value.makeObject(label);
-        }
+        assert label.getHostObject().getAPI() == HostAPIs.SPEC;
+
         // keep the object a singleton during instantiation, we create a summary later.
 
         effects.newObject(label, info);
         initializer.accept(label);
-
-        Obj object = c.getState().getObject(label, true);
-        object.setDefaultNonArrayProperty(Value.join(object.getDefaultNonArrayProperty(), Value.makeUndef(), Value.makeAbsent()));
         return Value.makeObject(label);
     }
 
