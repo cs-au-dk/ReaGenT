@@ -518,7 +518,8 @@ public class SpecInstantiator {
                     log.error("Symbols should be imprecise, they are not."); // TODO:
                     SpecObjects hostObject = SpecObjects.getObjectAbstraction(info.path, new TypeWithContext(t, info.context));
                     ObjectLabel l = ObjectLabel.make(hostObject, ObjectLabel.Kind.SYMBOL);
-                    return withNewObject(info.withlabel(l), (label) -> {});
+                    effects.newObject(l, info);
+                    return Value.makeObject(l);
                 case Object:
                     return instantiate(emptyObjectType, info, "-object");
                 default:
