@@ -180,16 +180,11 @@ public class DeltaDebug {
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
         Util.alwaysRecreate = false;
-        // TODO: analyzeBenchmarks: PeerJS, accounting.js, async
-        Benchmark bench = RunBenchmarks.benchmarks.get("PleaseJS");
-        bench = bench.withOptions(AnalyzeBenchmarks.options())
-                .withOptions(options -> options.staticOptions.setCreateSingletonObjects(true))
-                ;
-        Benchmark finalBench = bench;
+        Benchmark bench = RunBenchmarks.benchmarks.get("accounting.js").withOptions(AnalyzeBenchmarks.options());
         BooleanSupplier predicate = () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(finalBench, 180);
+                TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 180);
                 return false;
             } catch (NullPointerException e) {
                 return false;
@@ -206,11 +201,18 @@ public class DeltaDebug {
                 return false;
             }
         };
-        debug(bench.jsFile, predicate);
-        debug(bench.dTSFile, predicate);
-        debug(bench.jsFile, predicate);
-        debug(bench.dTSFile, predicate);
+        testPredicate(predicate);
         System.exit(0);
+    }
+
+    private static void testPredicate(BooleanSupplier predicate) {
+        if (predicate.getAsBoolean()) {
+            System.out.println("Success");
+            System.err.println("Success");
+        } else {
+            System.out.println("Fail");
+            System.err.println("Fail");
+        }
     }
 
     private static boolean testHasSomeError(Benchmark bench) throws Exception {
