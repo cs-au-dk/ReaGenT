@@ -1,12 +1,11 @@
 /*
+
 export module module {
-    function foo() : {
-        bar: number
-    };
+    function foo(): void;
 }*/
 
 module.exports = {
-    id: function (x) {
-        return x;
+    foo: function () {
+        return "foo bar baz".split(" ");
     }
 };
