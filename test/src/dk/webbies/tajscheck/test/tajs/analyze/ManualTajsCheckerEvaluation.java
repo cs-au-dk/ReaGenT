@@ -107,17 +107,21 @@ public class ManualTajsCheckerEvaluation {
         Util.writeFile("results/manualEval/" + counter + "/" + bench.name + ".js.original", jsFile);
 
 
-        deltaDebugViolation(bench, searchViolation);
+        boolean success = deltaDebugViolation(bench, searchViolation);
 
-        Util.writeFile("results/manualEval/" + counter + "/" + bench.name + ".d.ts", Util.readFile(bench.dTSFile));
-        Util.writeFile("results/manualEval/" + counter + "/" + bench.name + ".js", Util.readFile(bench.jsFile));
+        if (success) {
+            Util.writeFile("results/manualEval/" + counter + "/" + bench.name + ".d.ts", Util.readFile(bench.dTSFile));
+            Util.writeFile("results/manualEval/" + counter + "/" + bench.name + ".js", Util.readFile(bench.jsFile));
+        }
 
 
         Util.writeFile(bench.dTSFile, dTsFile);
         Util.writeFile(bench.jsFile, jsFile);
     }
 
-    private void deltaDebugViolation(Benchmark bench, TypeViolation searchViolation) throws IOException {
+    private boolean deltaDebugViolation(Benchmark bench, TypeViolation searchViolation) throws IOException {
+        Util.alwaysRecreate = true;
+        Util.isDeltaDebugging = true;
         BooleanSupplier predicate = () -> {
             try {
                 TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, TIMEOUT);
@@ -129,7 +133,12 @@ public class ManualTajsCheckerEvaluation {
             }
         };
 
+        if (!predicate.getAsBoolean()) {
+            return false;
+        }
+
         DeltaDebug.debug(bench.dTSFile, predicate);
         DeltaDebug.debug(bench.jsFile, predicate);
+        return true;
     }
 }
