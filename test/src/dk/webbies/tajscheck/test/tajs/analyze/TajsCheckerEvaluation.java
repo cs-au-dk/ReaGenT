@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TajsCheckerEvaluation {
-    private static final List<String> benchmarksToEvaluate = Arrays.asList(
+    static final List<String> benchmarksToEvaluate = Arrays.asList(
             "Hammer.js", // cheap. A lot fails because of TajsUnitTests.emptyValueException
             "PDF.js",
             "PhotoSwipe", // (timeout in global constructor)
@@ -84,7 +84,7 @@ public class TajsCheckerEvaluation {
     @Test
     @Ignore
     public void tmpStuff() {
-        new Experiment("Redux").addExperiment(experiment()).calculate(null);
+        new Experiment("axios").addExperiment(experiment()).calculate(null);
     }
 
     @Test
