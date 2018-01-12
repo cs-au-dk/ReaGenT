@@ -81,3 +81,5 @@ test/unit/*/coverage.js
 # Result files
 finalResult.json
 partialResult.json
+
+results/
