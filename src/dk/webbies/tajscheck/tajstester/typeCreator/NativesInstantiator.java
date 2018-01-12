@@ -123,6 +123,7 @@ public class NativesInstantiator {
                     signature.setMinArgumentCount(0);
                     signature.setParameters(Collections.singletonList(anyParameter));
                     signature.setResolvedReturnType(new SimpleType(SimpleTypeKind.Any));
+                    signature.setHasRestParameter(true);
 
                     inter.setDeclaredCallSignatures(Collections.singletonList(signature));
                     inter.setDeclaredConstructSignatures(Collections.singletonList(signature));

@@ -1552,8 +1552,17 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
-    // TODO: Consider a "hasReturnedNone" flag in SpecInstantiator.
-    // TODO: Make include comparison with TSTest (just standard settings).
+    @Test
+    public void nativeFunction() throws Exception {
+        TajsAnalysisResults result = run("nativeFunction");
+
+        expect(result)
+                .hasNoViolations()
+                .hasNoWarnings()
+                .performedAllTests();
+    }
+
+    // TODO: my "Function" doesn't work. Create one and call it with garbage, then test nothing is reported.
     // TODO: Create a manual experiment (possibly with automatic delta-debugging).
 
 
