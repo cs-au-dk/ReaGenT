@@ -1562,8 +1562,14 @@ public class TAJSUnitTests {
                 .performedAllTests();
     }
 
-    // TODO: my "Function" doesn't work. Create one and call it with garbage, then test nothing is reported.
-    // TODO: Create a manual experiment (possibly with automatic delta-debugging).
+    @Test
+    @Ignore // this shows a precision-issue, where we are unable to keep different objects in the heap separate. It seems to be related to allocation-site-abstraction, since the latest (which is singleton due to recency) does not experience any error.
+    public void twoCollections() throws Exception {
+        TajsAnalysisResults result = run("twoCollections");
 
-
+        expect(result)
+                .hasNoViolations()
+                .hasNoWarnings()
+                .performedAllTests();
+    }
 }
