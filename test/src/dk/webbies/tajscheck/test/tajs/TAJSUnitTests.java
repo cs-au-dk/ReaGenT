@@ -1563,12 +1563,25 @@ public class TAJSUnitTests {
 
     @Test
     @Ignore // this shows a precision-issue, where we are unable to keep different objects in the heap separate. It seems to be related to allocation-site-abstraction, since the latest (which is singleton due to recency) does not experience any error.
-    public void twoCollections() throws Exception {
-        TajsAnalysisResults result = run("twoCollections");
+    public void precisionIssue1() throws Exception {
+        TajsAnalysisResults result = run("precisionIssue1");
 
         expect(result)
                 .hasNoViolations()
                 .hasNoWarnings()
                 .performedAllTests();
     }
+
+    @Test
+    @Ignore // This might not be an issue at all. It is caused the "any" value being the same across function-calls, and a side-effects therefore leaks. A side-effects which is technically possible of the same object is used, however it is highly unlikely.
+    public void precisionIssue2() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("precisionIssue2", options(), Benchmark.RUN_METHOD.BROWSER));
+
+        expect(result)
+                .hasNoViolations()
+                .hasNoWarnings()
+                .performedAllTests();
+    }
+
+
 }
