@@ -19,8 +19,6 @@ public final class CheckOptions implements OptionsI {
     public final boolean writeAll;
     public final boolean onlyInitialize;
     public final boolean useTracified;
-    public final boolean useInspector;
-    public final boolean randomizePropertyOrder;
 
     public final DynamicOptions dynamicOptions;
     public final StaticOptions staticOptions;
@@ -41,8 +39,6 @@ public final class CheckOptions implements OptionsI {
         this.constructOnlyPrimitives = builder.constructOnlyPrimitives;
         this.onlyInitialize = builder.onlyInitialize;
         this.useTracified = builder.useTracified;
-        this.useInspector = builder.useInspector;
-        this.randomizePropertyOrder = builder.randomizePropertyOrder;
         this.builder = builder;
     }
 
@@ -90,8 +86,6 @@ public final class CheckOptions implements OptionsI {
         public boolean onlyInitialize = false; // If true, all tests except the initializing test is removed.
 
         public boolean useTracified = false;
-        public boolean useInspector = false;
-        public boolean randomizePropertyOrder = false; // Randomize the order of properties in Intersections, Generics and ClassTypes.
 
         public final DynamicOptions.Builder dynamicOptions = new DynamicOptions.Builder(this);
         public final StaticOptions.Builder staticOptions = new StaticOptions.Builder(this);
@@ -110,16 +104,6 @@ public final class CheckOptions implements OptionsI {
 
         public Builder setUseTracified(boolean useTracified) {
             this.useTracified = useTracified;
-            return this;
-        }
-
-        public Builder setUseInspector(boolean useInspector) {
-            this.useInspector = useInspector;
-            return this;
-        }
-
-        public Builder setRandomizePropertyOrder(boolean randomizePropertyOrder) {
-            this.randomizePropertyOrder = randomizePropertyOrder;
             return this;
         }
 

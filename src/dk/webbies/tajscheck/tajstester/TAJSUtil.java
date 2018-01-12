@@ -96,12 +96,12 @@ public class TAJSUtil {
 
 
         additionalOpts.enableUnevalizer();
-        if (bench.options.useInspector) additionalOpts.enableInspector();
+        if (bench.options.staticOptions.useInspector) additionalOpts.enableInspector();
 
         List<IAnalysisMonitoring> optMonitors = new LinkedList<>();
 
         if (secondsTimeout > 0) { // Timeout
-            AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, -1, !bench.options.useInspector);
+            AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, -1, !bench.options.staticOptions.useInspector);
             optMonitors.add(timeLimiter);
         }
 

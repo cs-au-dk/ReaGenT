@@ -24,6 +24,7 @@ public class StaticOptions implements OptionsI {
     public final boolean properWidthSubtyping;
     public final ArgumentValuesStrategy argumentValuesStrategy;
     public final boolean checkAllPropertiesAfterFunctionCall;
+    public final boolean useInspector;
 
     public enum ArgumentValuesStrategy {
         MIX_FEEDBACK_AND_CONSTRUCTED,
@@ -44,6 +45,7 @@ public class StaticOptions implements OptionsI {
         this.argumentValuesStrategy = builder.argumentValuesStrategy;
         this.properWidthSubtyping = builder.properWidthSubtyping;
         this.checkAllPropertiesAfterFunctionCall = builder.checkAllPropertiesAfterFunctionCall;
+        this.useInspector = builder.useInspector;
         this.builder = builder;
     }
 
@@ -62,6 +64,7 @@ public class StaticOptions implements OptionsI {
         private ArgumentValuesStrategy argumentValuesStrategy = ONLY_CONSTRUCTED;
         private boolean properWidthSubtyping = false;
         private boolean checkAllPropertiesAfterFunctionCall = false; // then we run through all the PropertyReadTests after a function-call, to see if it had any harmful side-effects.
+        public boolean useInspector = false;
 
         private final CheckOptions.Builder outerBuilder;
 
@@ -109,7 +112,7 @@ public class StaticOptions implements OptionsI {
         }
 
         public Builder setUseInspector(boolean useInspector) {
-            outerBuilder.setUseInspector(useInspector);
+            this.useInspector = useInspector;
             return this;
         }
 

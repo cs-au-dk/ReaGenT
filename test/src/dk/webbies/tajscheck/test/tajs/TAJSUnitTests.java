@@ -797,12 +797,11 @@ public class TAJSUnitTests {
     public void leafletMotivatingBuggy() throws Exception {
         TajsAnalysisResults buggy = run(benchFromFolder("leafletMotivating/buggy", options()
                         .setConstructAllTypes(true)
-                        .setUseInspector(false)
                         .staticOptions
-                        .setCreateSingletonObjects(true)
-                        .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
-                        .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments()
-                        )
+                            .setUseInspector(false)
+                            .setCreateSingletonObjects(true)
+                            .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
+                            .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
                 , Benchmark.RUN_METHOD.BROWSER));
 
 
@@ -817,9 +816,9 @@ public class TAJSUnitTests {
         TajsAnalysisResults fixed = run(benchFromFolder("leafletMotivating/fixed",
                 options()
                         .setConstructAllTypes(true)
-                        .setUseInspector(false)
                         .setSplitUnions(true)
                         .staticOptions
+                            .setUseInspector(false)
                             .setCreateSingletonObjects(true)
                             .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
                             .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments()
@@ -836,7 +835,7 @@ public class TAJSUnitTests {
     @Test
     @Ignore // TODO: Look at this later. I got no idea what is going on. When fixed, comment in the last method in leafletMotivating/fixed.
     public void feedbackValuesReadUndefined() throws Exception {
-        TajsAnalysisResults fixed = run("feedbackValuesReadUndefined", options().setConstructAllTypes(false).setUseInspector(false));
+        TajsAnalysisResults fixed = run("feedbackValuesReadUndefined", options().setConstructAllTypes(false).staticOptions.setUseInspector(false));
 
         System.out.println(fixed);
 
@@ -1200,8 +1199,8 @@ public class TAJSUnitTests {
     @Test
     public void noFeedbackCausesException() throws Exception {
         TajsAnalysisResults result = run("noFeedbackCausesException", options()
-                .setUseInspector(false)
                 .staticOptions
+                    .setUseInspector(false)
                     .setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE)
                     .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
         );
@@ -1286,7 +1285,7 @@ public class TAJSUnitTests {
 
     @Test
     public void directExport() throws Exception {
-        TajsAnalysisResults result = run("directExport", options().setUseInspector(false));
+        TajsAnalysisResults result = run("directExport", options().staticOptions.setUseInspector(false));
 
         expect(result)
                 .performedAllTests()
@@ -1308,8 +1307,8 @@ public class TAJSUnitTests {
     public void singletonInstanceof() throws Exception {
         TajsAnalysisResults singletons = run(benchFromFolder("singletonInstanceof",
                 options()
-                        .setUseInspector(false)
                         .staticOptions
+                            .setUseInspector(false)
                             .setCreateSingletonObjects(true)
         ));
 
@@ -1318,8 +1317,8 @@ public class TAJSUnitTests {
 
         TajsAnalysisResults summaries = run(benchFromFolder("singletonInstanceof",
                 options()
-                        .setUseInspector(false)
                         .staticOptions
+                            .setUseInspector(false)
                             .setCreateSingletonObjects(false)
         ));
 
@@ -1495,7 +1494,7 @@ public class TAJSUnitTests {
 
     @Test
     public void createNatives() throws Exception {
-        TajsAnalysisResults result = run("createNatives", options().setUseInspector(false));
+        TajsAnalysisResults result = run("createNatives", options().staticOptions.setUseInspector(false));
 
         System.out.println(result);
 

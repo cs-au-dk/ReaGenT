@@ -163,21 +163,6 @@ public class BenchmarkInfo {
         }
 
         for (Type type : allTypes) {
-            // randomizing the order of properties.
-            if (info.options.randomizePropertyOrder) {
-                if (type instanceof InterfaceType) {
-                    InterfaceType inter = (InterfaceType) type;
-                    inter.setDeclaredProperties(shuffleOrder(inter.getDeclaredProperties()));
-                } else if (type instanceof GenericType) {
-                    GenericType inter = (GenericType) type;
-                    inter.setDeclaredProperties(shuffleOrder(inter.getDeclaredProperties()));
-                } else if (type instanceof ClassType) {
-                    ClassType inter = (ClassType) type;
-                    inter.setStaticProperties(shuffleOrder(inter.getStaticProperties()));
-                    inter.setInstanceProperties(shuffleOrder(inter.getInstanceProperties()));
-                }
-            }
-
             // Generic signatures sometimes have their return-type in the target signature.
             if (type instanceof InterfaceType) {
                 InterfaceType inter = (InterfaceType) type;
