@@ -1,9 +1,11 @@
 package dk.webbies.tajscheck.test.tajs.analyze;
 
+import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
+import dk.webbies.tajscheck.test.dynamic.UnitTests;
 import dk.webbies.tajscheck.test.experiments.AutomaticExperiments;
 import dk.webbies.tajscheck.test.experiments.Experiment;
 import dk.webbies.tajscheck.util.Util;
@@ -15,64 +17,38 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TajsCheckerEvaluation {
     private static final List<String> benchmarksToEvaluate = Arrays.asList(
-            "Hammer.js", // 36,0s
-            "PDF.js", // 38,0s
-            "lunr.js", // 62,5s
-
-            "PhotoSwipe", // 241,4s
-            "accounting.js", // 381,1s
-            "pathjs", // 149,3s
-            "reveal.js" // 177,2s
-            /*
-                QUnit patched	BROWSER	false	80	43	43	130	87	56	43	9	6	1	1828,8s
-    Hammer.js patched	BROWSER	false	216	185	1646	700	170	144	530	0	14	0	36,0s
-    PDF.js patched	BROWSER	false	29	22	22	323	30	20	293	8	0	0	38,0s
-    PhotoSwipe	BROWSER	false	3	1	1	133	3	1	130	1	0	0	241,4s
-    PleaseJS patched	BROWSER	false	34	4	6	27	27	26	0	0	0	0	3,4s
-    Redux	NODE	false	80	26	33	74	58	51	16	0	2	0	38,0s
-    Sortable patched	BROWSER	false	48	2	6	54	43	41	11	0	0	0	57,8s
-    Swiper	BROWSER	false	3	1	1	144	3	1	141	1	0	0	22,0s
-    accounting.js	BROWSER	false	77	26	110	85	81	44	4	0	0	0	381,1s
-    axios patched	NODE	false	1	1	1	3	1	0	2	0	0	0	0,9s
-    lunr.js patched	BROWSER	false	105	102	140	373	96	61	277	0	1	0	62,5s
-    pathjs patched	BROWSER	false	56	2	3	47	45	44	2	5	0	0	149,3s
-    reveal.js	BROWSER	false	130	30	31	154	139	110	15	1	0	0	177,2s
-    async patched	BROWSER	false	311	108	198	515	270	260	245	5	114	38	2326,7s
-             */
-
-
-//            "PDF.js",
-//            "box2dweb",
-//            "pathjs",
-//            "QUnit",
-//            "Redux", // cheap
-//            "Hammer.js", // cheap
-//            "PleaseJS", // cheap
-//            "Sortable", // cheap
-//            "accounting.js",
-//            "PhotoSwipe", // (timeout in global constructor)
-//            "Swiper", // (timeout in global constructor)
-//            "Knockout", // cheap
-//            "RxJS",
-//            "lunr.js", // cheap
-//            "axios", // https://github.com/cs-au-dk/TAJS-private/issues/523 / TAJSUnitTests.forInOnPrototypeProperties
-//            "async",
-//            "Intro.js",
-//            "CreateJS", // TODO: Comment in.
-//            "Handlebars",
-//            "highlight.js",
-//            "Medium Editor", // TAJS never terminates on the global constructor
-//            "bluebird",
-
-//            "reveal.js"
+            "Hammer.js", // cheap. A lot fails because of TajsUnitTests.emptyValueException
+            "PDF.js",
+            "PhotoSwipe", // (timeout in global constructor)
+            "Swiper", // (timeout in global constructor)
+            "pathjs",
+            "Redux", // cheap
+            "Sortable", // cheap
+            "accounting.js",
+            "axios", // https://github.com/cs-au-dk/TAJS-private/issues/523 / TAJSUnitTests.forInOnPrototypeProperties
+            "lunr.js", // cheap
+            "reveal.js",
+            "box2dweb",
+            "QUnit",
+            "PleaseJS", // cheap
+            "Knockout", // cheap
+            "RxJS",
+            "async",
+            "Intro.js",
+            "CreateJS",
+            "Handlebars",
+            "highlight.js",
+            "bluebird",
+            "Medium Editor" // TAJS never terminates on the global constructor
     );
 
     /*
     // List of patches where filtering might have helped.
-    In knockout, i had to put that KnockoutBindingProvider.nodeHasBindings and KnockoutBindingProvider.getBindings could be undefined, as TAJS reported it.
+    In knockout, i had to put that KnockoutBindingProvider.nodeHasBindings and KnockoutBindingProvider.getBindings could be undefined, as TAJS reported it. (spurious?)
     In CreateJS, i had to make Ticker.framerate and Ticker.interval as potentially undefined, this might be spurious.
      */
 
@@ -107,12 +83,12 @@ public class TajsCheckerEvaluation {
 
     @Test
     @Ignore
-    public void tmpStuff() throws Exception {
-        new Experiment("PDF.js").addExperiment(experiment()).calculate(null);
+    public void tmpStuff() {
+        new Experiment("Redux").addExperiment(experiment()).calculate(null);
     }
 
     @Test
-    public void doEvaluation() throws IOException {
+    public void doEvaluation() {
         {
             // warmup.
             new Experiment("Sortable").addExperiment(experiment()).calculate(null);
@@ -132,6 +108,8 @@ public class TajsCheckerEvaluation {
 
         System.exit(0); // It would shut down by itself after a little, but I don't wanna wait.
     }
+
+    private static final boolean COMPARE_WITH_TSTEST = true;
 
     private static BiConsumer<Benchmark, BiConsumer<String, String>> experiment() {
         return (benchmark, register) -> {
@@ -160,7 +138,8 @@ public class TajsCheckerEvaluation {
 
             register.accept("timedout", Boolean.toString(result.timedout));
             register.accept("certificates", result.certificates.size() + "");
-            register.accept("violationPaths", result.detectedViolations.size() + "");
+            List<String> tajsCheckerPaths = result.detectedViolations.keySet().stream().map(Util::simplifyPath).collect(Collectors.toList());
+            register.accept("violationPaths", tajsCheckerPaths.size() + "");
             register.accept("violations", result.detectedViolations.asMap().entrySet().stream().reduce(0, (acc, entry) -> entry.getValue().size() + acc, Math::addExact) + "");
             register.accept("totalTests", result.testNot.size() + result.testPerformed.size() + "");
             register.accept("testsPerformed", result.testPerformed.size() + "");
@@ -178,6 +157,20 @@ public class TajsCheckerEvaluation {
                 Util.writeFile("results/" + benchmark.name + ".txt", result.toString());
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            }
+
+            if (COMPARE_WITH_TSTEST) {
+                try {
+                    OutputParser.RunResult tstestResult = UnitTests.run(benchmark);
+                    register.accept("tstest:testsPerformed", tstestResult.getTestsCalled().size() + "");
+                    register.accept("tsest:violations", tstestResult.getTypeErrors().size() + "");
+                    List<String> tstestPaths = tstestResult.getTypeErrors().stream().map(OutputParser.TypeError::getPath).map(Util::simplifyPath).distinct().collect(Collectors.toList());
+                    register.accept("tsest:violationPaths", tstestPaths.size() + "");
+                    List<String> commonPaths = Util.intersection(tstestPaths, tajsCheckerPaths);
+                    register.accept("commonViolationPaths", commonPaths.size() + "");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
         };
     }
