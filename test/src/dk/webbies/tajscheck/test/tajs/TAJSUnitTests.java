@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE;
 import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED;
+import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED;
 import static dk.webbies.tajscheck.tajstester.TAJSUtil.*;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
 import static dk.webbies.tajscheck.util.Util.mkString;
@@ -613,17 +614,17 @@ public class TAJSUnitTests {
 
     @Test
     public void classInheritance() throws Exception {
-        TajsAnalysisResults withConstructAll = run("classInheritance", options().setConstructAllTypes(true).staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults withConstructAll = run("classInheritance", options().setConstructAllTypes(true).staticOptions.setArgumentValuesStrategy(ONLY_CONSTRUCTED).setCreateSingletonObjects(true));
 
         expect(withConstructAll)
                 .performedAllTests()
                 .hasNoViolations();
 
-        TajsAnalysisResults dontConstructAll = run("classInheritance", options().setConstructAllTypes(false).staticOptions.setCreateSingletonObjects(true));
+        TajsAnalysisResults dontConstructAll = run("classInheritance", options().setConstructAllTypes(false).staticOptions.setArgumentValuesStrategy(ONLY_CONSTRUCTED).setCreateSingletonObjects(true));
 
         expect(dontConstructAll)
-                .performedAllTests()
-                .hasViolations();
+                .hasNoViolations()
+                .notPerformedAllTests();
     }
 
     @Test
@@ -673,6 +674,7 @@ public class TAJSUnitTests {
     }
 
     @Test
+    @Ignore // Not used anymore.
     public void fromTSFile() throws Exception {
         TajsAnalysisResults result = run(benchFromFolderTSFile("fromTSFile", options(), Benchmark.RUN_METHOD.BROWSER));
 
@@ -1053,6 +1055,7 @@ public class TAJSUnitTests {
                 .setConstructAllTypes(false)
                 .setConstructClassInstances(false)
                 .setConstructClassTypes(false)
+                .staticOptions.setArgumentValuesStrategy(MIX_FEEDBACK_AND_CONSTRUCTED)
         );
 
         expect(result)
@@ -1065,6 +1068,7 @@ public class TAJSUnitTests {
                 .setConstructAllTypes(false)
                 .setConstructClassInstances(false)
                 .setConstructClassTypes(false)
+                .staticOptions.setArgumentValuesStrategy(MIX_FEEDBACK_AND_CONSTRUCTED)
 //                .setUseInspector(true)
         );
 
@@ -1559,6 +1563,37 @@ public class TAJSUnitTests {
                 .hasNoViolations()
                 .hasNoWarnings()
                 .performedAllTests();
+    }
+
+    @Test//(timeout = 20000)
+    public void loopsIfCannotConstructType() throws Exception {
+        TajsAnalysisResults mix = run(benchFromFolder("loopsIfCannotConstructType", options().setConstructAllTypes(false).staticOptions.setArgumentValuesStrategy(MIX_FEEDBACK_AND_CONSTRUCTED), Benchmark.RUN_METHOD.BROWSER));
+
+        expect(mix)
+                .hasNoViolations()
+                .hasNoWarnings();
+
+        TajsAnalysisResults feedbackIfPossible = run(benchFromFolder("loopsIfCannotConstructType", options().setConstructAllTypes(false).staticOptions.setArgumentValuesStrategy(FEEDBACK_IF_POSSIBLE), Benchmark.RUN_METHOD.BROWSER));
+
+        expect(feedbackIfPossible)
+                .hasNoViolations()
+                .hasNoWarnings();
+
+        TajsAnalysisResults onlyConstructed = run(benchFromFolder("loopsIfCannotConstructType", options().setConstructAllTypes(false).staticOptions.setArgumentValuesStrategy(ONLY_CONSTRUCTED), Benchmark.RUN_METHOD.BROWSER));
+
+        expect(onlyConstructed)
+                .hasNoViolations()
+                .hasNoWarnings();
+
+    }
+
+    @Test
+    public void mixFeedback() throws Exception {
+        TajsAnalysisResults result = run("mixFeedback", options().setConstructAllTypes(true).staticOptions.setCreateSingletonObjects(false).setArgumentValuesStrategy(MIX_FEEDBACK_AND_CONSTRUCTED));
+
+        expect(result)
+                .performedAllTests()
+                .hasViolations();
     }
 
     @Test

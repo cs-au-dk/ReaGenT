@@ -83,9 +83,14 @@ class Effects {
 
     private final Set<ObjectLabel> summarized = new HashSet<>();
     ObjectLabel summarize(ObjectLabel label) {
+        label = label.makeSingleton();
         if (!summarized.contains(label)) {
+            Obj oldObj = c.getState().getStore().get(label);
             c.getState().multiplyObject(label);
+            c.getState().getStore().put(label, oldObj);
             summarized.add(label);
+        } else {
+            c.getState().propagateObj(label.makeSummary(), c.getState(), label.makeSingleton(), false);
         }
         return label.makeSingleton().makeSummary();
     }
