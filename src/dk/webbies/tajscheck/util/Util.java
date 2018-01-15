@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.util;
 
 
+import dk.brics.tajs.lattice.Bool;
 import dk.brics.tajs.lattice.State;
 import dk.brics.tajs.lattice.Value;
 import org.apache.commons.io.IOUtils;
@@ -297,6 +298,14 @@ public class Util {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public static <T, A> Function<A, T> fixpoint(BiFunction<A, Function<A, T>, T> inFunction) {
+        return a -> inFunction.apply(a, fixpoint(inFunction));
+    }
+
+    public static <T> Predicate<T> predicateFixpoint(BiFunction<T, Predicate<T>, Boolean> inFunction) {
+        return t -> inFunction.apply(t, predicateFixpoint(inFunction));
     }
 
     public static String runNodeScript(String nodeArgs) throws IOException {
