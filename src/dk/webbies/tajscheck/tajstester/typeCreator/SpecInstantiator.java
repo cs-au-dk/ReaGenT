@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import static dk.brics.tajs.util.Collections.*;
 import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE;
 import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED;
+import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED;
 import static java.util.Collections.singletonList;
 
 public class SpecInstantiator {
@@ -278,7 +279,7 @@ public class SpecInstantiator {
     Value instantiate(Type type, MiscInfo info, String step) {
         Value feedbackValue = valueHandler.findFeedbackValue(new TypeWithContext(type, info.context));
         if (!this.info.shouldConstructType(type) && !nativesInstantiator.shouldConstructAsNative(type)) {
-            if (feedbackValue == null) {
+            if (feedbackValue == null || this.info.options.staticOptions.argumentValuesStrategy == ONLY_CONSTRUCTED) {
                 throw new CannotConstructType(); // this will be catched by the top-most construction method.
             }
             return feedbackValue;
