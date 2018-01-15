@@ -9,6 +9,7 @@ import dk.brics.tajs.lattice.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments.CanEasilyConstructVisitor;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.tajstester.TypeValuesHandler;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
@@ -18,7 +19,9 @@ import dk.webbies.tajscheck.util.Util;
 import org.apache.log4j.Logger;
 
 import java.util.*;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -358,16 +361,84 @@ public class SpecInstantiator {
     }
 
     private boolean isSimpleType(Type type, TypeContext context) {
-        return type.accept(new LateExpansionToFunctionsWithConstructedArguments.CanEasilyConstructVisitor(context, info, subType -> nativesInstantiator.shouldConstructAsNative(subType.getType())));
+        return type.accept(new CanEasilyConstructVisitor(context, info, subType -> nativesInstantiator.shouldConstructAsNative(subType.getType())));
     }
 
     public Value createValue(TypeWithContext type, String path) {
+        boolean canConstruct = canConstruct(type);
+        if (!canConstruct) {
+            return Value.makeNone();
+        }
         try {
             MiscInfo misc = new MiscInfo(path, type.getTypeContext(), null);
             return instantiate(type.getType(), misc, null);
         } catch (CannotConstructType e) {
+            assert false;
             return Value.makeNone();
         }
+    }
+
+    private boolean canConstruct(TypeWithContext type) {
+        Set<TypeWithContext> coInductiveAssumptions = new HashSet<>();
+        BiPredicate<TypeWithContext, Predicate<TypeWithContext>> recurse = (subType, predicate) -> subType.getType().accept(new CanEasilyConstructVisitor(subType.getTypeContext(), info, predicate));
+
+        Predicate<TypeWithContext> predicate = Util.predicateFixpoint((subType, closurePredicate) -> {
+            if (coInductiveAssumptions.contains(subType)) {
+                return true;
+            }
+            coInductiveAssumptions.add(subType);
+
+            try {
+                if (valueHandler.findFeedbackValue(subType) != null && this.info.options.staticOptions.argumentValuesStrategy != ONLY_CONSTRUCTED) {
+                    return true;
+                }
+                if (nativesInstantiator.shouldConstructAsNative(subType.getType())) {
+                    return true;
+                }
+                if (!this.info.shouldConstructType(subType.getType())) {
+                    return false;
+                }
+
+                if (subType.getType() instanceof ReferenceType || subType.getType() instanceof GenericType || subType.getType() instanceof TypeParameterType) {
+                    return false; // handled by the "||" in the CanEasilyConstructVisitor.
+                }
+
+                if (subType.getType() instanceof InterfaceType) {
+                    InterfaceType inter = (InterfaceType) subType.getType();
+                    if (inter.getDeclaredNumberIndexType() != null) {
+                        if (!recurse.test(new TypeWithContext(inter.getDeclaredNumberIndexType(), subType.getTypeContext()), closurePredicate)) {
+                            return false;
+                        }
+                    }
+                    if (inter.getDeclaredStringIndexType() != null) {
+                        if (!recurse.test(new TypeWithContext(inter.getDeclaredStringIndexType(), subType.getTypeContext()), closurePredicate)) {
+                            return false;
+                        }
+                    }
+                    for (Type propType : inter.getDeclaredProperties().values()) {
+                        if (!recurse.test(new TypeWithContext(propType, subType.getTypeContext()), closurePredicate)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                if (subType.getType() instanceof ClassType) {
+                    Pair<InterfaceType, Map<TypeParameterType, Type>> asInterface = info.typesUtil.classToInterface((ClassType) subType.getType());
+                    return closurePredicate.test(new TypeWithContext(asInterface.getLeft(), subType.getTypeContext().append(asInterface.getRight())));
+                }
+                if (subType.getType() instanceof ClassInstanceType) {
+                    return closurePredicate.test(new TypeWithContext(this.info.typesUtil.createClassInstanceType((ClassType) ((ClassInstanceType) subType.getType()).getClassType()), subType.getTypeContext()));
+                }
+
+                throw new RuntimeException(subType.getType().getClass().getSimpleName());
+
+            } finally {
+                coInductiveAssumptions.remove(subType);
+            }
+        });
+
+        return recurse.test(type, predicate);
     }
 
     private ObjectLabel makeObjectLabel(Type t, MiscInfo miscInfo) {
