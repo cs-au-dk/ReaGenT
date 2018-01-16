@@ -189,6 +189,10 @@ public class Util {
         return result.toString();
     }
 
+    public static void copyFile(String from, String to) throws IOException {
+        Util.writeFile(to, Util.readFile(from));
+    }
+
     private static class Worker extends Thread {
         private final Process process;
         private Integer exit;
