@@ -599,7 +599,7 @@ public class TAJSUnitTests {
     public void classInheritsConstructors() throws Exception {
         TajsAnalysisResults result = run("classInheritsConstructors", options().setConstructAllTypes(true));
 
-        assertThat(result.detectedViolations.asMap().keySet(), is(hasSize(2)));
+        assertThat(result.detectedViolations.asMap().keySet(), is(hasSize(3)));
 
         expect(result)
                 .performedAllTests()
@@ -1618,5 +1618,35 @@ public class TAJSUnitTests {
                 .performedAllTests();
     }
 
+    @Test
+    @Ignore // it is really the same as precisionIssue1.
+    public void precisionIssue3() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("precisionIssue3", options().staticOptions.setArgumentValuesStrategy(MIX_FEEDBACK_AND_CONSTRUCTED), Benchmark.RUN_METHOD.BROWSER));
+
+        expect(result)
+                .hasNoViolations()
+                .hasNoWarnings()
+                .performedAllTests();
+    }
+
+    @Test
+    @Ignore // methods are only weakly written to the global object.
+    public void precisionIssue4() throws Exception {
+        TajsAnalysisResults result = run("precisionIssue4");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+
+    }
+
+
+    // TODO: Delta-debug the unsoundness in manualEvaluation 27. (34 likely has the same thing).
+    // TODO: 32 related to some of the above (createjs).
+
+    // TODO: WIth default options (from RunBenchmarks), PDF.js loops.
+
+    // TODO: huge optimization: only clear the value-cache when a new feedback-value is introduced. Send a callback to the ValueHandler, that clears the create-value-cache.
 
 }
