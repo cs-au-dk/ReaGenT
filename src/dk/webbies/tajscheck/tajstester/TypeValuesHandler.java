@@ -24,6 +24,7 @@ public class TypeValuesHandler {
 
     private final MultiMap<TypeWithContext, Reference<Value>> typeValueMap = new ArrayListMultiMap<>();
     private MultiMap<Test, Reference<Value>> testValueMap = new ArrayListMultiMap<>();
+    private final Map<TypeWithContext, Value> hasBeenUpdatedMap = new HashMap<>();
 
     TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, BenchmarkInfo info, TajsTypeTester tajsTypeTester) {
         this.typeNames = typeNames;
@@ -85,6 +86,16 @@ public class TypeValuesHandler {
     }
 
     public boolean addFeedbackValue(Test test, TypeWithContext type, Value v) {
+        if (!hasBeenUpdatedMap.containsKey(type)) {
+            hasBeenUpdatedMap.put(type, Value.makeNone());
+        }
+        Value previous = hasBeenUpdatedMap.get(type);
+        if (previous.join(v) != previous) {
+            hasBeenUpdatedMap.put(type, previous.join(v));
+            instantiator.clearValueCache();
+        }
+
+
         assert(v != null);
         AtomicBoolean valueWasAdded = new AtomicBoolean(false);
         Reference<Value> ref = new Reference<>(v);
@@ -93,10 +104,6 @@ public class TypeValuesHandler {
             typeValueMap.put(subType, ref);
         });
         return valueWasAdded.get();
-    }
-
-    public void clearCreatedValueCache() {
-        instantiator.clearValueCache();
     }
 
     public SpecInstantiator getInstantiator() {

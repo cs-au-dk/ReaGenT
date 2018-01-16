@@ -100,7 +100,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             return;
         }
 
-        valueHandler.clearCreatedValueCache();
         performed.clear();
         expansionPolicy.nextRound();
         valueHandler.cleanUp();
@@ -120,7 +119,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     continue;
                 }
                 progress = true;
-                valueHandler.clearCreatedValueCache();
                 valueHandler.clearValuesForTest(test);
                 Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
                 propagateStateToContext(c, newc, Timers.Tags.PROPAGATING_TO_THIS_CONTEXT);
@@ -190,7 +188,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             if (hasFailed.contains(test) && !c.isScanning() && !info.options.staticOptions.propagateStateFromFailingTest) {
                 continue; // fail once, fail always. And we can sometimes get an infinite loop cause we stop the state-propagation. However, since since we stop the state-propagation, we can soundly skip this, as it is effectively a noop.
             }
-            valueHandler.clearCreatedValueCache(); // TODO: Needed this much?
             if (performed.contains(test)) {
                 continue;
             }
@@ -253,7 +250,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
             c.propagateToBasicBlock(preState, allTestsBlock, newc);
         } else {
-            c.propagateToBasicBlock(c.getState(), allTestsBlock, newc);
+            State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, c.getState().getContext()).clone();
+            c.propagateToBasicBlock(preState, allTestsBlock, newc);
         }
         timers.stop(propagatingToThisContext);
     }
