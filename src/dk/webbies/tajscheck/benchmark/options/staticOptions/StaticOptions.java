@@ -61,7 +61,7 @@ public class StaticOptions implements OptionsI {
         private RetractionPolicy retractionPolicy = new NoRetractPolicy();
         private ExpansionPolicy expansionPolicy = new ExpandImmediatelyPolicy();
         private boolean propagateStateFromFailingTest = false;
-        private ArgumentValuesStrategy argumentValuesStrategy = ONLY_CONSTRUCTED;
+        private ArgumentValuesStrategy argumentValuesStrategy = MIX_FEEDBACK_AND_CONSTRUCTED;
         private boolean properWidthSubtyping = false;
         private boolean checkAllPropertiesAfterFunctionCall = false; // then we run through all the PropertyReadTests after a function-call, to see if it had any harmful side-effects.
         public boolean useInspector = false;
