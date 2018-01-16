@@ -17,33 +17,34 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class TajsCheckerEvaluation {
     static final List<String> benchmarksToEvaluate = Arrays.asList(
-            "Hammer.js", // cheap. A lot fails because of TajsUnitTests.emptyValueException
-            "PDF.js",
-            "PhotoSwipe", // (timeout in global constructor)
-            "Swiper", // (timeout in global constructor)
-            "pathjs",
-            "Redux", // cheap
-            "Sortable", // cheap
             "accounting.js",
-            "axios", // https://github.com/cs-au-dk/TAJS-private/issues/523 / TAJSUnitTests.forInOnPrototypeProperties
-            "lunr.js", // cheap
-            "reveal.js",
-            "box2dweb",
-            "QUnit",
-            "PleaseJS", // cheap
-            "Knockout", // cheap
-            "RxJS",
             "async",
-            "Intro.js",
+            "axios", // https://github.com/cs-au-dk/TAJS-private/issues/523 / TAJSUnitTests.forInOnPrototypeProperties
+            "bluebird",
+            "box2dweb",
             "CreateJS",
+            "Hammer.js", // cheap. A lot fails because of TajsUnitTests.emptyValueException
             "Handlebars",
             "highlight.js",
-            "bluebird",
-            "Medium Editor" // TAJS never terminates on the global constructor
+            "Intro.js",
+            "Knockout", // cheap
+            "lunr.js", // cheap
+//
+            "Medium Editor", // TAJS never terminates on the global constructor
+//
+            "pathjs",
+            "PDF.js",
+            "PhotoSwipe", // (timeout in global constructor)
+            "PleaseJS", // cheap
+            "QUnit",
+            "Redux", // cheap
+            "reveal.js",
+            "RxJS",
+            "Sortable", // cheap
+            "Swiper" // (timeout in global constructor)
     );
 
     /*
@@ -54,37 +55,33 @@ public class TajsCheckerEvaluation {
 
     /*
     Current status (run on my laptop):
-    Benchmark	type	timedout	certificates	violationPaths	violations	totalTests	testsPerformed	typeCheckedTests	testSkipped	timeouts	test-exceptions	retractions	time
-    CreateJS patched	BROWSER	true	2743	735	881	5821	1836	1752	3985	1	29	84	10829,5s
-    Handlebars patched	NODE	true	133	26	26	172	90	87	82	0	10	0	10801,1s
-    highlight.js patched	NODE	true	74	1	1	86	60	60	26	1	0	0	10800,6s
-    Medium Editor patched	BROWSER	true	2	0	0	86	2	2	84	0	0	0	10801,0s
-    bluebird patched	NODE	true	100	0	0	6738	55	55	6683	1	28	0	10801,4s
-    QUnit patched	BROWSER	false	80	43	43	130	87	56	43	9	6	1	1828,8s
-    Hammer.js patched	BROWSER	false	216	185	1646	700	170	144	530	0	14	0	36,0s
-    PDF.js patched	BROWSER	false	29	22	22	323	30	20	293	8	0	0	38,0s
-    PhotoSwipe	BROWSER	false	3	1	1	133	3	1	130	1	0	0	241,4s
-    PleaseJS patched	BROWSER	false	34	4	6	27	27	26	0	0	0	0	3,4s
-    Redux	NODE	false	80	26	33	74	58	51	16	0	2	0	38,0s
-    Sortable patched	BROWSER	false	48	2	6	54	43	41	11	0	0	0	57,8s
-    Swiper	BROWSER	false	3	1	1	144	3	1	141	1	0	0	22,0s
-    accounting.js	BROWSER	false	77	26	110	85	81	44	4	0	0	0	381,1s
-    axios patched	NODE	false	1	1	1	3	1	0	2	0	0	0	0,9s
-    lunr.js patched	BROWSER	false	105	102	140	373	96	61	277	0	1	0	62,5s
-    pathjs patched	BROWSER	false	56	2	3	47	45	44	2	5	0	0	149,3s
-    reveal.js	BROWSER	false	130	30	31	154	139	110	15	1	0	0	177,2s
-    async patched	BROWSER	false	311	108	198	515	270	260	245	5	114	38	2326,7s
-    Intro.js patched	NODE	false	115	6	9	54	49	49	5	12	0	0	1106,0s
-    RxJS patched	NODE	false	141	6232	6232	1148	141	35	1007	0	0	0	851,7s
-    box2dweb patched	BROWSER	false	3060	878	1147	1765	857	768	908	0	3	0	3729,4s
-    Total	-	-	4798	7696	9656	12811	2307	1915	10504	44	178	39	54254,3
-
+    Benchmark	type	timedout	certificates	violationPaths	violations	totalTests	testsPerformed	typeCheckedTests	testSkipped	timeouts	test-exceptions	retractions	time	tstest:testsPerformed	tsest:violations	tsest:violationPaths	commonViolationPaths
+    accounting.js	BROWSER	false	770	26	110	85	81	44	4	0	0	0	458,6s	85	0	0	0
+    async patched	BROWSER	true	456	61	84	515	201	196	314	5	113	3	10801,7s	491	74	32	2
+    axios patched	NODE	false	10	9	9	1049	1	0	1048	0	0	0	7,6s	1	0	0	0
+    bluebird patched	NODE	false	630	4	5	6739	63	62	6676	1	83	0	1331,0s	1	0	0	0
+    box2dweb patched	BROWSER	false	31730	878	1145	1765	857	768	908	0	3	0	4879,2s	905	125	100	58
+    CreateJS patched	BROWSER	true	2866	570	723	5800	1846	1786	3954	1	29	84	10913,3s	1567	230	163	81
+    Hammer.js patched	BROWSER	false	2160	186	2247	700	170	143	530	0	14	0	49,3s	651	205	177	129
+    Handlebars patched	NODE	false	1930	17	17	172	138	125	34	0	17	0	266,7s	1	0	0	0
+    highlight.js patched	NODE	false	4740	2	2	86	62	61	24	0	0	0	18,1s	1	0	0	0
+    Intro.js patched	NODE	false	1150	6	9	54	49	49	5	12	0	0	1389,4s	1	0	0	0
+    Knockout patched	NODE	true	662	91	177	1015	403	373	612	3	17	6	10809,4s	1	0	0	0
+    lunr.js patched	BROWSER	false	1170	104	168	373	108	72	265	0	1	0	75,7s	172	23	18	10
+    Medium Editor patched	BROWSER
+    pathjs patched	BROWSER	false	560	2	3	47	45	44	2	5	0	0	163,0s	47	0	0	0
+    PDF.js patched	BROWSER	false	340	1	1	323	36	23	287	12	0	0	70,5s	50	17	11	0
+    PhotoSwipe	BROWSER	false	30	42	1231	133	3	1	130	1	0	0	315,3s	66	14	13	7
+    PleaseJS patched	BROWSER	false	340	4	6	27	27	26	0	0	0	0	6,3s	27	0	0	0
+    Redux	NODE	false	800	26	33	74	58	51	16	0	2	0	51,2s	55	128	11	2
+    reveal.js	BROWSER	false	1300	30	31	154	139	110	15	1	0	0	245,4s	149	5	4	4
+    RxJS patched	NODE
      */
 
     @Test
     @Ignore
     public void tmpStuff() {
-        new Experiment("axios").addExperiment(experiment()).calculate(null);
+        new Experiment("PDF.js").addExperiment(experiment()).calculate(null);
     }
 
     @Test
