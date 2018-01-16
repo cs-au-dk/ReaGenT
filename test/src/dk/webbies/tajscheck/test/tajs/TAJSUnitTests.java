@@ -13,6 +13,7 @@ import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.Late
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
+import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.Util;
@@ -1641,12 +1642,12 @@ public class TAJSUnitTests {
 
     }
 
+    @Test
+    public void noValueFound() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("noValueFound", AnalyzeBenchmarks.options().apply(CheckOptions.builder()), Benchmark.RUN_METHOD.BROWSER));
 
-    // TODO: Delta-debug the unsoundness in manualEvaluation 27. (34 likely has the same thing).
-    // TODO: 32 related to some of the above (createjs).
-
-    // TODO: WIth default options (from RunBenchmarks), PDF.js loops.
-
-    // TODO: huge optimization: only clear the value-cache when a new feedback-value is introduced. Send a callback to the ValueHandler, that clears the create-value-cache.
-
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 }
