@@ -71,6 +71,10 @@ public class TajsTypeChecker {
 
         if(v.isMaybeNull()) vr.add(Value.makeNull());
 
+        if (vr.isEmpty()) {
+            return Collections.singletonList(Value.makeUndef());
+        }
+
         return vr;
     }
 
@@ -79,9 +83,6 @@ public class TajsTypeChecker {
         List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, 1);
 
         List<Value> split = split(v);
-        if (split.isEmpty()) {
-            return Collections.singletonList(TypeViolation.definite("No value found", path));
-        }
 
         List<List<TypeViolation>> violationsForEachValue = split.stream().map(splittenValue -> getTypeViolations(new TypeWithContext(type, context), splittenValue, typeChecks, path)).collect(Collectors.toList());
 
@@ -174,9 +175,6 @@ public class TajsTypeChecker {
         }
 
         List<Value> split = split(propertyValue);
-        if (split.isEmpty()) {
-            split = java.util.Collections.singletonList(Value.makeUndef());
-        }
 
         List<TypeCheck> subChecks = TypeChecker.getTypeChecks(hasSubType.getSubType().getType(), hasSubType.getSubType().getTypeContext(), info, 1);
 
