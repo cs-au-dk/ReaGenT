@@ -45,6 +45,10 @@ dependencies {
 }
 
 
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.3'
+}
+
 subprojects {
     apply plugin: 'java'
 
@@ -73,4 +77,11 @@ allprojects {
     repositories {
         mavenCentral()
     }
+}
+
+
+task performEvaluation(type: JavaExec) {
+    classpath sourceSets.test.runtimeClasspath
+    jvmArgs = ["-Xmx16G"]
+    main = 'dk.webbies.tajscheck.test.tajs.analyze.TajsCheckerEvaluation'
 }

@@ -145,6 +145,9 @@ public class TajsCheckerEvaluation {
             register.accept("timeouts", result.timeoutTests.size() + "");
             register.accept("test-exceptions", result.exceptionsEncountered.size() + "");
             register.accept("retractions", result.retractedTests.size() + "");
+            register.accept("statement-coverage", String.format("%.2f", result.statementCoverage) + "");
+            register.accept("branch-coverage", String.format("%.2f", result.branchCoverage) + "");
+            register.accept("function-coverage", String.format("%.2f", result.functionCoverage) + "");
             register.accept("time", time + "s");
 
             //noinspection ResultOfMethodCallIgnored
@@ -170,5 +173,10 @@ public class TajsCheckerEvaluation {
                 }
             }
         };
+    }
+
+
+    public static void main(String[] args) {
+        new TajsCheckerEvaluation().doEvaluation();
     }
 }

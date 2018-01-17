@@ -15,6 +15,7 @@ import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.data.TestCertificate;
 import dk.webbies.tajscheck.tajstester.data.Timers;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
+import dk.webbies.tajscheck.tajstester.monitors.TajsCoverageResult;
 import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
@@ -109,6 +110,7 @@ public class TAJSUtil {
         optMonitors.add(typeTester);
         optMonitors.add(typeTester.getSuspiciousMonitor());
         optMonitors.add(typeTester.getTransferMonitor());
+        optMonitors.add(typeTester.getCoverageMonitor());
 
         IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(optMonitors);
         initLogging();
@@ -161,6 +163,9 @@ public class TAJSUtil {
         public final Map<Test, Integer> testTranfers;
         public final List<TestCertificate> certificates;
         public final Timers timers;
+        public double statementCoverage;
+        public double branchCoverage;
+        public double functionCoverage;
 
         private boolean VERBOSE = true;
         public MultiMap<Test, Exception> exceptionsEncountered;
@@ -227,6 +232,10 @@ public class TAJSUtil {
             this.timers = typeTester.getTimers();
 
             this.typeCheckedTests = typeTester.getTypeCheckedTests();
+
+            this.statementCoverage = typeTester.getCoverageMonitor().statementCoverage();
+            this.branchCoverage = typeTester.getCoverageMonitor().branchCoverage();
+            this.functionCoverage = typeTester.getCoverageMonitor().functionCoverage();
         }
 
         @Override
