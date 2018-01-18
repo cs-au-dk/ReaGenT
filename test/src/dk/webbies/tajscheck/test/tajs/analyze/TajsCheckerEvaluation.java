@@ -78,6 +78,34 @@ public class TajsCheckerEvaluation {
     RxJS patched	NODE
      */
 
+    /* (mezzetti mac)
+    Benchmark	type	timedout	certificates	violationPaths	violations	totalTests	testsPerformed	typeCheckedTests	testSkipped	timeouts	test-exceptions	retractions	statement-coverage	branch-coverage	function-coverage	time	tstest:testsPerformed	tsest:violations	tsest:violationPaths	commonViolationPaths
+    accounting.js	BROWSER	false	770	26	110	85	81	44	4	0	0	0	0.95	0.39	0.91	236,7s	85	0	0	0
+    async patched	BROWSER	true	706	107	152	515	276	271	239	23	115	13	NaN	NaN	NaN	10800,9s	493	108	32	5
+    axios patched	NODE	false	10	9	9	1049	1	0	1048	0	0	0	0.34	0.32	0.35	52,1s	566	51	35	0
+    bluebird patched	NODE	false	630	4	5	6738	63	62	6675	1	83	0	0.38	0.28	0.36	3733,3s	228	1	1	0
+    box2dweb patched	BROWSER	false	31570	878	1145	1765	857	768	908	0	3	0	0.30	0.36	0.44	3784,3s	1324	215	179	75
+    CreateJS patched	BROWSER	true	2769	567	719	5801	1865	1810	3936	1	29	82	NaN	NaN	NaN	10920,5s	2052	280	200	84
+    Hammer.js patched	BROWSER	false	2160	186	2247	700	170	143	530	0	14	0	0.36	0.20	0.41	263,9s	651	199	173	128
+    Handlebars patched	NODE	false	1930	17	17	172	138	125	34	0	17	0	0.50	0.18	0.42	234,9s	168	128	11	4
+    highlight.js patched	NODE	false	4740	2	2	86	62	61	24	0	0	0	0.74	0.25	0.44	36,5s	62	2	2	1
+    Intro.js patched	NODE	false	1150	6	9	54	49	49	5	12	0	0	0.94	0.30	0.97	733,5s	5	0	0	0
+    Knockout patched	NODE	true	681	92	199	1015	384	355	631	4	17	6	NaN	NaN	NaN	10818,2s	666	211	68	20
+    lunr.js patched	BROWSER	false	1170	104	168	373	108	72	265	0	1	0	0.56	0.39	0.47	131,9s	270	40	29	13
+    Medium Editor patched	BROWSER	true	2	0	0	86	2	2	84	0	0	0	NaN	NaN	NaN	10803,1s	80	14	12	0
+    pathjs patched	BROWSER	false	560	2	3	47	45	44	2	5	0	0	0.92	0.44	1.00	90,3s	46	0	0	0
+    PDF.js patched	BROWSER
+    PhotoSwipe	BROWSER	false	30	42	1231	133	3	1	130	1	0	0	0.11	0.01	0.05	148,3s	66	14	13	7
+    PleaseJS patched	BROWSER	false	340	4	6	27	27	26	0	0	0	0	0.39	0.18	0.52	2,8s	27	0	0	0
+    QUnit patched	BROWSER	false	760	43	43	130	83	56	47	4	10	1	0.38	0.17	0.53	1369,3s	128	11	3	1
+    Redux	NODE	false	800	26	33	74	58	51	16	0	2	0	0.82	0.64	0.85	27,4s	55	133	11	2
+    reveal.js	BROWSER	false	1300	30	31	154	139	110	15	1	0	0	0.75	0.32	0.83	138,9s	149	5	4	4
+    RxJS patched	NODE
+    Sortable patched	BROWSER	false	480	2	6	54	43	41	11	0	0	0	0.42	0.18	0.66	40,3s	26	0	0	0
+    Swiper	BROWSER	false	30	1	1	144	3	1	141	1	0	0	0.04	0.01	0.05	36,4s	68	55	54	0
+    Total	-	-	52588	2148	6136	19202	4457	4092	14745	53	291	102	8,9	4,619999999999999	9,26	54403,50000000002	7215	1467	827	344
+     */
+
     @Test
     @Ignore
     public void tmpStuff() {
@@ -145,6 +173,9 @@ public class TajsCheckerEvaluation {
             register.accept("timeouts", result.timeoutTests.size() + "");
             register.accept("test-exceptions", result.exceptionsEncountered.size() + "");
             register.accept("retractions", result.retractedTests.size() + "");
+            register.accept("statement-coverage", String.format("%.2f", result.statementCoverage) + "");
+            register.accept("branch-coverage", String.format("%.2f", result.branchCoverage) + "");
+            register.accept("function-coverage", String.format("%.2f", result.functionCoverage) + "");
             register.accept("time", time + "s");
 
             //noinspection ResultOfMethodCallIgnored
@@ -170,5 +201,10 @@ public class TajsCheckerEvaluation {
                 }
             }
         };
+    }
+
+
+    public static void main(String[] args) {
+        new TajsCheckerEvaluation().doEvaluation();
     }
 }

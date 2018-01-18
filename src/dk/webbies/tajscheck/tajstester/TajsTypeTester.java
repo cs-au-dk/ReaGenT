@@ -18,6 +18,7 @@ import dk.webbies.tajscheck.tajstester.data.TestCertificate;
 import dk.webbies.tajscheck.tajstester.data.Timers;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.tajstester.monitors.SuspiciousnessMonitor;
+import dk.webbies.tajscheck.tajstester.monitors.TajsCoverageResult;
 import dk.webbies.tajscheck.tajstester.monitors.TestTransfersMonitor;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
@@ -60,6 +61,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private SuspiciousnessMonitor suspiciousMonitor;
     private TestTransfersMonitor transferMonitor;
+    private TajsCoverageResult coverageMonitor = new TajsCoverageResult();
 
     private Timers timers = new Timers();
     private List<Test> typeCheckedTests = new ArrayList<>();
@@ -465,6 +467,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     public TesterContextSensitivity getSensitivity() {return sensitivity; }
 
     public SuspiciousnessMonitor getSuspiciousMonitor() {return suspiciousMonitor; }
+
+    public TajsCoverageResult getCoverageMonitor() {return coverageMonitor; }
 
     public TestTransfersMonitor getTransferMonitor() {return transferMonitor; }
 
