@@ -1650,4 +1650,13 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations();
     }
+
+    @Test
+    @Ignore // TODO: This really shouldn't happen.
+    public void multipleConstructors() throws Exception {
+        run("multipleConstructors", options().staticOptions.setUseInspector(true));
+    }
+
+    // TODO: Delta-debug ManualEval 52.
+    // TODO: Delta-debug ManualEval 56.
 }
