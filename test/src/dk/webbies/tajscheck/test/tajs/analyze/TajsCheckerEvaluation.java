@@ -32,6 +32,8 @@ public class TajsCheckerEvaluation {
             "Intro.js",
             "Knockout", // cheap
             "lunr.js", // cheap
+            "CodeMirror",
+            "Moment.js",
 //
             "Medium Editor", // TAJS never terminates on the global constructor
 //
@@ -109,7 +111,7 @@ public class TajsCheckerEvaluation {
     @Test
     @Ignore
     public void tmpStuff() {
-        new Experiment("PDF.js").addExperiment(experiment()).calculate(null);
+        new Experiment("PleaseJS").addExperiment(experiment()).calculate(null);
     }
 
     @Test
