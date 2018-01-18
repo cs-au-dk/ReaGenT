@@ -1657,6 +1657,16 @@ public class TAJSUnitTests {
         run("multipleConstructors", options().staticOptions.setUseInspector(true));
     }
 
+    @Test
+    public void dontReportFakeField() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("dontReportFakeField", options(), Benchmark.RUN_METHOD.BROWSER));
+        System.out.println(result);
+
+        int fakeFieldViolations = (int) result.detectedViolations.keySet().stream().filter(key -> key.contains("fakeFieldPath")).count();
+
+        assertThat(fakeFieldViolations, is(0));
+    }
+
     // TODO: Delta-debug ManualEval 52.
     // TODO: Delta-debug ManualEval 56.
 }

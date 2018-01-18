@@ -149,7 +149,9 @@ public class TajsTypeChecker {
             } else {
                 cache.put(key, java.util.Collections.emptyList()); // coinductive assumption, if we hit the same check, it must be true.
                 List<TypeViolation> result = getForCache.get();
-                cache.put(key, result);
+                if (result.stream().noneMatch(violation -> violation.path.startsWith(">"))) { // our magic marker that it was just a check if there was a violation, and that the reported violation is meaningless.
+                    cache.put(key, result);
+                }
                 return result;
             }
         };
@@ -330,7 +332,7 @@ public class TajsTypeChecker {
         public Bool visit(FieldCheck check, Value o) {
             String field = check.getField();
 
-            List<TypeViolation> subViolations = performSubTypeCheck(o, check, "fakeFieldPath", Value.makeStr(field));
+            List<TypeViolation> subViolations = performSubTypeCheck(o, check, ">fakeFieldPath", Value.makeStr(field));
             if (subViolations.isEmpty()) {
                 return Value.makeBool(true);
             }
@@ -342,7 +344,7 @@ public class TajsTypeChecker {
 
         @Override
         public Bool visit(NumberIndexCheck check, Value o) {
-            List<TypeViolation> subViolations = performSubTypeCheck(o, check, "fakeNumberIndexPath", Value.makeAnyStrUInt());
+            List<TypeViolation> subViolations = performSubTypeCheck(o, check, ">fakeNumberIndexPath", Value.makeAnyStrUInt());
             if (subViolations.isEmpty()) {
                 return Value.makeBool(true);
             }
@@ -360,7 +362,7 @@ public class TajsTypeChecker {
             if (!o.isNotBool()) {
                 return Value.makeBool(false);
             }
-            List<TypeViolation> subViolations = performSubTypeCheck(o, check, "fakeStringIndexPath", Value.makeAnyStr());
+            List<TypeViolation> subViolations = performSubTypeCheck(o, check, ">fakeStringIndexPath", Value.makeAnyStr());
             if (subViolations.isEmpty()) {
                 return Value.makeBool(true);
             }
