@@ -142,6 +142,8 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
                     tajsTypeTester.evaluateCallToSymbolicFunction(l.getHostObject(), callinfo, c);
                 });
             });
+        } else if (l.isHostObject()) {
+            returnedValue = HostAPIs.evaluate(l.getHostObject(), callinfo, c);
         } else {
             BasicBlock implicitAfterCall = UserFunctionCalls.implicitUserFunctionCall(l, callinfo, c);
 

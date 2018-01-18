@@ -1667,6 +1667,16 @@ public class TAJSUnitTests {
         assertThat(fakeFieldViolations, is(0));
     }
 
+    @Test
+    public void isArray() throws Exception {
+        TajsAnalysisResults result = run("isArray");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
+
     // TODO: Delta-debug ManualEval 52.
     // TODO: Delta-debug ManualEval 56.
 }
