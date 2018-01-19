@@ -115,7 +115,12 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
     private static ContextArguments tagContextArguments(ContextArguments args, Value tag) {
         Map<String, Value> newCVars = args == null || args.getSelectedClosureVariables() == null ? newMap() : new HashMap<>(args.getSelectedClosureVariables());
         newCVars.putIfAbsent(testSpecialLocation, tag);
-        return args.copyWith(null, newCVars, null, null);
+        if(args != null) {
+            return args.copyWith(null, newCVars, null, null);
+        }
+        else {
+            return new ContextArguments(null, null, newCVars);
+        }
     }
 
     @Override
