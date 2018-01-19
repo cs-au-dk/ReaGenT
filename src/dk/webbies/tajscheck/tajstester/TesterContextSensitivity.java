@@ -17,16 +17,17 @@ import dk.brics.tajs.solver.GenericSolver;
 import dk.webbies.tajscheck.testcreator.test.Test;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
+import static dk.brics.tajs.util.Collections.newList;
 import static dk.brics.tajs.util.Collections.newMap;
 import static dk.brics.tajs.util.Collections.singleton;
 
 public class TesterContextSensitivity extends StaticDeterminacyContextSensitivityStrategy {
 
     public static final String TEST_IDENTIFIER = "$_$test";
-
-    public static final String WIDEN_IDENTIFIER = "$_$widen";
 
     private BiMap<String, Test> contextTest = HashBiMap.create();
 
@@ -91,7 +92,7 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
             boolean condition2 = destinationContext.getFunArgs() == null || destinationContext.getFunArgs().getSelectedClosureVariables() == null || !destinationContext.getFunArgs().getSelectedClosureVariables().containsKey(testSpecialLocation) || destinationContext.getFunArgs().getSelectedClosureVariables().get(testSpecialLocation).equals(picked);
             assert (overwrite || condition2);
 
-            ContextArguments cargs = tagContextArguments(sourceContext.getFunArgs(), destinationContext.getFunArgs(), picked);
+            ContextArguments cargs = tagContextArguments(destinationContext.getFunArgs(), picked);
 
             return Context.make(destinationContext.getThisVal(), cargs, destinationContext.getSpecialRegisters(), destinationContext.getLocalContext(), destinationContext.getLocalContextAtEntry());
         }
@@ -111,20 +112,18 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
         return sourceContext;
     }
 
-    private static ContextArguments tagContextArguments(ContextArguments sourceArgs, ContextArguments args, Value tag) {
+    private static ContextArguments tagContextArguments(ContextArguments args, Value tag) {
         Map<String, Value> newCVars = args == null || args.getSelectedClosureVariables() == null ? newMap() : new HashMap<>(args.getSelectedClosureVariables());
         newCVars.putIfAbsent(testSpecialLocation, tag);
-        return sourceArgs == null ?
-                new ContextArguments(null, null, newCVars)
-                : sourceArgs.copyWith(null, newCVars, null, null);
+        return args.copyWith(null, newCVars, null, null);
     }
 
     @Override
     public HeapContext makeHeapContext(AbstractNode location, ContextArguments arguments, Solver.SolverInterface c) {
         HeapContext hc = super.makeHeapContext(location, arguments, c);
-        if(isFunctionTestContext(c.getState().getContext())) {
+        if(isFunctionTestContext(c.getState().getContext()) || isLocalTestContext(c.getState().getContext())) {
             String tag = getTag(c.getState().getContext());
-            return hc.copyWith(tagContextArguments(arguments, hc.getFunctionArguments(), Value.makeSpecialStrings(singleton(tag))), null);
+            return hc.copyWith(tagContextArguments(hc.getFunctionArguments(), Value.makeSpecialStrings(singleton(tag))), null);
         }
         return hc;
     }

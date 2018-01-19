@@ -136,8 +136,7 @@ public class AnalyzeBenchmarks extends TestCase {
                     .setPropagateStateFromFailingTest(false)
 
                     .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
-                    .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
-                ;
+                    .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments());
     }
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))

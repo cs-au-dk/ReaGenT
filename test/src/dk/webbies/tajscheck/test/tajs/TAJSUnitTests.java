@@ -836,7 +836,6 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: Look at this later. I got no idea what is going on. When fixed, comment in the last method in leafletMotivating/fixed.
     public void feedbackValuesReadUndefined() throws Exception {
         TajsAnalysisResults fixed = run("feedbackValuesReadUndefined", options().setConstructAllTypes(false).staticOptions.setUseInspector(false));
 
@@ -1679,4 +1678,13 @@ public class TAJSUnitTests {
 
     // TODO: Delta-debug ManualEval 52.
     // TODO: Delta-debug ManualEval 56.
+
+    @Test
+    public void wrongIn() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("wrongIn", AnalyzeBenchmarks.options().apply(CheckOptions.builder()), Benchmark.RUN_METHOD.NODE));
+
+        expect(result)
+                .hasViolations();
+    }
+
 }
