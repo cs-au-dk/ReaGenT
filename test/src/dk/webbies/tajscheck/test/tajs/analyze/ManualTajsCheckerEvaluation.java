@@ -26,18 +26,20 @@ public class ManualTajsCheckerEvaluation {
             "PhotoSwipe",
             "Swiper",
             "pathjs",
-//            "Redux", // has a .d.ts file that imports another.
+            "Redux",
             "Sortable",
             "accounting.js",
             "axios",
             "lunr.js",
+            "CodeMirror", // TODO: Get some bugs from this one.
+            "Moment.js", // TODO: Get some bugs from this one.
 
             "reveal.js",
             "box2dweb",
             "QUnit",
             "PleaseJS",
             "Knockout",
-//            "RxJS", Has its actual types spread out all in many sub-files.
+//            "RxJS", Has its actual types spread out in many sub-files.
             "async",
             "Intro.js",
             "CreateJS",
@@ -61,7 +63,10 @@ public class ManualTajsCheckerEvaluation {
 
     @Test
     public void doASingleEval() throws Exception {
-        findATypeError("axios");
+        while(true) {
+            findATypeError("CodeMirror");
+            findATypeError("Moment.js");
+        }
     }
 
     private static final Set<String> cleanBenchmarks = new HashSet<>();
@@ -122,11 +127,12 @@ public class ManualTajsCheckerEvaluation {
         Util.writeFile("results/manualEval/" + counter + "/" + bench.name + ".js.original", jsFile);
         Util.writeFile("results/manualEval/" + counter + "/" + bench.name + ".js", jsFile);
 
-        bench = bench
-                .withJsFile("results/manualEval/" + counter + "/" + bench.name + ".js")
-                .withDecl("results/manualEval/" + counter + "/" + bench.name + ".d.ts");
 
         if (DO_DELTA_DEBUGGING) {
+            bench = bench
+                    .withJsFile("results/manualEval/" + counter + "/" + bench.name + ".js")
+                    .withDecl("results/manualEval/" + counter + "/" + bench.name + ".d.ts");
+
             boolean success = deltaDebugViolation(bench, searchViolation);
 
             if (success) {
@@ -140,17 +146,45 @@ public class ManualTajsCheckerEvaluation {
 
     @Test
     public void doTheMissingStuff() throws IOException {
-        continueWithFolder(11);
+        // Wouldn't delta-debug
         continueWithFolder(19);
-        continueWithFolder(20);
-        continueWithFolder(22);
-        continueWithFolder(24);
-        continueWithFolder(26);
-        continueWithFolder(33);
-        continueWithFolder(37);
+        continueWithFolder(79);
+        continueWithFolder(100);
+        continueWithFolder(95);
+
+        continueWithFolder(143); // TODO: I don't know. Is delta-debugged.
+
+        // redux.
+//        continueWithFolder(59);
+//        continueWithFolder(73);
+//        continueWithFolder(60);
+//        continueWithFolder(55);
+//        continueWithFolder(74);
+//        continueWithFolder(151);
+
+//        continueWithFolder(98); // might help with 133, 81, 121
+//        continueWithFolder(120); // might help 155, 61, 93, 22, 64, 108
+//        continueWithFolder(86); // same answer for 116, 26, 20, 21 // TODO: This one not done.
+//        continueWithFolder(103);
+//        continueWithFolder(68);
+//        continueWithFolder(124);
+//        continueWithFolder(96);
+//        continueWithFolder(158);
+//        continueWithFolder(80);
+//        continueWithFolder(71);
+//        continueWithFolder(72); // same answer for 84, 136
+//        continueWithFolder(107); // same answer for 87, 152
+
+//        continueWithFolder(134); // same answer for 118
+
     }
 
-    @SuppressWarnings("ConstantConditions")
+    @Test
+    public void tmpStuff() throws IOException {
+
+    }
+
+    @SuppressWarnings({"ConstantConditions", "Duplicates"})
     public void continueWithFolder(int counter) throws IOException {
         List<String> violationNames = Arrays.stream(new File("results/manualEval/" + counter).listFiles()).map(File::getName).filter(name -> name.contains("violation")).collect(Collectors.toList());
         assert violationNames.size() == 1;
@@ -180,15 +214,23 @@ public class ManualTajsCheckerEvaluation {
             return;
         }
 
-        System.out.println("Nothing to do here.");
+        System.out.println("Nothing to do here. Testing the predicate.");
+        Benchmark benchmark = getBenchmark(counter, benchmarkName);
+        TypeViolation violation = getViolation(counter, benchmarkName);
+        BooleanSupplier predicate = makePredicate(benchmark, violation, TIMEOUT);
+        if (predicate.getAsBoolean()) {
+            System.out.println("Success");
+            System.err.println("Success");
+        } else {
+            System.out.println("Fail");
+            System.err.println("Fail");
+        }
     }
 
     public void continueDeltaDebugging(int folderNumber, String benchmarkName) throws IOException {
         assert new File("results/manualEval/" + folderNumber + "/" + benchmarkName + ".d.ts.original").exists();
 
-        Benchmark bench = RunBenchmarks.benchmarks.get(benchmarkName)
-                .withJsFile("results/manualEval/" + folderNumber + "/" + benchmarkName + ".js")
-                .withDecl("results/manualEval/" + folderNumber + "/" + benchmarkName + ".d.ts");
+        Benchmark bench = getBenchmark(folderNumber, benchmarkName);
 
         String smallJs = Util.readFile("results/manualEval/" + folderNumber + "/" + bench.name + ".js.smallest");
         String smallDTS = Util.readFile("results/manualEval/" + folderNumber + "/" + bench.name + ".d.ts.smallest");
@@ -196,6 +238,16 @@ public class ManualTajsCheckerEvaluation {
         Util.writeFile(bench.jsFile, smallJs);
         Util.writeFile(bench.dTSFile, smallDTS);
 
+        TypeViolation violation = getViolation(folderNumber, benchmarkName);
+        boolean success = deltaDebugViolation(bench, violation);
+        if (success) {
+            new File("results/manualEval/" + folderNumber + "/" + bench.name + ".js.smallest").delete();
+            new File("results/manualEval/" + folderNumber + "/" + bench.name + ".d.ts.smallest").delete();
+        }
+
+    }
+
+    private TypeViolation getViolation(int folderNumber, String benchmarkName) throws IOException {
         String violationString = Util.readFile("results/manualEval/" + folderNumber + "/" + benchmarkName + "_violation.txt");
 
         System.out.println(violationString);
@@ -210,12 +262,13 @@ public class ManualTajsCheckerEvaluation {
         if (!definite) {
             violation = violation.asMaybeViolation();
         }
-        boolean success = deltaDebugViolation(bench, violation);
-        if (success) {
-            new File("results/manualEval/" + folderNumber + "/" + bench.name + ".js.smallest").delete();
-            new File("results/manualEval/" + folderNumber + "/" + bench.name + ".d.ts.smallest").delete();
-        }
+        return violation;
+    }
 
+    private Benchmark getBenchmark(int folderNumber, String benchmarkName) {
+        return RunBenchmarks.benchmarks.get(benchmarkName).withOptions(AnalyzeBenchmarks.options())
+                    .withJsFile("results/manualEval/" + folderNumber + "/" + benchmarkName + ".js")
+                    .withDecl("results/manualEval/" + folderNumber + "/" + benchmarkName + ".d.ts");
     }
 
     private boolean deltaDebugViolation(Benchmark bench, TypeViolation searchViolation) throws IOException {
@@ -223,23 +276,7 @@ public class ManualTajsCheckerEvaluation {
 
         AtomicInteger timeout = new AtomicInteger(TIMEOUT);
 
-        BooleanSupplier predicate = () -> {
-            try {
-                TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, timeout.get());
-
-                return result.detectedViolations.asMap()
-                        .values().stream()
-                        .flatMap(Collection::stream)
-                        .anyMatch(typeViolation ->
-                                Util.simplifyPath(typeViolation.path).equals(searchViolation.path)
-                                && typeViolation.message.equals(searchViolation.message)
-                                && typeViolation.definite == searchViolation.definite
-                        );
-            } catch (Throwable e) {
-                e.printStackTrace();
-                return false;
-            }
-        };
+        BooleanSupplier predicate = makePredicate(bench, searchViolation, timeout.get());
 
         if (!predicate.getAsBoolean()) {
             Util.isDeltaDebugging = false;
@@ -250,13 +287,36 @@ public class ManualTajsCheckerEvaluation {
 
         do {
             timeout.set(timeout.get() / 2);
+            predicate = makePredicate(bench, searchViolation, timeout.get());
         } while (timeout.get() >= 20 && predicate.getAsBoolean());
 
         timeout.set(timeout.get() * 2 + 15);
+        predicate = makePredicate(bench, searchViolation, timeout.get());
 
         DeltaDebug.debug(bench.dTSFile, predicate);
         DeltaDebug.debug(bench.jsFile, predicate);
+        predicate.getAsBoolean();
         Util.isDeltaDebugging = false;
         return true;
+    }
+
+    private BooleanSupplier makePredicate(Benchmark bench, TypeViolation searchViolation, int timeout) {
+        return () -> {
+                try {
+                    TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, timeout);
+
+                    return result.detectedViolations.asMap()
+                            .values().stream()
+                            .flatMap(Collection::stream)
+                            .anyMatch(typeViolation ->
+                                    Util.simplifyPath(typeViolation.path).equals(searchViolation.path)
+                                    && typeViolation.message.equals(searchViolation.message)
+                                    && typeViolation.definite == searchViolation.definite
+                            );
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            };
     }
 }
