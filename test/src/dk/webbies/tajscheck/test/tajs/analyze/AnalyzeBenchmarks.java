@@ -59,12 +59,12 @@ public class AnalyzeBenchmarks extends TestCase {
             "Intro.js",
             "Redux", //
             "highlight.js", // Include any of the highlight functions, and it takes forever. Exclude them, done in 15 seconds.
-
-            // below is not included in TajsCheckerEvaluation. 
-
             "CodeMirror", // TODO: Crashes (after 6 minutes on my desktop) with "Reading undefined register v10).
-
             "Moment.js", // Timeout.
+
+            // below is not included in TajsCheckerEvaluation.
+
+
             "Leaflet" // initialization crashes on line 2302, because TAJS thinks it is reading an undefined property.
     ));
 
