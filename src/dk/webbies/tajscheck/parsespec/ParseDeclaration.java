@@ -154,7 +154,7 @@ public class ParseDeclaration {
             }
 
             for (Map.Entry<String, Type> entry : t.getStaticProperties().entrySet()) {
-                queue.add(arg.append("[static]" + entry.getKey(), entry.getValue()));
+                queue.add(arg.append(entry.getKey(), entry.getValue()));
             }
             if (t.getDeclaredNumberIndexType() != null) {
                 queue.add(arg.append("[numberIndexer]", t.getDeclaredNumberIndexType()));
