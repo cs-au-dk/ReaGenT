@@ -117,8 +117,7 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
         newCVars.putIfAbsent(testSpecialLocation, tag);
         if(args != null) {
             return args.copyWith(null, newCVars, null, null);
-        }
-        else {
+        } else {
             return new ContextArguments(null, null, newCVars);
         }
     }
