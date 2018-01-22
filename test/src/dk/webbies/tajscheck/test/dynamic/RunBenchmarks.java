@@ -139,7 +139,7 @@ public class RunBenchmarks {
 
         register(new Benchmark("Zepto.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/zepto/zepto.js", "test/benchmarks/zepto/zepto.d.ts", BROWSER, options));
 
-        register(new Benchmark("Redux", ParseDeclaration.Environment.ES5Core, "test/benchmarks/redux/redux.js", "test/benchmarks/redux/reduxModule.d.ts", NODE, options, "redux"));
+        register(new Benchmark("Redux", ParseDeclaration.Environment.ES5Core, "test/benchmarks/redux/redux.js", "test/benchmarks/redux/redux.d.ts", NODE, options, "redux"));
 
         register(new Benchmark("Ionic", ParseDeclaration.Environment.ES5Core, "test/benchmarks/ionic/ionic.js", "test/benchmarks/ionic/ionic.d.ts", BROWSER, options)
             .addDependencies(jQuery, angular)
