@@ -2,6 +2,9 @@ package dk.webbies.tajscheck.tajstester;
 
 import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.Solver;
+import dk.brics.tajs.flowgraph.AbstractNode;
+import dk.brics.tajs.lattice.Context;
+import dk.brics.tajs.lattice.HostObject;
 import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.solver.GenericSolver;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -11,6 +14,7 @@ import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
+import dk.webbies.tajscheck.util.Tuple3;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,7 +27,7 @@ public class TypeValuesHandler {
     private final SpecInstantiator instantiator;
 
     private final MultiMap<TypeWithContext, Reference<Value>> typeValueMap = new ArrayListMultiMap<>();
-    private MultiMap<Test, Reference<Value>> testValueMap = new ArrayListMultiMap<>();
+    private MultiMap<Object, Reference<Value>> testValueMap = new ArrayListMultiMap<>();
     private final Map<TypeWithContext, Value> hasBeenUpdatedMap = new HashMap<>();
 
     TypeValuesHandler(Map<Type, String> typeNames, Solver.SolverInterface c, BenchmarkInfo info, TajsTypeTester tajsTypeTester) {
@@ -80,12 +84,11 @@ public class TypeValuesHandler {
                 .collect(ArrayListMultiMap.collector());
     }
 
-    public void clearValuesForTest(Test test) {
-        testValueMap.get(test).forEach(Reference::setToNull);
-        testValueMap.remove(test);
+    public void clearValuesForTest(Object key) {
+        testValueMap.remove(key).forEach(Reference::setToNull);
     }
 
-    public boolean addFeedbackValue(Test test, TypeWithContext type, Value v) {
+    public boolean addFeedbackValue(Object key, TypeWithContext type, Value v) {
         if (!hasBeenUpdatedMap.containsKey(type)) {
             hasBeenUpdatedMap.put(type, Value.makeNone());
         }
@@ -99,7 +102,7 @@ public class TypeValuesHandler {
         assert(v != null);
         AtomicBoolean valueWasAdded = new AtomicBoolean(false);
         Reference<Value> ref = new Reference<>(v);
-        testValueMap.put(test, ref);
+        testValueMap.put(key, ref);
         info.typesUtil.forAllSubTypes(type.getType(), type.getTypeContext(), (subType) -> {
             typeValueMap.put(subType, ref);
         });

@@ -66,7 +66,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private ViolationsOracle violationsOracle;
 
     private Timers timers = new Timers();
-    private List<Test> typeCheckedTests = new ArrayList<>();
+    private final List<Test> typeCheckedTests = new ArrayList<>();
+    private TypedSymbolicFunctionEvaluator typedSymbolicFunctionEvaluator;
 
     public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
         this.tests = tests.stream().sorted((a, b) -> {
@@ -148,8 +149,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 });
             }
         } while (progress);
-
-        //valueHandler.clearValuesForTest(null); // null is the special test used for saved arguments from higher-order-functions.
 
         propagateStateToContext(c, allTestsContext, Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
 
@@ -348,20 +347,22 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
         timers.stop(Timers.Tags.INITIAL_STATE_PROPAGATION_TO_TEST_ENTRY);
         if(valueHandler == null) {
-            valueHandler = new TypeValuesHandler(info.typeNames, c, info, this);
+            this.valueHandler = new TypeValuesHandler(info.typeNames, c, info, this);
+            this.typedSymbolicFunctionEvaluator = new TypedSymbolicFunctionEvaluator(this, info, valueHandler);
         }
     }
 
     @Override
     public Value evaluateCallToSymbolicFunction(HostObject hostObject, CallInfo call, Solver.SolverInterface c) {
-        return new TypedSymbolicFunctionEvaluator(this, info, valueHandler).evaluateCallToSymbolicFunction(hostObject, call, c);
+        return typedSymbolicFunctionEvaluator.evaluateCallToSymbolicFunction(hostObject, call, c);
     }
 
     /**
      *
      * @return if the value satisfied the type
      */
-    public boolean attemptAddValue(Value value, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker, Test test) {
+    public boolean attemptAddValue(Value value, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker, Object key) {
+        assert key != null;
         value = UnknownValueResolver.getRealValue(value, c.getState());
         if (value.isNone()) {
             return !c.isScanning(); // if not scanning, it is ok. If scanning, it is a type-error.
@@ -369,7 +370,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         List<TypeViolation> violations = getViolations(value, t, path, c, tajsTypeChecker);
 
         if(violations.isEmpty() && !value.isNone()) {
-            boolean newValue = valueHandler.addFeedbackValue(test, t, value);
+            boolean newValue = valueHandler.addFeedbackValue(key, t, value);
             if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + value);
             if(newValue && c.isScanning()) {
                 throw new RuntimeException("New values should not appear in scanning!");
@@ -520,5 +521,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public Context getAllTestsContext() {
         return allTestsContext;
+    }
+
+    public ViolationsOracle getViolationsOracle() {
+        return violationsOracle;
     }
 }

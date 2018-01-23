@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.FunctionCalls;
 import dk.brics.tajs.analysis.Solver;
+import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.SourceLocation;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
@@ -16,6 +17,7 @@ import dk.webbies.tajscheck.typeutil.PrettyTypes;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
+import dk.webbies.tajscheck.util.Tuple3;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.ArrayList;
@@ -37,6 +39,9 @@ public class TypedSymbolicFunctionEvaluator {
     }
 
     public Value evaluateCallToSymbolicFunction(HostObject hostObject, FunctionCalls.CallInfo call, Solver.SolverInterface c) {
+        Tuple3<HostObject, AbstractNode, Context> key = new Tuple3<>(hostObject, c.getNode(), c.getState().getContext());
+        valueHandler.clearValuesForTest(key);
+
         TypeWithContext typeWithContext = ((SpecObjects.TypedObject) hostObject).getType();
 
         SourceLocation sourceLocation = c.getNode().getBlock().getSourceLocation();
@@ -90,11 +95,11 @@ public class TypedSymbolicFunctionEvaluator {
             return Value.makeNone();
         }
 
-        return evaluateCallToSymbolicFunction(call, c, path, context, signatures);
+        return evaluateCallToSymbolicFunction(call, c, path, context, signatures, key);
     }
 
-    private Value evaluateCallToSymbolicFunction(FunctionCalls.CallInfo call, Solver.SolverInterface c, Function<String, String> path, TypeContext context, List<Signature> signatures) {
-        TajsTypeChecker tajsTypeChecker = new TajsTypeChecker(null, c, info, null);
+    private Value evaluateCallToSymbolicFunction(FunctionCalls.CallInfo call, Solver.SolverInterface c, Function<String, String> path, TypeContext context, List<Signature> signatures, Tuple3<HostObject, AbstractNode, Context> key) {
+        TajsTypeChecker tajsTypeChecker = new TajsTypeChecker(null, c, info, tajsTypeTester.getViolationsOracle());
 
         if (signatures.size() == 1) {
             Signature signature = signatures.get(0);
@@ -123,22 +128,22 @@ public class TypedSymbolicFunctionEvaluator {
                 }
                 if (signature.isHasRestParameter()) {
                     // restricting to not undef, because rest-args must be possibly undef.
-                    tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, context), path.apply(".[argUnknown]"), c, tajsTypeChecker, null);
+                    tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, context), path.apply(".[argUnknown]"), c, tajsTypeChecker, key);
                 }
             }
 
             for (int i = 0; i < parameters.size(); i++) {
                 Value arg = call.getArg(i);
                 if (arg.isMaybePresent()) {
-                    tajsTypeTester.attemptAddValue(arg, new TypeWithContext(parameters.get(i).getType(), context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, null);
+                    tajsTypeTester.attemptAddValue(arg, new TypeWithContext(parameters.get(i).getType(), context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, key);
                 }
             }
             if (signature.isHasRestParameter()) {
                 if (call.isUnknownNumberOfArgs()) {
-                    tajsTypeTester.attemptAddValue(call.getArg(parameters.size()), new TypeWithContext(restArgsType, context), path.apply(".[arg" + parameters.size() + "]"), c, tajsTypeChecker, null);
+                    tajsTypeTester.attemptAddValue(call.getArg(parameters.size()), new TypeWithContext(restArgsType, context), path.apply(".[arg" + parameters.size() + "]"), c, tajsTypeChecker, key);
                 } else {
                     for (int i = parameters.size(); i < call.getNumberOfArgs(); i++) {
-                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, null);
+                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, key);
                     }
                 }
             }
@@ -166,15 +171,15 @@ public class TypedSymbolicFunctionEvaluator {
                     parameters = parameters.subList(0, parameters.size() - 1);
 
                     for (int i = parameters.size(); i < call.getNumberOfArgs(); i++) {
-                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, null);
+                        tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(restArgsType, context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, key);
                     }
 
                     if (call.isUnknownNumberOfArgs()) {
-                        tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, context), path.apply(".[argUnknown]"), c, tajsTypeChecker, null);
+                        tajsTypeTester.attemptAddValue(call.getUnknownArg().restrictToNotUndef(), new TypeWithContext(restArgsType, context), path.apply(".[argUnknown]"), c, tajsTypeChecker, key);
                     }
                 }
                 for (int i = 0; i < Math.min(parameters.size(), call.getNumberOfArgs()); i++) {
-                    tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, null);
+                    tajsTypeTester.attemptAddValue(call.getArg(i), new TypeWithContext(parameters.get(i).getType(), context), path.apply(".[arg" + i + "]"), c, tajsTypeChecker, key);
                 }
             }
 

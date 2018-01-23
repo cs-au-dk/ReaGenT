@@ -127,7 +127,7 @@ public class TajsTypeChecker {
                         }
                         if (v.isMaybePrimitive()) {
                             TypeViolation violation = definiteViolation(path, v, typeCheck);
-                            if (this.violationsOracle == null || this.violationsOracle.canEmit(violation)) {
+                            if (this.violationsOracle.canEmit(violation)) {
                                 return Collections
                                         .singletonList(violation);
                             }
@@ -143,7 +143,7 @@ public class TajsTypeChecker {
                         if (resultBool.isMaybeAnyBool()) {
                             violation = violation.asMaybeViolation();
                         }
-                        if(this.violationsOracle == null || this.violationsOracle.canEmit(violation)) {
+                        if(this.violationsOracle.canEmit(violation)) {
                             return Collections.singletonList(violation);
                         }
                         return java.util.Collections.emptyList();

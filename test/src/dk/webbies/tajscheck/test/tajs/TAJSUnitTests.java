@@ -887,6 +887,28 @@ public class TAJSUnitTests {
     }
 
     @Test
+    public void discardSpuriousValuesHigherOrder() throws Exception {
+        List<String> executionOrder = Arrays.asList("module.gen(obj)", "module.gen.[arg0].[arg0].foo()", "module.gen.[arg0].[arg0].foo().baz()", "module.gen.[arg0].[arg0].bar()");
+
+        TajsAnalysisResults resultNoOrder = run("discardSpuriousValuesHigherOrder", options());
+
+        TajsAnalysisResults resultFixedExpansion = run("discardSpuriousValuesHigherOrder", options().staticOptions.setExpansionPolicy(new FixedExpansionOrder(executionOrder)));
+
+        System.out.println("With default expansion-policy");
+        System.out.println(resultNoOrder);
+
+        System.out.println("With fixed expansion");
+        System.out.println(resultFixedExpansion);
+
+        assertThat(resultNoOrder.detectedViolations.keySet(), is(equalTo(resultFixedExpansion.detectedViolations.keySet())));
+
+        expect(resultFixedExpansion)
+                .hasViolations();
+        expect(resultNoOrder)
+                .hasViolations();
+    }
+
+    @Test
     public void asyncError() throws Exception {
         TajsAnalysisResults result = run("asyncError");
 
@@ -1683,9 +1705,6 @@ public class TAJSUnitTests {
                 .hasNoViolations()
                 .hasNoWarnings();
     }
-
-    // TODO: Delta-debug ManualEval 52.
-    // TODO: Delta-debug ManualEval 56.
 
     @Test
     public void wrongIn() throws Exception {
