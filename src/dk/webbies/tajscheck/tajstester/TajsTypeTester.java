@@ -5,6 +5,7 @@ import dk.brics.tajs.analysis.*;
 import dk.brics.tajs.analysis.FunctionCalls.CallInfo;
 import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.lattice.*;
+import dk.brics.tajs.monitoring.AnalysisPhase;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
 import dk.brics.tajs.solver.BlockAndContext;
 import dk.brics.tajs.solver.WorkList;
@@ -62,6 +63,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private SuspiciousnessMonitor suspiciousMonitor;
     private TestTransfersMonitor transferMonitor;
     private TajsCoverageResult coverageMonitor = new TajsCoverageResult();
+    private ViolationsOracle violationsOracle;
 
     private Timers timers = new Timers();
     private List<Test> typeCheckedTests = new ArrayList<>();
@@ -77,6 +79,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         this.expansionPolicy = new ConsistencyKeepingExpansionPolicy(this.info.options.staticOptions.expansionPolicy);
         this.transferMonitor = new TestTransfersMonitor(this, retractionPolicy::notifyTestTransfer);
         this.suspiciousMonitor = new SuspiciousnessMonitor(this, retractionPolicy::notifySuspiciousLocation);
+        this.violationsOracle = ViolationsOracle.fromJson(info.bench);
     }
 
     public Timers getTimers() {return timers; }
@@ -146,7 +149,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
         } while (progress);
 
-        valueHandler.clearValuesForTest(null); // null is the special test used for saved arguments from higher-order-functions.
+        //valueHandler.clearValuesForTest(null); // null is the special test used for saved arguments from higher-order-functions.
 
         propagateStateToContext(c, allTestsContext, Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
 
@@ -261,7 +264,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private void performTest(Solver.SolverInterface c, Test test, Context newc) {
         if (DEBUG) System.out.println("Performing test " + test);
 
-        TajsTypeChecker typeChecker = new TajsTypeChecker(test, c, info);
+        TajsTypeChecker typeChecker = new TajsTypeChecker(test, c, info, violationsOracle);
         TajsTestVisitor visitor = new TajsTestVisitor(c, typeChecker, this, info, valueHandler);
 
         // attempting to perform the test in the local context
@@ -290,9 +293,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private boolean checkPropertyReads(Test testToBlame, List<PropertyReadTest> propertyReads, Solver.SolverInterface c) {
         boolean typeChecked = true;
-        TajsTypeChecker typeChecker = new TajsTypeChecker(testToBlame, c, info);
+        TajsTypeChecker typeChecker = new TajsTypeChecker(testToBlame, c, info, violationsOracle);
         for (PropertyReadTest propertyRead : propertyReads) {
-            Value baseValue = valueHandler.findFeedbackValue(new TypeWithContext(propertyRead.getBaseType(),propertyRead.getTypeContext()));
+            Value baseValue = valueHandler.findFeedbackValue(new TypeWithContext(propertyRead.getBaseType(), propertyRead.getTypeContext()));
             PropVarOperations pc = c.getAnalysis().getPropVarOperations();
             if (baseValue == null) {
                 continue;
@@ -306,13 +309,15 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 }
                 List<TypeViolation> violations = getViolations(propertyValue, closedType, propertyRead.getPath(), c, typeChecker);
 
+                violations = violations.stream()
+                        .map(v -> v.withMessage("Violation after FunctionCall: \"" + v.toString() + "\"").withPath(testToBlame.getPath()))
+                        .filter(violationsOracle::canEmit)
+                        .collect(Collectors.toList());
+
                 typeChecked &= violations.isEmpty();
 
-                for (TypeViolation violation : violations) {
-                    addViolation(violation.withMessage("Violation after FunctionCall: \"" + violation.toString() + "\"").withPath(testToBlame.getPath()), c);
-                }
+                violations.forEach(v -> addViolation(v, c));
             }
-
         }
 
         return typeChecked;
@@ -378,7 +383,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     }
 
     List<TypeViolation> getViolations(Value v, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker) {
-        return tajsTypeChecker.typeCheck(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), info, path);
+        return tajsTypeChecker.typeCheck(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), info, path)
+                .stream()
+                .filter(this.violationsOracle::canEmit)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -457,6 +465,16 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             return notDoneCertificates;
         } else {
             return certificates;
+        }
+    }
+
+    @Override
+    public void visitPhasePost(AnalysisPhase phase) {
+        if(phase == AnalysisPhase.SCAN) {
+            if(!this.violationsOracle.isTight()) {
+                throw new RuntimeException("The violation oracle used is not tight, remove the following suppressions:\n" +
+                        new ArrayList<>(this.violationsOracle.getUnnecessarySuppressions()));
+            }
         }
     }
 

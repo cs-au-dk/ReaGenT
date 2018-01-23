@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import dk.webbies.tajscheck.tajstester.ViolationsOracle;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.Util;
 

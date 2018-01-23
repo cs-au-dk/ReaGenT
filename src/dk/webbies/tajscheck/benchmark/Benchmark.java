@@ -3,11 +3,14 @@ package dk.webbies.tajscheck.benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import dk.webbies.tajscheck.tajstester.ViolationsOracle;
 import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -20,21 +23,26 @@ public class Benchmark {
     public final ParseDeclaration.Environment environment;
     public final String jsFile;
     public final String dTSFile;
+    public final String violationsOracleFile;
     public final Set<String> pathsToTest;
     public final RUN_METHOD run_method;
     public final CheckOptions options;
     public final String exportName;
     private final List<Benchmark> dependencies;
 
+    public Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, CheckOptions options, String exportName, String violationsOracleFile) {
+        this(name, environment, jsFile, dTSFile, load_method, null, options, new ArrayList<>(), exportName, violationsOracleFile);
+    }
+
     public Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, CheckOptions options, String exportName) {
-        this(name, environment, jsFile, dTSFile, load_method, null, options, new ArrayList<>(), exportName);
+        this(name, environment, jsFile, dTSFile, load_method, null, options, new ArrayList<>(), exportName, null);
     }
 
     public Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, CheckOptions options) {
-        this(name, environment, jsFile, dTSFile, load_method, options, null);
+        this(name, environment, jsFile, dTSFile, load_method, options, null, null);
     }
 
-    private Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, Set<String> pathsToTest, CheckOptions options, List<Benchmark> dependencies, String exportName) {
+    private Benchmark(String name, ParseDeclaration.Environment environment, String jsFile, String dTSFile, RUN_METHOD load_method, Set<String> pathsToTest, CheckOptions options, List<Benchmark> dependencies, String exportName, String violationsOracleFile) {
         this.name = name;
         this.environment = environment;
         this.dTSFile = dTSFile;
@@ -49,6 +57,12 @@ public class Benchmark {
         } else {
             this.jsFile = jsFile;
         }
+        if(violationsOracleFile != null) {
+            this.violationsOracleFile = violationsOracleFile;
+        }
+        else {
+            this.violationsOracleFile = Paths.get(dTSFile).getParent().resolve("suppressed.json").toString();
+        }
     }
 
     public Benchmark withPathsToTest(Collection<String> pathsToTest) {
@@ -61,7 +75,8 @@ public class Benchmark {
                 Collections.unmodifiableSet(pathsToTest.stream().map(Util::simplifyPath).collect(Collectors.toSet())),
                 this.options,
                 this.dependencies,
-                this.exportName);
+                this.exportName,
+                this.violationsOracleFile);
     }
 
     public Benchmark withRunMethod(RUN_METHOD method) {
@@ -74,7 +89,8 @@ public class Benchmark {
                 this.pathsToTest,
                 this.options,
                 this.dependencies,
-                this.exportName);
+                this.exportName,
+                this.violationsOracleFile);
     }
 
     public Benchmark addDependencies(Benchmark... benchmarks) {
@@ -103,7 +119,8 @@ public class Benchmark {
                 this.pathsToTest,
                 this.options,
                 dependencies,
-                this.exportName
+                this.exportName,
+                this.violationsOracleFile
         );
     }
 
@@ -121,7 +138,8 @@ public class Benchmark {
                 this.pathsToTest,
                 options,
                 this.dependencies,
-                this.exportName
+                this.exportName,
+                this.violationsOracleFile
         );
     }
 
@@ -139,7 +157,8 @@ public class Benchmark {
                 this.pathsToTest,
                 transformer.apply(this.options.getBuilder()).build(),
                 this.dependencies,
-                this.exportName
+                this.exportName,
+                this.violationsOracleFile
         );
     }
 
@@ -153,7 +172,8 @@ public class Benchmark {
                 this.pathsToTest,
                 this.options,
                 this.dependencies,
-                this.exportName
+                this.exportName,
+                this.violationsOracleFile
         );
     }
 
@@ -167,7 +187,8 @@ public class Benchmark {
                 this.pathsToTest,
                 this.options,
                 this.dependencies,
-                this.exportName
+                this.exportName,
+                this.violationsOracleFile
         );
     }
 
@@ -181,8 +202,40 @@ public class Benchmark {
                 this.pathsToTest,
                 this.options,
                 this.dependencies,
-                this.exportName
+                this.exportName,
+                this.violationsOracleFile
         );
+    }
+
+    public Benchmark withViolationsOracle(String violationsOracleFile) {
+        return new Benchmark(
+                this.name,
+                this.environment,
+                jsFile,
+                this.dTSFile,
+                this.run_method,
+                this.pathsToTest,
+                this.options,
+                this.dependencies,
+                this.exportName,
+                violationsOracleFile
+        );
+    }
+
+    public Benchmark patched() {
+        Path dtspath = Paths.get(this.dTSFile);
+        Path entryPath = Paths.get(this.jsFile);
+        String patched = dtspath.getParent().resolve("patched." + dtspath.getFileName()).toString();
+        String patchedSuppressed = dtspath.getParent().resolve("patched.suppressed.json").toString();
+        if (!new File(patched).exists()) {
+            return null;
+        } else {
+            String patchedEntry = entryPath.getParent().resolve("patched." + entryPath.getFileName()).toString();
+            return this
+                    .withDecl(patched)
+                    .withViolationsOracle(patchedSuppressed)
+                    .withJsFile(patchedEntry);
+        }
     }
 
     public static Benchmark fromTSFile(String tsFile, String name, ParseDeclaration.Environment environment, RUN_METHOD run_method, CheckOptions options) throws IOException {

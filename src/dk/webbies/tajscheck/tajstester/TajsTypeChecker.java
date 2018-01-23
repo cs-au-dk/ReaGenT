@@ -40,12 +40,15 @@ public class TajsTypeChecker {
 
     private final Map<Tuple3<Check, TypeWithContext, Value>, List<TypeViolation>> cache = new HashMap<>();
 
+    private final ViolationsOracle violationsOracle;
+
     @SuppressWarnings({"unused", "FieldCanBeLocal"})
     private final Test test; // Not used for anything, but this way we enforce that a TajsTypeChecker is constructed for every test, and thereby the cache's aren't mixed.
 
-    public TajsTypeChecker(Test test, Solver.SolverInterface c, BenchmarkInfo info) {
+    public TajsTypeChecker(Test test, Solver.SolverInterface c, BenchmarkInfo info, ViolationsOracle violationsOracle) {
         this.c = c;
         this.pv = c.getAnalysis().getPropVarOperations();
+        this.violationsOracle = violationsOracle;
         this.info = info;
         this.test = test;
     }
@@ -123,7 +126,11 @@ public class TajsTypeChecker {
                             return java.util.Collections.emptyList();
                         }
                         if (v.isMaybePrimitive()) {
-                            return Collections.singletonList(definiteViolation(path, v, typeCheck));
+                            TypeViolation violation = definiteViolation(path, v, typeCheck);
+                            if (this.violationsOracle == null || this.violationsOracle.canEmit(violation)) {
+                                return Collections
+                                        .singletonList(violation);
+                            }
                         }
                         return performSubTypeCheck(v, (StringIndexCheck)check, path + ".[stringIndexer]", Value.makeAnyStrUInt());
                     } else {
@@ -136,7 +143,10 @@ public class TajsTypeChecker {
                         if (resultBool.isMaybeAnyBool()) {
                             violation = violation.asMaybeViolation();
                         }
-                        return Collections.singletonList(violation);
+                        if(this.violationsOracle == null || this.violationsOracle.canEmit(violation)) {
+                            return Collections.singletonList(violation);
+                        }
+                        return java.util.Collections.emptyList();
                     } else {
                         return java.util.Collections.emptyList();
                     }

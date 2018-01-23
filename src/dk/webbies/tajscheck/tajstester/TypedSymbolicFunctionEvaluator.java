@@ -94,7 +94,7 @@ public class TypedSymbolicFunctionEvaluator {
     }
 
     private Value evaluateCallToSymbolicFunction(FunctionCalls.CallInfo call, Solver.SolverInterface c, Function<String, String> path, TypeContext context, List<Signature> signatures) {
-        TajsTypeChecker tajsTypeChecker = new TajsTypeChecker(null, c, info);
+        TajsTypeChecker tajsTypeChecker = new TajsTypeChecker(null, c, info, null);
 
         if (signatures.size() == 1) {
             Signature signature = signatures.get(0);

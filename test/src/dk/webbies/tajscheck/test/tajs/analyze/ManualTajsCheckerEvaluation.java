@@ -77,7 +77,7 @@ public class ManualTajsCheckerEvaluation {
             return;
         }
         Benchmark bench = RunBenchmarks.benchmarks.get(benchmarkName).withOptions(AnalyzeBenchmarks.options());
-        Benchmark patched = AnalyzeBenchmarks.getPatchedBenchmark(bench);
+        Benchmark patched = bench.patched();
         if (patched != null) {
             bench = patched;
         }

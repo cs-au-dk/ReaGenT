@@ -1,0 +1,19 @@
+{
+  "suppressions": [
+    {
+      "path": "module.property.x3"
+    },
+    {
+      "path": "module.fun().x2"
+    },
+    {
+      "path": "module.C1.new().x1"
+    },
+    {
+      "path": "window.module.callback.[arg0].[arg0] {implementation.js43:5}.x4"
+    },
+    {
+      "path": "module.callback.[arg0].[arg0].x4"
+    }
+  ]
+}

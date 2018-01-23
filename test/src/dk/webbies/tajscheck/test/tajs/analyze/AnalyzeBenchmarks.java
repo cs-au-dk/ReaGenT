@@ -148,7 +148,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
     public void analyzeBenchmarkPatched() throws Exception {
-        Benchmark benchmark = getPatchedBenchmark(this.benchmark);
+        Benchmark benchmark = this.benchmark.patched();
         if (benchmark == null) {
             return;
         }
@@ -156,20 +156,6 @@ public class AnalyzeBenchmarks extends TestCase {
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
         System.out.println(result);
         assert(!result.timedout);
-    }
-
-    public static Benchmark getPatchedBenchmark(Benchmark benchmark) {
-        Path dtspath = Paths.get(benchmark.dTSFile);
-        Path entryPath = Paths.get(benchmark.jsFile);
-        String patched = dtspath.getParent().resolve("patched." + dtspath.getFileName()).toString();
-        if (!new File(patched).exists()) {
-            return null;
-        } else {
-            String patchedEntry = entryPath.getParent().resolve("patched." + entryPath.getFileName()).toString();
-            return benchmark
-                    .withDecl(patched)
-                    .withJsFile(patchedEntry);
-        }
     }
 
     @Test(timeout = (int)(INIT_TIMEOUT * 1000 * 1.3))

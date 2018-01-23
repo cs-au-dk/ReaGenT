@@ -121,7 +121,7 @@ public class TajsCheckerEvaluation {
             new Experiment("Sortable").addExperiment(experiment()).calculate(null);
         }
         Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(bench -> {
-            if (AnalyzeBenchmarks.getPatchedBenchmark(bench) != null) {
+            if (bench.patched() != null) {
                 return bench.withName(bench.name + " patched");
             } else {
                 return bench;
@@ -140,7 +140,7 @@ public class TajsCheckerEvaluation {
 
     private static BiConsumer<Benchmark, BiConsumer<String, String>> experiment() {
         return (benchmark, register) -> {
-            Benchmark patched = AnalyzeBenchmarks.getPatchedBenchmark(benchmark);
+            Benchmark patched = benchmark.patched();
 
             if (patched != null) {
                 benchmark = patched;

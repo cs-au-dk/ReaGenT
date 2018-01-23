@@ -1,0 +1,8 @@
+{
+  "suppressions": [
+    {
+      "path": "Path.map().partition().[numberIndexer]",
+      "comment": "TAJS imprecision, NaN arising from Undefined + Undefined"
+    }
+  ]
+}

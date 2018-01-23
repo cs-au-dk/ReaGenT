@@ -1703,4 +1703,13 @@ public class TAJSUnitTests {
 
         assert result.detectedViolations.asMap().values().stream().flatMap(Collection::stream).anyMatch(violation -> !violation.definite);
     }
+
+    @Test
+    public void suppressionsAllowFeedback() throws Exception {
+        TajsAnalysisResults result = run("suppressionAllowsFeedback");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 }
