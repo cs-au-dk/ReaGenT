@@ -167,7 +167,9 @@ public class TajsCheckerEvaluation {
             register.accept("certificates", result.certificates.size() + "");
             List<String> tajsCheckerPaths = result.detectedViolations.keySet().stream().map(Util::simplifyPath).collect(Collectors.toList());
             register.accept("violationPaths", tajsCheckerPaths.size() + "");
-            register.accept("violations", result.detectedViolations.asMap().entrySet().stream().reduce(0, (acc, entry) -> entry.getValue().size() + acc, Math::addExact) + "");
+            register.accept("violations", result.detectedViolations.asMap().values().stream().reduce(0, (acc, violations) -> violations.size() + acc, Math::addExact) + "");
+            register.accept("violations-definite", result.detectedViolations.asMap().values().stream().flatMap(Collection::stream).filter(violation -> violation.definite).count() + "");
+            register.accept("violations-maybe", result.detectedViolations.asMap().values().stream().flatMap(Collection::stream).filter(violation -> !violation.definite).count() + "");
             register.accept("totalTests", result.testNot.size() + result.testPerformed.size() + "");
             register.accept("testsPerformed", result.testPerformed.size() + "");
             register.accept("typeCheckedTests", result.typeCheckedTests.size() + "");
