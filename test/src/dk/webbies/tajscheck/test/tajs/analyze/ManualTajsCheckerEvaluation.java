@@ -80,7 +80,7 @@ public class ManualTajsCheckerEvaluation {
     private static final Set<String> cleanBenchmarks = new HashSet<>();
 
     private void findATypeError(String benchmarkName) throws Exception {
-        findATypeError(benchmarkName, 0);
+        findATypeError(benchmarkName, -1);
     }
 
     @SuppressWarnings("SameParameterValue")
