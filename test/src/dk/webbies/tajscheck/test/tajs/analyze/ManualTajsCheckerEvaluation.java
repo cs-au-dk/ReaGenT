@@ -27,7 +27,7 @@ public class ManualTajsCheckerEvaluation {
 
     private static final int TIMEOUT = 20 * 60; // in seconds
     private static final boolean DO_DELTA_DEBUGGING = true;
-    private static final String outputDir = "Intro.js";
+    private static String outputDir = "Intro.js";
 
     private static final Set<String> CAN_DELTA_DEBUG = new HashSet<>(Arrays.asList(
             "Hammer.js",
@@ -79,8 +79,12 @@ public class ManualTajsCheckerEvaluation {
 
     private static final Set<String> cleanBenchmarks = new HashSet<>();
 
-    @SuppressWarnings("SameParameterValue")
     private void findATypeError(String benchmarkName) throws Exception {
+        findATypeError(benchmarkName, 0);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void findATypeError(String benchmarkName, int index) throws Exception {
         if (cleanBenchmarks.contains(benchmarkName)) {
             return;
         }
@@ -104,7 +108,7 @@ public class ManualTajsCheckerEvaluation {
         ArrayList<TypeViolation> typeViolations = new ArrayList<>(violation.getValue());
         Collections.shuffle(typeViolations);
 
-        TypeViolation typeViolation = typeViolations.iterator().next();
+        TypeViolation typeViolation = typeViolations.get(index);
         typeViolation = typeViolation.withPath(Util.simplifyPath(typeViolation.path));
         reportViolation(bench, typeViolation);
     }
@@ -335,8 +339,11 @@ public class ManualTajsCheckerEvaluation {
 
     public static void main(String[] args) throws Exception {
         ManualTajsCheckerEvaluation o = new ManualTajsCheckerEvaluation();
+        ManualTajsCheckerEvaluation.outputDir = args[0];
+        int index = 0;
+        try { index = Integer.parseInt(args[1]); } catch(Exception e){}
         while(true) {
-            o.findATypeError(args[0]);
+            o.findATypeError(args[0], index);
         }
     }
 }
