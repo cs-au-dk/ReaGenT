@@ -79,9 +79,13 @@ allprojects {
     }
 }
 
-
-task performEvaluation(type: JavaExec) {
+// Example usage:
+// ./gradlew deltaDebug -PappArgs="['Intro.js']"
+task deltaDebug(type: JavaExec) {
+    if (project.hasProperty("appArgs")) {
+        args Eval.me(appArgs)
+    }
     classpath sourceSets.test.runtimeClasspath
-    jvmArgs = ["-Xmx16G"]
-    main = 'dk.webbies.tajscheck.test.tajs.analyze.TajsCheckerEvaluation'
+    jvmArgs = ["-Xmx32G"]
+    main = 'dk.webbies.tajscheck.test.tajs.analyze.ManualTajsCheckerEvaluation'
 }

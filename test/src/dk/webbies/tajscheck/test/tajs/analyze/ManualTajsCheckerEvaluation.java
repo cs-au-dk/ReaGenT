@@ -10,7 +10,15 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -19,7 +27,7 @@ public class ManualTajsCheckerEvaluation {
 
     private static final int TIMEOUT = 20 * 60; // in seconds
     private static final boolean DO_DELTA_DEBUGGING = true;
-    private static final String outputDir = "accounting";
+    private static final String outputDir = "Intro.js";
 
     private static final Set<String> CAN_DELTA_DEBUG = new HashSet<>(Arrays.asList(
             "Hammer.js",
@@ -65,7 +73,7 @@ public class ManualTajsCheckerEvaluation {
     @Test
     public void doASingleEval() throws Exception {
         while(true) {
-            findATypeError("accounting.js");
+            findATypeError("Intro.js");
         }
     }
 
@@ -142,6 +150,11 @@ public class ManualTajsCheckerEvaluation {
         } else {
             Util.writeFile("results/" + outputDir + "/" + counter + "/skipped_delta.txt", "");
         }
+    }
+
+    @Test
+    public void deltaDebugSuppressed() throws IOException {
+
     }
 
     @Test
@@ -318,5 +331,12 @@ public class ManualTajsCheckerEvaluation {
                     return false;
                 }
             };
+    }
+
+    public static void main(String[] args) throws Exception {
+        ManualTajsCheckerEvaluation o = new ManualTajsCheckerEvaluation();
+        while(true) {
+            o.findATypeError(args[0]);
+        }
     }
 }
