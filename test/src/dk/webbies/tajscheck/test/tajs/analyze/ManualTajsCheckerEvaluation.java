@@ -106,9 +106,15 @@ public class ManualTajsCheckerEvaluation {
         Collections.shuffle(violationList);
         Map.Entry<String, Collection<TypeViolation>> violation = violationList.get(0);
         ArrayList<TypeViolation> typeViolations = new ArrayList<>(violation.getValue());
-        Collections.shuffle(typeViolations);
 
-        TypeViolation typeViolation = typeViolations.get(index);
+        TypeViolation typeViolation;
+        if (index < 0) {
+            Collections.shuffle(typeViolations);
+            typeViolation = typeViolations.get(0);
+        } else {
+            typeViolation = typeViolations.get(index);
+        }
+
         typeViolation = typeViolation.withPath(Util.simplifyPath(typeViolation.path));
         reportViolation(bench, typeViolation);
     }
@@ -340,7 +346,7 @@ public class ManualTajsCheckerEvaluation {
     public static void main(String[] args) throws Exception {
         ManualTajsCheckerEvaluation o = new ManualTajsCheckerEvaluation();
         ManualTajsCheckerEvaluation.outputDir = args[0];
-        int index = 0;
+        int index = -1;
         try { index = Integer.parseInt(args[1]); } catch(Exception e){}
         while(true) {
             o.findATypeError(args[0], index);
