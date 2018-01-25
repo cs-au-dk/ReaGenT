@@ -1,0 +1,28 @@
+{
+  "suppressions": [
+    {
+      "path": "window.introJs.().onbeforechange.[arg0].[arg0] {patched.intro.js337:13}",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "window.introJs.().onhintclick.[arg0].[arg1] {patched.intro.js1534:13}",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "window.introJs.().onhintclick.[arg0].[arg1] {patched.intro.js1534:13}.intro",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "window.introJs.().onchange.[arg0].[arg0] {patched.intro.js770:13}",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "window.introJs.().onhintclose.[arg0].[arg0] {patched.intro.js1348:13}",
+      "comment": "Major imprecision: Expected number but found {toString:^(*MouseEvent[dom].toString[absent]),valueOf:^(*MouseEvent[dom].valueOf[absent]),[[DefaultArray]]=?,[[DefaultNonArray]]=?,[[Prototype]]=[@MouseEvent.prototype[dom]],[[Value]]=?,[[Scope]]=?} in test window.introJs.().onhintclose.[arg0].[arg0] {patched.intro.js1348:13}"
+    },
+    {
+      "path": "window.introJs.().onhintclick.[arg0].[arg1] {patched.intro.js1534:13}.position",
+      "comment": "Investigated but not understood precision loss"
+    }
+  ]
+}
