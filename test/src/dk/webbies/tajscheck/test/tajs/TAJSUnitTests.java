@@ -1717,6 +1717,7 @@ public class TAJSUnitTests {
 
     @Test
     @Ignore // The "is undefined" violation is not definite, there is an object. But because that object fails its type-check, it is marked as a definite instead of a maybe.
+    // Can properly get around in the places where i split the value by checking if the different splits have violations in different locations. In which case the top-most location is a maybe.
     public void definiteIssue() throws Exception {
         TajsAnalysisResults result = run("definiteIssue");
 

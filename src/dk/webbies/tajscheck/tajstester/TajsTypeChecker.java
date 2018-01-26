@@ -87,7 +87,10 @@ public class TajsTypeChecker {
 
         List<Value> split = split(v);
 
-        List<List<TypeViolation>> violationsForEachValue = split.stream().map(splittenValue -> getTypeViolations(new TypeWithContext(type, context), splittenValue, typeChecks, path)).collect(Collectors.toList());
+        List<List<TypeViolation>> violationsForEachValue = split.stream()
+                .map(splittenValue -> getTypeViolations(new TypeWithContext(type, context), splittenValue, typeChecks, path))
+                .filter(violation -> violation != ViolationsOracle.suppresedViolationMarker)
+                .collect(Collectors.toList());
 
         boolean definiteViolation = violationsForEachValue.stream().allMatch(Util.not(Collection::isEmpty));
 
@@ -130,6 +133,8 @@ public class TajsTypeChecker {
                             if (this.violationsOracle.canEmit(violation)) {
                                 return Collections
                                         .singletonList(violation);
+                            } else {
+                                return Collections.singletonList(ViolationsOracle.suppresedViolationMarker);
                             }
                         }
                         return performSubTypeCheck(v, (StringIndexCheck)check, path + ".[stringIndexer]", Value.makeAnyStrUInt());
@@ -145,8 +150,9 @@ public class TajsTypeChecker {
                         }
                         if(this.violationsOracle.canEmit(violation)) {
                             return Collections.singletonList(violation);
+                        } else {
+                            return Collections.singletonList(ViolationsOracle.suppresedViolationMarker);
                         }
-                        return java.util.Collections.emptyList();
                     } else {
                         return java.util.Collections.emptyList();
                     }

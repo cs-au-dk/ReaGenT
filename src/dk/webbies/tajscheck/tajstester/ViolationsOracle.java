@@ -21,15 +21,19 @@ public class ViolationsOracle {
     }
 
     public boolean canEmit(TypeViolation v) {
+        if (v.path.equals(suppresedViolationMarker.path)) {
+            return false;
+        }
         TypeViolationSignature signature = getSignature(v);
         if(!toSuppress.contains(signature)) {
             return true;
-        }
-        else {
+        } else {
             suppressed.add(signature);
             return false;
         }
     }
+
+    public static final TypeViolation suppresedViolationMarker = TypeViolation.definite(">Is fake", "Should never be reported");
 
     public boolean isTight() {
         return suppressed.containsAll(toSuppress);
