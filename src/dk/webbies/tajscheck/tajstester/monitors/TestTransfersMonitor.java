@@ -4,6 +4,7 @@ import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.lattice.State;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
+import dk.webbies.tajscheck.tajstester.TesterContextSensitivity;
 import dk.webbies.tajscheck.testcreator.test.Test;
 
 import java.util.Map;
@@ -12,8 +13,6 @@ import java.util.function.BiConsumer;
 import static dk.brics.tajs.util.Collections.newMap;
 
 public class TestTransfersMonitor extends DefaultAnalysisMonitoring {
-    private boolean DEBUG = true;
-
     private Map<Test, Integer> testsTransfer = newMap();
 
     private TajsTypeTester tester;
@@ -33,7 +32,7 @@ public class TestTransfersMonitor extends DefaultAnalysisMonitoring {
         if (s.getSolverInterface().isScanning()) {
             return;
         }
-        if(tester.getSensitivity() != null && tester.getSensitivity().isTestContext(s.getContext())) {
+        if(tester.getSensitivity() != null && TesterContextSensitivity.isTestContext(s.getContext())) {
             Test t = tester.getSensitivity().getTest(s.getContext());
             int newTransfer = testsTransfer.getOrDefault(t, 0) + 1;
             testsTransfer.put(t, newTransfer);
