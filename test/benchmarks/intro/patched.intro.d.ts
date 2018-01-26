@@ -56,9 +56,9 @@ declare namespace IntroJs {
         setOptions(options: Options): IntroJs;
 
         onexit(callback: Function): IntroJs;
-        onbeforechange(callback: (element: HTMLElement) => any): IntroJs;
+        onbeforechange(callback: (element?: HTMLElement) => any): IntroJs; // Because Hint.element can be undefined, so can the element argument in the callback
         onafterchange(callback: (element: HTMLElement) => any): IntroJs;
-        onchange(callback: (element: HTMLElement) => any): IntroJs;
+        onchange(callback: (element?: HTMLElement) => any): IntroJs;// Because Hint.element can be undefined, so can the element argument in the callback
         oncomplete(callback: Function): IntroJs;
 
         addHints(): IntroJs;

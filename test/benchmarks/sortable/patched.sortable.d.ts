@@ -144,7 +144,7 @@ declare namespace Sortablejs {
          * @param {HTMLElement} element Any variety of HTMLElement.
          * @param {SortableOptions} options Sortable options object.
          */
-        constructor(element: any, options: SortableOptions);
+        constructor(element: HTMLElement, options: SortableOptions);
 
         static active?: Sortable;
         static utils: SortableUtils;
