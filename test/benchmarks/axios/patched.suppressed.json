@@ -1,0 +1,76 @@
+{
+  "suppressions": [
+    {
+      "path": "\"axios\".patch",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".head",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".request",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".defaults",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".post",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".get",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".delete",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".put",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".interceptors",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".create().get",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".create().interceptors",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".create().request",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".create().delete",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".create().head",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".create().put",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".create().patch",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".create().defaults",
+      "comment": "Looses precision and has a spurious undefined. "
+    },
+    {
+      "path": "\"axios\".create().post",
+      "comment": "Looses precision and has a spurious undefined. "
+    }
+  ]
+}
