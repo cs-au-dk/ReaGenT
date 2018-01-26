@@ -211,7 +211,7 @@ public class Benchmark {
         return new Benchmark(
                 this.name,
                 this.environment,
-                jsFile,
+                this.jsFile,
                 this.dTSFile,
                 this.run_method,
                 this.pathsToTest,
