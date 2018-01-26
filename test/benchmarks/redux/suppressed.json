@@ -1,0 +1,8 @@
+{
+  "suppressions": [
+    {
+      "path": "redux.compose()",
+      "comment": "TAJS is unable to reason a certain index in a non-fixed-size array does not contain undefined."
+    }
+  ]
+}
