@@ -343,13 +343,18 @@ public class ManualTajsCheckerEvaluation {
             };
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         ManualTajsCheckerEvaluation o = new ManualTajsCheckerEvaluation();
         ManualTajsCheckerEvaluation.outputDir = args[0];
         int index = -1;
         try { index = Integer.parseInt(args[1]); } catch(Exception e){}
-        while(true) {
-            o.findATypeError(args[0], index);
+        try {
+            while (true) {
+                o.findATypeError(args[0], index);
+            }
+        } catch(Exception e) {
+            System.err.println(e);
+            e.printStackTrace();
         }
     }
 }
