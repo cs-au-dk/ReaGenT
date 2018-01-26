@@ -285,6 +285,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
             matchingTypes.forEach(subType -> tajsTypeTester.attemptAddValue(splitValue, new TypeWithContext(subType, test.getTypeContext()), test.getPath(), c, typeChecker, test));
         }
+        violationsAdded = violationsAdded.stream().filter(tajsTypeTester.getViolationsOracle()::canEmit).collect(Collectors.toList());
         if (definiteViolation) {
             violationsAdded.forEach(violation -> tajsTypeTester.addViolation(violation, c));
         } else {
