@@ -1,0 +1,36 @@
+{
+  "suppressions": [
+    {
+      "path": "accounting.formatColumn(obj).[numberIndexer]",
+      "comment": "Insufficient context-sensitivity, two contexts gets merged in a recursive call. "
+    },
+    {
+      "path": "accounting.formatColumn(obj,string,number,string,string).[numberIndexer]",
+      "comment": "Insufficient context-sensitivity, two contexts gets merged in a recursive call. "
+    },
+    {
+      "path": "accounting.formatColumn(obj,string,number,string,string,string).[numberIndexer]",
+      "comment": "Insufficient context-sensitivity, two contexts gets merged in a recursive call. "
+    },
+    {
+      "path": "accounting.formatColumn(obj,string).[numberIndexer]",
+      "comment": "Insufficient context-sensitivity, two contexts gets merged in a recursive call. "
+    },
+    {
+      "path": "accounting.formatColumn(obj,string,number,string).[numberIndexer]",
+      "comment": "Insufficient context-sensitivity, two contexts gets merged in a recursive call. "
+    },
+    {
+      "path": "accounting.formatColumn(obj,obj).[numberIndexer]",
+      "comment": "Insufficient context-sensitivity, two contexts gets merged in a recursive call. "
+    },
+    {
+      "path": "accounting.formatColumn(obj,string,number).[numberIndexer]",
+      "comment": "Insufficient context-sensitivity, two contexts gets merged in a recursive call. "
+    },
+    {
+      "path": "accounting.formatColumn().<>.[numberIndexer]",
+      "comment": "Insufficient context-sensitivity, two contexts gets merged in a recursive call. "
+    }
+  ]
+}
