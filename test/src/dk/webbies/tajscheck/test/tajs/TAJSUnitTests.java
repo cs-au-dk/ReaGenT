@@ -1734,6 +1734,7 @@ public class TAJSUnitTests {
     }
 
     @Test
+    @Ignore
     public void weirdSideEffect() throws Exception {
         TajsAnalysisResults result = run(benchFromFolder("weirdSideEffect", AnalyzeBenchmarks.options().apply(CheckOptions.builder()), Benchmark.RUN_METHOD.BROWSER));
 

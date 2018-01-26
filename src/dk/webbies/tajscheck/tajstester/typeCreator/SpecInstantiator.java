@@ -287,7 +287,7 @@ public class SpecInstantiator {
             }
             return feedbackValue;
         }
-        if (this.info.options.staticOptions.argumentValuesStrategy == FEEDBACK_IF_POSSIBLE && feedbackValue != null && !isSimpleType(type, info.context)) {
+        if (this.info.options.staticOptions.argumentValuesStrategy == FEEDBACK_IF_POSSIBLE && feedbackValue != null && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
             return feedbackValue;
         }
 
