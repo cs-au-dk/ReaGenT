@@ -23,12 +23,12 @@ module.exports = {
             return "not a";
         }
         if (arguments.length >= 2) {
-            if (!b) {
+            if (b !== true && typeof b !== "undefined") {
                 return "not b";
             }
         }
-        if (arguments >= 3) {
-            if (typeof c !== "number") {
+        if (arguments.length >= 3) {
+            if (typeof c !== "number" && typeof c !== "undefined") {
                 return "c was not a number";
             }
         }

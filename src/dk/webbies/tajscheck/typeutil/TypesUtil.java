@@ -335,7 +335,47 @@ public class TypesUtil {
     }
 
     public List<Signature> splitOptionalSignatures(List<Signature> signatures) {
-        return signatures.stream().map(TypesUtil::makeSureOptionalArgumentsHaveUnionUndef).map(this::splitOptionalSignature).reduce(new ArrayList<>(), Util::reduceList);
+        return signatures.stream().map(TypesUtil::makeSureOptionalArgumentsHaveUnionUndef).map(this::splitOptionalSignature).reduce(addOptionalToUndefArguments(signatures), Util::reduceList);
+    }
+
+    private List<Signature> addOptionalToUndefArguments(List<Signature> signatures) {
+        return signatures.stream()
+                .map(signature -> {
+                    signature = cloneSignature(signature);
+                    List<Signature> result = new ArrayList<>();
+                    if (signature.isHasRestParameter()) {
+                        signature = cloneSignature(signature);
+                        signature.getParameters().remove(signature.getParameters().size() - 1);
+                        signature.setHasRestParameter(false);
+                    }
+                    for (int i = signature.getMinArgumentCount(); i < signature.getParameters().size(); i++) {
+                        Type type = signature.getParameters().get(i).getType();
+                        if (type instanceof UnionType && ((UnionType) type).getElements().stream().anyMatch(element -> element instanceof SimpleType && ((SimpleType) element).getKind() == SimpleTypeKind.Undefined)) {
+                            List<Type> elements = ((UnionType) type).getElements().stream().filter(element -> !(element instanceof SimpleType && ((SimpleType) element).getKind() == SimpleTypeKind.Undefined)).collect(Collectors.toList());
+                            Type newType;
+                            assert !elements.isEmpty();
+                            if (elements.size() == 1) {
+                                newType = elements.get(0);
+                            } else {
+                                UnionType newUnion = new UnionType();
+                                newUnion.setElements(elements);
+                                newType = newUnion;
+                            }
+                            signature.getParameters().get(i).setType(newType);
+                        }
+                    }
+                    int minArgs = signature.getMinArgumentCount();
+                    signature.setMinArgumentCount(signature.getParameters().size());
+                    for (int i = signature.getParameters().size() - 1; i >= minArgs; i--) {
+                        signature = cloneSignature(signature);
+                        signature.getParameters().get(i).setType(new SimpleType(SimpleTypeKind.Undefined));
+                        result.add(signature);
+                    }
+
+                    return result;
+                })
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     private static Signature makeSureOptionalArgumentsHaveUnionUndef(Signature signature) {
@@ -453,7 +493,7 @@ public class TypesUtil {
         result.setResolvedReturnType(signature.getResolvedReturnType());
         result.setUnionSignatures(signature.getUnionSignatures());
         result.setTarget(signature.getTarget());
-        result.setParameters(new ArrayList<>(signature.getParameters()));
+        result.setParameters(signature.getParameters().stream().map(par -> new Signature.Parameter(par.getName(), par.getType())).collect(Collectors.toList()));
         result.setHasRestParameter(signature.isHasRestParameter());
         result.setIsolatedSignatureType(signature.getIsolatedSignatureType());
         result.setMinArgumentCount(signature.getMinArgumentCount());

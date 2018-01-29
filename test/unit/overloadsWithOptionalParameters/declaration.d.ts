@@ -1,8 +1,8 @@
 interface IPipelineFunction {
-    (a: number, b?: boolean): 0;
-    (a: boolean, b?: number): 1;
-    (a: string): 2;
-    (a: string, b: string): 3;
+    (a: 0, b?: boolean): 0;
+    (a: 1, b?: number): 1;
+    (a: 2): 2;
+    (a: 3, b: string): 3;
 }
 
 export module module {

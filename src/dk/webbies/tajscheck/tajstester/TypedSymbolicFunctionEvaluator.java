@@ -159,9 +159,10 @@ public class TypedSymbolicFunctionEvaluator {
             if (matchingSignatures.size() < signatures.size()) {
                 ArrayList<Signature> nonMatchingSignatures = new ArrayList<>(signatures);
                 nonMatchingSignatures.removeAll(matchingSignatures);
-                for (Signature nonMatchingSignature : nonMatchingSignatures) {
-                    tajsTypeTester.addWarning(TypeViolation.definite("Signatures with args " + PrettyTypes.parameters(nonMatchingSignature.getParameters()) + " was never called", path.apply("")), c);
-                }
+                // Was pr. callsite, so if one callsite called some, and another call-site called some other overloads. Then i would get warnings in both places.
+//                for (Signature nonMatchingSignature : nonMatchingSignatures) {
+//                    tajsTypeTester.addWarning(TypeViolation.definite("Signatures with args " + PrettyTypes.parameters(nonMatchingSignature.getParameters()) + " was never called", path.apply("")), c);
+//                }
             }
 
             for (Signature signature : matchingSignatures) {

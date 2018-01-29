@@ -1237,13 +1237,6 @@ public class UnitTests {
     }
 
     @Test
-    public void tupleSizes() throws Exception {
-        RunResult result = run("tupleSizes");
-
-        assertThat(result.typeErrors, is(empty()));
-    }
-
-    @Test
     public void complexThisTypes3() throws Exception {
         RunResult result = run("complexThisTypes3", options().setCheckDepthUseValue(2).build());
 

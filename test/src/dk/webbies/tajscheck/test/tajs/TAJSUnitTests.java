@@ -297,8 +297,7 @@ public class TAJSUnitTests {
 
         expect(result)
                 .performed("module.foo(obj)")
-                .forPath("Foo")
-                .hasWarnings();
+                .forPath("Foo");
 
     }
 
@@ -308,8 +307,7 @@ public class TAJSUnitTests {
 
         expect(result)
                 .performedAllTests()
-                .forPath("Foo")
-                .hasWarnings();
+                .forPath("Foo");
     }
 
     @Test
@@ -1754,5 +1752,15 @@ public class TAJSUnitTests {
 
         expect(result)
                 .hasNoViolations();
+    }
+
+    @Test
+    public void optionalArguments() throws Exception {
+        TajsAnalysisResults result = run("optionalArguments");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+
     }
 }
