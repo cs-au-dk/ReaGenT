@@ -1,0 +1,28 @@
+{
+  "suppressions": [
+    {
+      "path": "redux.compose(obj,...obj)",
+      "comment": "TAJS is unable to reason a certain index in a non-fixed-size array does not contain undefined."
+    },
+    {
+      "path": "redux.compose()()._isUnboundGeneric",
+      "comment": "compose is inprecise on purpose. ."
+    },
+    {
+      "path": "redux.compose()(typeParameter,typeParameter)._isUnboundGeneric",
+      "comment": "The declaration of compose is imprecise on purpose. Because TypeScript is unable to capture the actual type."
+    },
+    {
+      "path": "redux.compose()()",
+      "comment": "The declaration of compose is imprecise on purpose. Because TypeScript is unable to capture the actual type."
+    },
+    {
+      "path": "window.redux.compose.[arg3]",
+      "comment": "TAJS inprecision. TAJS is unable to reason that the last argument has been removed form a list. "
+    },
+    {
+      "path": "window.redux.compose.[arg0]",
+      "comment": "Somewhat same as above. TAJS is unable to prove which functions gets called with what arguments. Since some tricky array-manipulation is happening."
+    }
+  ]
+}
