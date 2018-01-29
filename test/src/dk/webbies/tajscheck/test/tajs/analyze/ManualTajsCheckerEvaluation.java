@@ -115,12 +115,14 @@ public class ManualTajsCheckerEvaluation {
             typeViolation = typeViolations.get(index);
         }
 
+        TypeViolation fullViolation = typeViolation;
+
         typeViolation = typeViolation.withPath(Util.simplifyPath(typeViolation.path));
-        reportViolation(bench, typeViolation);
+        reportViolation(bench, typeViolation, fullViolation);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private void reportViolation(Benchmark bench, TypeViolation searchViolation) throws IOException {
+    private void reportViolation(Benchmark bench, TypeViolation searchViolation, TypeViolation fullViolation) throws IOException {
         new File("results").mkdir();
         new File("results/" + outputDir).mkdir();
 
@@ -132,6 +134,7 @@ public class ManualTajsCheckerEvaluation {
         new File("results/" + outputDir + "/" + counter).mkdir();
 
         Util.writeFile("results/" + outputDir + "/" + counter + "/" + bench.name + "_violation.txt", searchViolation.toString());
+        Util.writeFile("results/" + outputDir + "/" + counter + "/" + bench.name + "_violation_full.txt", fullViolation.toString(Integer.MAX_VALUE));
 
         String dTsFile = Util.readFile(bench.dTSFile);
         String jsFile = Util.readFile(bench.jsFile);
