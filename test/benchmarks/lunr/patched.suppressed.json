@@ -1,0 +1,28 @@
+{
+  "suppressions": [
+    {
+      "path": "lunr.SortedSet.load().<>.locationFor(typeParameter,number,number)",
+      "comment": "From JSDoc: \"This function assumes that the element to search for does not already exist\". If that is the case, the function returns undefined."
+    },
+    {
+      "path": "lunr.SortedSet.load().<>.locationFor(typeParameter,number)",
+      "comment": "From JSDoc: \"This function assumes that the element to search for does not already exist\". If that is the case, the function returns undefined."
+    },,
+    {
+      "path": "lunr().corpusTokens.<>.locationFor(typeParameter,number)",
+      "comment": "From JSDoc: \"This function assumes that the element to search for does not already exist\". If that is the case, the function returns undefined."
+    },
+    {
+      "path": "lunr.SortedSet.new().indexOf(typeParameter)",
+      "comment": "The SortedSet actually only works on elements where \">\" and \"<\" work correctly. Not any type"
+    },
+    {
+      "path": "lunr().corpusTokens.<>.indexOf(typeParameter,number)",
+      "comment": "The SortedSet actually only works on elements where \">\" and \"<\" work correctly. Not any type"
+    },
+    {
+      "path": "lunr().corpusTokens.<>.indexOf(typeParameter)",
+      "comment": "The SortedSet actually only works on elements where \">\" and \"<\" work correctly. Not any type"
+    }
+  ]
+}

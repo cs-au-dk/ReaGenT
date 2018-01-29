@@ -44,7 +44,7 @@ declare namespace lunr
      *
      * @param token  The token to pass through the filter
      */
-    function stopWordFilter(token:string):string;
+    function stopWordFilter(token:string): string | undefined;
 
     namespace stopWordFilter {
         var stopWords:SortedSet<string>;
@@ -141,7 +141,7 @@ declare namespace lunr
      */
     class Pipeline
     {
-        registeredFunctions:{[label:string]:Function};
+        static registeredFunctions:{[label:string]:Function};
 
 
         /**
@@ -156,7 +156,7 @@ declare namespace lunr
          * @param fn     The function to check for.
          * @param label  The label to register this function with
          */
-        registerFunction(fn:IPipelineFunction, label:string):void;
+        static registerFunction(fn:IPipelineFunction, label:string):void;
 
 
         /**
@@ -164,7 +164,7 @@ declare namespace lunr
          *
          * @param fn  The function to check for.
          */
-        warnIfFunctionNotRegistered(fn:IPipelineFunction):void;
+        static warnIfFunctionNotRegistered(fn:IPipelineFunction):void;
 
 
         /**
@@ -725,11 +725,13 @@ declare namespace lunr
      * lunr.TokenStore is used for efficient storing and lookup of the reverse index of token
      * to document ref.
      */
+    interface TokenStoreElement {
+        [token: string]: TokenStoreElement | ITokenDocument
+    }
+
     class TokenStore
     {
-        root:{[token:string]:TokenStore};
-
-        docs:{[ref:string]:ITokenDocument};
+        root:TokenStoreElement;
 
         length:number;
 
