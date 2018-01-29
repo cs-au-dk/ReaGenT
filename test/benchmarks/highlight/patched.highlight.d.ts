@@ -5,22 +5,17 @@
 
 declare namespace hljs
 {
-    // export function highlight(name: string, value: string, ignore_illegals?: boolean, continuation?: boolean) : IHighlightResult;
-    // export function highlightAuto(value: string, languageSubset?: string[]) : IAutoHighlightResult;
+    export function highlight(name: string, value: string, ignore_illegals?: boolean, continuation?: boolean) : IHighlightResult;
+    export function highlightAuto(value: string, languageSubset?: string[]) : IAutoHighlightResult;
     export function fixMarkup(value: string) : string;
-    // export function highlightBlock(block: Node) : void;
+    export function highlightBlock(block: Node) : void;
     export function configure(options: IOptions): void;
-    // export function initHighlighting(): void;
-    // export function initHighlightingOnLoad(): void;
+    export function initHighlighting(): void;
+    export function initHighlightingOnLoad(): void;
     export function registerLanguage(name: string, language: (hljs?: HLJSStatic) => IModeBase): void;
     export function listLanguages(): string[];
     export function getLanguage(name: string): IMode;
     export function inherit(parent: Object, obj: Object): Object;
-
-    /*export function COMMENT(
-        begin: (string|RegExp),
-        end: (string|RegExp),
-        inherits: IModeBase): IMode;*/
 
     // Common regexps
     export var IDENT_RE: string | undefined;
