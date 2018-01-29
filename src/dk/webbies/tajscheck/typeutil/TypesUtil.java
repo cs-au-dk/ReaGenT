@@ -493,12 +493,19 @@ public class TypesUtil {
         result.setResolvedReturnType(signature.getResolvedReturnType());
         result.setUnionSignatures(signature.getUnionSignatures());
         result.setTarget(signature.getTarget());
-        result.setParameters(signature.getParameters().stream().map(par -> new Signature.Parameter(par.getName(), par.getType())).collect(Collectors.toList()));
+        result.setParameters(signature.getParameters().stream().map(TypesUtil::cloneParameter).collect(Collectors.toList()));
         result.setHasRestParameter(signature.isHasRestParameter());
         result.setIsolatedSignatureType(signature.getIsolatedSignatureType());
         result.setMinArgumentCount(signature.getMinArgumentCount());
         result.setTypeParameters(signature.getTypeParameters());
         return result;
+    }
+
+    private static Signature.Parameter cloneParameter(Signature.Parameter parameter) {
+        Signature.Parameter newParameter = new Signature.Parameter();
+        newParameter.setType(parameter.getType());
+        newParameter.setName(parameter.getName());
+        return newParameter;
     }
 
     public static List<Signature> removeDuplicateSignatures(List<Signature> signatures) {
