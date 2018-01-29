@@ -1746,6 +1746,7 @@ public class TAJSUnitTests {
 
 
     @Test
+    @Ignore
     public void precisionIssue6() throws Exception {
         TajsAnalysisResults result = run("precisionIssue6");
 
