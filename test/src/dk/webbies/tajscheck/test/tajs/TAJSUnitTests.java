@@ -1743,4 +1743,15 @@ public class TAJSUnitTests {
         expect(result)
                 .hasNoViolations();
     }
+
+
+    @Test
+    public void precisionIssue6() throws Exception {
+        TajsAnalysisResults result = run("precisionIssue6");
+
+        System.out.println(result);
+
+        expect(result)
+                .hasNoViolations();
+    }
 }
