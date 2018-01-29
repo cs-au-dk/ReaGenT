@@ -473,7 +473,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     public void visitPhasePost(AnalysisPhase phase) {
         if(phase == AnalysisPhase.SCAN) {
             if(!this.violationsOracle.isTight()) {
-                throw new RuntimeException("The violation oracle used is not tight, remove the following suppressions:\n" +
+                System.out.println("The violation oracle used is not tight, remove the following suppressions:\n" +
                         new ArrayList<>(this.violationsOracle.getUnnecessarySuppressions()));
             }
         }
