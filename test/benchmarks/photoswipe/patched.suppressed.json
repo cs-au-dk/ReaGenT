@@ -1,0 +1,226 @@
+{ "suppressions": [
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).isZooming",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).currItem",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).viewportSize.y",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).container",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).viewportSize.x",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).destroy",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipeUI_Default",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).applyZoomPan",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).next",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).prev",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).getCurrentIndex",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).options._isUnboundGeneric",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).updateSize",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).getZoomLevel",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).zoomTo",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).close",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).shout",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).goTo",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).viewportSize",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).invalidateCurrItems",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).init",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).framework",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).isMainScrollAnimating",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).isDragging",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).ui",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).listen",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).options",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new(obj,union,obj,typeParameter).items",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().isZooming",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().currItem",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().viewportSize.y",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().container",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().viewportSize.x",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().destroy",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipeUI_Default",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().applyZoomPan",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().next",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().prev",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().getCurrentIndex",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().options._isUnboundGeneric",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().updateSize",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().getZoomLevel",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().zoomTo",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().close",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().shout",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().goTo",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().viewportSize",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().invalidateCurrItems",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().init",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().framework",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().isMainScrollAnimating",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().isDragging",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().ui",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().listen",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().options",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  },
+  {
+    "path": "PhotoSwipe.new().items",
+    "comment": "Not understood the source of the imprecision, the warning only concerns a possibly undefined"
+  }
+]}
