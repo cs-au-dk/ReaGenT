@@ -141,7 +141,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
     public void analyzeBenchmark() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options().andThen(options -> options.setUseInspector(false)));
+        Benchmark benchmark = this.benchmark.withOptions(options().andThen(options -> options.setUseInspector(true)));
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
         System.out.println(result);
     }
@@ -152,7 +152,7 @@ public class AnalyzeBenchmarks extends TestCase {
         if (benchmark == null) {
             return;
         }
-        benchmark = benchmark.withOptions(options());
+        benchmark = benchmark.withOptions(options().andThen(options -> options.setUseInspector(false)));
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
         System.out.println(result);
         assert(!result.timedout);

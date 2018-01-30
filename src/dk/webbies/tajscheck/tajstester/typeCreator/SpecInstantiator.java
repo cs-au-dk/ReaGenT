@@ -85,7 +85,7 @@ public class SpecInstantiator {
             lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
             lbs.add(InitialStateBuilder.PROXY_PROTOTYPE);
             lbs.add(InitialStateBuilder.REGEXP_PROTOTYPE);
-            //lbs.add(InitialStateBuilder.GLOBAL); //TODO: Add this ?
+            if(info.options.staticOptions.betterAnyStringWithoutGlobal) lbs.add(InitialStateBuilder.GLOBAL);
             lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
 
             Set<PKey> forbidden = new HashSet<>(initial.getProperties(lbs, ObjProperties.PropertyQuery.makeQuery().includeSymbols().withoutProto())

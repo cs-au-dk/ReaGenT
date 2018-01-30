@@ -81,6 +81,8 @@ public class TAJSUtil {
         additionalOpts.enableConsoleModel();
         additionalOpts.enableNoHybridCollections();
         additionalOpts.enableIncludeDom();
+        additionalOpts.setMediumSeverityDisabled(true);
+        additionalOpts.disableLowSeverity();
 
         additionalOpts.setTypeTestRunner(typeTester);
         additionalOpts.setCustomContextSensitivityStrategy(contextStrategy);
@@ -253,7 +255,7 @@ public class TAJSUtil {
                     builder.append(" (timeout)");
                 }
                 if (exceptionsEncountered.containsKey(notPerformed)) {
-                    builder.append(" (exception: ").append(exceptionsEncountered.get(notPerformed)).append(")");
+                    builder.append(" (exception: ").append(exceptionsEncountered.get(notPerformed).stream().map(e -> e + "@@" + Utils.readableStackTrace(e.getStackTrace())).collect(Collectors.toList())).append(")");
                 }
                 builder.append("\n");
             }
@@ -282,7 +284,7 @@ public class TAJSUtil {
                                 result += " (timeout)";
                             }
                             if (exceptionsEncountered.containsKey(test)) {
-                                result += " (exception: " + exceptionsEncountered.get(test) + ")";
+                                result += " (exception: " + exceptionsEncountered.get(test).stream().map(ex -> e + "@@" + Utils.readableStackTrace(ex.getStackTrace())).collect(Collectors.toList()) + ")";
                             }
                             return result;
                         }), "\n   "));

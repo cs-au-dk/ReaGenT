@@ -25,6 +25,7 @@ import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
 import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.util.Collectors;
+import dk.webbies.tajscheck.tajstester.TesterContextSensitivity;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -82,6 +83,14 @@ public class TajsCoverageResult extends DefaultAnalysisMonitoring {
                     AbstractNode functionNode = function.getEntry().getFirstNode();
                     functions.put(functionNode, coverage(functionNode));
 
+                    //TODO: If function is only reached during initialization, then we don't really care about reaching any statement in it.
+                    Map<Context, State> functionReachability = c.getAnalysisLatticeElement().getStates(function.getEntry());
+                    if(!functionReachability.keySet().stream().anyMatch(TesterContextSensitivity::isTestContext)) {
+                        // The function is only reached during initialization, hence we are not interested into counting it
+                        // for reachability
+                        continue;//FIXME: Note this is not aligned with the dynamic coverage
+                    }
+
                     for (BasicBlock b : function.getBlocks()) {
                         for (AbstractNode n : b.getNodes()) {
                             if (!n.isArtificial()) {
@@ -122,7 +131,7 @@ public class TajsCoverageResult extends DefaultAnalysisMonitoring {
     }
 
     @Override
-    public void visitNodeTransferPost(AbstractNode n, State s) {
+    public void visitNodeTransferPre(AbstractNode n, State s) {
         if(!s.isBottom()) {
             covered.add(n);
         }

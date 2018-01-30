@@ -115,7 +115,16 @@ public class TajsCheckerEvaluation {
     }
 
     @Test
-    public void doEvaluation() {
+    public void evaluate() {
+        doEvaluation(false);
+    }
+
+    @Test
+    public void evaluateTajsOnly() {
+        doEvaluation(true);
+    }
+
+    private void doEvaluation(boolean tajsOnly) {
         {
             // warmup.
             new Experiment("Sortable").addExperiment(experiment()).calculate(null);
@@ -128,7 +137,8 @@ public class TajsCheckerEvaluation {
             }
         }).collect(Collectors.toList()));
 
-        experiment.addSingleExperiment(AutomaticExperiments.type);
+        if(!tajsOnly)
+            experiment.addSingleExperiment(AutomaticExperiments.type);
         experiment.addExperiment(experiment());
 
         experiment.calculate("experiment.csv");
@@ -209,6 +219,9 @@ public class TajsCheckerEvaluation {
 
 
     public static void main(String[] args) {
-        new TajsCheckerEvaluation().doEvaluation();
+        if(args.length >= 1 && args[0].equals("tajs-only"))
+            new TajsCheckerEvaluation().doEvaluation(true);
+        else
+            new TajsCheckerEvaluation().doEvaluation(false);
     }
 }

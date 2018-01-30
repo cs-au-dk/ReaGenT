@@ -18,6 +18,7 @@ public class StaticOptions implements OptionsI {
     public final boolean killGetters;
     public final boolean createSingletonObjects;
     public final boolean betterAnyString;
+    public final boolean betterAnyStringWithoutGlobal;
     public final RetractionPolicy retractionPolicy;
     public final ExpansionPolicy expansionPolicy;
     public final boolean propagateStateFromFailingTest;
@@ -39,6 +40,7 @@ public class StaticOptions implements OptionsI {
         this.killGetters = builder.killGetters;
         this.createSingletonObjects = builder.createSingletonObjects;
         this.betterAnyString = builder.betterAnyString;
+        this.betterAnyStringWithoutGlobal = builder.betterAnyStringWithoutGlobal;
         this.retractionPolicy = builder.retractionPolicy;
         this.expansionPolicy = builder.expansionPolicy;
         this.propagateStateFromFailingTest = builder.propagateStateFromFailingTest;
@@ -58,6 +60,7 @@ public class StaticOptions implements OptionsI {
         private boolean killGetters = false;
         private boolean createSingletonObjects = false;
         private boolean betterAnyString = true; // if true all string types are *not* well-known strings in Object or Function prototypes
+        private boolean betterAnyStringWithoutGlobal = true;
         private RetractionPolicy retractionPolicy = new NoRetractPolicy();
         private ExpansionPolicy expansionPolicy = new ExpandImmediatelyPolicy();
         private boolean propagateStateFromFailingTest = false;
