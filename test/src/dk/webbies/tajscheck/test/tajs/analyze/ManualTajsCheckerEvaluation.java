@@ -27,7 +27,7 @@ public class ManualTajsCheckerEvaluation {
 
     private static final int TIMEOUT = 20 * 60; // in seconds
     private static final boolean DO_DELTA_DEBUGGING = true;
-    private static String outputDir = "Intro.js";
+    private static String outputDir = "Redux";
 
     private static final Set<String> CAN_DELTA_DEBUG = new HashSet<>(Arrays.asList(
             "Hammer.js",
@@ -212,9 +212,9 @@ public class ManualTajsCheckerEvaluation {
 
     @SuppressWarnings({"ConstantConditions", "Duplicates"})
     public void continueWithFolder(int counter) throws IOException {
-        List<String> violationNames = Arrays.stream(new File("results/" + outputDir + "/" + counter).listFiles()).map(File::getName).filter(name -> name.contains("violation")).collect(Collectors.toList());
+        List<String> violationNames = Arrays.stream(new File("results/" + outputDir + "/" + counter).listFiles()).map(File::getName).filter(name -> name.contains("violation_full.txt")).collect(Collectors.toList());
         assert violationNames.size() == 1;
-        String benchmarkName = Util.removeSuffix(violationNames.iterator().next(), "_violation.txt");
+        String benchmarkName = Util.removeSuffix(violationNames.iterator().next(), "_violation_full.txt");
 
         System.out.println("Benchmark: " + benchmarkName);
 
@@ -330,6 +330,8 @@ public class ManualTajsCheckerEvaluation {
         return () -> {
                 try {
                     TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, timeout);
+
+                    System.out.println(result);
 
                     return result.detectedViolations.asMap()
                             .values().stream()
