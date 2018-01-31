@@ -188,6 +188,8 @@ public class RunBenchmarks {
 
         register(new Benchmark("uuid", ParseDeclaration.Environment.ES5Core, "test/benchmarks/uuid/uuid.js", "test/benchmarks/uuid/uuid.d.ts", BROWSER, options));
 
+        register(new Benchmark("jsyaml", ParseDeclaration.Environment.ES5Core, "test/benchmarks/jsyaml/jsyaml.js", "test/benchmarks/jsyaml/jsyaml.d.ts", BROWSER, options));
+
         // If need more benchmarks, get some from here: https://www.javascripting.com/?p=5
     }
 

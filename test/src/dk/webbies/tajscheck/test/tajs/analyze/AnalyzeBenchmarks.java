@@ -12,9 +12,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -61,7 +58,6 @@ public class AnalyzeBenchmarks extends TestCase {
             "highlight.js", // Include any of the highlight functions, and it takes forever. Exclude them, done in 15 seconds.
             "CodeMirror", // TODO: Crashes (after 6 minutes on my desktop) with "Reading undefined register v10).
             "Moment.js", // Timeout.
-            "minimist", // Precision is drammatically low, TAJS crashes due to violation on Array.join.
             "classnames", // TAJS crashes due to violation on Array.join
             "uuid",
 
@@ -98,6 +94,9 @@ public class AnalyzeBenchmarks extends TestCase {
             "Sugar", // Too much mem, and too much time, just for the initialization.
             "q",  // Uses require mechanism to fetch dependencies.
             "Ace", // Has catastrophic precision-loos when calling the top-level constructor.
+            "minimist", // Precision is drammatically low, TAJS crashes due to violation on Array.join.
+            "jsyaml", // hopeless
+
 
             // TODO: Try on a proper machine.
             "Fabric.js", // initialization crashes TAJS
@@ -133,18 +132,18 @@ public class AnalyzeBenchmarks extends TestCase {
                 .staticOptions
                     .setKillGetters(true) // because getters currently causes the analysis to loop. // TODO: Still?
 
-                    .setRetractionPolicy(new LimitTransfersRetractionPolicy(10000, 0))
+                    .setRetractionPolicy(new LimitTransfersRetractionPolicy(100000, 0))
 
                     .setCheckAllPropertiesAfterFunctionCall(true)
                     .setPropagateStateFromFailingTest(false)
 
                     .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
-                    .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments());//.setUseInspector(true);
+                    .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments());
     }
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
     public void analyzeBenchmark() throws Exception {
-        Benchmark benchmark = this.benchmark.withOptions(options().andThen(options -> options.setUseInspector(true)));
+        Benchmark benchmark = this.benchmark.withOptions(options().andThen(options -> options.setUseInspector(false)));
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, BENCHMARK_TIMEOUT);
         System.out.println(result);
     }
