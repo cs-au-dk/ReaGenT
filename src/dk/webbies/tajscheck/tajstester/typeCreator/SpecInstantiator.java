@@ -688,7 +688,7 @@ public class SpecInstantiator {
         @Override
         public Value visit(IntersectionType t, MiscInfo miscInfo) {
             return convertType(t, miscInfo, () -> {
-                if (t.getElements().stream().allMatch(InterfaceType.class::isInstance)) {
+                if (t.getElements().stream().allMatch(inter -> inter instanceof InterfaceType || inter instanceof ReferenceType)) {
 
                     List<Type> subTypes = t.getElements();
 

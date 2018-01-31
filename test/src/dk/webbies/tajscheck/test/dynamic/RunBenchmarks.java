@@ -182,6 +182,11 @@ public class RunBenchmarks {
 
         register(new Benchmark("Sortable", ParseDeclaration.Environment.ES5Core, "test/benchmarks/sortable/sortable.js", "test/benchmarks/sortable/sortable.d.ts", BROWSER, options));
 
+        register(new Benchmark("minimist", ParseDeclaration.Environment.ES5Core, "test/benchmarks/minimist/minimist.js", "test/benchmarks/minimist/minimist.d.ts", NODE, options));
+
+        register(new Benchmark("classnames", ParseDeclaration.Environment.ES5Core, "test/benchmarks/classnames/classnames.js", "test/benchmarks/classnames/classnames.d.ts", BROWSER, options));
+
+        register(new Benchmark("uuid", ParseDeclaration.Environment.ES5Core, "test/benchmarks/uuid/uuid.js", "test/benchmarks/uuid/uuid.d.ts", BROWSER, options));
 
         // If need more benchmarks, get some from here: https://www.javascripting.com/?p=5
     }
