@@ -1728,7 +1728,6 @@ public class UnitTests {
     }
 
     @Test
-    @Ignore
     public void shouldNotBeUnbound() throws Exception {
         String driver = Main.writeFullDriver(benchFromFolder("shouldNotBeUnbound")).getRight();
 
