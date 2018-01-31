@@ -12,6 +12,7 @@ import dk.brics.tajs.analysis.dom.ajax.XmlHttpRequest;
 import dk.brics.tajs.analysis.dom.core.DOMDocument;
 import dk.brics.tajs.analysis.dom.core.DOMNode;
 import dk.brics.tajs.analysis.dom.core.DOMNodeList;
+import dk.brics.tajs.analysis.dom.event.Event;
 import dk.brics.tajs.analysis.dom.html.HTMLCollection;
 import dk.brics.tajs.analysis.dom.html.HTMLImageElement;
 import dk.brics.tajs.analysis.dom.html.HTMLTextAreaElement;
@@ -152,6 +153,8 @@ public class NativesInstantiator {
                 return Value.makeObject(Collections.singleton(DOMWindow.WINDOW_CONSTRUCTOR));
             case "EventTarget":
                 return constructFromPrototype(info, DOMObjects.EVENT_TARGET_PROTOTYPE, c);
+            case "Event":
+                return Value.makeObject(Event.INSTANCES);
             case "WebGLRenderingContext":
                 return constructFromPrototype(info, DOMObjects.WEBGLRENDERINGCONTEXT_PROTOTYPE, c);
             case "XMLHttpRequest":
