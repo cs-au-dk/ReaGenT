@@ -514,7 +514,7 @@ public class TypesUtil {
 
     public Type getNativeBase(Type type, Set<Type> nativeTypes, Map<Type, String> typeNames) {
         Predicate<Type> isNativeType = t -> {
-            if (t instanceof InterfaceType && TypesUtil.isEmptyInterface((InterfaceType) t)) {
+            if (TypesUtil.isEmptyInterface(t)) {
                 return false;
             }
             if (nativeTypes.contains(t)) {
@@ -776,6 +776,10 @@ public class TypesUtil {
     }
 
     public Pair<InterfaceType, Map<TypeParameterType, Type>> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter) {
+        return constructSyntheticInterfaceWithBaseTypes(inter, Collections.emptySet());
+    }
+
+    public Pair<InterfaceType, Map<TypeParameterType, Type>> constructSyntheticInterfaceWithBaseTypes(InterfaceType inter, Set<Type> baseTypesToIgnore) {
         if (inter.getBaseTypes().isEmpty()) {
             return new Pair<>(inter, Collections.emptyMap());
         }
@@ -787,9 +791,13 @@ public class TypesUtil {
         result.getDeclaredConstructSignatures().addAll(inter.getDeclaredConstructSignatures());
         result.setDeclaredNumberIndexType(inter.getDeclaredNumberIndexType());
         result.setDeclaredStringIndexType(inter.getDeclaredStringIndexType());
+        result.getDeclaredProperties().putAll(inter.getDeclaredProperties());
 
         info.typeNames.put(result, info.typeNames.get(inter));
         inter.getBaseTypes().forEach(subType -> {
+            if (baseTypesToIgnore.contains(subType)) {
+                return;
+            }
             if (subType instanceof ReferenceType) {
                 newParameters.putAll(generateParameterMap((ReferenceType) subType));
                 subType = ((ReferenceType) subType).getTarget();
@@ -805,7 +813,7 @@ public class TypesUtil {
             if (subType instanceof ClassInstanceType) {
                 subType = this.createClassInstanceType(((ClassType) ((ClassInstanceType) subType).getClassType()));
             }
-            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) subType);
+            Pair<InterfaceType, Map<TypeParameterType, Type>> pair = constructSyntheticInterfaceWithBaseTypes((InterfaceType) subType, baseTypesToIgnore);
             newParameters.putAll(pair.getRight());
             InterfaceType type = pair.getLeft();
             result.getDeclaredCallSignatures().addAll((type.getDeclaredCallSignatures()));
@@ -816,7 +824,7 @@ public class TypesUtil {
             if (result.getDeclaredStringIndexType() == null) {
                 result.setDeclaredStringIndexType(type.getDeclaredStringIndexType());
             }
-            result.getDeclaredProperties().putAll(inter.getDeclaredProperties());
+            result.getDeclaredProperties().putAll(type.getDeclaredProperties());
             for (Map.Entry<String, Type> entry : type.getDeclaredProperties().entrySet()) {
                 if (result.getDeclaredProperties().containsKey(entry.getKey())) {
                     continue;

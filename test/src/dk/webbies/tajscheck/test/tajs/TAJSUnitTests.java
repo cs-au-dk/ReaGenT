@@ -1762,4 +1762,14 @@ public class TAJSUnitTests {
                 .hasNoViolations();
 
     }
+
+    @Test
+    public void extendsArray() throws Exception {
+        TajsAnalysisResults result = run("extendsArray");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
 }

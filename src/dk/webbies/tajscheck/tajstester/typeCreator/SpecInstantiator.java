@@ -518,7 +518,24 @@ public class SpecInstantiator {
             }
             Pair<InterfaceType, Map<TypeParameterType, Type>> withBaseTypes = SpecInstantiator.this.info.typesUtil.constructSyntheticInterfaceWithBaseTypes(t);
 
-            return writePropertiesToInterface(withBaseTypes.getLeft(), info.withContext(info.context.append(withBaseTypes.getRight())));
+            Type nativeBaseType = SpecInstantiator.this.info.typesUtil.getNativeBase(t, SpecInstantiator.this.info.nativeTypes, SpecInstantiator.this.info.typeNames);
+
+            info = info.withContext(info.context.append(withBaseTypes.getRight()));
+            if (nativeBaseType == null) {
+                return writePropertiesToInterface(withBaseTypes.getLeft(), info);
+            }
+
+            assert nativesInstantiator.shouldConstructAsNative(nativeBaseType);
+
+            Value nativeBaseValue = nativesInstantiator.instantiateNative(nativeBaseType, info, c);
+
+            t = SpecInstantiator.this.info.typesUtil.constructSyntheticInterfaceWithBaseTypes(t, Collections.singleton(nativeBaseType)).getLeft();
+
+            assert nativeBaseValue.isMaybeObject() && nativeBaseValue.getObjectLabels().size() == 1;
+
+            info = info.withlabel(nativeBaseValue.getObjectLabels().iterator().next().makeSingleton());
+
+            return writePropertiesToInterface(t, info);
         }
 
         private Value writePropertiesToInterface(InterfaceType type, MiscInfo info) {
