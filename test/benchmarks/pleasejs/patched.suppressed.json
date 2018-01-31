@@ -1,0 +1,32 @@
+{
+  "suppressions": [
+    {
+      "path": "Please.make_scheme(obj,obj)",
+      "comment": "Precision-loss, cannot prove that it is Array<A> | Array<B>, only that it is Array<A|B>. (And if changed to Array<A|B>, another precision loss would put a spurious undefined in there)."
+    },
+    {
+      "path": "Please.make_scheme(obj)",
+      "comment": "Precision-loss, cannot prove that it is Array<A> | Array<B>, only that it is Array<A|B>. (And if changed to Array<A|B>, another precision loss would put a spurious undefined in there)."
+    },
+    {
+      "path": "Please.make_color(obj)",
+      "comment": "Precision-loss, cannot prove that it is Array<A> | Array<B>, only that it is Array<A|B>. (And if changed to Array<A|B>, another precision loss would put a spurious undefined in there)."
+    },
+    {
+      "path": "Please.make_scheme(obj,undefined)",
+      "comment": "Precision-loss, cannot prove that it is Array<A> | Array<B>, only that it is Array<A|B>. (And if changed to Array<A|B>, another precision loss would put a spurious undefined in there)."
+    },
+    {
+      "path": "Please.make_color()",
+      "comment": "Precision-loss, cannot prove that it is Array<A> | Array<B>, only that it is Array<A|B>. (And if changed to Array<A|B>, another precision loss would put a spurious undefined in there)."
+    },
+    {
+      "path": "Please.make_color(undefined)",
+      "comment": "Precision-loss, cannot prove that it is Array<A> | Array<B>, only that it is Array<A|B>. (And if changed to Array<A|B>, another precision loss would put a spurious undefined in there)."
+    },
+    {
+      "path": "Please.make_color(obj)",
+      "comment": "Precision-loss, cannot prove that it is Array<A> | Array<B>, only that it is Array<A|B>. (And if changed to Array<A|B>, another precision loss would put a spurious undefined in there)."
+    }
+  ]
+}
