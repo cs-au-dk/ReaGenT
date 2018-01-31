@@ -10,6 +10,7 @@ import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks;
 import dk.webbies.tajscheck.util.MinimizeArray;
 import dk.webbies.tajscheck.util.Util;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -203,6 +204,37 @@ public class DeltaDebug {
         };
         testPredicate(predicate);
         System.exit(0);
+    }
+
+
+    @Test
+    public void deltaDebugRetractedTestInAll() throws IOException {
+        Util.isDeltaDebugging = true;
+
+        List<Benchmark> benchmarks = AnalyzeBenchmarks.getBenchmarks().stream().map(bench -> {
+            if (bench.patched() != null) {
+                return bench.patched();
+            } else {
+                return bench;
+            }
+        }).collect(Collectors.toList());
+
+        for (Benchmark benchmark : benchmarks) {
+            BooleanSupplier predicate = () -> {
+                //noinspection TryWithIdenticalCatches
+                try {
+                    TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, 20 * 60);
+                    return !result.retractedTests.isEmpty();
+                } catch (Error | Exception e) {
+                    return false;
+                }
+            };
+            if (!predicate.getAsBoolean()) {
+                continue;
+            }
+            debug(benchmark.dTSFile, predicate);
+            debug(benchmark.jsFile, predicate);
+        }
     }
 
     private static void testPredicate(BooleanSupplier predicate) {
