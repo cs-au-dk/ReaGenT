@@ -676,7 +676,7 @@
                 }
 
                 var unexpectedKeys = Object.keys(inputState).filter(function (key) {
-                    return !reducers.hasOwnProperty(key) && !unexpectedKeyCache[key];
+                    return !Object.prototype.hasOwnProperty.call(reducers, key) && !unexpectedKeyCache[key];
                 });
 
                 unexpectedKeys.forEach(function (key) {
