@@ -1700,7 +1700,7 @@ public class UnitTests {
         RunResult result = run("genericSignaturesError");
 
         expect(result)
-                .forPath("MyModule.createElement()(typeParameter)")
+                .forPath("MyModule.createElement().<>(typeParameter)")
                 .expected("string")
                 .got(TYPEOF, "number");
     }
