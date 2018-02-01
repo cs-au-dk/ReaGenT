@@ -5,7 +5,31 @@
       "comment": "TAJS is unable to reason a certain index in a non-fixed-size array does not contain undefined."
     },
     {
+      "path": "redux.compose(,...obj)",
+      "comment": "TAJS is unable to reason a certain index in a non-fixed-size array does not contain undefined."
+    },
+    {
       "path": "redux.compose()()._isUnboundGeneric",
+      "comment": "compose is inprecise on purpose. ."
+    },
+    {
+      "path": "redux.compose().<>()._isUnboundGeneric",
+      "comment": "compose is inprecise on purpose. ."
+    },
+    {
+      "path": "redux.compose().<>(typeParameter)._isUnboundGeneric",
+      "comment": "compose is inprecise on purpose. ."
+    },
+    {
+      "path": "redux.compose().<>(typeParameter,typeParameter)._isUnboundGeneric",
+      "comment": "compose is inprecise on purpose. ."
+    },
+    {
+      "path": "redux.compose().<>(typeParameter,typeParameter,typeParameter,...any)._isUnboundGeneric",
+      "comment": "compose is inprecise on purpose. ."
+    },
+    {
+      "path": "redux.compose()(,...any)._isUnboundGeneric",
       "comment": "compose is inprecise on purpose. ."
     },
     {
@@ -17,8 +41,16 @@
       "comment": "The declaration of compose is imprecise on purpose. Because TypeScript is unable to capture the actual type."
     },
     {
-      "path": "window.redux.compose.[arg3]",
+      "path": "window.redux.compose.[arg3] {patched.redux.js142:32}",
       "comment": "TAJS inprecision. TAJS is unable to reason that the last argument has been removed form a list. "
+    },
+    {
+      "path": "window.redux.compose.[arg1] {patched.redux.js142:32}",
+      "comment": "TAJS inprecision. Tajs is generally unable to reason about which function gets called with what."
+    },
+    {
+      "path": "window.redux.compose.[arg2] {patched.redux.js142:32}",
+      "comment": "TAJS inprecision. Tajs is generally unable to reason about which function gets called with what."
     },
     {
       "path": "window.redux.compose.[arg0]",
