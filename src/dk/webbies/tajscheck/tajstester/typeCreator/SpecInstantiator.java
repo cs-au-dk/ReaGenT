@@ -695,8 +695,7 @@ public class SpecInstantiator {
                     InterfaceType combined = SpecReader.makeEmptySyntheticInterfaceType();
                     combined.setBaseTypes(subTypes);
 
-                    Pair<InterfaceType, Map<TypeParameterType, Type>> syntheticInterface = info.typesUtil.constructSyntheticInterfaceWithBaseTypes(combined);
-                    return new TypeWithContext(syntheticInterface.getLeft(), miscInfo.context.append(syntheticInterface.getRight()));
+                    return new TypeWithContext(combined, miscInfo.context);
                 } else {
                     throw new RuntimeException("Cannot construct IntersectionType");
                 }
