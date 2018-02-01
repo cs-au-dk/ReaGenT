@@ -425,6 +425,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
      */
 
     public void addViolation(TypeViolation violation, Solver.SolverInterface c) {
+        if (!violationsOracle.canEmit(violation)) {
+            return;
+        }
         if (c.isScanning()) {
             violations.add(violation);
         } else {
@@ -433,6 +436,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     }
 
     public void addWarning(TypeViolation warning, Solver.SolverInterface c) {
+        if (!violationsOracle.canEmit(warning)) {
+            return;
+        }
         if (c.isScanning()) {
             warnings.add(warning);
         } else {
