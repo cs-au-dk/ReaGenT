@@ -69,6 +69,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private final List<Test> typeCheckedTests = new ArrayList<>();
     private TypedSymbolicFunctionEvaluator typedSymbolicFunctionEvaluator;
 
+    private boolean hasScanned = false;
+
     public TajsTypeTester(List<Test> tests, BenchmarkInfo info) {
         this.tests = tests.stream().sorted((a, b) -> {
             int aValue = a instanceof FunctionTest ? 1 : 0;
@@ -104,6 +106,13 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         if (!c.getWorklist().isEmpty()) {
             enqueueTypeTester(c);
             return;
+        }
+
+        if (c.isScanning()) {
+            if (hasScanned) {
+                return;
+            }
+            hasScanned = true;
         }
 
         performed.clear();
