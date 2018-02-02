@@ -512,18 +512,12 @@ public class TypesUtil {
         return signatures.stream().map(SignatureComparisonContainer::new).distinct().map(SignatureComparisonContainer::getSignature).collect(Collectors.toList());
     }
 
-    public Type getNativeBase(Type type, Set<Type> nativeTypes, Map<Type, String> typeNames) {
+    public Type getNativeBase(Type type, Predicate<Type> predicate) {
         Predicate<Type> isNativeType = t -> {
             if (TypesUtil.isEmptyInterface(t)) {
                 return false;
             }
-            if (nativeTypes.contains(t)) {
-                return true;
-            }
-            if (t instanceof ReferenceType && nativeTypes.contains(((ReferenceType) t).getTarget())) {
-                return true;
-            }
-            return false;
+            return predicate.test(t);
         };
         List<Type> nativeBaseTypes = getAllBaseTypes(type, new HashSet<>(), Util.not(isNativeType)).stream().filter(isNativeType).collect(Collectors.toList());
 

@@ -251,7 +251,7 @@ public class TypeCreator {
 
             Expression constructInitial;
             if (numberOfSignatures == 0) {
-                Type nativebase = info.typesUtil.getNativeBase(type, info.nativeTypes, info.typeNames);
+                Type nativebase = info.typesUtil.getNativeBase(type, info.nativeTypes::contains);
                 if (nativebase != null) {
                     constructInitial = constructType(nativebase, typeContext);
                 } else {

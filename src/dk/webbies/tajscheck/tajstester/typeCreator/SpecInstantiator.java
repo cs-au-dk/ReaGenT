@@ -8,7 +8,6 @@ import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments.CanEasilyConstructVisitor;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.tajstester.TypeValuesHandler;
@@ -518,7 +517,7 @@ public class SpecInstantiator {
             }
             Pair<InterfaceType, Map<TypeParameterType, Type>> withBaseTypes = SpecInstantiator.this.info.typesUtil.constructSyntheticInterfaceWithBaseTypes(t);
 
-            Type nativeBaseType = SpecInstantiator.this.info.typesUtil.getNativeBase(t, SpecInstantiator.this.info.nativeTypes, SpecInstantiator.this.info.typeNames);
+            Type nativeBaseType = SpecInstantiator.this.info.typesUtil.getNativeBase(t, nativesInstantiator::shouldConstructAsNative);
 
             info = info.withContext(info.context.append(withBaseTypes.getRight()));
             if (nativeBaseType == null) {

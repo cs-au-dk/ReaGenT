@@ -54,20 +54,25 @@ public class NativesInstantiator {
         evalConstructorMap.forEach((name, args) -> {
             evalConstructor(c, name, args.toArray(new Value[0]));
         });
-
     }
+
+    private static final Set<String> constructStructually = new HashSet<>(Arrays.asList(
+            "ArrayLike"
+    ));
 
     public boolean shouldConstructAsNative(Type type) {
         if (type instanceof ReferenceType) {
             type = ((ReferenceType) type).getTarget();
         }
+        String name = info.typeNames.get(type);
         return
+                !constructStructually.contains(name) &&
                 info.nativeTypes.contains(type) &&
-                        !nativesToConstructStructurally.contains(info.typeNames.get(type)) &&
-                        !(type instanceof TypeParameterType) &&
-                        !(type instanceof ReferenceType && info.typeNames.get(((ReferenceType) type).getTarget()).equals("Array")) &&
-                        !info.typeNames.get(type).contains("[") &&
-                        !info.typeNames.get(type).startsWith("window.");
+                !nativesToConstructStructurally.contains(name) &&
+                !(type instanceof TypeParameterType) &&
+                !(type instanceof ReferenceType && info.typeNames.get(((ReferenceType) type).getTarget()).equals("Array")) &&
+                !name.contains("[") &&
+                !name.startsWith("window.");
 
     }
 
