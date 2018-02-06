@@ -55,6 +55,50 @@
     {
       "path": "window.redux.compose.[arg0]",
       "comment": "Somewhat same as above. TAJS is unable to prove which functions gets called with what arguments. Since some tricky array-manipulation is happening."
+    },
+    {
+      "path": "window.redux.compose.[arg0].[arg0] {patched.redux.js142:32}._isUnboundGeneric",
+      "comment": "Somewhat same as above. TAJS is unable to prove which functions gets called with what arguments. Since some tricky array-manipulation is happening."
+    },
+    {
+      "path": "redux.bindActionCreators(typeParameter,obj)._isUnboundGeneric",
+      "comment": "Functions are copied over, but other properties are not. I think exact error was showcased in paper for TSTest."
+    },
+    {
+      "path": "redux.compose().<>(typeParameter)",
+      "comment": "Seems to be related to the \"any\" variant of compose."
+    },
+    {
+      "path": "redux.combineReducers().<>(typeParameter,union)._isUnboundGeneric",
+      "comment": "Oversimplified it is basically an \"<T>foo(a: any): T\" function, so it has an error and that is expected."
+    },
+    {
+      "path": "window.redux.compose.[arg2].[arg0] {patched.redux.js142:32}._isUnboundGeneric",
+      "comment": "The \"any\" overload of compose seem to be leaking. This thing is working, but TAJS is unable to reason about it."
+    },
+    {
+      "path": "redux.compose().<>(typeParameter,typeParameter)",
+      "comment": "Definitely imprecision by TAJS"
+    },
+    {
+      "path": "window.redux.compose.[arg0] {patched.redux.js143:24}",
+      "comment": "Unable to reason that you don't get the first element when fetching the last element. And thus the two gets mixed together."
+    },
+    {
+      "path": "window.redux.compose.[arg0] {patched.redux.js0:0}",
+      "comment": "Same as above"
+    },
+    {
+      "path": "window.redux.compose.[arg0].[arg0] {patched.redux.js142:32}",
+      "comment": "The any case of compose gets mixed together with the others."
+    },
+    {
+      "path": "window.redux.compose.[arg2].[arg0] {patched.redux.js142:32}",
+      "comment": "Variation on the above."
+    },
+    {
+      "path": "window.redux.compose.[arg1].[arg0] {patched.redux.js142:32}",
+      "comment": "Variation on the above."
     }
   ]
 }
