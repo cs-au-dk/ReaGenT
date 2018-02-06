@@ -45,6 +45,10 @@ public class ViolationsOracle {
         return to;
     }
 
+    public static ViolationsOracle empty() {
+        return new ViolationsOracle(TypeViolations.empty());
+    }
+
     public static ViolationsOracle fromJson(Benchmark benchmark) {
         Gson g = new Gson();
         try {

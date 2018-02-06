@@ -2,19 +2,17 @@ package dk.webbies.tajscheck.tajstester;
 
 import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.Solver;
-import dk.brics.tajs.flowgraph.AbstractNode;
-import dk.brics.tajs.lattice.Context;
-import dk.brics.tajs.lattice.HostObject;
 import dk.brics.tajs.lattice.Value;
 import dk.brics.tajs.solver.GenericSolver;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.buildprogram.TypeChecker;
+import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
+import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
-import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
-import dk.webbies.tajscheck.util.Tuple3;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -88,7 +86,8 @@ public class TypeValuesHandler {
         testValueMap.remove(key).forEach(Reference::setToNull);
     }
 
-    public boolean addFeedbackValue(Object key, TypeWithContext type, Value v) {
+    public boolean addFeedbackValue(Object key, TypeWithContext type, Value v, Solver.SolverInterface c) {
+        v = simpleTypeFilter(v, type, c);
         if (!hasBeenUpdatedMap.containsKey(type)) {
             hasBeenUpdatedMap.put(type, Value.makeNone());
         }
@@ -99,7 +98,7 @@ public class TypeValuesHandler {
         }
 
 
-        assert(v != null);
+        assert (v != null);
         AtomicBoolean valueWasAdded = new AtomicBoolean(false);
         Reference<Value> ref = new Reference<>(v);
         testValueMap.put(key, ref);
@@ -107,6 +106,21 @@ public class TypeValuesHandler {
             typeValueMap.put(subType, ref);
         });
         return valueWasAdded.get();
+    }
+
+    private Value simpleTypeFilter(Value value, TypeWithContext type, Solver.SolverInterface c) {
+        List<Value> result = new ArrayList<>();
+        TajsTypeChecker checker = new TajsTypeChecker(null, c, info, ViolationsOracle.empty());
+        for (Value splitValue : TajsTypeChecker.split(value)) {
+            List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type.getType(), type.getTypeContext(), info, 0);
+
+            List<TypeViolation> violations = checker.getTypeViolations(type, splitValue, typeChecks, "whatever");
+            if (violations.isEmpty()) {
+                result.add(splitValue);
+            }
+        }
+
+        return Value.join(result);
     }
 
     public SpecInstantiator getInstantiator() {

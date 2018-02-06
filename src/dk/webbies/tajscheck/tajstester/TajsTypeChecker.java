@@ -107,7 +107,7 @@ public class TajsTypeChecker {
         return TypeViolation.definite("Expected " + check.getExpected() + " but found " + Util.prettyValue(value, c.getState()), violationPath);
     }
 
-    private List<TypeViolation> getTypeViolations(TypeWithContext typeWithContext, Value v, List<TypeCheck> typeChecks, String path) {
+    public List<TypeViolation> getTypeViolations(TypeWithContext typeWithContext, Value v, List<TypeCheck> typeChecks, String path) {
 
         Function<TypeCheck, List<TypeViolation>> findTypeViolations = typeCheck -> {
             Check check = typeCheck.getCheck();
@@ -333,9 +333,6 @@ public class TajsTypeChecker {
                         if (!clazz.isNotAbsent()) {
                             System.err.println("Cannot check prototype of: " + name); // TODO: At Least MouseEvent and similar.
                             return Value.makeBool(true);
-                        }
-                        if (clazz.getObjectLabels().size() != 1) {
-                            System.out.println();
                         }
                         assert clazz.getObjectLabels().size() == 1;
                         return Operators.instof(o, clazz, c);

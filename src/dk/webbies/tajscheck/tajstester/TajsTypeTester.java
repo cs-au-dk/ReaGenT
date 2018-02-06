@@ -379,7 +379,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         List<TypeViolation> violations = getViolations(value, t, path, c, tajsTypeChecker);
 
         if(violations.isEmpty() && !value.isNone()) {
-            boolean newValue = valueHandler.addFeedbackValue(key, t, value);
+            boolean newValue = valueHandler.addFeedbackValue(key, t, value, c);
             if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + value);
             if(newValue && c.isScanning()) {
                 throw new RuntimeException("New values should not appear in scanning!");

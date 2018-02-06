@@ -1,0 +1,8 @@
+{
+  "suppressions": [
+    {
+      "path": "module.makeFoo()",
+      "comment": "Part of the test that this is suppressed."
+    }
+  ]
+}

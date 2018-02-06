@@ -50,6 +50,35 @@ public class TajsCheckerEvaluation {
     );
 
     /*
+    Clean benchmarks (where every violation is suppressed or patched).
+    pathjs
+    PleaseJS
+
+
+    // In progress.
+    Redux TODO: Delta-debugging on casa04.
+//    accounting.js // TODO: Not clean.
+
+    TODO: Intro.js
+    TODO: Lunr (losses a lot of precision in the SortedSet, but otherwise seems ok).
+
+
+    PhotoSwipe // Next step would be doing a lot of delta-debugging.
+
+    // Benchmarks that should definitely not be cleaned:
+    Hammer.js: Catastrophic precision loss (has retractions)
+    axios: Seems to take quite a while after the most obvious fixed has been made.
+    highlight.js simply takes too long. Nothing found after 1 hour.
+    Handlebars patched	No signature defined for Error.captureStackTrace
+
+    // Undecided.
+    Medium Editor patched	BROWSER
+    PDF.js patched	BROWSER	false	340	1	1	323	36	23	287	12	0	0	70,5s	50	17	11	0
+    reveal.js	BROWSER	false	1300	30	31	154	139	110	15	1	0	0	245,4s	149	5	4	4
+
+     */
+
+    /*
     // List of patches where filtering might have helped.
     In knockout, i had to put that KnockoutBindingProvider.nodeHasBindings and KnockoutBindingProvider.getBindings could be undefined, as TAJS reported it. (spurious?)
     In CreateJS, i had to make Ticker.framerate and Ticker.interval as potentially undefined, this might be spurious.

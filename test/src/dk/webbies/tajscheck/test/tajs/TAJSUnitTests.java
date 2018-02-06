@@ -1772,4 +1772,13 @@ public class TAJSUnitTests {
                 .hasNoViolations()
                 .hasNoWarnings();
     }
+
+    @Test
+    public void simpleTypeFilter() throws Exception {
+        TajsAnalysisResults result = run("simpleTypeFilter");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 }
