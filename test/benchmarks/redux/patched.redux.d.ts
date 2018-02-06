@@ -195,7 +195,6 @@ declare module redux {
      * @template S State object type.
      */
     export interface StoreCreator {
-        <S>(reducer: Reducer<S>, enhancer?: StoreEnhancer<S>): Store<S>;
         <S>(reducer: Reducer<S>, preloadedState: S, enhancer?: StoreEnhancer<S>): Store<S>;
     }
 
