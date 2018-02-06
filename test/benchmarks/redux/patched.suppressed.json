@@ -99,6 +99,50 @@
     {
       "path": "window.redux.compose.[arg1].[arg0] {patched.redux.js142:32}",
       "comment": "Variation on the above."
+    },
+    {
+      "path": "window.redux.compose.[arg2].[arg0] {patched.redux.js143:24}._isUnboundGeneric",
+      "comment": "Variation on the above."
+    },
+    {
+      "path": "window.redux.compose.[arg1].[arg0] {patched.redux.js142:32}._isUnboundGeneric",
+      "comment": "Variation on the above."
+    },
+    {
+      "path": "redux.compose().<>()",
+      "comment": "Variation on the above."
+    },
+    {
+      "path": "window.redux.compose.[arg2].[arg0] {patched.redux.js143:24}",
+      "comment": "Variation on the above."
+    },
+    {
+      "path": "window.redux.compose.[arg1].[arg0] {patched.redux.js143:24}",
+      "comment": "Variation on the above."
+    },
+    {
+      "path": "window.redux.compose.[arg3].[arg0] {patched.redux.js142:32}._isUnboundGeneric",
+      "comment": "Variation on the above."
+    },
+    {
+      "path": "redux.compose()(,...any)",
+      "comment": "Variation on the above."
+    },
+    {
+      "path": "window.redux.compose.[arg3].[arg0] {patched.redux.js143:24}._isUnboundGeneric",
+      "comment": "Variation on the above."
+    },
+    {
+      "path": "window.redux.compose.[arg3].[arg0] {patched.redux.js142:32}",
+      "comment": "Variation on the above."
+    },
+    {
+      "path": "redux.compose().<>(typeParameter,typeParameter,typeParameter,...any)",
+      "comment": "Variation on the above."
+    },
+    {
+      "path": "window.redux.compose.[arg1].[arg0] {patched.redux.js143:24}._isUnboundGeneric",
+      "comment": "Variation on the above."
     }
   ]
 }
