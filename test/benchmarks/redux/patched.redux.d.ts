@@ -219,7 +219,7 @@ declare module redux {
      */
     export type StoreEnhancer<S> = (next: StoreEnhancerStoreCreator<S>) => StoreEnhancerStoreCreator<S>;
     export type GenericStoreEnhancer = <S>(next: StoreEnhancerStoreCreator<S>) => StoreEnhancerStoreCreator<S>;
-    export type StoreEnhancerStoreCreator<S> = (reducer: Reducer<S>, preloadedState?: S) => Store<S>;
+    export type StoreEnhancerStoreCreator<S> = (reducer: Reducer<S>, preloadedState?: S, enhancer?: StoreEnhancer<S>) => Store<S>;
 
     /**
      * Creates a Redux store that holds the state tree.
