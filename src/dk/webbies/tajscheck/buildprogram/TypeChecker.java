@@ -747,9 +747,6 @@ public class TypeChecker {
 
         @Override
         public List<TypeCheck> visit(ThisType t, Arg arg) {
-            if (arg.typeContext.getThisType() == null) {
-                System.out.println();
-            }
             return arg.typeContext.getThisType().accept(this, arg);
         }
 
