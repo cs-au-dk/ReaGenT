@@ -18,6 +18,4 @@ declare namespace mime {
     export function getExtension(mime: string): string | null;
 
     export function define(mimes: TypeMap, force?: boolean): void;
-
-    export const default_type: string;
 }
