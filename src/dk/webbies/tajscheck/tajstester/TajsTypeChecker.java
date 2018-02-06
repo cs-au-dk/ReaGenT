@@ -66,8 +66,12 @@ public class TajsTypeChecker {
         vcur = v.restrictToBool();
         if(!vcur.isNone()) vr.add(vcur);
 
-        vcur = v.restrictToStr();
-        if(!vcur.isNone()) vr.add(vcur);
+        if(v.isMaybeAllKnownStr())
+            vr.addAll(v.getAllKnownStr().stream().map(Value::makeStr).collect(Collectors.toList()));
+        else {
+            vcur = v.restrictToStr();
+            if(!vcur.isNone()) vr.add(vcur);
+        }
 
         vcur = v.restrictToNum();
         if(!vcur.isNone()) vr.add(vcur);

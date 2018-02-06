@@ -190,6 +190,10 @@ public class RunBenchmarks {
 
         register(new Benchmark("jsyaml", ParseDeclaration.Environment.ES5Core, "test/benchmarks/jsyaml/jsyaml.js", "test/benchmarks/jsyaml/jsyaml.d.ts", BROWSER, options));
 
+        register(new Benchmark("semver", ParseDeclaration.Environment.ES5Core, "test/benchmarks/semver/semver.js", "test/benchmarks/semver/semver.d.ts", NODE, options));
+
+        register(new Benchmark("mime", ParseDeclaration.Environment.ES5Core, "test/benchmarks/mime/mime.js", "test/benchmarks/mime/mime.d.ts", BROWSER, options));
+
         // If need more benchmarks, get some from here: https://www.javascripting.com/?p=5
     }
 

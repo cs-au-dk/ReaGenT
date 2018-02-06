@@ -1774,6 +1774,16 @@ public class TAJSUnitTests {
     }
 
     @Test
+    public void multipleStringLiterals() throws Exception {
+        TajsAnalysisResults result = run("multipleStringLiterals");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
+
+    @Test
     public void simpleTypeFilter() throws Exception {
         TajsAnalysisResults result = run("simpleTypeFilter");
 

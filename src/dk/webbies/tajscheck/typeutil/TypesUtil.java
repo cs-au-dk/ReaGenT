@@ -358,6 +358,7 @@ public class TypesUtil {
                                 newType = elements.get(0);
                             } else {
                                 UnionType newUnion = new UnionType();
+                                info.typeNames.put(newUnion, info.typeNames.get(type));
                                 newUnion.setElements(elements);
                                 newType = newUnion;
                             }

@@ -164,6 +164,32 @@ public class BenchmarkInfo {
         }
 
         for (Type type : allTypes) {
+            if (type instanceof UnionType) {
+                // Collapsing nested unions
+                UnionType union = (UnionType) type;
+                HashSet<UnionType> es = new HashSet<>(Collections.singletonList(union));
+                union.setElements(collectAllUnionElements(union.getElements(), es));
+
+                // boolean are often represented as true | false. Collapse that to just "boolean". (Because otherwise the static analysis just says "maybe", if asked if a bool is "true | false", even though it is definitely one of the two.)
+                boolean hasTrue = false;
+                boolean hasFalse = false;
+                for (Type element : union.getElements()) {
+                    if (element instanceof BooleanLiteral && ((BooleanLiteral) element).getValue()) {
+                        hasTrue = true;
+                    }
+                    if (element instanceof BooleanLiteral && !((BooleanLiteral) element).getValue()) {
+                        hasFalse = true;
+                    }
+                }
+                if (hasTrue && hasFalse) {
+                    ArrayList<Type> elements = new ArrayList<>(union.getElements().stream().filter(Util.not(BooleanLiteral.class::isInstance)).collect(Collectors.toList()));
+                    elements.add(new SimpleType(SimpleTypeKind.Boolean));
+                    union.setElements(elements);
+                }
+            }
+        }
+
+        for (Type type : allTypes) {
             // Generic signatures sometimes have their return-type in the target signature.
             if (type instanceof InterfaceType) {
                 InterfaceType inter = (InterfaceType) type;
@@ -223,32 +249,6 @@ public class BenchmarkInfo {
             // Setting the instance of a class to an existing instance instead of creating a new.
             if (type instanceof ClassInstanceType) {
                 ((ClassType) ((ClassInstanceType) type).getClassType()).instance = (ClassInstanceType) type;
-            }
-
-
-            if (type instanceof UnionType) {
-                // Collapsing nested unions
-                UnionType union = (UnionType) type;
-                HashSet<UnionType> es = new HashSet<>(Collections.singletonList(union));
-                union.setElements(collectAllUnionElements(union.getElements(), es));
-
-                // boolean are often represented as true | false. Collapse that to just "boolean". (Because otherwise the static analysis just says "maybe", if asked if a bool is "true | false", even though it is definitely one of the two.)
-                boolean hasTrue = false;
-                boolean hasFalse = false;
-                for (Type element : union.getElements()) {
-                    if (element instanceof BooleanLiteral && ((BooleanLiteral)element).getValue()) {
-                        hasTrue = true;
-                    }
-                    if (element instanceof BooleanLiteral && !((BooleanLiteral)element).getValue()) {
-                        hasFalse = true;
-                    }
-                }
-                if (hasTrue && hasFalse) {
-                    ArrayList<Type> elements = new ArrayList<>(union.getElements().stream().filter(Util.not(BooleanLiteral.class::isInstance)).collect(Collectors.toList()));
-                    elements.add(new SimpleType(SimpleTypeKind.Boolean));
-                    union.setElements(elements);
-                }
-
             }
         }
 

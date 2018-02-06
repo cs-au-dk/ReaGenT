@@ -58,8 +58,15 @@ public class AnalyzeBenchmarks extends TestCase {
             "highlight.js", // Include any of the highlight functions, and it takes forever. Exclude them, done in 15 seconds.
             "CodeMirror", // TODO: Crashes (after 6 minutes on my desktop) with "Reading undefined register v10).
             "Moment.js", // Timeout.
-            "classnames", // TAJS crashes due to violation on Array.join
-            "uuid",
+            "classnames", // Ok
+            "uuid",  //ok
+            "semver", // ok-ish, still WIP
+            "mime",
+
+            "minimist", // Precision is drammatically low, TAJS crashes due to violation on Array.join.
+            "jsyaml", // hopeless
+            "Ace", // Has catastrophic precision-loos when calling the top-level constructor.
+
 
             // below is not included in TajsCheckerEvaluation.
 
@@ -93,10 +100,6 @@ public class AnalyzeBenchmarks extends TestCase {
             "Polymer", // "Too imprecise calls to Function" during initialization
             "Sugar", // Too much mem, and too much time, just for the initialization.
             "q",  // Uses require mechanism to fetch dependencies.
-            "Ace", // Has catastrophic precision-loos when calling the top-level constructor.
-            "minimist", // Precision is drammatically low, TAJS crashes due to violation on Array.join.
-            "jsyaml", // hopeless
-
 
             // TODO: Try on a proper machine.
             "Fabric.js", // initialization crashes TAJS

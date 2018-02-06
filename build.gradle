@@ -97,3 +97,12 @@ task doEvaluation(type: JavaExec) {
     jvmArgs = ["-Xmx32G"]
     main = 'dk.webbies.tajscheck.test.tajs.analyze.TajsCheckerEvaluation'
 }
+
+
+// Example usage:
+// ./gradlew deltaDebugRetractedTestInAll"
+task deltaDebugRetractedTestInAll(type: JavaExec) {
+    classpath sourceSets.test.runtimeClasspath
+    jvmArgs = ["-Xmx30G"]
+    main = 'dk.webbies.tajscheck.test.DeltaDebug$DeltaDebugRetractedTestInAll'
+}

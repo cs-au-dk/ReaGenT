@@ -1,0 +1,56 @@
+{
+  "suppressions": [
+    {
+      "path": "compare(union,union,boolean)",
+      "comment": "Expected type 1 | 0 | -1, but TAJS says Uint|NotUInt"
+    },
+    {
+      "path": "rcompareIdentifiers(union,union)",
+      "comment": "Expected type 1 | 0 | -1, but TAJS says Uint|NotUInt"
+    },
+    {
+      "path": "validRange(union)",
+      "comment": "Expected string but found Null"
+    },
+    {
+      "path": "compare(union,union,undefined)",
+      "comment": "Expected type 1 | 0 | -1, but TAJS says Uint|NotUInt"
+    },
+    {
+      "path": "compare(union,union)",
+      "comment": "Expected type 1 | 0 | -1, but TAJS says Uint|NotUInt"
+    },
+    {
+      "path": "rcompare(union,union,undefined)",
+      "comment": "Expected type 1 | 0 | -1, but TAJS says Uint|NotUInt"
+    },
+    {
+      "path": "validRange(union,boolean)",
+      "comment": "Expected string but found Null"
+    },
+    {
+      "path": "rcompare(union,union,boolean)",
+      "comment": "Expected type 1 | 0 | -1, but TAJS says Uint|NotUInt"
+    },
+    {
+      "path": "Comparator.new(union,union).semver.raw",
+      "comment": "Spurious undef due to missing refinement on line 700"
+    },
+    {
+      "path": "compareIdentifiers(union,union)",
+      "comment": "Expected type 1 | 0 | -1, but TAJS says Uint|NotUInt"
+    },
+    {
+      "path": "Comparator.new(union,union).value",
+      "comment": "A NaN generated from undefined + undefined, the undefined in version is probably coming from line 289"
+    },
+    {
+      "path": "rcompare(union,union)",
+      "comment": "Expected type 1 | 0 | -1, but TAJS says Uint|NotUInt"
+    },
+    {
+      "path": "Comparator.new(union,union).operator",
+      "comment": "Spurious undefined"
+    }
+  ]
+}

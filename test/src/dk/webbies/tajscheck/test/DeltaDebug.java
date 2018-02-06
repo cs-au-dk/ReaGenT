@@ -220,12 +220,15 @@ public class DeltaDebug {
         }).collect(Collectors.toList());
 
         for (Benchmark benchmark : benchmarks) {
+            System.out.println("==========================\n" + benchmark + "==========================\n");
             BooleanSupplier predicate = () -> {
                 //noinspection TryWithIdenticalCatches
                 try {
-                    TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, 20 * 60);
+                    TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(benchmark, 30 * 60);
                     return !result.retractedTests.isEmpty();
                 } catch (Error | Exception e) {
+                    System.out.println("ERROR: " + e);
+                    e.printStackTrace();
                     return false;
                 }
             };
@@ -298,5 +301,12 @@ public class DeltaDebug {
         }
 
         return result.typeErrors.size() > 0;
+    }
+
+
+    private static class DeltaDebugRetractedTestInAll {
+        public static void main(String[] args) throws IOException {
+            new DeltaDebug().deltaDebugRetractedTestInAll();
+        }
     }
 }
