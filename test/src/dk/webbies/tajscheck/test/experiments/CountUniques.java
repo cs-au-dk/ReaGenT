@@ -397,7 +397,6 @@ public class CountUniques {
         @Override
         public Type visit(ThisType t, Arg arg) {
             if (arg.context.getThisType() == null) {
-                System.out.println();
                 throw new RuntimeException();
             } else {
                 return recurse(arg.context.getThisType(), arg);

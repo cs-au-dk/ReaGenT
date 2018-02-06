@@ -143,9 +143,6 @@ public class OutputParser {
     }
 
     private static TypeError parseSingleResult(List<String> lines, Set<Integer> testsCalled, boolean collectCalledTests, String filterPath) {
-        if (!(lines.size() == 6 || lines.size() == 5)) {
-            System.out.println();
-        }
         assert lines.size() == 6 || lines.size() == 5;
 
         String header = lines.get(0);

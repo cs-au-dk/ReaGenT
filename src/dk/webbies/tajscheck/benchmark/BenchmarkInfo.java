@@ -375,9 +375,6 @@ public class BenchmarkInfo {
             return;
         }
 
-        if (signature.getTarget() == null) {
-            System.out.println();
-        }
         assert signature.getTarget() != null;
         assert signature.getTarget().getResolvedReturnType() != null;
         signature.setResolvedReturnType(signature.getTarget().getResolvedReturnType());
