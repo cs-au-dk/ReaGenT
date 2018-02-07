@@ -171,7 +171,7 @@
     {
       "path": "redux.applyMiddleware()().<>(obj,undefined,undefined).replaceReducer",
       "comment": "See above"
-    },,
+    },
     {
       "path": "redux.applyMiddleware()().<>(obj,typeParameter,obj).replaceReducer",
       "comment": "See above"
@@ -275,7 +275,7 @@
     {
       "path": "redux.createStore.[arg2].<>.[arg0].<>.[arg0].<>.[arg1]",
       "comment": "Is actually spurious write to _isunboundgeneric."
-    }
+    },
     {
       "path": "window.redux.createStore.().replaceReducer.[arg0].[arg0] {patched.redux.js329:40}",
       "comment": "Is actually spurious write to _isunboundgeneric."
