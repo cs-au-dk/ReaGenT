@@ -57,6 +57,10 @@
       "comment": "Somewhat same as above. TAJS is unable to prove which functions gets called with what arguments. Since some tricky array-manipulation is happening."
     },
     {
+      "path": "window.redux.applyMiddleware.[arg0].[typeArg0].().[arg0] {patched.redux.js573:37",
+      "comment": "i think any from compose is leaking."
+    },
+    {
       "path": "window.redux.compose.[arg0].[arg0] {patched.redux.js142:32}._isUnboundGeneric",
       "comment": "Somewhat same as above. TAJS is unable to prove which functions gets called with what arguments. Since some tricky array-manipulation is happening."
     },
@@ -145,12 +149,136 @@
       "comment": "Variation on the above."
     },
     {
+      "path": "window.redux.applyMiddleware.[arg0].[typeArg0].().[arg0] {patched.redux.js143:24}",
+      "comment": "Variation on the above."
+    },
+    {
       "path": "redux.createStore.[arg0].<>.[arg1]",
       "comment": "Spurious writes to _isUnboundGeneric"
     },
     {
       "path": "redux.applyMiddleware()().<>(obj,typeParameter,undefined).replaceReducer",
       "comment": "Spurious write"
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,typeParameter).replaceReducer",
+      "comment": "Spurious write"
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj).replaceReducer",
+      "comment": "See above"
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,undefined,undefined).replaceReducer",
+      "comment": "See above"
+    },,
+    {
+      "path": "redux.applyMiddleware()().<>(obj,typeParameter,obj).replaceReducer",
+      "comment": "See above"
+    },
+    {
+      "path": "window.redux.applyMiddleware.[arg0].[typeArg0].().[arg0] {patched.redux.js142:32}",
+      "comment": "Variation on one of the above"
+    },
+    {
+      "path": "window.redux.applyMiddleware.().[arg0].[arg0].[arg1] {patched.redux.js0:0}",
+      "comment": "Variation on one of the above"
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,undefined,undefined).getState",
+      "comment": "Spurious write"
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,typeParameter).getState",
+      "comment": "Spurious write"
+    },
+    {
+      "path": "window.redux.applyMiddleware.[arg0].[numberindexer].[arg0] {patched.redux.js571:36}.getState",
+      "comment": "Spurious write"
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,typeParameter,undefined).getState",
+      "comment": "Spurious write"
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,typeParameter,obj).getState",
+      "comment": "Spurious write"
+    },
+    {
+      "path": "redux.compose(typeParameter)._isUnboundGeneric",
+      "comment": "One of the usual compose issues"
+    },
+    {
+      "path": "redux.applyMiddleware.[restArg].().[arg0].<>(typeParameter)._isUnboundGeneric",
+      "comment": "Spurious write"
+    },
+    {
+      "path": "window.redux.applyMiddleware.[arg0].[typeArg0].().[arg0] {patched.redux.js142:32}",
+      "comment": "One of the usual compose issues"
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,typeParameter,obj).dispatch",
+      "comment": "Unable to prove that the property is definitely present. / spurious write."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj).dispatch",
+      "comment": "Unable to prove that the property is definitely present. / spurious write."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,typeParameter,undefined).dispatch",
+      "comment": "Unable to prove that the property is definitely present."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,undefined,undefined).dispatch",
+      "comment": "Unable to prove that the property is definitely present."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,typeParameter).dispatch",
+      "comment": "Unable to prove that the property is definitely present."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,undefined).dispatch",
+      "comment": "Unable to prove that the property is definitely present."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,typeParameter,obj).subscribe",
+      "comment": "Unable to prove that the property is definitely present."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,typeParameter).subscribe",
+      "comment": "Unable to prove that the property is definitely present."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,typeParameter,undefined).subscribe",
+      "comment": "Unable to prove that the property is definitely present."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,undefined,undefined).subscribe",
+      "comment": "Unable to prove that the property is definitely present."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj,undefined).subscribe",
+      "comment": "Unable to prove that the property is definitely present."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>(obj).subscribe",
+      "comment": "Unable to prove that the property is definitely present."
+    },
+    {
+      "path": "window.redux.applyMiddleware.[arg0].[typeArg0].().[arg0] {patched.redux.js142:32}",
+      "comment": "Variation on one of the above."
+    },
+    {
+      "path": "redux.applyMiddleware()().<>.[arg0].<>.[arg1]",
+      "comment": "Is actually spurious write to _isunboundgeneric."
+    },
+    {
+      "path": "redux.createStore.[arg2].<>.[arg0].<>.[arg0].<>.[arg1]",
+      "comment": "Is actually spurious write to _isunboundgeneric."
+    }
+    {
+      "path": "window.redux.createStore.().replaceReducer.[arg0].[arg0] {patched.redux.js329:40}",
+      "comment": "Is actually spurious write to _isunboundgeneric."
     }
   ]
 }

@@ -44,7 +44,7 @@ declare module redux {
      *
      * @template S State object type.
      */
-    export type Reducer<S> = <A extends Action>(state: S, action: A | {type: '@@redux/INIT'}) => S;
+    export type Reducer<S> = <A extends Action>(state: S, action: A | {type: '@@redux/INIT'} | {type: "@@redux/PROBE_UNKNOWN_ACTION_"}) => S;
 
     /**
      * Object whose values correspond to different reducer functions.
@@ -218,7 +218,7 @@ declare module redux {
      */
     export type StoreEnhancer<S> = (next: StoreEnhancerStoreCreator<S>) => StoreEnhancerStoreCreator<S>;
     export type GenericStoreEnhancer = <S>(next: StoreEnhancerStoreCreator<S>) => StoreEnhancerStoreCreator<S>;
-    export type StoreEnhancerStoreCreator<S> = (reducer: Reducer<S>, preloadedState?: S, enhancer?: StoreEnhancer<S>) => Store<S>;
+    export type StoreEnhancerStoreCreator<S> = (reducer: Reducer<S>, preloadedState: S, enhancer?: StoreEnhancer<S>) => Store<S>;
 
     /**
      * Creates a Redux store that holds the state tree.
