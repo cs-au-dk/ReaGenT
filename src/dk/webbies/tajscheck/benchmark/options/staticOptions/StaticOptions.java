@@ -26,6 +26,8 @@ public class StaticOptions implements OptionsI {
     public final ArgumentValuesStrategy argumentValuesStrategy;
     public final boolean checkAllPropertiesAfterFunctionCall;
     public final boolean useInspector;
+    public final boolean useValuesWithMismatches;
+    public final boolean simpleTypeFilter;
 
     public enum ArgumentValuesStrategy {
         MIX_FEEDBACK_AND_CONSTRUCTED,
@@ -48,7 +50,13 @@ public class StaticOptions implements OptionsI {
         this.properWidthSubtyping = builder.properWidthSubtyping;
         this.checkAllPropertiesAfterFunctionCall = builder.checkAllPropertiesAfterFunctionCall;
         this.useInspector = builder.useInspector;
+        this.useValuesWithMismatches = builder.useValuesWithMismatches;
+        this.simpleTypeFilter = builder.simpleTypeFilter;
         this.builder = builder;
+
+        if (useValuesWithMismatches && !propagateStateFromFailingTest) {
+            throw new RuntimeException("This set of options does not make sense");
+        }
     }
 
     @Override
@@ -68,6 +76,8 @@ public class StaticOptions implements OptionsI {
         private boolean properWidthSubtyping = false;
         private boolean checkAllPropertiesAfterFunctionCall = false; // then we run through all the PropertyReadTests after a function-call, to see if it had any harmful side-effects.
         private boolean useInspector = false;
+        private boolean useValuesWithMismatches = false;
+        private boolean simpleTypeFilter = true;
 
         private final CheckOptions.Builder outerBuilder;
 
@@ -86,6 +96,16 @@ public class StaticOptions implements OptionsI {
 
         public Builder setCheckAllPropertiesAfterFunctionCall(boolean checkAllPropertiesAfterFunctionCall) {
             this.checkAllPropertiesAfterFunctionCall = checkAllPropertiesAfterFunctionCall;
+            return this;
+        }
+
+        public Builder setUseValuesWithMismatches(boolean useValuesWithMismatches) {
+            this.useValuesWithMismatches = useValuesWithMismatches;
+            return this;
+        }
+
+        public Builder setSimpleTypeFilter(boolean simpleTypeFilter) {
+            this.simpleTypeFilter = simpleTypeFilter;
             return this;
         }
 

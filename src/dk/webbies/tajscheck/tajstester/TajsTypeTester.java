@@ -248,7 +248,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                     performTest(c, test, newc);
                     return true;
                 });
-                if (!hasProgress) {
+                if (!hasProgress) { // TODO: Every false?
                     hasFailed.add(test);
                 }
                 return hasProgress;
@@ -368,7 +368,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     /**
      *
-     * @return if the value satisfied the type
+     * @return if the value was added.
      */
     public boolean attemptAddValue(Value value, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker, Object key) {
         assert key != null;
@@ -378,7 +378,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
         List<TypeViolation> violations = getViolations(value, t, path, c, tajsTypeChecker);
 
-        if(violations.isEmpty() && !value.isNone()) {
+        violations.forEach(violation -> addViolation(violation, c));
+
+        if((violations.isEmpty() || info.options.staticOptions.useValuesWithMismatches) && !value.isNone()) {
             boolean newValue = valueHandler.addFeedbackValue(key, t, value, c);
             if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + value);
             if(newValue && c.isScanning()) {
@@ -386,10 +388,10 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
         } else {
             if(DEBUG_VALUES) System.out.println("Value " + value + " not added because it violates type " + t + " path:" + path);
-            violations.forEach(violation -> addViolation(violation, c));
         }
 
-        return violations.isEmpty();
+
+        return violations.isEmpty() || info.options.staticOptions.useValuesWithMismatches;
     }
 
     List<TypeViolation> getViolations(Value v, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker) {

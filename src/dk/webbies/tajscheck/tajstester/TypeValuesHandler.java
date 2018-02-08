@@ -87,7 +87,12 @@ public class TypeValuesHandler {
     }
 
     public boolean addFeedbackValue(Object key, TypeWithContext type, Value v, Solver.SolverInterface c) {
-        v = simpleTypeFilter(v, type, c);
+        if (info.options.staticOptions.simpleTypeFilter) {
+            v = simpleTypeFilter(v, type, c);
+            if (v.isNone()) {
+                return false;
+            }
+        }
         if (!hasBeenUpdatedMap.containsKey(type)) {
             hasBeenUpdatedMap.put(type, Value.makeNone());
         }

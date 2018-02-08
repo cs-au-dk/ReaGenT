@@ -597,7 +597,7 @@ public class TAJSUnitTests {
 
     @Test
     public void classInheritsConstructors() throws Exception {
-        TajsAnalysisResults result = run("classInheritsConstructors", options().setConstructAllTypes(true));
+        TajsAnalysisResults result = run("classInheritsConstructors", options().setConstructAllTypes(true).staticOptions.setUseValuesWithMismatches(false).setPropagateStateFromFailingTest(false));
 
         assertThat(result.detectedViolations.asMap().keySet(), is(hasSize(3)));
 
@@ -722,7 +722,7 @@ public class TAJSUnitTests {
 
     @Test
     public void deepChecking() throws Exception {
-        TajsAnalysisResults result = run("deepChecking");
+        TajsAnalysisResults result = run("deepChecking", options().staticOptions.setUseValuesWithMismatches(false).setPropagateStateFromFailingTest(false).setSimpleTypeFilter(false));
 
         assertTrue(result.testNot.stream().map(dk.webbies.tajscheck.testcreator.test.Test::getPath).anyMatch("foo().foo"::equals));
     }
@@ -920,11 +920,11 @@ public class TAJSUnitTests {
 
     @Test
     public void noStateFromFailingMethods() throws Exception {
-        TajsAnalysisResults resultNoPropagate = run("noStateFromFailingMethods", options().staticOptions.setPropagateStateFromFailingTest(false));
+        TajsAnalysisResults resultNoPropagate = run("noStateFromFailingMethods", options().staticOptions.setPropagateStateFromFailingTest(false).setUseValuesWithMismatches(false));
 
         assertThat(resultNoPropagate.detectedViolations.keySet(), hasSize(1));
 
-        TajsAnalysisResults resultDoPropagate = run("noStateFromFailingMethods", options().staticOptions.setPropagateStateFromFailingTest(true));
+        TajsAnalysisResults resultDoPropagate = run("noStateFromFailingMethods", options().staticOptions.setPropagateStateFromFailingTest(true).setUseValuesWithMismatches(false));
 
         assertThat(resultDoPropagate.detectedViolations.keySet(), hasSize(2));
     }
@@ -932,7 +932,7 @@ public class TAJSUnitTests {
     @Test
     public void cannotHaveNonMonotomeState() throws Exception {
         // If we retracted state, this would run in an infinite loop.
-        TajsAnalysisResults result = run("cannotHaveNonMonotomeState");
+        TajsAnalysisResults result = run("cannotHaveNonMonotomeState", options().staticOptions.setUseValuesWithMismatches(false).setPropagateStateFromFailingTest(false));
 
         expect(result)
                 .notPerformedAllTests();
@@ -1251,7 +1251,8 @@ public class TAJSUnitTests {
     public void harmfulSideEffectsAreCatched() throws Exception {
         TajsAnalysisResults result = run("harmfulSideEffectsAreCatched", options().staticOptions
                 .setCheckAllPropertiesAfterFunctionCall(true)
-                .setPropagateStateFromFailingTest(false) // <- default, but to be explicit.
+                .setPropagateStateFromFailingTest(false)
+                .setUseValuesWithMismatches(false)
         );
 
         expect(result)
@@ -1362,14 +1363,15 @@ public class TAJSUnitTests {
             function foo4(): {foo: boolean} // returns {foo: string | boolean} (maybe error)
             function foo5(): {foo: boolean} // returns {foo: string} | {foo: boolean} (maybe error)
          */
-        TajsAnalysisResults result = run("definiteExceptions");
+        TajsAnalysisResults result = run("definiteExceptions", options().staticOptions.setUseValuesWithMismatches(false).setPropagateStateFromFailingTest(false));
 
         System.out.println(result);
 
         expect(result)
                 .hasViolations();
 
-        result.detectedViolations.asMap().values().forEach(violations -> assertThat(violations, hasSize(1)));
+        //noinspection ResultOfMethodCallIgnored
+        result.detectedViolations.asMap().values().forEach(violations -> violations.stream().reduce((a, b) -> {assert a.definite == b.definite; return a;}));
 
         assertThat(result.detectedViolations.get("module.foo00()").iterator().next().definite, is(false));
         assertThat(result.detectedViolations.get("module.foo0()").iterator().next().definite, is(true));
@@ -1785,7 +1787,7 @@ public class TAJSUnitTests {
 
     @Test
     public void simpleTypeFilter() throws Exception {
-        TajsAnalysisResults result = run("simpleTypeFilter");
+        TajsAnalysisResults result = run("simpleTypeFilter", options().staticOptions.setSimpleTypeFilter(true));
 
         expect(result)
                 .performedAllTests()
