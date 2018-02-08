@@ -1791,4 +1791,18 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations();
     }
+
+    @Test
+    @Ignore // TODO: I can't get this one to make sense.
+    public void noneObject() throws Exception {
+        TajsAnalysisResults result = run("noneObject", options()
+                .setSplitUnions(false)
+                .staticOptions
+                .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
+        );
+
+        List<TypeViolation> violations = result.detectedViolations.asMap().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+
+        assert violations.stream().map(Object::toString).noneMatch(str -> str.contains("{<none>}"));
+    }
 }
