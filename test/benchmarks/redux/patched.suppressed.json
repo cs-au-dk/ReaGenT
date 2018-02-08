@@ -213,6 +213,10 @@
       "comment": "Spurious write"
     },
     {
+      "path": "redux.applyMiddleware.[restArg].().[arg0].<>(typeParameter)",
+      "comment": "Spurious write"
+    },
+    {
       "path": "window.redux.applyMiddleware.[arg0].[typeArg0].().[arg0] {patched.redux.js142:32}",
       "comment": "One of the usual compose issues"
     },
@@ -279,6 +283,22 @@
     {
       "path": "window.redux.createStore.().replaceReducer.[arg0].[arg0] {patched.redux.js329:40}",
       "comment": "Is actually spurious write to _isunboundgeneric."
+    },
+    {
+      "path": "window.redux.applyMiddleware.[arg0].[typeArg0].().[arg0] {patched.redux.js573:37}",
+      "comment": "Spurious write"
+    },
+    {
+      "path": "redux.ReducersMapObject.[stringIndexer].[union0].[arg1] {patched.redux.js773:47}",
+      "comment": "TajsUniTests.noneObject"
+    },
+    {
+      "path": "window.redux.applyMiddleware.().[arg0].[arg0].[arg0] {patched.redux.js329:40}",
+      "comment": "Is caused by one of these supressions"
+    },
+    {
+      "path": "window.redux.createStore.[arg0].[arg0] {patched.redux.js329:40}",
+      "comment": "Is caused by one of these supressions"
     }
   ]
 }
