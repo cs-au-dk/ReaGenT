@@ -137,7 +137,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
                     .setRetractionPolicy(new LimitTransfersRetractionPolicy(100000, 0))
 
-                    .setCheckAllPropertiesAfterFunctionCall(true)
+                    .setCheckAllPropertiesAfterFunctionCall(false)
 
                     .setUseValuesWithMismatches(true)
                     .setPropagateStateFromFailingTest(true)
