@@ -335,6 +335,18 @@
     {
       "path": "window.redux.createStore.[arg0].[arg0] {patched.redux.js329:40}",
       "comment": "Is caused by one of these supressions"
+    },
+    {
+      "path": "redux.createStore().<>.getState()",
+      "comment": "A spurious write on getState happens in applyMiddleware"
+    },
+    {
+      "path": "redux.applyMiddleware()().<>().<>.getState()",
+      "comment": "A spurious write on getState happens in applyMiddleware"
+    },
+    {
+      "path": "redux.applyMiddleware.[restArg].[arg0].<>.getState()",
+      "comment": "A spurious write on getState happens in applyMiddleware"
     }
   ]
 }
