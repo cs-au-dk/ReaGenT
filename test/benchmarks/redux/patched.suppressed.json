@@ -347,6 +347,14 @@
     {
       "path": "redux.applyMiddleware.[restArg].[arg0].<>.getState()",
       "comment": "A spurious write on getState happens in applyMiddleware"
+    },
+    {
+      "path": "window.redux.bindActionCreators.[arg1].[arg0] {patched.redux.js592:28}",
+      "comment": "A use of any in the declaration file, to get around something that is hard to write type-safe. "
+    },
+    {
+      "path": "window.redux.bindActionCreators.[arg1].[arg0] {patched.redux.js592:28}._isUnboundGeneric",
+      "comment": "A use of any in the declaration file, to get around something that is hard to write type-safe. "
     }
   ]
 }
