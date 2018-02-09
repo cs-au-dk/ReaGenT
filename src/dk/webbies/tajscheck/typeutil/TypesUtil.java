@@ -943,6 +943,9 @@ public class TypesUtil {
             } else {
                 // Do nothing
             }
+            if (((TypeParameterType) type).getConstraint() != null) {
+                forAllSubTypes(((TypeParameterType) type).getConstraint(), typeContext, callback);
+            }
         } else if (type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType || type instanceof IndexedAccessType) {
             // Do nothing.
         } else {

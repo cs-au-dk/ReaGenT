@@ -1807,4 +1807,12 @@ public class TAJSUnitTests {
 
         assert violations.stream().map(Object::toString).noneMatch(str -> str.contains("{<none>}"));
     }
+
+    @Test
+    public void genericConstraints() throws Exception {
+        TajsAnalysisResults result = run("genericConstraints", options().staticOptions.setUseValuesWithMismatches(true).setPropagateStateFromFailingTest(true));
+
+        expect(result)
+                .performedAllTests();
+    }
 }
