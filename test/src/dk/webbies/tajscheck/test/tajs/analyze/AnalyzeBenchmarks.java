@@ -139,7 +139,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
                     .setCheckAllPropertiesAfterFunctionCall(false)
 
-                    .setUseValuesWithMismatches(true)
+                    .setUseValuesWithMismatches(false)
                     .setPropagateStateFromFailingTest(true)
 
                     .setSimpleTypeFilter(true)
