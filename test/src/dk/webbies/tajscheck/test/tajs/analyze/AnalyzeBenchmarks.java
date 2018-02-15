@@ -2,11 +2,13 @@ package dk.webbies.tajscheck.test.tajs.analyze;
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
+import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
+import dk.webbies.tajscheck.testcreator.test.check.Check;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -124,7 +126,7 @@ public class AnalyzeBenchmarks extends TestCase {
     }
 
     public static Function<CheckOptions.Builder, StaticOptions.Builder> options() {
-        return options -> options
+        Function<CheckOptions.Builder, StaticOptions.Builder> analysisOptions = options -> options
                 .setCombineNullAndUndefined(true) // because no-one cares.
 
                 .setConstructClassInstances(true) // due to our expansion-policy, this should only happen rarely.
@@ -137,15 +139,33 @@ public class AnalyzeBenchmarks extends TestCase {
 
                     .setRetractionPolicy(new LimitTransfersRetractionPolicy(100000, 0))
 
-                    .setCheckAllPropertiesAfterFunctionCall(false)
-
-                    .setUseValuesWithMismatches(false)
-                    .setPropagateStateFromFailingTest(true)
-
-                    .setSimpleTypeFilter(true)
-
                     .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
                     .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments());
+
+        return analysisOptions.andThen(options -> strongMode().apply(options.getOuterBuilder()));
+    }
+
+    // Strong mode is when we find a lot of mismatches.
+    public static Function<CheckOptions.Builder, StaticOptions.Builder> strongMode() {
+        return options ->
+                options.staticOptions
+                .setCheckAllPropertiesAfterFunctionCall(false) // Enabling this doesn't make sense in strong-mode. The errornous state will be propagated anyway, which will result in a flood of "Error after FunctionCall:".
+                .setUseValuesWithMismatches(true)
+                .setPropagateStateFromFailingTest(true)
+                .setSimpleTypeFilter(true)
+                ;
+    }
+
+
+    // Weak mode is when we stop early, but we can provide better feedback.
+    public static Function<CheckOptions.Builder, StaticOptions.Builder> weakMode() {
+        return options ->
+                options.staticOptions
+                .setCheckAllPropertiesAfterFunctionCall(true)
+                .setUseValuesWithMismatches(false)
+                .setPropagateStateFromFailingTest(false)
+                .setSimpleTypeFilter(false) // doesn't do anything, therefore disabling it.
+                ;
     }
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))
