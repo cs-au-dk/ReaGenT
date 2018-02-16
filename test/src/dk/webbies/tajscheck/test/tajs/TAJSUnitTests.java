@@ -1815,4 +1815,15 @@ public class TAJSUnitTests {
         expect(result)
                 .performedAllTests();
     }
+
+    @Test
+    @Ignore // TODO: mez.
+    public void propReadFromTwoObjectMaybeUndef() throws Exception {
+        TajsAnalysisResults result = run("propReadFromTwoObjectMaybeUndef", options().setSplitUnions(false)); // for benchmarks, unions are not being split, because it for some benchmarks results in an explosion of signatures.
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
 }
