@@ -142,7 +142,7 @@ public class AnalyzeBenchmarks extends TestCase {
                     .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
                     .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments());
 
-        return analysisOptions.andThen(options -> strongMode().apply(options.getOuterBuilder()));
+        return analysisOptions.andThen(options -> weakMode().apply(options.getOuterBuilder()));
     }
 
     // Strong mode is when we find a lot of mismatches.
