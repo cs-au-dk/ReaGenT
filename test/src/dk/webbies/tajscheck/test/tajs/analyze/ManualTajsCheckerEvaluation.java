@@ -42,6 +42,7 @@ public class ManualTajsCheckerEvaluation {
             "lunr.js",
             "CodeMirror", // TODO: Get some bugs from this one.
             "Moment.js", // TODO: Get some bugs from this one.
+            "semver",
 
             "reveal.js",
             "box2dweb",
