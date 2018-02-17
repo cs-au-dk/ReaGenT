@@ -41,6 +41,10 @@ public class TajsCheckerEvaluation {
             "Intro.js",
             "CodeMirror",
             "Moment.js",
+            "classnames", // Ok
+            "uuid",  //ok
+            "semver", // ok-ish, still WIP
+            "mime",
 //
             "Medium Editor", // TAJS never terminates on the global constructor
 //
