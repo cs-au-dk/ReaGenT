@@ -91,7 +91,7 @@ task deltaDebug(type: JavaExec) {
 }
 
 // Example usage:
-// ./gradlew doEvalutation"
+// ./gradlew doEvaluation"
 task doEvaluation(type: JavaExec) {
     classpath sourceSets.test.runtimeClasspath
     jvmArgs = ["-Xmx32G"]
