@@ -20,18 +20,21 @@ import java.util.stream.Collectors;
 
 public class TajsCheckerEvaluation {
     static final List<String> benchmarksToEvaluate = Arrays.asList(
+            "Sortable", // cheap
+            "Knockout", // cheap
+            "lunr.js", // cheap
+            "Hammer.js", // cheap. A lot fails because of TajsUnitTests.emptyValueException
+            "PleaseJS", // cheap
+            "Redux", // cheap
             "accounting.js",
             "async",
             "axios", // https://github.com/cs-au-dk/TAJS-private/issues/523 / TAJSUnitTests.forInOnPrototypeProperties
             "bluebird",
             "box2dweb",
             "CreateJS",
-            "Hammer.js", // cheap. A lot fails because of TajsUnitTests.emptyValueException
             "Handlebars",
             "highlight.js",
             "Intro.js",
-            "Knockout", // cheap
-            "lunr.js", // cheap
             "CodeMirror",
             "Moment.js",
 //
@@ -40,23 +43,28 @@ public class TajsCheckerEvaluation {
             "pathjs",
             "PDF.js",
             "PhotoSwipe", // (timeout in global constructor)
-            "PleaseJS", // cheap
             "QUnit",
-            "Redux", // cheap
             "reveal.js",
             "RxJS",
-            "Sortable", // cheap
-            "Swiper" // (timeout in global constructor)
+            "Swiper", // (timeout in global constructor)
+
+            // Benchmarks not from TSTest.
+            "classnames",
+            "uuid",
+            "semver",
+            "mime",
+            "minimist",
+            "jsyaml"
     );
 
     /*
     Clean benchmarks (where every violation is suppressed or patched).
     pathjs
     PleaseJS
+    Redux
 
 
     // In progress.
-    Redux TODO: Delta-debugging on casa04.
 //    accounting.js // TODO: Not clean.
 
     TODO: Intro.js
@@ -143,17 +151,7 @@ public class TajsCheckerEvaluation {
         new Experiment("PleaseJS").addExperiment(experiment()).calculate(null);
     }
 
-    @Test
-    public void evaluate() {
-        doEvaluation(false);
-    }
-
-    @Test
-    public void evaluateTajsOnly() {
-        doEvaluation(true);
-    }
-
-    private void doEvaluation(boolean tajsOnly) {
+    private void doEvaluation() {
         {
             // warmup.
             new Experiment("Sortable").addExperiment(experiment()).calculate(null);
@@ -166,8 +164,6 @@ public class TajsCheckerEvaluation {
             }
         }).collect(Collectors.toList()));
 
-        if(!tajsOnly)
-            experiment.addSingleExperiment(AutomaticExperiments.type);
         experiment.addExperiment(experiment());
 
         experiment.calculate("experiment.csv");
@@ -240,7 +236,7 @@ public class TajsCheckerEvaluation {
                     List<String> commonPaths = Util.intersection(tstestPaths, tajsCheckerPaths);
                     register.accept("commonViolationPaths", commonPaths.size() + "");
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    System.err.println("TSTest comparison failed with: " + e);
                 }
             }
         };
@@ -248,9 +244,6 @@ public class TajsCheckerEvaluation {
 
 
     public static void main(String[] args) {
-        if(args.length >= 1 && args[0].equals("tajs-only"))
-            new TajsCheckerEvaluation().doEvaluation(true);
-        else
-            new TajsCheckerEvaluation().doEvaluation(false);
+        new TajsCheckerEvaluation().doEvaluation();
     }
 }
