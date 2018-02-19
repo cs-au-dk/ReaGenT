@@ -51,6 +51,22 @@
     {
       "path": "Comparator.new(union,union).operator",
       "comment": "Spurious undefined"
+    },
+    {
+      "path": "SemVer.Comparator.new(union,union).operator",
+      "comment": "Spurious undefined"
+    },
+    {
+      "path": "SemVer.parse(union,boolean)",
+      "comment": "Cannot determine that the result is not a string."
+    },
+    {
+      "path": "SemVer.SemVer.new(union,union).build",
+      "comment": "I'm quite sure this will be fixed with the fix Gianlucca is making, but I'm putting it here anyway. "
+    },
+    {
+      "path": "SemVer.Range.new(union,union).set.[numberIndexer]",
+      "comment": "Imprecission"
     }
   ]
 }

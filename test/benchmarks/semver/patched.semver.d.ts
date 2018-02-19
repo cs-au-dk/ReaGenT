@@ -143,12 +143,12 @@ declare module SemVer {
     /**
      * Return the highest version in the list that satisfies the range, or null if none of them do.
      */
-    export function maxSatisfying(versions: Array<string | SemVer>, range: string | Range, loose?: boolean): string | SemVer;
+    export function maxSatisfying(versions: Array<string | SemVer>, range: string | Range, loose?: boolean): string | SemVer | null;
 
     /**
      * Return the lowest version in the list that satisfies the range, or null if none of them do.
      */
-    export function minSatisfying(versions: Array<string | SemVer>, range: string, loose?: boolean): string | SemVer;
+    export function minSatisfying(versions: Array<string | SemVer>, range: string, loose?: boolean): string | SemVer | null;
 
     /**
      * Return true if version is greater than all the versions possible in the range.
@@ -220,7 +220,7 @@ declare module SemVer {
 
         range: string;
         raw: string;
-        loose: boolean;
+        loose?: boolean;
 
         format(): string;
 

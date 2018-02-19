@@ -339,10 +339,10 @@ function SemVer(version, loose) {
 }
 
 SemVer.prototype.format = function() {
-    this.version = this.major + '.' + this.minor + '.' + this.patch;
+    var version = this.major + '.' + this.minor + '.' + this.patch;
     if (this.prerelease.length)
-        this.version += '-' + this.prerelease.join('.');
-    return this.version;
+        version += '-' + this.prerelease.join('.');
+    return this.version = version;
 };
 
 SemVer.prototype.toString = function() {
@@ -489,8 +489,7 @@ SemVer.prototype.inc = function(release, identifier) {
         default:
             throw new Error('invalid increment argument: ' + release);
     }
-    this.format();
-    this.raw = this.version;
+    this.raw = this.format();
     return this;
 };
 
