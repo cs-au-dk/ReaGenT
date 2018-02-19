@@ -154,7 +154,7 @@ public class TajsCheckerEvaluation {
     private void doEvaluation() {
         {
             // warmup.
-            new Experiment("Sortable").addExperiment(experiment()).calculate(null);
+            new Experiment("classnames").addExperiment(experiment()).calculate(null);
         }
         Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(bench -> {
             if (bench.patched() != null) {
