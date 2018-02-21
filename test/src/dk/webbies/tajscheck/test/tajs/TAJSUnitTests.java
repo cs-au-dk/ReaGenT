@@ -1826,4 +1826,15 @@ public class TAJSUnitTests {
                 .hasNoViolations()
                 .hasNoWarnings();
     }
+
+    @Test
+    @Ignore // TODO: Very likely related to the above. But I have no idea what is going on.
+    public void weirdObjectWrite() throws Exception {
+        TajsAnalysisResults result = run("weirdObjectWrite");
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations()
+                .hasNoWarnings();
+    }
 }

@@ -181,12 +181,16 @@ public class DeltaDebug {
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
         Util.alwaysRecreate = false;
-        Benchmark bench = RunBenchmarks.benchmarks.get("accounting.js").withOptions(AnalyzeBenchmarks.options());
+        Benchmark bench = RunBenchmarks.benchmarks.get("semver").withOptions(AnalyzeBenchmarks.options()).patched();
         BooleanSupplier predicate = () -> {
             //noinspection TryWithIdenticalCatches
             try {
                 TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 180);
-                return false;
+                System.out.println(result);
+                if (!result.detectedViolations.containsKey("SemVer.SemVer.new(classInstance).raw")) {
+                    return false;
+                }
+                return result.detectedViolations.get("SemVer.SemVer.new(classInstance).raw").toString().contains("Maybe: Expected string but found Undef in test SemVer.SemVer.new(classInstance).raw");
             } catch (NullPointerException e) {
                 return false;
             } catch (AnalysisException e) {
@@ -202,6 +206,7 @@ public class DeltaDebug {
                 return false;
             }
         };
+//        debug(bench.jsFile, predicate);
         testPredicate(predicate);
         System.exit(0);
     }
@@ -303,10 +308,4 @@ public class DeltaDebug {
         return result.typeErrors.size() > 0;
     }
 
-
-    private static class DeltaDebugRetractedTestInAll {
-        public static void main(String[] args) throws IOException {
-            new DeltaDebug().deltaDebugRetractedTestInAll();
-        }
-    }
 }
