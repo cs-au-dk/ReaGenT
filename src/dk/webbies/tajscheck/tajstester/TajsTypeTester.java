@@ -389,6 +389,12 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         return tajsTypeChecker.typeCheck(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), info, path)
                 .stream()
                 .filter(this.violationsOracle::canEmit)
+                .filter(violation -> {
+                    if (!info.options.staticOptions.ignoreMaybeUndefined) {
+                        return true;
+                    }
+                    return violation.definite || (!violation.message.endsWith("but found Undef") && !violation.message.endsWith("but found Null"));
+                })
                 .collect(Collectors.toList());
     }
 

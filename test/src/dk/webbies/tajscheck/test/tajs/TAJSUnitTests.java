@@ -1817,6 +1817,21 @@ public class TAJSUnitTests {
     }
 
     @Test
+    public void ignoreMaybeUndef() throws Exception {
+        TajsAnalysisResults result = run("ignoreMaybeUndef");
+
+        expect(result)
+                .performedAllTests()
+                .hasViolations();
+
+        result = run("ignoreMaybeUndef", options().staticOptions.setIgnoreMaybeUndefined(true));
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
     @Ignore // TODO: mez.
     public void propReadFromTwoObjectMaybeUndef() throws Exception {
         TajsAnalysisResults result = run("propReadFromTwoObjectMaybeUndef", options().setSplitUnions(false)); // for benchmarks, unions are not being split, because it for some benchmarks results in an explosion of signatures.
