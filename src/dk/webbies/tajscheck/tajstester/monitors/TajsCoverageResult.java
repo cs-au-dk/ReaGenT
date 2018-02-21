@@ -63,7 +63,7 @@ public class TajsCoverageResult extends DefaultAnalysisMonitoring {
     }
 
     private long branchCount() {
-        return functions.values().stream().filter(n -> n > 0).count();
+        return branches.values().stream().filter(n -> n > 0).count();
     }
 
     @Override
@@ -88,7 +88,7 @@ public class TajsCoverageResult extends DefaultAnalysisMonitoring {
                     if(!functionReachability.keySet().stream().anyMatch(TesterContextSensitivity::isTestContext)) {
                         // The function is only reached during initialization, hence we are not interested into counting it
                         // for reachability
-                        continue;//FIXME: Note this is not aligned with the dynamic coverage
+//                        continue;//FIXME: Note this is not aligned with the dynamic coverage
                     }
 
                     for (BasicBlock b : function.getBlocks()) {
