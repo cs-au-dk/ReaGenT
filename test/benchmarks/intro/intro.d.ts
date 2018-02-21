@@ -82,5 +82,5 @@ declare namespace IntroJs {
 
 declare var introJs: IntroJs.Factory;
 declare module 'intro.js' {
-    export = IntroJs;
+    var introJs: IntroJs.Factory;
 }
