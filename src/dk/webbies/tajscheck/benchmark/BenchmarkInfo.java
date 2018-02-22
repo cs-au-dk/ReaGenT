@@ -223,6 +223,9 @@ public class BenchmarkInfo {
                     GenericType inter = (GenericType) type;
                     inter.setDeclaredCallSignatures(TypesUtil.splitUnionsInSignatures(inter.getDeclaredCallSignatures()));
                     inter.setDeclaredConstructSignatures(TypesUtil.splitUnionsInSignatures(inter.getDeclaredConstructSignatures()));
+                } else if (type instanceof ClassType) {
+                    ClassType inter = (ClassType) type;
+                    inter.setSignatures(TypesUtil.splitUnionsInSignatures(inter.getSignatures()));
                 }
             }
 
