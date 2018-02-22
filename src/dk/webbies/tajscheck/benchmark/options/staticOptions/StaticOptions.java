@@ -28,6 +28,7 @@ public class StaticOptions implements OptionsI {
     public final boolean useInspector;
     public final boolean useValuesWithMismatches;
     public final boolean simpleTypeFilter;
+    public final boolean ignoreMaybeUndefined;
 
     public enum ArgumentValuesStrategy {
         MIX_FEEDBACK_AND_CONSTRUCTED,
@@ -52,10 +53,14 @@ public class StaticOptions implements OptionsI {
         this.useInspector = builder.useInspector;
         this.useValuesWithMismatches = builder.useValuesWithMismatches;
         this.simpleTypeFilter = builder.simpleTypeFilter;
+        this.ignoreMaybeUndefined = builder.ignoreMaybeUndefined;
         this.builder = builder;
 
         if (useValuesWithMismatches && !propagateStateFromFailingTest) {
             throw new RuntimeException("This set of options does not make sense");
+        }
+        if (ignoreMaybeUndefined && !simpleTypeFilter) {
+            throw new RuntimeException("If ignoring maybe undef, you should have simple type filter on.");
         }
     }
 
@@ -78,6 +83,7 @@ public class StaticOptions implements OptionsI {
         private boolean useInspector = false;
         private boolean useValuesWithMismatches = false;
         private boolean simpleTypeFilter = true;
+        private boolean ignoreMaybeUndefined = false;
 
         private final CheckOptions.Builder outerBuilder;
 
@@ -92,6 +98,11 @@ public class StaticOptions implements OptionsI {
 
         public CheckOptions.Builder getOuterBuilder() {
             return outerBuilder;
+        }
+
+        public Builder setIgnoreMaybeUndefined(boolean ignoreMaybeUndefined) {
+            this.ignoreMaybeUndefined = ignoreMaybeUndefined;
+            return this;
         }
 
         public Builder setCheckAllPropertiesAfterFunctionCall(boolean checkAllPropertiesAfterFunctionCall) {
