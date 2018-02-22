@@ -54,11 +54,12 @@ public class Experiment {
         addSingleExperiment(new Pair<>(name, calculator));
     }
 
-    public void addSingleExperiment(Pair<String,ExperimentSingleRunner> experiment) {
+    public Experiment addSingleExperiment(Pair<String,ExperimentSingleRunner> experiment) {
         addMultiExperiment(new Pair<>(
                 Collections.singletonList(experiment.getLeft()),
                 (bench) -> Collections.singletonList(experiment.getRight().run(bench))
         ));
+        return this;
     }
 
     public Experiment addExperiment(BiConsumer<Benchmark, BiConsumer<String, String>> experiment) {
