@@ -2,10 +2,7 @@ package dk.webbies.tajscheck.tajstester;
 
 import dk.au.cs.casa.typescript.types.SimpleType;
 import dk.au.cs.casa.typescript.types.Type;
-import dk.brics.tajs.analysis.HostAPIs;
-import dk.brics.tajs.analysis.InitialStateBuilder;
-import dk.brics.tajs.analysis.PropVarOperations;
-import dk.brics.tajs.analysis.Solver;
+import dk.brics.tajs.analysis.*;
 import dk.brics.tajs.analysis.js.Operators;
 import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
 import dk.brics.tajs.lattice.*;
@@ -339,10 +336,17 @@ public class TajsTypeChecker {
                             return Value.makeBool(true);
                         }
                         assert clazz.getObjectLabels().size() == 1;
-                        return Operators.instof(o, clazz, c);
+                        return instof(o, clazz, c);
                 }
             }
             throw new RuntimeException("Instanceof check" + check + " against " + o);
+        }
+
+        public Value instof(Value v1, Value v2, Solver.SolverInterface c) {
+            Set<ObjectLabel> v2_objlabels = v2.getObjectLabels();
+            Value v2_prototype = c.getAnalysis().getPropVarOperations().readPropertyValue(v2_objlabels, "prototype");
+            v2_prototype = UnknownValueResolver.getRealValue(v2_prototype, c.getState());
+            return c.getState().hasInstance(v2_prototype.getObjectLabels(), v1);
         }
 
         @Override
