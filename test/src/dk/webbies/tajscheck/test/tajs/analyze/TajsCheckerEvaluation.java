@@ -1,13 +1,17 @@
 package dk.webbies.tajscheck.test.tajs.analyze;
 
+import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
 import dk.webbies.tajscheck.test.experiments.AutomaticExperiments;
 import dk.webbies.tajscheck.test.experiments.Experiment;
+import dk.webbies.tajscheck.testcreator.TestCreator;
+import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -67,24 +71,40 @@ public class TajsCheckerEvaluation {
     // In progress.
 //    accounting.js // TODO: Not clean.
 
-    TODO: Intro.js
-    TODO: Lunr (losses a lot of precision in the SortedSet, but otherwise seems ok).
-
-
-    PhotoSwipe // Next step would be doing a lot of delta-debugging.
-
-    // Benchmarks that should definitely not be cleaned:
-    Hammer.js: Catastrophic precision loss (has retractions)
-    axios: Seems to take quite a while after the most obvious fixed has been made.
-    highlight.js simply takes too long. Nothing found after 1 hour.
-    Handlebars patched	No signature defined for Error.captureStackTrace
-
-    // Undecided.
-    Medium Editor patched	BROWSER
-    PDF.js patched	BROWSER	false	340	1	1	323	36	23	287	12	0	0	70,5s	50	17	11	0
-    reveal.js	BROWSER	false	1300	30	31	154	139	110	15	1	0	0	245,4s	149	5	4	4
-
-     */
+    // New status of tool from casa04 (weak mode). (not with ignore maybe undef errors).
+    Benchmark	type	timedout	certificates	violationPaths	violations	violations-definite	violations-maybe	totalTests	testsPerformed	typeCheckedTests	testSkipped	timeouts	test-exceptions	retractions	statement-coverage	branch-coverage	function-coverage	time	tstest:testsPerformed	tsest:violations	tsest:violationPaths	commonViolationPaths
+    accounting.js	BROWSER	false	115	25	85	0	85	121	121	88	0	0	0	0	0.95	0.84	0.91	2554,6s
+    async	BROWSER	true	663	72	299	213	86	644	217	212	427	0	224	9	NaN	NaN	NaN	10803,5s
+    axios	NODE	false	1	10	10	3	7	1242	1	0	1241	0	0	0	0.34	0.11	0.35	4,5s	756	53	33	1
+    bluebird	NODE	false	1	1	1	1	0	7407	1	0	7406	0	0	0	0.24	0.06	0.17	53,5s	168	2	2	1
+    box2dweb	BROWSER	false	1	4	4	4	0	1846	1	0	1845	0	0	0	0.16	0.02	0.10	7,4s
+    classnames	BROWSER	false	2	0	0	0	0	2	2	2	0	0	0	0	0.91	0.67	0.91	2,9s
+    CodeMirror	BROWSER	false	1	2	2	2	0	1033	1	0	1032	0	0	0	0.05	0.01	0.02	10,5s
+    CreateJS	BROWSER	false	1	29	29	29	0	9054	1	0	9053	0	0	0	0.14	0.03	0.10	22,7s
+    Hammer.js	BROWSER	false	8	127	128	128	0	634	8	0	626	0	0	0	0.16	0.02	0.05	1,5s
+    Handlebars	NODE	false	1	9	9	8	1	196	1	0	195	0	0	0	0.38	0.01	0.20	9,9s	186	116	25	8
+    highlight.js	NODE	false	1	8	8	8	0	139	1	0	138	0	0	0	0.73	0.02	0.37	2,2s	112	51	31	8
+    Intro.js	NODE	false	115	6	9	4	5	54	49	49	5	3	0	0	0.95	0.86	0.97	9093,3s	5	0	0	0
+    jsyaml	BROWSER	false	16	9	9	9	0	68	16	7	52	0	0	0	0.19	0.05	0.27	72,3s
+    Knockout	NODE	false	1	7	7	5	2	1156	1	0	1155	0	0	0	0.16	0.02	0.11	4,3s	722	208	74	5
+    lunr.js	BROWSER	false	1	7	7	7	0	418	1	0	417	0	0	0	0.15	0.00	0.08	1,0s
+    Medium Editor	BROWSER	false	1	32	32	32	0	95	1	0	94	0	0	0	0.10	0.02	0.07	3,0s
+    mime	BROWSER	false	1	1	1	1	0	11	1	0	10	0	0	0	0.97	0.38	0.86	52,0s
+    minimist	NODE	false	7	3	3	2	1	23	7	1	16	0	10	0	1.00	1.00	1.00	52,8s	23	792	4	1
+    Moment.js	BROWSER	false	1	1	1	1	0	826	1	0	825	0	0	0	0.21	0.03	0.10	6,3s
+    pathjs	BROWSER	false	45	8	8	0	8	44	42	34	2	0	0	0	0.93	0.87	1.00	287,0s
+    PDF.js	BROWSER	false	1	8	8	8	0	349	1	0	348	0	0	0	0.10	0.01	0.11	3,7s
+    PhotoSwipe	BROWSER	false	3	28	30	12	18	135	3	1	132	0	0	0	0.11	0.03	0.05	2,3s
+    PleaseJS	BROWSER	false	64	9	37	0	37	51	47	28	4	0	0	0	0.83	0.81	0.81	10,9s
+    QUnit	BROWSER	false	1	17	29	3	26	178	1	0	177	0	0	0	0.18	0.09	0.23	2,7s
+    Redux	NODE	false	214	19	39	19	20	94	79	73	15	0	0	0	0.87	0.62	0.88	56,1s	84	666	10	1
+    reveal.js	BROWSER	false	141	39	53	37	16	165	150	113	15	0	0	0	0.91	0.86	0.95	1415,7s
+    RxJS	NODE	false	1	47	48	48	0	2023	1	0	2022	0	0	0	0.20	0.01	0.20	17,2s	995	613	359	47
+    semver	NODE	false	128	54	75	25	50	192	130	97	62	0	0	0	0.97	0.93	0.92	1200,6s	190	181	34	13
+    Sortable	BROWSER	false	2	3	3	3	0	114	2	0	112	0	0	0	0.06	0.00	0.09	0,8s
+    Swiper	BROWSER	false	3	56	57	57	0	157	3	1	154	1	0	0	0.06	0.05	0.08	521,3s
+    uuid	BROWSER	false	21	0	0	0	0	21	21	21	0	0	0	0	0.04	0.01	0.01	21,7s
+    Total	-	-	1562	641	1031	669	362	28492	912	727	27580	4	234	9	13,049999999999999	8,440000000000001	11,97	26298,199999999997	3241	2682	572	85
 
     /*
     // List of patches where filtering might have helped.
@@ -148,22 +168,24 @@ public class TajsCheckerEvaluation {
     @Test
     @Ignore
     public void tmpStuff() {
-        new Experiment("PleaseJS").addExperiment(experiment()).calculate(null);
+        new Experiment("Handlebars").addSingleExperiment(AutomaticExperiments.type).addExperiment(experiment()).calculate(null);
     }
 
-    private void doEvaluation() {
+    @Test
+    public void doEvaluation() {
         {
             // warmup.
             new Experiment("classnames").addExperiment(experiment()).calculate(null);
         }
         Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(bench -> {
             if (bench.patched() != null) {
-                return bench.withName(bench.name + " patched");
+                return bench.withName(bench.name); // TODO:
             } else {
                 return bench;
             }
         }).collect(Collectors.toList()));
 
+        experiment.addSingleExperiment(AutomaticExperiments.type);
         experiment.addExperiment(experiment());
 
         experiment.calculate("experiment.csv");
@@ -175,13 +197,14 @@ public class TajsCheckerEvaluation {
 
     private static BiConsumer<Benchmark, BiConsumer<String, String>> experiment() {
         return (benchmark, register) -> {
-            Benchmark patched = benchmark.patched();
+            // Not interresting in patched versions now.
+//            Benchmark patched = benchmark.patched();
+//
+//            if (patched != null) {
+//                benchmark = patched;
+//            }
 
-            if (patched != null) {
-                benchmark = patched;
-            }
-
-            benchmark = benchmark.withOptions(AnalyzeBenchmarks.options());
+            benchmark = benchmark.withOptions(AnalyzeBenchmarks.options().andThen(((StaticOptions.Builder builder) -> AnalyzeBenchmarks.weakMode().apply(builder.getOuterBuilder()))));
 
             BenchmarkInfo.create(benchmark); // <- Just populating cache.
 
@@ -228,7 +251,9 @@ public class TajsCheckerEvaluation {
 
             if (COMPARE_WITH_TSTEST) {
                 try {
-                    OutputParser.RunResult tstestResult = UnitTests.run(benchmark);
+
+                    OutputParser.RunResult tstestResult = makeTSTestRunTheSameTests(benchmark, result.testPerformed);
+
                     register.accept("tstest:testsPerformed", tstestResult.getTestsCalled().size() + "");
                     register.accept("tsest:violations", tstestResult.getTypeErrors().size() + "");
                     List<String> tstestPaths = tstestResult.getTypeErrors().stream().map(OutputParser.TypeError::getPath).map(Util::simplifyPath).distinct().collect(Collectors.toList());
@@ -240,6 +265,18 @@ public class TajsCheckerEvaluation {
                 }
             }
         };
+    }
+
+    private static OutputParser.RunResult makeTSTestRunTheSameTests(Benchmark bench, Collection<dk.webbies.tajscheck.testcreator.test.Test> testPerformed) throws IOException {
+        BenchmarkInfo info = BenchmarkInfo.create(bench);
+
+        List<dk.webbies.tajscheck.testcreator.test.Test> tests = new ArrayList<>(testPerformed);
+
+        String programString = Main.generateFullDriver(info, tests, null);
+
+        Util.writeFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME, programString);
+
+        return OutputParser.parseDriverResult(Main.runBenchmark(bench));
     }
 
 
