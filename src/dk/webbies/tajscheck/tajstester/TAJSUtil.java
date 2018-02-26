@@ -124,6 +124,9 @@ public class TAJSUtil {
             TajsMisc.captureSystemOutput();
         } catch (AnalysisLimitationException.AnalysisTimeException e) {
             timedout = true;
+        } catch (OutOfMemoryError e) {
+            dk.brics.tajs.Main.reset(); // Trying to quickly free some mem.
+            timedout = true;
         }
 
         TajsAnalysisResults results = new TajsAnalysisResults(typeTester, timedout);
