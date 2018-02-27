@@ -1852,4 +1852,13 @@ public class TAJSUnitTests {
                 .hasNoViolations()
                 .hasNoWarnings();
     }
+
+    @Test
+    @Ignore // TODO: This test fails because we don't do side-effects for higher-order functions.
+    public void higherOrderFunctionSideEffects() throws Exception {
+        TajsAnalysisResults result = run("higherOrderFunctionSideEffects");
+
+        expect(result)
+                .hasViolations();
+    }
 }
