@@ -197,13 +197,6 @@ public class TajsCheckerEvaluation {
 
     private static BiConsumer<Benchmark, BiConsumer<String, String>> experiment() {
         return (benchmark, register) -> {
-            // Not interresting in patched versions now.
-//            Benchmark patched = benchmark.patched();
-//
-//            if (patched != null) {
-//                benchmark = patched;
-//            }
-
             benchmark = benchmark.withOptions(AnalyzeBenchmarks.options().andThen(((StaticOptions.Builder builder) -> AnalyzeBenchmarks.weakMode().apply(builder.getOuterBuilder()))));
 
             BenchmarkInfo.create(benchmark); // <- Just populating cache.
@@ -270,7 +263,10 @@ public class TajsCheckerEvaluation {
     private static OutputParser.RunResult makeTSTestRunTheSameTests(Benchmark bench, Collection<dk.webbies.tajscheck.testcreator.test.Test> testPerformed) throws IOException {
         BenchmarkInfo info = BenchmarkInfo.create(bench);
 
-        List<dk.webbies.tajscheck.testcreator.test.Test> tests = new ArrayList<>(testPerformed);
+        //noinspection Convert2MethodRef
+        Set<String> performedPaths = testPerformed.stream().map(test -> test.getPath()).collect(Collectors.toSet());
+
+        List<dk.webbies.tajscheck.testcreator.test.Test> tests = new TestCreator(info).createTests().stream().filter(test -> performedPaths.contains(test.getPath())).collect(Collectors.toList());
 
         String programString = Main.generateFullDriver(info, tests, null);
 
