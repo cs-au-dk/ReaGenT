@@ -9,8 +9,12 @@
       "comment": "Precision-loss, cannot prove that it is Array<A> | Array<B>, only that it is Array<A|B>. (And if changed to Array<A|B>, another precision loss would put a spurious undefined in there)."
     },
     {
-      "path": "Please.make_color(obj)",
-      "comment": "Precision-loss, cannot prove that it is Array<A> | Array<B>, only that it is Array<A|B>. (And if changed to Array<A|B>, another precision loss would put a spurious undefined in there)."
+      "path": "Please.make_color(obj).[numberIndexer]",
+      "comment": "Spurious undefined in RGB."
+    },
+    {
+      "path": "Please.make_color().<>.[numberIndexer]",
+      "comment": "Spurious undefined in RGB."
     },
     {
       "path": "Please.make_scheme(obj,undefined)",
@@ -27,6 +31,26 @@
     {
       "path": "Please.make_color(obj)",
       "comment": "Precision-loss, cannot prove that it is Array<A> | Array<B>, only that it is Array<A|B>. (And if changed to Array<A|B>, another precision loss would put a spurious undefined in there)."
+    },
+    {
+      "path": "Please.make_scheme(obj,obj).[numberIndexer]",
+      "comment": "Spurious undefined in RGB"
+    },
+    {
+      "path": "Please.make_scheme(obj).[numberIndexer]",
+      "comment": "Spurious undefined in RGB"
+    },
+    {
+      "path": "Please.make_scheme(obj,undefined).[numberIndexer]",
+      "comment": "Spurious undefined in RGB"
+    },
+    {
+      "path": "Please.make_color(undefined).[numberIndexer]",
+      "comment": "Spurious undefined in RGB"
+    },
+    {
+      "path": "Please.make_color().[numberIndexer]",
+      "comment": "Spurious undefined in RGB."
     }
   ]
 }
