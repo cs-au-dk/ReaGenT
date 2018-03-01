@@ -8,6 +8,7 @@ import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.AnalysisPhase;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
 import dk.brics.tajs.solver.BlockAndContext;
+import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.solver.WorkList;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -88,6 +89,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     public Timers getTimers() {return timers; }
 
     private Context previousTestContext = null;
+    private Context prepreviousTestContext = null;
+
 
     public void triggerTypeTests(Solver.SolverInterface c) {
         if(allTestsBlock == null) {
@@ -160,6 +163,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         } while (progress);
 
         propagateStateToContext(c, allTestsContext, Timers.Tags.PROPAGATING_BACK_TO_LOOP_ENTRY);
+        previousTestContext = null;
+        prepreviousTestContext = null;
 
         endOfInnerLoopCallbacks.forEach(Runnable::run);
         endOfInnerLoopCallbacks.clear();
@@ -186,6 +191,12 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         if (!c.getWorklist().isEmpty()) {
             enqueueTypeTester(c);
         }
+    }
+
+    public void bipropagate(Solver.SolverInterface c) {
+        State allState = c.getAnalysisLatticeElement().getState(allTestsBlock, allTestsContext);
+        allState.propagate(c.getState().clone(), true);
+        c.getState().propagate(allState.clone(), true);
     }
 
     private void enqueueTypeTester(Solver.SolverInterface c) {
@@ -218,6 +229,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             Context newc = sensitivity.makeLocalTestContext(allTestsContext, test);
 
             State previousState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext == null ? c.getState().getContext() : previousTestContext);
+            State prepreviousState = c.getAnalysisLatticeElement().getState(allTestsBlock, prepreviousTestContext == null ? c.getState().getContext() : prepreviousTestContext);
+
+            previousState.propagate(prepreviousState.clone(), true);
 
             progress |= c.withState(previousState, () -> {
                 if (test instanceof FunctionTest && !expansionPolicy.expandTo((FunctionTest) test, this)) { // placed before the propagateStateToContext, to avoid an infinite loop.
@@ -250,11 +264,16 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     private void propagateStateToContext(Solver.SolverInterface c, Context newc, Timers.Tags propagatingToThisContext) {
         timers.start(propagatingToThisContext);
+        if (prepreviousTestContext != null) {
+            State prepreState = c.getAnalysisLatticeElement().getState(allTestsBlock, prepreviousTestContext).clone();
+            c.propagateToBasicBlock(prepreState, allTestsBlock, newc);
+        }
         if (previousTestContext != null) {
             State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext).clone();
             c.propagateToBasicBlock(preState, allTestsBlock, newc);
-        } else {
-            State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, c.getState().getContext()).clone();
+        }
+        if(previousTestContext == null || prepreviousTestContext == null) {
+            State preState = c.getAnalysisLatticeElement().getState(allTestsBlock, allTestsContext).clone();
             c.propagateToBasicBlock(preState, allTestsBlock, newc);
         }
         timers.stop(propagatingToThisContext);
@@ -283,6 +302,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         timers.stop(Timers.Tags.TEST_TRANSFER);
 
         if (typeChecked || info.options.staticOptions.propagateStateFromFailingTest) {
+            prepreviousTestContext = previousTestContext;
             previousTestContext = newc; // do propagate the new state.
         }
         if (typeChecked) {

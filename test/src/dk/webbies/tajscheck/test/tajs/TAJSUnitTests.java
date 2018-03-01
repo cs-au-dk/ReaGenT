@@ -1854,8 +1854,7 @@ public class TAJSUnitTests {
     }
 
     @Test
-    @Ignore // TODO: This test fails because we don't do side-effects for higher-order functions.
-    public void higherOrderFunctionSideEffects() throws Exception {
+    public void higherOrderFunctionSideEffects1() throws Exception {
         TajsAnalysisResults result = run("higherOrderFunctionSideEffects");
 
         expect(result)
