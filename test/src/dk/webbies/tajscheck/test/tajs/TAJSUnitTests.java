@@ -1859,5 +1859,21 @@ public class TAJSUnitTests {
 
         expect(result)
                 .hasViolations();
+   }
+
+    @Test
+    @Ignore
+    public void anyUndeclaredEnumerable() throws Exception {
+        TajsAnalysisResults result = run("anyUndeclaredEnumerable", options().staticOptions.setProperWidthSubtyping(true));
+
+        expect(result)
+                .hasNoViolations();
     }
+
+   /* TODO: Things to do before the camera ready version:
+        - Actual do the delta-debugging of weak and strong, to get the precise numbers for the paper.
+        - set of numbers in the value-lattice.
+        - Reduce the number of @ignored test-cases in TAJSUnitTests.
+     */
+
 }
