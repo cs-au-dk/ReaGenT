@@ -15,10 +15,19 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class LateExpansionToFunctionsWithConstructedArguments implements ExpansionPolicy {
+    private final boolean expandToSyntheticallyCreatedArguments;
 
     private FunctionTest fallbackExpansion = null;
 
     private Set<TypeWithContext> argumentsThatAreConstructedAnyway = new HashSet<>();
+
+    public LateExpansionToFunctionsWithConstructedArguments(boolean performTestAnyway) {
+        this.expandToSyntheticallyCreatedArguments = performTestAnyway;
+    }
+
+    public LateExpansionToFunctionsWithConstructedArguments() {
+        this(true);
+    }
 
     @Override
     public void nextRound() {
@@ -36,7 +45,7 @@ public class LateExpansionToFunctionsWithConstructedArguments implements Expansi
 
     @Override
     public Collection<Test> getTestsToPerformAnyway(Solver.SolverInterface c) {
-        if (!c.getWorklist().isEmpty() || fallbackExpansion == null) {
+        if (!c.getWorklist().isEmpty() || fallbackExpansion == null || !expandToSyntheticallyCreatedArguments) {
             return Collections.emptyList();
         }
 

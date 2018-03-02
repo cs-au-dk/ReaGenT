@@ -40,7 +40,9 @@ public class TypedSymbolicFunctionEvaluator {
 
     public Value evaluateCallToSymbolicFunction(HostObject hostObject, FunctionCalls.CallInfo call, Solver.SolverInterface c) {
 
-        tajsTypeTester.bipropagate(c);
+        if (info.options.staticOptions.callbacksAreMGC) {
+            tajsTypeTester.bipropagate(c);
+        }
 
         Tuple3<HostObject, AbstractNode, Context> key = new Tuple3<>(hostObject, c.getNode(), c.getState().getContext());
         valueHandler.clearValuesForTest(key);
