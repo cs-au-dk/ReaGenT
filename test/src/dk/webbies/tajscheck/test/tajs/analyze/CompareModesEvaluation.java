@@ -92,10 +92,10 @@ public class CompareModesEvaluation {
             String exhaustiveness = Util.toFixed(100 * finishedTests / totalTests, 1) + "%";
 
             register.accept(prefix + " exhaustiveness", exhaustiveness);
-            register.accept(prefix + "statement-coverage", String.format("%.2f", result.statementCoverage) + "");
+            register.accept(prefix + " statement-coverage", String.format("%.2f", result.statementCoverage) + "");
             register.accept(prefix + " scaleIssues", result.exceptionsEncountered.size() + result.retractedTests.size() + "");
-            register.accept(prefix + "violations", result.detectedViolations.asMap().values().stream().reduce(0, (acc, violations) -> violations.size() + acc, Math::addExact) + "");
-            register.accept(prefix + "time", time);
+            register.accept(prefix + " violations", result.detectedViolations.asMap().values().stream().reduce(0, (acc, violations) -> violations.size() + acc, Math::addExact) + "");
+            register.accept(prefix + " time", time);
 
             //noinspection ResultOfMethodCallIgnored
             new File("results").mkdir();
