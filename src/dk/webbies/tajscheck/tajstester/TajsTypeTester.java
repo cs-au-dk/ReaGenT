@@ -8,7 +8,6 @@ import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.AnalysisPhase;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
 import dk.brics.tajs.solver.BlockAndContext;
-import dk.brics.tajs.solver.GenericSolver;
 import dk.brics.tajs.solver.WorkList;
 import dk.brics.tajs.type_testing.TypeTestRunner;
 import dk.webbies.tajscheck.TypeWithContext;
@@ -30,6 +29,7 @@ import dk.webbies.tajscheck.util.Util;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.newList;
@@ -296,7 +296,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
         if (test instanceof FunctionTest && info.options.staticOptions.checkAllPropertiesAfterFunctionCall) {
-            typeChecked &= checkPropertyReads(test, typeCheckedTests.stream().filter(PropertyReadTest.class::isInstance).map(PropertyReadTest.class::cast).collect(Collectors.toList()), c);
+            typeChecked &= checkPropertyReads(test, typeCheckedTests.stream().filter(PropertyReadTest.class::isInstance).map(PropertyReadTest.class::cast).collect(Collectors.toList()), c, test.getPath());
         }
 
         timers.stop(Timers.Tags.TEST_TRANSFER);
@@ -310,7 +310,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
     }
 
-    private boolean checkPropertyReads(Test testToBlame, List<PropertyReadTest> propertyReads, Solver.SolverInterface c) {
+    boolean checkPropertyReads(Test testToBlame, List<PropertyReadTest> propertyReads, Solver.SolverInterface c, String pathToBlame) {
         boolean typeChecked = true;
         TajsTypeChecker typeChecker = new TajsTypeChecker(testToBlame, c, info, violationsOracle);
         for (PropertyReadTest propertyRead : propertyReads) {
@@ -328,8 +328,12 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 }
                 List<TypeViolation> violations = getViolations(propertyValue, closedType, propertyRead.getPath(), c, typeChecker);
 
+                Function<TypeViolation, String> messageGenerator = testToBlame != null ?
+                        v -> "Violation after FunctionCall: \"" + v.toString() + "\"" :
+                        v -> "Violation while callback is invoked: \"" + v.toString() + "\"";
+
                 violations = violations.stream()
-                        .map(v -> v.withMessage("Violation after FunctionCall: \"" + v.toString() + "\"").withPath(testToBlame.getPath()))
+                        .map(v -> v.withMessage(messageGenerator.apply(v)).withPath(pathToBlame))
                         .filter(violationsOracle::canEmit)
                         .collect(Collectors.toList());
 

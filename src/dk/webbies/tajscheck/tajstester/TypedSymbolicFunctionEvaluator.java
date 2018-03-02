@@ -1,19 +1,16 @@
 package dk.webbies.tajscheck.tajstester;
 
 import dk.au.cs.casa.typescript.types.*;
-import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.FunctionCalls;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.SourceLocation;
 import dk.brics.tajs.lattice.*;
-import dk.brics.tajs.monitoring.IAnalysisMonitoring;
-import dk.brics.tajs.solver.GenericSolver;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecObjects;
-import dk.webbies.tajscheck.typeutil.PrettyTypes;
+import dk.webbies.tajscheck.testcreator.test.PropertyReadTest;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
@@ -40,13 +37,6 @@ public class TypedSymbolicFunctionEvaluator {
 
     public Value evaluateCallToSymbolicFunction(HostObject hostObject, FunctionCalls.CallInfo call, Solver.SolverInterface c) {
 
-        if (info.options.staticOptions.callbacksAreMGC) {
-            tajsTypeTester.bipropagate(c);
-        }
-
-        Tuple3<HostObject, AbstractNode, Context> key = new Tuple3<>(hostObject, c.getNode(), c.getState().getContext());
-        valueHandler.clearValuesForTest(key);
-
         TypeWithContext typeWithContext = ((SpecObjects.TypedObject) hostObject).getType();
 
         SourceLocation sourceLocation = c.getNode().getBlock().getSourceLocation();
@@ -54,6 +44,21 @@ public class TypedSymbolicFunctionEvaluator {
 
         Function<String, String> path = suffix -> ((SpecObjects.TypedObject) hostObject).asText() + suffix + " {" + shortLocation + "}";
         TypeContext context = typeWithContext.getTypeContext();
+
+
+        if (info.options.staticOptions.callbacksAreMGC) {
+            boolean typeChecked = true;
+            if (info.options.staticOptions.checkAllPropertiesAfterFunctionCall) {
+                typeChecked = tajsTypeTester.checkPropertyReads(null, tajsTypeTester.getTypeCheckedTests().stream().filter(PropertyReadTest.class::isInstance).map(PropertyReadTest.class::cast).collect(Collectors.toList()), c, path.apply(""));
+            }
+
+            if (typeChecked || info.options.staticOptions.propagateStateFromFailingTest) {
+                tajsTypeTester.bipropagate(c);
+            }
+        }
+
+        Tuple3<HostObject, AbstractNode, Context> key = new Tuple3<>(hostObject, c.getNode(), c.getState().getContext());
+        valueHandler.clearValuesForTest(key);
 
         Type type = typeWithContext.getType();
         if (type instanceof ReferenceType) {

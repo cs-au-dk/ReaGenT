@@ -1870,7 +1870,17 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
-   /* TODO: Things to do before the camera ready version:
+    @Test
+    public void blockStateFromCallback() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("blockStateFromCallback", options().staticOptions.setCheckAllPropertiesAfterFunctionCall(true).setPropagateStateFromFailingTest(false)));
+
+        expect(result)
+                .hasViolations()
+                .forPath("module.bool")
+                .hasNoViolations();
+    }
+
+    /* TODO: Things to do before the camera ready version:
         - Actual do the delta-debugging of weak and strong, to get the precise numbers for the paper.
         - set of numbers in the value-lattice.
         - Reduce the number of @ignored test-cases in TAJSUnitTests.
