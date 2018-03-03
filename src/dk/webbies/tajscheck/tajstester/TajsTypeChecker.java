@@ -19,6 +19,7 @@ import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.testcreator.test.check.*;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Tuple3;
+import dk.webbies.tajscheck.util.Tuple4;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
@@ -35,7 +36,7 @@ public class TajsTypeChecker {
 
     private final CheckChecker cc = new CheckChecker();
 
-    private final Map<Tuple3<Check, TypeWithContext, Value>, List<TypeViolation>> cache = new HashMap<>();
+    private final Map<Tuple4<Check, TypeWithContext, Value, String>, List<TypeViolation>> cache = new HashMap<>();
 
     private final ViolationsOracle violationsOracle;
 
@@ -160,7 +161,7 @@ public class TajsTypeChecker {
                 }
             };
 
-            Tuple3<Check, TypeWithContext, Value> key = new Tuple3<>(check, typeWithContext, v);
+            Tuple4<Check, TypeWithContext, Value, String> key = new Tuple4<>(check, typeWithContext, v, Util.lastPathPart(path));
             if (cache.containsKey(key) && !(typeWithContext.getType() instanceof SimpleType || typeWithContext.getType() instanceof BooleanLiteral || typeWithContext.getType() instanceof NumberLiteral || typeWithContext.getType() instanceof StringLiteral)) {
                 return cache.get(key);
             } else {
@@ -181,9 +182,10 @@ public class TajsTypeChecker {
             return baseErrors;
         }
 
-        return typeChecks.stream()
+        List<List<TypeViolation>> collect = typeChecks.stream()
                 .filter(typeCheck -> CanHaveSubTypeCheck.class.isInstance(typeCheck.getCheck()))
-                .map(findTypeViolations)
+                .map(findTypeViolations).collect(Collectors.toList());
+        return collect.stream()
                 .reduce(new ArrayList<>(), Util::reduceList);
     }
 

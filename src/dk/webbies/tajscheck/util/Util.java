@@ -193,6 +193,14 @@ public class Util {
         Util.writeFile(to, Util.readFile(from));
     }
 
+    public static String lastPathPart(String path) {
+        if (!path.contains(".")) {
+            return path;
+        }
+        path = simplifyPath(path);
+        return path.substring(path.lastIndexOf('.') + 1, path.length());
+    }
+
     private static class Worker extends Thread {
         private final Process process;
         private Integer exit;

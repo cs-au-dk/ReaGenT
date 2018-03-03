@@ -1881,11 +1881,20 @@ public class TAJSUnitTests {
         assertThat(result.toString(), containsString("callback"));
     }
 
+    @Test
+    public void multiObjectError() throws Exception {
+        TajsAnalysisResults result = run("multiObjectError");
+
+        assertThat(result.detectedViolations.size(), is(2));
+    }
+
     // todo: CountUniques
 
     /* TODO: Things to do before the camera ready version:
         - Actual do the delta-debugging of weak and strong, to get the precise numbers for the paper.
         - set of numbers in the value-lattice.
+        - Make sure readonly-properties are not overridden.
+        - "but our analysis takes care to emit a warning for every built-in object or function used by the library that is not used through a reference saved upon loading"
         - Reduce the number of @ignored test-cases in TAJSUnitTests.
      */
 
