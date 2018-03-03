@@ -329,11 +329,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 List<TypeViolation> violations = getViolations(propertyValue, closedType, propertyRead.getPath(), c, typeChecker);
 
                 Function<TypeViolation, String> messageGenerator = testToBlame != null ?
-                        v -> "Violation after FunctionCall: \"" + v.toString() + "\"" :
-                        v -> "Violation while callback is invoked: \"" + v.toString() + "\"";
+                        v -> "Violation after functionCall" + pathToBlame + " violation: " + v.toString() + "\"" :
+                        v -> "Violation while callback is invoked: " + pathToBlame + " violation: " + v.toString() + "\"";
 
                 violations = violations.stream()
-                        .map(v -> v.withMessage(messageGenerator.apply(v)).withPath(pathToBlame))
+                        .map(v -> v.withMessage(messageGenerator.apply(v)))
                         .filter(violationsOracle::canEmit)
                         .collect(Collectors.toList());
 

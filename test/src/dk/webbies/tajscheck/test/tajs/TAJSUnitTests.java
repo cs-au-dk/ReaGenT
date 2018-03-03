@@ -1875,10 +1875,13 @@ public class TAJSUnitTests {
         TajsAnalysisResults result = run(benchFromFolder("blockStateFromCallback", options().staticOptions.setCheckAllPropertiesAfterFunctionCall(true).setPropagateStateFromFailingTest(false)));
 
         expect(result)
-                .hasViolations()
-                .forPath("module.bool")
-                .hasNoViolations();
+                .hasViolations();
+
+
+        assertThat(result.toString(), containsString("callback"));
     }
+
+    // todo: CountUniques
 
     /* TODO: Things to do before the camera ready version:
         - Actual do the delta-debugging of weak and strong, to get the precise numbers for the paper.
