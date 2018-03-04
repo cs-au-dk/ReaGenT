@@ -1888,6 +1888,21 @@ public class TAJSUnitTests {
         assertThat(result.detectedViolations.size(), is(2));
     }
 
+    @Test
+    public void callbacksMgcFalsePositive() throws Exception {
+        TajsAnalysisResults mgc = run("callbacksMgcFalsePositive", options().staticOptions.setCallbacksAreMGC(true));
+
+        TajsAnalysisResults notMgc = run("callbacksMgcFalsePositive", options().staticOptions.setCallbacksAreMGC(false));
+
+        expect(mgc)
+                .forPath("redux.createStore().<>.getState()")
+                .hasViolations();
+
+        expect(notMgc)
+                .forPath("redux.createStore().<>.getState()")
+                .hasNoViolations();
+    }
+
     // todo: CountUniques
 
     /* TODO: Things to do before the camera ready version:
