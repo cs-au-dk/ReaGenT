@@ -59,21 +59,15 @@ public class AnalyzeBenchmarks extends TestCase {
             "Redux", //
             "highlight.js", // Include any of the highlight functions, and it takes forever. Exclude them, done in 15 seconds.
             "CodeMirror", // TODO: Crashes (after 6 minutes on my desktop) with "Reading undefined register v10).
-            "Moment.js", // Timeout.
             "classnames", // Ok
             "uuid",  //ok
             "semver", // ok-ish, still WIP
             "mime",
-
             "minimist", // Precision is drammatically low, TAJS crashes due to violation on Array.join.
             "jsyaml", // hopeless
-            "Ace", // Has catastrophic precision-loos when calling the top-level constructor.
-
-
-            // below is not included in TajsCheckerEvaluation.
-
-
-            "Leaflet" // initialization crashes on line 2302, because TAJS thinks it is reading an undefined property.
+            "Moment.js", // Timeout.
+            "Zepto.js",  // Call eval very imprecisely. (line 914)
+            "PeerJS" // TAJS does not support WebRTC
     ));
 
     static final Set<String> blackList = new HashSet<>(Arrays.asList(
