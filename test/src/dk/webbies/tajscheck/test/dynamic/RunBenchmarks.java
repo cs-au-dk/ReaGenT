@@ -174,7 +174,7 @@ public class RunBenchmarks {
 
         register(new Benchmark("Intro.js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/intro/intro.js", "test/benchmarks/intro/intro.d.ts", NODE, options));
 
-        register(new Benchmark("Swiper", ParseDeclaration.Environment.ES5Core, "test/benchmarks/swiper/swiper.js", "test/benchmarks/swiper/swiper.d.ts", BROWSER, options));
+        register(new Benchmark("Swiper", ParseDeclaration.Environment.ES5Core, "test/benchmarks/swiper/swiper.js", "test/benchmarks/swiper/swiper.d.ts", BROWSER, options)); // TODO: Actually depends on a jQuery like library.
 
         register(new Benchmark("axios", ParseDeclaration.Environment.ES5Core, "test/benchmarks/axios/axios.js", "test/benchmarks/axios/axios.d.ts", NODE, options));
 
