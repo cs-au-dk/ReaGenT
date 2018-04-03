@@ -270,6 +270,7 @@ public class TypeChecker {
                     case "ReadonlyArray":
                     case "IterableIterator":
                     case "Iterator":
+                    case "ConcatArray":
                         break; // Check manually.
                     default:
                         throw new RuntimeException(info.typeNames.get(t));
