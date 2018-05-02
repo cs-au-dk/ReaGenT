@@ -4,7 +4,7 @@ apply plugin: 'java'
 buildscript {
     repositories {
         mavenCentral()
-    }    
+    }
 }
 
 
@@ -104,6 +104,14 @@ task compareModes(type: JavaExec) {
     classpath sourceSets.test.runtimeClasspath
     jvmArgs = ["-Xmx32G"]
     main = 'dk.webbies.tajscheck.test.tajs.analyze.CompareModesEvaluation'
+}
+
+// Example usage:
+// ./gradlew manualEval"
+task manualEval(type: JavaExec) {
+    classpath sourceSets.test.runtimeClasspath
+    jvmArgs = ["-Xmx32G"]
+    main = 'dk.webbies.tajscheck.test.tajs.analyze.ManualTajsCheckerEvaluation'
 }
 
 
