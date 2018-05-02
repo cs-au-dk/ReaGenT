@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 public class ManualTajsCheckerEvaluation {
 
     private static final int TIMEOUT = 20 * 60; // in seconds
-    private static final boolean DO_DELTA_DEBUGGING = true;
-    private static String outputDir = "Redux";
+    private static final boolean DO_DELTA_DEBUGGING = false;
+    private static String outputDir = "strong";
 
     private static final Set<String> CAN_DELTA_DEBUG = new HashSet<>(Arrays.asList(
             "Hammer.js",
@@ -46,11 +46,13 @@ public class ManualTajsCheckerEvaluation {
 
             "reveal.js",
             "box2dweb",
+            "mime",
             "QUnit",
             "PleaseJS",
             "Knockout",
 //            "RxJS", Has its actual types spread out in many sub-files.
             "async",
+            "uuid",
             "Intro.js",
             "CreateJS",
             "Handlebars",
@@ -63,7 +65,7 @@ public class ManualTajsCheckerEvaluation {
     public void runInALoop() throws Exception {
         List<String> benchmarks = TajsCheckerEvaluation.benchmarksToEvaluate;
         if (benchmarks.size() < 20) {
-            throw new RuntimeException("I don't think you meant to do this");
+            throw new RuntimeException("I don't think you meant to do this " + benchmarks.size());
         }
         //noinspection InfiniteLoopStatement
         while (true) {
@@ -73,9 +75,7 @@ public class ManualTajsCheckerEvaluation {
 
     @Test
     public void doASingleEval() throws Exception {
-        while(true) {
-            findATypeError("Intro.js");
-        }
+        findATypeError("uuid");
     }
 
     private static final Set<String> cleanBenchmarks = new HashSet<>();
@@ -89,11 +89,7 @@ public class ManualTajsCheckerEvaluation {
         if (cleanBenchmarks.contains(benchmarkName)) {
             return;
         }
-        Benchmark bench = RunBenchmarks.benchmarks.get(benchmarkName).withOptions(AnalyzeBenchmarks.options());
-        Benchmark patched = bench.patched();
-        if (patched != null) {
-            bench = patched;
-        }
+        Benchmark bench = RunBenchmarks.benchmarks.get(benchmarkName).withOptions(AnalyzeBenchmarks.options().andThen(builder -> AnalyzeBenchmarks.strongMode().apply(builder.getOuterBuilder())));
 
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, TIMEOUT);
 
@@ -164,51 +160,6 @@ public class ManualTajsCheckerEvaluation {
         } else {
             Util.writeFile("results/" + outputDir + "/" + counter + "/skipped_delta.txt", "");
         }
-    }
-
-    @Test
-    public void deltaDebugSuppressed() throws IOException {
-
-    }
-
-    @Test
-    public void doTheMissingStuff() throws IOException {
-        // Wouldn't delta-debug
-        continueWithFolder(19);
-        continueWithFolder(79);
-        continueWithFolder(100);
-        continueWithFolder(95);
-
-        continueWithFolder(143); // TODO: I don't know. Is delta-debugged.
-
-        // redux.
-//        continueWithFolder(59);
-//        continueWithFolder(73);
-//        continueWithFolder(60);
-//        continueWithFolder(55);
-//        continueWithFolder(74);
-//        continueWithFolder(151);
-
-//        continueWithFolder(98); // might help with 133, 81, 121
-//        continueWithFolder(120); // might help 155, 61, 93, 22, 64, 108
-//        continueWithFolder(86); // same answer for 116, 26, 20, 21 // TODO: This one not done.
-//        continueWithFolder(103);
-//        continueWithFolder(68);
-//        continueWithFolder(124);
-//        continueWithFolder(96);
-//        continueWithFolder(158);
-//        continueWithFolder(80);
-//        continueWithFolder(71);
-//        continueWithFolder(72); // same answer for 84, 136
-//        continueWithFolder(107); // same answer for 87, 152
-
-//        continueWithFolder(134); // same answer for 118
-
-    }
-
-    @Test
-    public void tmpStuff() throws IOException {
-
     }
 
     @SuppressWarnings({"ConstantConditions", "Duplicates"})
@@ -349,7 +300,11 @@ public class ManualTajsCheckerEvaluation {
             };
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            new ManualTajsCheckerEvaluation().runInALoop();
+            return;
+        }
         ManualTajsCheckerEvaluation o = new ManualTajsCheckerEvaluation();
         ManualTajsCheckerEvaluation.outputDir = args[0];
         int index = -1;
