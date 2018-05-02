@@ -12,6 +12,12 @@ public class Table {
     private final List<List<String>> table = Collections.synchronizedList(new ArrayList<>());
     private int size = -1;
 
+    public Table() {}
+
+    public Table(List<List<String>> table) {
+        this.table.addAll(table);
+    }
+
     public synchronized void addRow(List<String> objects) {
         table.add(objects);
     }
@@ -107,5 +113,9 @@ public class Table {
             result.addRow(row);
         }
         return result;
+    }
+
+    public List<List<String>> getRaw() {
+        return table;
     }
 }
