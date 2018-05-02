@@ -77,7 +77,7 @@ public class TypedSymbolicFunctionEvaluator {
             return valueHandler.createValue(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info));
         }
 
-        if (type instanceof SimpleType && ((SimpleType) type).getKind() == SimpleTypeKind.Any) {
+        if (type instanceof SimpleType && ((SimpleType) type).getKind() == SimpleTypeKind.Any || ((SpecObjects.TypedObject) hostObject).asText().startsWith("any.")) {
 //            Exceptions.throwException(c.getState().clone(), valueHandler.getTheAny(), c, c.getNode());
             return valueHandler.getTheAny();
         }
