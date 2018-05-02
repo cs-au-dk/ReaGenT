@@ -136,6 +136,7 @@ public class TypesUtil {
         instanceType.setDeclaredStringIndexType(type.getDeclaredStringIndexType());
         instanceType.setDeclaredProperties(type.getInstanceProperties());
         instanceType.setTypeParameters(type.getTypeParameters());
+        instanceType.setReadonlyDeclarations(type.getInstanceReadOnlyProperties());
 
         instanceType.setBaseTypes(type.getBaseTypes().stream().map(baseType -> {
             if (baseType instanceof ClassType) {

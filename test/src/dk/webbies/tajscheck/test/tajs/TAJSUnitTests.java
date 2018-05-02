@@ -22,6 +22,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryUsage;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -1903,14 +1905,29 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
-    // todo: CountUniques
+    @Test
+    public void notWriteReadonly() throws Exception {
+        TajsAnalysisResults result = run("notWriteToReadOnly", options().setWritePrimitives(true));
+
+        expect(result)
+                .forPath("module.readsFoo")
+                .hasNoViolations();
+
+        expect(result)
+                .forPath("module.readsBar")
+                .hasViolations();
+    }
 
     /* TODO: Things to do before the camera ready version:
-        - Actual do the delta-debugging of weak and strong, to get the precise numbers for the paper.
-        - set of numbers in the value-lattice.
         - Make sure readonly-properties are not overridden.
         - "but our analysis takes care to emit a warning for every built-in object or function used by the library that is not used through a reference saved upon loading"
+        - Make gradle targets that directly produce the tables in the paper.
         - Reduce the number of @ignored test-cases in TAJSUnitTests.
+        - Make an updated version of the tstools webpage.
+
+
+        - Possibly do 100 violations of each variant to determine false positive rates.
      */
+
 
 }

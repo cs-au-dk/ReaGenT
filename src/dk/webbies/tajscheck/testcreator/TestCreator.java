@@ -90,7 +90,7 @@ public class TestCreator {
             assert Util.intersection(paths, info.bench.pathsToTest).size() == info.bench.pathsToTest.size();
         }
 
-        if (info.bench.options.writePrimitives) {
+        if (info.bench.options.writePrimitives || info.bench.options.writeAll) {
             for (Test test : new ArrayList<>(tests)) {
                 if (test instanceof PropertyReadTest) {
                     PropertyReadTest readTest = (PropertyReadTest) test;
@@ -107,6 +107,28 @@ public class TestCreator {
                 }
             }
         }
+        tests = tests.stream().filter(test -> {
+            if (!(test instanceof PropertyWriteTest)) {
+                return true;
+            }
+
+            PropertyWriteTest writeTest = (PropertyWriteTest) test;
+
+            Type baseType = writeTest.getBaseType();
+            if (baseType instanceof InterfaceType) {
+                InterfaceType base = (InterfaceType) baseType;
+                if (base.getReadonlyDeclarations().contains(writeTest.getProperty())) {
+                    return false;
+                }
+            }
+            if (baseType instanceof ClassType) {
+                ClassType clazz = (ClassType) baseType;
+                if (clazz.getStaticReadonlyProperties().contains(writeTest.getProperty())) {
+                    return false;
+                }
+            }
+            return true;
+        }).collect(Collectors.toList());
 
         if (concatDuplicates) {
             tests = concatDuplicateTests(tests);
