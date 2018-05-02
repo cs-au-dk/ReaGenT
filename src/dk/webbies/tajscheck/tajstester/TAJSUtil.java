@@ -3,7 +3,9 @@ package dk.webbies.tajscheck.tajstester;
 import com.google.gson.Gson;
 import dk.brics.tajs.Main;
 import dk.brics.tajs.analysis.Analysis;
+import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.FlowGraph;
+import dk.brics.tajs.flowgraph.jsnodes.ReadPropertyNode;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
 import dk.brics.tajs.options.UnsoundnessOptionValues;
@@ -113,6 +115,7 @@ public class TAJSUtil {
         optMonitors.add(typeTester.getSuspiciousMonitor());
         optMonitors.add(typeTester.getTransferMonitor());
         optMonitors.add(typeTester.getCoverageMonitor());
+        optMonitors.add(typeTester.getReadFromStdlibMonitor());
 
         IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(optMonitors);
         initLogging();
@@ -159,6 +162,7 @@ public class TAJSUtil {
         public final MultiMap<String, TypeViolation> detectedViolations;
         public final MultiMap<String, TypeViolation> detectedViolationsBeforeScan;
         public final MultiMap<String, TypeViolation> detectedWarnings;
+        public final Set<ReadPropertyNode> possiblyProblematicReads;
         public final Collection<Test> testPerformed;
         public final List<Test> testNot;
         public final boolean timedout;
@@ -186,7 +190,8 @@ public class TAJSUtil {
                                    Set<Test> retractedTests,
                                    Set<Test> timeoutTests,
                                    List<Test> typeCheckedTests,
-                                   MultiMap<String, TypeViolation> detectedViolationsBeforeScan) {
+                                   MultiMap<String, TypeViolation> detectedViolationsBeforeScan,
+                                   Set<ReadPropertyNode> possiblyProblematicReads) {
 
             this.detectedViolations = detectedViolations;
             this.detectedViolationsBeforeScan = detectedViolationsBeforeScan;
@@ -200,6 +205,7 @@ public class TAJSUtil {
             this.retractedTests = retractedTests;
             this.timeoutTests = timeoutTests;
             this.typeCheckedTests = typeCheckedTests;
+            this.possiblyProblematicReads = possiblyProblematicReads;
         }
 
         public TajsAnalysisResults(TajsTypeTester typeTester, boolean timedout) {
@@ -241,6 +247,7 @@ public class TAJSUtil {
             this.statementCoverage = typeTester.getCoverageMonitor().statementCoverage();
             this.branchCoverage = typeTester.getCoverageMonitor().branchCoverage();
             this.functionCoverage = typeTester.getCoverageMonitor().functionCoverage();
+            this.possiblyProblematicReads = typeTester.getReadFromStdlibMonitor().getPossiblyProblematicReads();
         }
 
         @Override
@@ -297,6 +304,11 @@ public class TAJSUtil {
                 if (!exceptionsEncountered.get(null).isEmpty()) {
                     builder.append("Exceptions outside test-context: \n");
                     exceptionsEncountered.get(null).stream().map(Object::toString).map(str -> "   " + str + "\n").distinct().forEach(builder::append);
+                }
+
+                if (!this.possiblyProblematicReads.isEmpty()) {
+                    builder.append("Reads performed by the library that could be affected by the client: \n");
+                    this.possiblyProblematicReads.stream().map(AbstractNode::getSourceLocation).map(Object::toString).distinct().sorted().forEach(str -> builder.append(str).append("\n"));
                 }
             }
             return builder.toString();

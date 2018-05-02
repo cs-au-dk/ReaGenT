@@ -143,7 +143,7 @@ public class TAJSUnitTests {
             List<dk.webbies.tajscheck.testcreator.test.Test> testsNot = results.testNot.stream().filter(test -> test.getPath().startsWith(path)).collect(Collectors.toList());
             MultiMap<String, TypeViolation> warnings = results.detectedWarnings.asMap().entrySet().stream().filter(entry -> entry.getKey().startsWith(path)).collect(ArrayListMultiMap.collector());
 
-            return new TAJSResultTester(new TajsAnalysisResults(detectedViolations, warnings, performedTest, testsNot, results.certificates, results.testTranfers, results.timers, results.timedout, results.retractedTests, results.timeoutTests, results.typeCheckedTests, results.detectedViolationsBeforeScan));
+            return new TAJSResultTester(new TajsAnalysisResults(detectedViolations, warnings, performedTest, testsNot, results.certificates, results.testTranfers, results.timers, results.timedout, results.retractedTests, results.timeoutTests, results.typeCheckedTests, results.detectedViolationsBeforeScan, results.possiblyProblematicReads));
         }
 
         TAJSUnitTests.TAJSResultTester hasWarnings() {
@@ -1918,10 +1918,15 @@ public class TAJSUnitTests {
                 .hasViolations();
     }
 
+    @Test
+    public void warningAboutReadOfStdLibValue() throws Exception {
+        TajsAnalysisResults results = run("warningsReadFromStdlib");
+        assertThat(results.possiblyProblematicReads.stream().map(r -> r.getSourceLocation().toString()).distinct().collect(Collectors.toList()), hasSize(3));
+    }
+
     /* TODO: Things to do before the camera ready version:
-        - Make sure readonly-properties are not overridden.
-        - "but our analysis takes care to emit a warning for every built-in object or function used by the library that is not used through a reference saved upon loading"
         - Make gradle targets that directly produce the tables in the paper.
+        - write artifact stuff.
         - Reduce the number of @ignored test-cases in TAJSUnitTests.
         - Make an updated version of the tstools webpage.
 

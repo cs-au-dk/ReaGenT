@@ -18,6 +18,7 @@ import dk.webbies.tajscheck.benchmark.options.staticOptions.RetractionPolicy;
 import dk.webbies.tajscheck.tajstester.data.TestCertificate;
 import dk.webbies.tajscheck.tajstester.data.Timers;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
+import dk.webbies.tajscheck.tajstester.monitors.ReadFromStdlibMonitor;
 import dk.webbies.tajscheck.tajstester.monitors.SuspiciousnessMonitor;
 import dk.webbies.tajscheck.tajstester.monitors.TajsCoverageResult;
 import dk.webbies.tajscheck.tajstester.monitors.TestTransfersMonitor;
@@ -64,6 +65,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     private SuspiciousnessMonitor suspiciousMonitor;
     private TestTransfersMonitor transferMonitor;
     private TajsCoverageResult coverageMonitor = new TajsCoverageResult();
+    private ReadFromStdlibMonitor readFromStdlibMonitor = new ReadFromStdlibMonitor();
     private ViolationsOracle violationsOracle;
 
     private Timers timers = new Timers();
@@ -110,6 +112,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             enqueueTypeTester(c);
             return;
         }
+
+        readFromStdlibMonitor.setLibTestingHasStarted();
 
         if (c.isScanning()) {
             if (hasScanned) {
@@ -563,5 +567,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public ViolationsOracle getViolationsOracle() {
         return violationsOracle;
+    }
+
+    public ReadFromStdlibMonitor getReadFromStdlibMonitor() {
+        return readFromStdlibMonitor;
     }
 }
