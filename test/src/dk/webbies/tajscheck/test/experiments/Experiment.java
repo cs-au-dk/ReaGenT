@@ -96,6 +96,10 @@ public class Experiment {
 
 
 
+    public Table calculate() {
+        return calculate(null);
+    }
+
     public Table calculate(String saveFile) {
         return calculate(1, saveFile);
     }
@@ -104,7 +108,7 @@ public class Experiment {
         Table table = new Table();
 
         List<String> header = new ArrayList<>();
-        header.add("Benchmark");
+        header.add("Library");
         Map<String, Integer> headerIndexes = new HashMap<>();
 
         table.addRow(header);
