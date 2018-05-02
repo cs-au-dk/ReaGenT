@@ -14,10 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -39,7 +36,6 @@ public class AnalyzeBenchmarks extends TestCase {
             "async", // can analyze, takes a while and most gets retracted/timeouts.
             "PleaseJS", // can analyze
             "PhotoSwipe", // encounters (cannot construct intersectionType) at top-level constructor.
-            "Swiper", // Top level constructor gets retracted (takes way to long).
             "pathjs", // can analyze.
             "reveal.js", // can analyze.
             "accounting.js", // ~4 minutes on my desktop.
@@ -81,6 +77,8 @@ public class AnalyzeBenchmarks extends TestCase {
             "Jasmine", // Nahhh. has a difficult structure, somewhat incompatible with everything else.
             "pickadate.js", // includes jQuery
             "Foundation", // includes jQuery
+            "Ace",
+            "Leaflet",
             "Materialize", // includes jQuery
             "RequireJS", // includes jQuery
             "Ember.js", // includes jQuery
@@ -96,6 +94,7 @@ public class AnalyzeBenchmarks extends TestCase {
             "Polymer", // "Too imprecise calls to Function" during initialization
             "Sugar", // Too much mem, and too much time, just for the initialization.
             "q",  // Uses require mechanism to fetch dependencies.
+            "Swiper",
 
             // TODO: Try on a proper machine.
             "Fabric.js", // initialization crashes TAJS
@@ -130,7 +129,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
                 .staticOptions
                     .setKillGetters(true) // because getters currently causes the analysis to loop. // TODO: Still?
-
+                    .setBetterAnyString(true) // left == bad any-str, right == better any-str.
                     .setRetractionPolicy(new LimitTransfersRetractionPolicy(100000, 0))
 
                     .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
@@ -155,7 +154,7 @@ public class AnalyzeBenchmarks extends TestCase {
     public static Function<CheckOptions.Builder, StaticOptions.Builder> weakMode() {
         return options ->
                 options.staticOptions
-                .setCheckAllPropertiesAfterFunctionCall(true)
+                .setCheckAllPropertiesAfterFunctionCall(true) // ended up not being used in the paper.
                 .setUseValuesWithMismatches(false)
                 .setPropagateStateFromFailingTest(false)
                 .setSimpleTypeFilter(false) // doesn't do anything, therefore disabling it.
