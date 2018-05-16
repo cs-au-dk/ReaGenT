@@ -16,10 +16,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -40,26 +37,31 @@ public class CompareModesEvaluation {
              */
     );
 
+    public static final Map<String, Function<CheckOptions.Builder, StaticOptions.Builder>> modes = new LinkedHashMap<>(){{
+        put("all-assumptions", AnalyzeBenchmarks.weakMode());
+        put("no-check-types", AnalyzeBenchmarks.strongMode());
+        put("width-subtyping", AnalyzeBenchmarks.weakMode().andThen(options -> options.setProperWidthSubtyping(true)));
+        put("writes", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWriteAll(true).staticOptions));
+        put("no-prefer-lib-values", AnalyzeBenchmarks.weakMode().andThen(options -> options.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)));
+        //experiment.addExperiment(experiment("only-constructed", options -> options.staticOptions.setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED)));
+        //experiment.addExperiment(experiment("only-feedback", options -> options.staticOptions.setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE).setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments(false))));
+        //experiment.addExperiment(experiment("callbacks-not-rmgc", options -> options.staticOptions.setCallbacksAreMGC(false)));
+        put("no-safe-strings", AnalyzeBenchmarks.weakMode().andThen(options -> options.setBetterAnyString(false)));
+
+        new HashSet<>(entrySet()).forEach(entry -> {
+            Function<CheckOptions.Builder, StaticOptions.Builder> value = entry.getValue();
+            put(entry.getKey(), AnalyzeBenchmarks.options().andThen(options -> value.apply(options.getOuterBuilder())));
+        });
+    }};
+
 
     @Test
     public void doEvaluation() {
         Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
 
-//        experiment.addSingleExperiment(AutomaticExperiments.type);
-
-        // Weak mode is default, so no need to change anything there.
-        experiment.addExperiment(experiment("all-assumptions", AnalyzeBenchmarks.weakMode()));
-        experiment.addExperiment(experiment("no-check-types", AnalyzeBenchmarks.strongMode()));
-        experiment.addExperiment(experiment("width-subtyping", AnalyzeBenchmarks.weakMode().andThen(options -> options.setProperWidthSubtyping(true))));
-        experiment.addExperiment(experiment("writes", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWriteAll(true).staticOptions)));
-
-        // still waits for feedback-values to be available, but then mixed synthetic into it anyway.
-        experiment.addExperiment(experiment("no-prefer-lib-values", AnalyzeBenchmarks.weakMode().andThen(options -> options.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED))));
-//        experiment.addExperiment(experiment("only-constructed", options -> options.staticOptions.setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED)));
-//        experiment.addExperiment(experiment("only-feedback", options -> options.staticOptions.setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE).setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments(false))));
-
-        experiment.addExperiment(experiment("no-safe-strings", AnalyzeBenchmarks.weakMode().andThen(options -> options.setBetterAnyString(false))));
-//        experiment.addExperiment(experiment("callbacks-not-rmgc", options -> options.staticOptions.setCallbacksAreMGC(false)));
+        modes.forEach((name, options) -> {
+            experiment.addExperiment(experiment(name, options));
+        });
 
         Table table = experiment.calculate("experiment.csv");
 
@@ -121,18 +123,22 @@ public class CompareModesEvaluation {
                     sums.set(i, sums.get(i) + values.get(i));
                 }
             }
-            sums.stream().map(value -> value / (table.getRaw().size() - 1)).map(val -> val + "").forEach(averages::add);
+            List<String> resultSums = sums.stream().map(value -> value / (table.getRaw().size() - 1)).map(val -> val + "").collect(Collectors.toList());
+            averages.add(String.join(" / ", resultSums));
         }
 
         result.add(averages);
 
 
+        for (int i = 0; i < 10; i++) {
+            System.out.println();
+        }
         System.out.println("Comparison of RMGC variants. Each column contains: " + String.join(" / ", metrics));
 
         System.out.println(
                 String.join("\n", result.stream()
                     .filter(Objects::nonNull)
-                    .map(row -> String.join("\t", Util.replaceNulls(row, "-")))
+                    .map(row -> String.join("|", Util.replaceNulls(row, "-")))
                     .collect(Collectors.toList())
                 )
         );
@@ -164,7 +170,7 @@ public class CompareModesEvaluation {
 
     private static BiConsumer<Benchmark, BiConsumer<String, String>> experiment(String prefix, Function<CheckOptions.Builder, StaticOptions.Builder> optionsTransformer) {
         return (benchmark, register) -> {
-            benchmark = benchmark.withOptions(AnalyzeBenchmarks.options().andThen(builder -> optionsTransformer.apply(builder.getOuterBuilder())));
+            benchmark = benchmark.withOptions(optionsTransformer);
 
             BenchmarkInfo.create(benchmark); // <- Just populating cache.
 

@@ -176,7 +176,7 @@ public class TAJSUtil {
         public double branchCoverage;
         public double functionCoverage;
 
-        private boolean VERBOSE = true;
+        private boolean VERBOSE = false;
         public MultiMap<Test, Exception> exceptionsEncountered;
 
         public TajsAnalysisResults(MultiMap<String, TypeViolation> detectedViolations,
@@ -255,7 +255,7 @@ public class TAJSUtil {
             StringBuilder builder = new StringBuilder();
             if (this.timedout)
                 builder.append("Type-checking timedout!").append("\n");
-            builder.append("Tests not performed (").append(testNot.size()).append(")").append("\n");
+            builder.append("Actions not performed (").append(testNot.size()).append(")").append("\n");
             for (Test notPerformed : testNot) {
                 builder.append("   ").append(notPerformed);
                 if (retractedTests.contains(notPerformed)) {
@@ -270,7 +270,7 @@ public class TAJSUtil {
                 builder.append("\n");
             }
 
-            builder.append("Tests performed (").append(testPerformed.size()).append(")").append("\n");
+            builder.append("Actions performed (").append(testPerformed.size()).append(")").append("\n");
             for (Test performed : testPerformed) {
                 builder.append("   ").append(performed).append("\n");
             }
@@ -283,7 +283,7 @@ public class TAJSUtil {
 //                builder.append("Test details:\n   ")
 //                        .append(mkString(certificates, "\n   "));
                 builder.append("\n");
-                builder.append("Transfers per test:\n   ")
+                builder.append("Transfers per action:\n   ")
                         .append(mkString(testTranfers.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getValue)).map(e -> {
                             Test test = e.getKey();
                             String result = test + ": " + e.getValue();
@@ -302,14 +302,14 @@ public class TAJSUtil {
                 builder.append(timers.toString());
 
                 if (!exceptionsEncountered.get(null).isEmpty()) {
-                    builder.append("Exceptions outside test-context: \n");
+                    builder.append("Exceptions outside action-context: \n");
                     exceptionsEncountered.get(null).stream().map(Object::toString).map(str -> "   " + str + "\n").distinct().forEach(builder::append);
                 }
 
-                if (!this.possiblyProblematicReads.isEmpty()) {
-                    builder.append("Reads performed by the library that could be affected by the client: \n");
-                    this.possiblyProblematicReads.stream().map(AbstractNode::getSourceLocation).map(Object::toString).distinct().sorted().forEach(str -> builder.append(str).append("\n"));
-                }
+            }
+            if (!this.possiblyProblematicReads.isEmpty()) {
+                builder.append("Reads performed by the library that could be affected by the client: \n");
+                this.possiblyProblematicReads.stream().map(AbstractNode::getSourceLocation).map(Object::toString).distinct().sorted().forEach(str -> builder.append(str).append("\n"));
             }
             return builder.toString();
         }

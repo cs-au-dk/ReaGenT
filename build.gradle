@@ -86,7 +86,7 @@ task deltaDebug(type: JavaExec) {
         args Eval.me(appArgs)
     }
     classpath sourceSets.test.runtimeClasspath
-    jvmArgs = ["-Xmx32G"]
+    jvmArgs = ["-Xmx30G"]
     main = 'dk.webbies.tajscheck.test.tajs.analyze.ManualTajsCheckerEvaluation'
 }
 
@@ -94,7 +94,7 @@ task deltaDebug(type: JavaExec) {
 // ./gradlew doEvaluation"
 task doEvaluation(type: JavaExec) {
     classpath sourceSets.test.runtimeClasspath
-    jvmArgs = ["-Xmx32G"]
+    jvmArgs = ["-Xmx30G"]
     main = 'dk.webbies.tajscheck.test.tajs.analyze.TajsCheckerEvaluation'
 }
 
@@ -102,16 +102,30 @@ task doEvaluation(type: JavaExec) {
 // ./gradlew compareModes"
 task compareModes(type: JavaExec) {
     classpath sourceSets.test.runtimeClasspath
-    jvmArgs = ["-Xmx32G"]
+    jvmArgs = ["-Xmx30G"]
     main = 'dk.webbies.tajscheck.test.tajs.analyze.CompareModesEvaluation'
 }
 
 // Example usage:
-// ./gradlew manualEval"
+// ./gradlew manualEval -PappArgs="['all-assumptions']"
 task manualEval(type: JavaExec) {
+    if (project.hasProperty("appArgs")) {
+        args Eval.me(appArgs)
+    }
     classpath sourceSets.test.runtimeClasspath
-    jvmArgs = ["-Xmx32G"]
+    jvmArgs = ["-Xmx30G"]
     main = 'dk.webbies.tajscheck.test.tajs.analyze.ManualTajsCheckerEvaluation'
+}
+
+// Example usage:
+// ./gradlew bigBenchEval -PappArgs="['limited']"
+task bigBenchEval(type: JavaExec) {
+    if (project.hasProperty("appArgs")) {
+        args Eval.me(appArgs)
+    }
+    classpath sourceSets.test.runtimeClasspath
+    jvmArgs = ["-Xmx30G"]
+    main = 'dk.webbies.tajscheck.test.tajs.analyze.BigLibEvaluation'
 }
 
 
@@ -121,4 +135,15 @@ task deltaDebugRetractedTestInAll(type: JavaExec) {
     classpath sourceSets.test.runtimeClasspath
     jvmArgs = ["-Xmx30G"]
     main = 'dk.webbies.tajscheck.test.DeltaDebug$DeltaDebugRetractedTestInAll'
+}
+
+// Example usage:
+// ./gradlew runSingle -PappArgs="['classnames', 'writes']"
+task runSingle(type: JavaExec) {
+    if (project.hasProperty("appArgs")) {
+        args Eval.me(appArgs)
+    }
+    classpath sourceSets.test.runtimeClasspath
+    jvmArgs = ["-Xmx30G"]
+    main = 'dk.webbies.tajscheck.test.tajs.analyze.RunASingleBenchmark'
 }

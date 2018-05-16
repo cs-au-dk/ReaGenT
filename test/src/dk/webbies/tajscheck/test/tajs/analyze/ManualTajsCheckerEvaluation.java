@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 public class ManualTajsCheckerEvaluation {
 
     private static final int TIMEOUT = 20 * 60; // in seconds
-    private static final boolean DO_DELTA_DEBUGGING = false;
-    private static String outputDir = "strong";
+    private static final boolean DO_DELTA_DEBUGGING = true;
+    private static String mode;
 
     private static final Set<String> CAN_DELTA_DEBUG = new HashSet<>(Arrays.asList(
             "Hammer.js",
@@ -40,8 +40,8 @@ public class ManualTajsCheckerEvaluation {
             "accounting.js",
             "axios",
             "lunr.js",
-            "CodeMirror", // TODO: Get some bugs from this one.
-            "Moment.js", // TODO: Get some bugs from this one.
+            "CodeMirror",
+            "Moment.js",
             "semver",
 
             "reveal.js",
@@ -63,9 +63,9 @@ public class ManualTajsCheckerEvaluation {
 
     @Test
     public void runInALoop() throws Exception {
-        List<String> benchmarks = TajsCheckerEvaluation.benchmarksToEvaluate;
+        List<String> benchmarks = Arrays.asList("Hammer.js");//BigLibEvaluation.benchmarksToEvaluate;
         if (benchmarks.size() < 20) {
-            throw new RuntimeException("I don't think you meant to do this " + benchmarks.size());
+//            throw new RuntimeException("I don't think you meant to do this " + benchmarks.size());
         }
         //noinspection InfiniteLoopStatement
         while (true) {
@@ -89,7 +89,7 @@ public class ManualTajsCheckerEvaluation {
         if (cleanBenchmarks.contains(benchmarkName)) {
             return;
         }
-        Benchmark bench = RunBenchmarks.benchmarks.get(benchmarkName).withOptions(AnalyzeBenchmarks.options().andThen(builder -> AnalyzeBenchmarks.strongMode().apply(builder.getOuterBuilder())));
+        Benchmark bench = RunBenchmarks.benchmarks.get(benchmarkName).withOptions(CompareModesEvaluation.modes.get(mode));
 
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, TIMEOUT);
 
@@ -121,17 +121,17 @@ public class ManualTajsCheckerEvaluation {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void reportViolation(Benchmark bench, TypeViolation searchViolation, TypeViolation fullViolation) throws IOException {
         new File("results").mkdir();
-        new File("results/" + outputDir).mkdir();
+        new File("results/" + mode).mkdir();
 
         int counter = 0;
-        while (new File("results/" + outputDir + "/" + counter).exists()) {
+        while (new File("results/" + mode + "/" + counter).exists()) {
             counter++;
         }
 
-        new File("results/" + outputDir + "/" + counter).mkdir();
+        new File("results/" + mode + "/" + counter).mkdir();
 
-        Util.writeFile("results/" + outputDir + "/" + counter + "/" + bench.name + "_violation.txt", searchViolation.toString());
-        Util.writeFile("results/" + outputDir + "/" + counter + "/" + bench.name + "_violation_full.txt", fullViolation.toString(Integer.MAX_VALUE));
+        Util.writeFile("results/" + mode + "/" + counter + "/" + bench.name + "_violation.txt", searchViolation.toString());
+        Util.writeFile("results/" + mode + "/" + counter + "/" + bench.name + "_violation_full.txt", fullViolation.toString(Integer.MAX_VALUE));
 
         String dTsFile = Util.readFile(bench.dTSFile);
         String jsFile = Util.readFile(bench.jsFile);
@@ -140,53 +140,53 @@ public class ManualTajsCheckerEvaluation {
             return;
         }
 
-        Util.writeFile("results/" + outputDir + "/" + counter + "/" + bench.name + ".d.ts.original", dTsFile);
-        Util.writeFile("results/" + outputDir + "/" + counter + "/" + bench.name + ".d.ts", dTsFile);
-        Util.writeFile("results/" + outputDir + "/" + counter + "/" + bench.name + ".js.original", jsFile);
-        Util.writeFile("results/" + outputDir + "/" + counter + "/" + bench.name + ".js", jsFile);
+        Util.writeFile("results/" + mode + "/" + counter + "/" + bench.name + ".d.ts.original", dTsFile);
+        Util.writeFile("results/" + mode + "/" + counter + "/" + bench.name + ".d.ts", dTsFile);
+        Util.writeFile("results/" + mode + "/" + counter + "/" + bench.name + ".js.original", jsFile);
+        Util.writeFile("results/" + mode + "/" + counter + "/" + bench.name + ".js", jsFile);
 
 
         if (DO_DELTA_DEBUGGING) {
             bench = bench
-                    .withJsFile("results/" + outputDir + "/" + counter + "/" + bench.name + ".js")
-                    .withDecl("results/" + outputDir + "/" + counter + "/" + bench.name + ".d.ts");
+                    .withJsFile("results/" + mode + "/" + counter + "/" + bench.name + ".js")
+                    .withDecl("results/" + mode + "/" + counter + "/" + bench.name + ".d.ts");
 
             boolean success = deltaDebugViolation(bench, searchViolation);
 
             if (success) {
-                new File("results/" + outputDir + "/" + counter + "/" + bench.name + ".js.smallest").delete();
-                new File("results/" + outputDir + "/" + counter + "/" + bench.name + ".d.ts.smallest").delete();
+                new File("results/" + mode + "/" + counter + "/" + bench.name + ".js.smallest").delete();
+                new File("results/" + mode + "/" + counter + "/" + bench.name + ".d.ts.smallest").delete();
             }
         } else {
-            Util.writeFile("results/" + outputDir + "/" + counter + "/skipped_delta.txt", "");
+            Util.writeFile("results/" + mode + "/" + counter + "/skipped_delta.txt", "");
         }
     }
 
     @SuppressWarnings({"ConstantConditions", "Duplicates"})
     public void continueWithFolder(int counter) throws IOException {
-        List<String> violationNames = Arrays.stream(new File("results/" + outputDir + "/" + counter).listFiles()).map(File::getName).filter(name -> name.contains("violation_full.txt")).collect(Collectors.toList());
+        List<String> violationNames = Arrays.stream(new File("results/" + mode + "/" + counter).listFiles()).map(File::getName).filter(name -> name.contains("violation_full.txt")).collect(Collectors.toList());
         assert violationNames.size() == 1;
         String benchmarkName = Util.removeSuffix(violationNames.iterator().next(), "_violation_full.txt");
 
         System.out.println("Benchmark: " + benchmarkName);
 
 
-        if (new File("results/" + outputDir + "/" + counter + "/skipped_delta.txt").exists()) {
+        if (new File("results/" + mode + "/" + counter + "/skipped_delta.txt").exists()) {
             System.out.println("Start delta-debugging.");
-            new File("results/" + outputDir + "/" + counter + "/skipped_delta.txt").delete();
+            new File("results/" + mode + "/" + counter + "/skipped_delta.txt").delete();
             Util.copyFile(
-                    "results/" + outputDir + "/" + counter + "/" + benchmarkName + ".js",
-                    "results/" + outputDir + "/" + counter + "/" + benchmarkName + ".js.smallest"
+                    "results/" + mode + "/" + counter + "/" + benchmarkName + ".js",
+                    "results/" + mode + "/" + counter + "/" + benchmarkName + ".js.smallest"
             );
             Util.copyFile(
-                    "results/" + outputDir + "/" + counter + "/" + benchmarkName + ".d.ts",
-                    "results/" + outputDir + "/" + counter + "/" + benchmarkName + ".d.ts.smallest"
+                    "results/" + mode + "/" + counter + "/" + benchmarkName + ".d.ts",
+                    "results/" + mode + "/" + counter + "/" + benchmarkName + ".d.ts.smallest"
             );
             continueDeltaDebugging(counter, benchmarkName);
             return;
         }
 
-        if (new File("results/" + outputDir + "/" + counter + "/" + benchmarkName + ".js.smallest").exists()) {
+        if (new File("results/" + mode + "/" + counter + "/" + benchmarkName + ".js.smallest").exists()) {
             System.out.println("Continue delta-debugging");
             continueDeltaDebugging(counter, benchmarkName);
             return;
@@ -206,12 +206,12 @@ public class ManualTajsCheckerEvaluation {
     }
 
     public void continueDeltaDebugging(int folderNumber, String benchmarkName) throws IOException {
-        assert new File("results/" + outputDir + "/" + folderNumber + "/" + benchmarkName + ".d.ts.original").exists();
+        assert new File("results/" + mode + "/" + folderNumber + "/" + benchmarkName + ".d.ts.original").exists();
 
         Benchmark bench = getBenchmark(folderNumber, benchmarkName);
 
-        String smallJs = Util.readFile("results/" + outputDir + "/" + folderNumber + "/" + bench.name + ".js.smallest");
-        String smallDTS = Util.readFile("results/" + outputDir + "/" + folderNumber + "/" + bench.name + ".d.ts.smallest");
+        String smallJs = Util.readFile("results/" + mode + "/" + folderNumber + "/" + bench.name + ".js.smallest");
+        String smallDTS = Util.readFile("results/" + mode + "/" + folderNumber + "/" + bench.name + ".d.ts.smallest");
 
         Util.writeFile(bench.jsFile, smallJs);
         Util.writeFile(bench.dTSFile, smallDTS);
@@ -219,14 +219,14 @@ public class ManualTajsCheckerEvaluation {
         TypeViolation violation = getViolation(folderNumber, benchmarkName);
         boolean success = deltaDebugViolation(bench, violation);
         if (success) {
-            new File("results/" + outputDir + "/" + folderNumber + "/" + bench.name + ".js.smallest").delete();
-            new File("results/" + outputDir + "/" + folderNumber + "/" + bench.name + ".d.ts.smallest").delete();
+            new File("results/" + mode + "/" + folderNumber + "/" + bench.name + ".js.smallest").delete();
+            new File("results/" + mode + "/" + folderNumber + "/" + bench.name + ".d.ts.smallest").delete();
         }
 
     }
 
     private TypeViolation getViolation(int folderNumber, String benchmarkName) throws IOException {
-        String violationString = Util.readFile("results/" + outputDir + "/" + folderNumber + "/" + benchmarkName + "_violation.txt");
+        String violationString = Util.readFile("results/" + mode + "/" + folderNumber + "/" + benchmarkName + "_violation.txt");
 
         System.out.println(violationString);
 
@@ -245,8 +245,8 @@ public class ManualTajsCheckerEvaluation {
 
     private Benchmark getBenchmark(int folderNumber, String benchmarkName) {
         return RunBenchmarks.benchmarks.get(benchmarkName).withOptions(AnalyzeBenchmarks.options())
-                    .withJsFile("results/" + outputDir + "/" + folderNumber + "/" + benchmarkName + ".js")
-                    .withDecl("results/" + outputDir + "/" + folderNumber + "/" + benchmarkName + ".d.ts");
+                    .withJsFile("results/" + mode + "/" + folderNumber + "/" + benchmarkName + ".js")
+                    .withDecl("results/" + mode + "/" + folderNumber + "/" + benchmarkName + ".d.ts");
     }
 
     private boolean deltaDebugViolation(Benchmark bench, TypeViolation searchViolation) throws IOException {
@@ -302,20 +302,9 @@ public class ManualTajsCheckerEvaluation {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            new ManualTajsCheckerEvaluation().runInALoop();
-            return;
+            throw new RuntimeException("You did not specify the mode");
         }
-        ManualTajsCheckerEvaluation o = new ManualTajsCheckerEvaluation();
-        ManualTajsCheckerEvaluation.outputDir = args[0];
-        int index = -1;
-        try { index = Integer.parseInt(args[1]); } catch(Exception e){}
-        try {
-            while (true) {
-                o.findATypeError(args[0], index);
-            }
-        } catch(Exception e) {
-            System.err.println(e);
-            e.printStackTrace();
-        }
+        ManualTajsCheckerEvaluation.mode = args[0];
+        new ManualTajsCheckerEvaluation().runInALoop();
     }
 }

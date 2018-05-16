@@ -288,24 +288,6 @@ public class DriverProgramBuilder {
             );
         }
 
-        /*
-         * Check dependencies
-         * Run test, put result in "result"
-         * Check that "result" is of the right type
-         * Store result for use by other tests
-         */
-
-        Type product;
-        if (test.getProduces().size() == 0) {
-            product = null;
-        } else if (test.getProduces().size() == 1) {
-            product = test.getProduces().iterator().next();
-        } else {
-            UnionType union = new UnionType();
-            union.setElements(new ArrayList<>(test.getProduces()));
-            product = union;
-        }
-
         return Util.concat(
                 testCode,
                 Collections.singletonList(saveResultStatement)

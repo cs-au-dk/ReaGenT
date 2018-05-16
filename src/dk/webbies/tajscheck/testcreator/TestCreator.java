@@ -117,13 +117,13 @@ public class TestCreator {
             Type baseType = writeTest.getBaseType();
             if (baseType instanceof InterfaceType) {
                 InterfaceType base = (InterfaceType) baseType;
-                if (base.getReadonlyDeclarations().contains(writeTest.getProperty())) {
+                if (base.getReadonlyDeclarations() != null && base.getReadonlyDeclarations().contains(writeTest.getProperty())) {
                     return false;
                 }
             }
             if (baseType instanceof ClassType) {
                 ClassType clazz = (ClassType) baseType;
-                if (clazz.getStaticReadonlyProperties().contains(writeTest.getProperty())) {
+                if (clazz.getStaticReadonlyProperties() != null && clazz.getStaticReadonlyProperties().contains(writeTest.getProperty())) {
                     return false;
                 }
             }

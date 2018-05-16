@@ -27,7 +27,7 @@ public class Table {
         table.set(index, objects);
     }
 
-    private synchronized String print(String columnSeparator, String rowSeparator) {
+    public synchronized String print(String columnSeparator, String rowSeparator) {
         List<List<String>> table = new ArrayList<>(this.table);
         table.add(totalRow());
 
