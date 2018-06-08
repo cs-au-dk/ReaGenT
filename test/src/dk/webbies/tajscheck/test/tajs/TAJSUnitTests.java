@@ -55,11 +55,11 @@ public class TAJSUnitTests {
         return run(benchFromFolder(folderName, options), timeout);
     }
 
-    private static TajsAnalysisResults run(Benchmark bench) throws Exception {
+    static TajsAnalysisResults run(Benchmark bench) throws Exception {
         return run(bench, Integer.MAX_VALUE);
     }
 
-    private static TajsAnalysisResults run(Benchmark bench, int timeout) throws Exception {
+    static TajsAnalysisResults run(Benchmark bench, int timeout) throws Exception {
         TajsAnalysisResults result = runNoDriver(bench, timeout);
         System.out.println(result);
         return result;
@@ -95,7 +95,7 @@ public class TAJSUnitTests {
         return Benchmark.fromTSFile(tsFile, name, ParseDeclaration.Environment.ES5Core, run_method, options.build());
     }
 
-    private static CheckOptions.Builder options() {
+    static CheckOptions.Builder options() {
         return CheckOptions.builder().setCheckDepthReport(0).setCheckDepthUseValue(0);
     }
 

@@ -43,7 +43,6 @@ public class Util {
     }
 
     public static String runScript(String args, File dir, int timeout) throws IOException {
-        if (args.endsWith("\"")) args = args.replace("\"", "");
         Process process = Runtime.getRuntime().exec(args, null, dir);
 
         CountDownLatch latch = new CountDownLatch(2);

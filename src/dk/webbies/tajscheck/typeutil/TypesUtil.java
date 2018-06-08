@@ -29,6 +29,21 @@ public class TypesUtil {
     }
 
     private final Map<ClassType, Pair<InterfaceType, Map<TypeParameterType, Type>>> classToInterfaceCache;
+
+    public static ClassType emptyClassType() {
+        ClassType clazz = new ClassType();
+        clazz.setSignatures(new ArrayList<>());
+        clazz.setBaseTypes(new ArrayList<>());
+        clazz.setStaticProperties(new HashMap<>());
+        clazz.setInstanceProperties(new HashMap<>());
+        clazz.setTypeParameters(new ArrayList<>());
+        clazz.setTypeArguments(new ArrayList<>());
+        clazz.setStaticReadonlyProperties(new ArrayList<>());
+        clazz.setInstanceReadOnlyProperties(new ArrayList<>());
+        clazz.setTarget(clazz);
+        return clazz;
+    }
+
     public Pair<InterfaceType, Map<TypeParameterType, Type>> classToInterface(ClassType t) {
         if (classToInterfaceCache.containsKey(t)) {
             return classToInterfaceCache.get(t);

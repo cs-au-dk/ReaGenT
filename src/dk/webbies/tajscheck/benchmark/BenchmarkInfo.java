@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.benchmark;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
+import dk.webbies.tajscheck.parsespec.FlowParser;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.ViolationsOracle;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
@@ -35,9 +36,13 @@ public class BenchmarkInfo {
         this.typesUtil = new TypesUtil(this);
         this.typeParameterIndexer = new TypeParameterIndexer(bench.options);
 
-        this.spec = ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile));
+        this.spec = bench.dTSFile.endsWith(".ts") ?
+                ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile)) :
+                FlowParser.parse(Collections.singletonList(bench.dTSFile));
 
-        SpecReader emptySpec = ParseDeclaration.getTypeSpecification(bench.environment, new ArrayList<>());
+        SpecReader emptySpec = bench.dTSFile.endsWith(".ts") ?
+                ParseDeclaration.getTypeSpecification(bench.environment, Collections.emptyList()):
+                FlowParser.parse(Collections.emptyList());
 
         this.nativeTypes = TypesUtil.collectNativeTypes(spec, emptySpec);
 
