@@ -107,8 +107,22 @@ public class FlowParser {
         String kind = typeDescription.get("kind").getAsString();
         switch (kind) {
             case "ModuleT":
-//                assert typeDescription.get("namedExports").getAsJsonArray().size() == 0; // I don't see any need for me to use the namedExports.
-                return parseType(typeDescription.get("cjsExport").getAsJsonObject());
+                if (typeDescription.get("cjsExport").isJsonObject()) {
+                    return parseType(typeDescription.get("cjsExport").getAsJsonObject());
+                }
+                Map<String, Type> exports = new HashMap<>();
+                for (JsonElement namedExportRaw : typeDescription.get("namedExports").getAsJsonArray()) {
+                    String name = namedExportRaw.getAsJsonObject().get("name").getAsString();
+                    JsonObject typeObject = resolve(namedExportRaw.getAsJsonObject().get("type").getAsJsonObject());
+                    if (typeObject.get("kind").getAsString().equals("TypeT")) {
+                        continue;
+                    }
+                    exports.put(name, parseType(typeObject));
+                }
+
+                InterfaceType result = SpecReader.makeEmptySyntheticInterfaceType();
+                exports.forEach(result.getDeclaredProperties()::put);
+                return result;
             case "FunT":
                 return parseFunctionType(typeDescription.get("funType").getAsJsonObject());
             case "StrT":
@@ -129,10 +143,16 @@ public class FlowParser {
             case "AnnotT":
                 assert !typeDescription.get("useDesc").getAsBoolean();
                 return parseType(typeDescription.get("assume").getAsJsonObject());
-            case "InstanceT":
+            case "ThisClassT":{
+                assert typeDescription.get("type").getAsJsonObject().get("kind").getAsString().equals("InstanceT");
+                ClassInstanceType instanceType = (ClassInstanceType) parseType(typeDescription.get("type").getAsJsonObject());
+                return instanceType.getClassType();
+            }
+            case "InstanceT": {
                 ClassInstanceType instanceType = new ClassInstanceType();
                 instanceType.setClassType(parseClassType(typeDescription.get("instance").getAsJsonObject()));
                 return instanceType;
+            }
             case "OpenT": // type annotation kind of thing.
                 int id = typeDescription.get("id").getAsNumber().intValue();
                 if (openTCache.containsKey(id)) {
@@ -177,7 +197,7 @@ public class FlowParser {
     }
 
     private JsonObject resolve(JsonObject object) {
-        if (object.get("kind").getAsString().equals("unresolved")) {
+        if (object.get("kind").getAsString().equals("cached")) {
             int typeId = Integer.parseInt(object.get("id").getAsString());
             return resolved_types.get(typeId);
         } else {

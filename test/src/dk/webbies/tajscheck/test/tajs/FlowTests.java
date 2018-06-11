@@ -25,27 +25,28 @@ public class FlowTests {
 
     @Test
     public void createInfo() {
-        Benchmark benchmark = benchFromFolder("left-pad");
-        BenchmarkInfo.create(benchmark);
+        BenchmarkInfo.create(benchFromFolder("left-pad"));
     }
 
     @Test
     public void parseClass() {
-        Benchmark benchmark = benchFromFolder("class");
-        BenchmarkInfo.create(benchmark);
+        BenchmarkInfo.create(benchFromFolder("class"));
     }
 
     @Test
     public void parseYargs() {
-        Benchmark benchmark = benchFromFolder("yargs");
-        BenchmarkInfo.create(benchmark);
+        BenchmarkInfo.create(benchFromFolder("yargs"));
     }
 
 
     @Test
     public void parseYamljs() {
-        Benchmark benchmark = benchFromFolder("yamljs");
-        BenchmarkInfo.create(benchmark);
+        BenchmarkInfo.create(benchFromFolder("yamljs"));
+    }
+
+    @Test
+    public void parseXterm() {
+        BenchmarkInfo.create(benchFromFolder("xterm"));
     }
 
     @Test

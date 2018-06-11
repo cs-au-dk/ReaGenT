@@ -14,6 +14,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by erik1 on 01-11-2016.
@@ -350,11 +351,16 @@ public class TypesUtil {
                 inter.getDeclaredNumberIndexType() == null;
     }
 
-    public List<Signature> splitOptionalSignatures(List<Signature> signatures) {
-        return signatures.stream().map(TypesUtil::makeSureOptionalArgumentsHaveUnionUndef).map(this::splitOptionalSignature).reduce(addOptionalToUndefArguments(signatures), Util::reduceList);
+    public List<Signature> splitOptionalSignatures(List<Signature> signatures, boolean isTypeScript) {
+        Stream<Signature> stream = signatures.stream();
+        if (isTypeScript) {
+            stream = stream.map(TypesUtil::makeSureOptionalArgumentsHaveUnionUndef);
+        }
+        List<Signature> result = stream.map(this::splitOptionalSignature).reduce(addOptionalToUndefArguments(signatures, isTypeScript), Util::reduceList);
+        return result;
     }
 
-    private List<Signature> addOptionalToUndefArguments(List<Signature> signatures) {
+    private List<Signature> addOptionalToUndefArguments(List<Signature> signatures, boolean isTypeScript) {
         return signatures.stream()
                 .map(signature -> {
                     signature = cloneSignature(signature);
@@ -383,10 +389,12 @@ public class TypesUtil {
                     }
                     int minArgs = signature.getMinArgumentCount();
                     signature.setMinArgumentCount(signature.getParameters().size());
-                    for (int i = signature.getParameters().size() - 1; i >= minArgs; i--) {
-                        signature = cloneSignature(signature);
-                        signature.getParameters().get(i).setType(new SimpleType(SimpleTypeKind.Undefined));
-                        result.add(signature);
+                    if (isTypeScript) {
+                        for (int i = signature.getParameters().size() - 1; i >= minArgs; i--) {
+                            signature = cloneSignature(signature);
+                            signature.getParameters().get(i).setType(new SimpleType(SimpleTypeKind.Undefined));
+                            result.add(signature);
+                        }
                     }
 
                     return result;
@@ -445,7 +453,9 @@ public class TypesUtil {
 
         Signature.Parameter optionalParameter = withOptional.getParameters().get(signature.getMinArgumentCount());
 
-        optionalParameter.setType(removeUndef((UnionType) optionalParameter.getType()));
+        if (optionalParameter.getType() instanceof UnionType) {
+            optionalParameter.setType(removeUndef((UnionType) optionalParameter.getType()));
+        }
 
         withOptional.setMinArgumentCount(withOptional.getMinArgumentCount() + 1);
 
@@ -455,13 +465,15 @@ public class TypesUtil {
     }
 
     private Type removeUndef(UnionType union) {
+        if (union.getElements().stream().noneMatch(sub -> sub instanceof SimpleType && ((SimpleType) sub).getKind() == SimpleTypeKind.Undefined)) {
+            return union;
+        }
+
         ArrayList<Type> elements = new ArrayList<>(union.getElements());
         String name = info.typeNames.get(union);
         union = new UnionType();
         info.typeNames.put(union, name);
         union.setElements(elements);
-
-        assert union.getElements().stream().anyMatch(sub -> sub instanceof SimpleType && ((SimpleType) sub).getKind() == SimpleTypeKind.Undefined);
 
         union.setElements(union.getElements().stream().filter(sub -> !(sub instanceof SimpleType && ((SimpleType) sub).getKind() == SimpleTypeKind.Undefined)).collect(Collectors.toList()));
 

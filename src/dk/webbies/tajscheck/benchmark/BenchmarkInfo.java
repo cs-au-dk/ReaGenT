@@ -5,7 +5,6 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.parsespec.FlowParser;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
-import dk.webbies.tajscheck.tajstester.ViolationsOracle;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.Util;
 
@@ -210,12 +209,12 @@ public class BenchmarkInfo {
             // Splitting optional arguments in signature
             if (type instanceof InterfaceType) {
                 InterfaceType inter = (InterfaceType) type;
-                inter.setDeclaredCallSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredCallSignatures()));
-                inter.setDeclaredConstructSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredConstructSignatures()));
+                inter.setDeclaredCallSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredCallSignatures(), bench.dTSFile.endsWith(".ts")));
+                inter.setDeclaredConstructSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredConstructSignatures(), bench.dTSFile.endsWith(".ts")));
             } else if (type instanceof GenericType) {
                 GenericType inter = (GenericType) type;
-                inter.setDeclaredCallSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredCallSignatures()));
-                inter.setDeclaredConstructSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredConstructSignatures()));
+                inter.setDeclaredCallSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredCallSignatures(), bench.dTSFile.endsWith(".ts")));
+                inter.setDeclaredConstructSignatures(info.typesUtil.splitOptionalSignatures(inter.getDeclaredConstructSignatures(), bench.dTSFile.endsWith(".ts")));
             }
 
             // splitting unions
