@@ -6,6 +6,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.Util;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
@@ -50,10 +51,16 @@ public class FlowParser {
             return new SpecReader(SpecReader.makeEmptySyntheticInterfaceType(), Collections.emptyList(), Collections.emptyList(), new HashMap<>());
         }
         assert declarationFiles.size() == 1;
+
+
         final String flowTypeJSON;
         try {
+            File outputFile = File.createTempFile("flowOutput", ".tmp");
             String flowBinaryPath = Util.unixify(Paths.get("./lib/flow/flow"));
-            flowTypeJSON = Util.runScript("bash -c \"" + flowBinaryPath + " dump-types --raw " + declarationFiles.iterator().next() + "\"", 10 * 60 * 1000);
+            Util.runScript("bash -c \"" + flowBinaryPath + " dump-types --raw " + declarationFiles.iterator().next() + " > " + Util.unixify(Paths.get(outputFile.getPath())) + "\"", 10 * 60 * 1000);
+            flowTypeJSON = Util.readFile(outputFile.getPath());
+            //noinspection ResultOfMethodCallIgnored
+            outputFile.delete();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
