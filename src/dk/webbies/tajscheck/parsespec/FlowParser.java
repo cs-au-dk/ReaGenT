@@ -7,11 +7,44 @@ import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+// TODO: prelude.js from flow. lib/dom.js lib/node.js
 public class FlowParser {
+    private Map<Integer, JsonObject> resolved_types = new HashMap<>();
+
+    public FlowParser(JsonArray exportedTypes) {
+        for (JsonElement exportedType : exportedTypes) {
+            if (exportedType.isJsonObject() && exportedType.getAsJsonObject().get("raw_type") != null) {
+                findResolvedTypes(new JsonParser().parse(exportedType.getAsJsonObject().get("raw_type").getAsString()));
+
+            }
+        }
+    }
+
+    private void findResolvedTypes(JsonElement json) {
+        if (json.isJsonObject() && json.getAsJsonObject().get("cache_id") != null) {
+            JsonObject obj = json.getAsJsonObject();
+            int id = Integer.parseInt(obj.get("cache_id").getAsString());
+            assert !resolved_types.containsKey(id);
+            resolved_types.put(id, obj);
+        }
+        if (json.isJsonObject()) {
+            JsonObject obj = json.getAsJsonObject();
+            for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+                findResolvedTypes(entry.getValue());
+            }
+        }
+        if (json.isJsonArray()) {
+            for (JsonElement jsonElement : json.getAsJsonArray()) {
+                findResolvedTypes(jsonElement);
+            }
+        }
+    }
+
     public static SpecReader parse(Collection<String> declarationFiles) {
         if (declarationFiles.isEmpty()) {
             return new SpecReader(SpecReader.makeEmptySyntheticInterfaceType(), Collections.emptyList(), Collections.emptyList(), new HashMap<>());
@@ -19,7 +52,8 @@ public class FlowParser {
         assert declarationFiles.size() == 1;
         final String flowTypeJSON;
         try {
-            flowTypeJSON = Util.runScript("bash -c \"flow dump-types --raw " + declarationFiles.iterator().next() + "\"", 60 * 1000);
+            String flowBinaryPath = Util.unixify(Paths.get("./lib/flow/flow"));
+            flowTypeJSON = Util.runScript("bash -c \"" + flowBinaryPath + " dump-types --raw " + declarationFiles.iterator().next() + "\"", 10 * 60 * 1000);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -27,11 +61,15 @@ public class FlowParser {
         List<SpecReader.NamedType> ambientTypes = new ArrayList<>();
         Map<String, Type> globalProperties = new HashMap<>();
 
-        FlowParser flowParser = new FlowParser();
+        JsonArray exportedTypes = new JsonParser().parse(flowTypeJSON).getAsJsonArray();
+        FlowParser flowParser = new FlowParser(exportedTypes);
 
-        for (JsonElement typeDescriptionRaw : new JsonParser().parse(flowTypeJSON).getAsJsonArray()) {
+        for (JsonElement typeDescriptionRaw : exportedTypes) {
             JsonObject typeDescription = typeDescriptionRaw.getAsJsonObject();
             String typeString = typeDescription.get("type").getAsString();
+            if (typeString.startsWith("[")) {
+                continue;
+            }
             switch (typeString) {
                 case "Module":
                     String name = getNameFromModule(typeDescription);
@@ -44,7 +82,6 @@ public class FlowParser {
                         globalProperties.put(name, type);
                     }
                     break;
-                case "[type: string]":
                 case "This":
                     break; // Do nothing, no need.
                 default:
@@ -59,6 +96,7 @@ public class FlowParser {
     }
 
     private Type parseType(JsonObject typeDescription) {
+        typeDescription = resolve(typeDescription);
         String kind = typeDescription.get("kind").getAsString();
         switch (kind) {
             case "ModuleT":
@@ -70,6 +108,8 @@ public class FlowParser {
                 return new SimpleType(SimpleTypeKind.String);
             case "NumT":
                 return new SimpleType(SimpleTypeKind.Number);
+            case "MixedT":
+                return new SimpleType(SimpleTypeKind.Any);
             case "VoidT":
                 return new SimpleType(SimpleTypeKind.Void);
             case "MaybeT":
@@ -101,8 +141,40 @@ public class FlowParser {
                 Type resultType = parseType(constraintType);
                 openTCache.put(id, resultType);
                 return resultType;
+            case "Array":
+                throw new RuntimeException(); // TODO: Need native Array type, and where do I get that? (From TypeScript?).
+            case "ObjT":
+                if (typeDescription.get("type") != null) {
+                    typeDescription = typeDescription.get("type").getAsJsonObject();
+                }
+                JsonObject flags = typeDescription.get("flags").getAsJsonObject();
+                assert !flags.get("frozen").getAsBoolean();
+//                assert !flags.get("sealed").getAsBoolean(); // Can be both, and that is OK.
+//                assert flags.get("exact").getAsBoolean(); // Can be both, and not sure what it means
+
+                Map<String, Type> propTypes = new HashMap<>();
+                for (JsonElement propTypeRaw : typeDescription.get("propTypes").getAsJsonArray()) {
+                    JsonObject propType = propTypeRaw.getAsJsonObject();
+                    String name = propType.get("name").getAsString();
+                    JsonObject prop = propType.get("prop").getAsJsonObject();
+                    assert prop.get("polarity").getAsString().equals("Neutral");
+                    propTypes.put(name, parseType(prop.get("field").getAsJsonObject()));
+                }
+
+                InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
+                propTypes.forEach(interfaceType.getDeclaredProperties()::put);
+                return interfaceType;
             default:
                 throw new RuntimeException(kind);
+        }
+    }
+
+    private JsonObject resolve(JsonObject object) {
+        if (object.get("kind").getAsString().equals("unresolved")) {
+            int typeId = Integer.parseInt(object.get("id").getAsString());
+            return resolved_types.get(typeId);
+        } else {
+            return object;
         }
     }
 
@@ -140,6 +212,7 @@ public class FlowParser {
 
     private Type parseFunctionType(JsonObject description) {
         List<Type> paramTypes = StreamSupport.stream(description.get("paramTypes").getAsJsonArray().spliterator(), false).map(elem -> {
+            elem = resolve(elem.getAsJsonObject());
             if (elem.getAsJsonObject().get("kind").getAsString().equals("OptionalT")) {
                 return parseType(elem.getAsJsonObject().get("type").getAsJsonObject());
             } else {

@@ -4,6 +4,7 @@ import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static dk.webbies.tajscheck.test.tajs.TAJSUnitTests.*;
@@ -31,6 +32,19 @@ public class FlowTests {
     @Test
     public void parseClass() {
         Benchmark benchmark = benchFromFolder("class");
+        BenchmarkInfo.create(benchmark);
+    }
+
+    @Test
+    public void parseYargs() {
+        Benchmark benchmark = benchFromFolder("yargs");
+        BenchmarkInfo.create(benchmark);
+    }
+
+
+    @Test
+    public void parseYamljs() {
+        Benchmark benchmark = benchFromFolder("yamljs");
         BenchmarkInfo.create(benchmark);
     }
 

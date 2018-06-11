@@ -11,6 +11,7 @@ import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
@@ -56,13 +57,15 @@ public class Util {
                 new Thread(() -> {
                     try {
                         Thread.sleep(10000);
-                    } catch (InterruptedException ignored) { }
+                    } catch (InterruptedException ignored) {
+                    }
                     try {
                         if (process.isAlive()) {
                             process.destroyForcibly();
                             process.destroy();
                         }
-                    } catch (Error ignored) { }
+                    } catch (Error ignored) {
+                    }
                     latch.countDown();
                     latch.countDown();
                 }).start();
@@ -703,8 +706,8 @@ public class Util {
     }
 
 
-    public static String prettyValue(Value v, State s){
-        if(v.isNone()) return "None";
+    public static String prettyValue(Value v, State s) {
+        if (v.isNone()) return "None";
 
         Value nonObject = v.restrictToNotGetterSetter().restrictToNotObject();
         List<String> prettyStrings = new ArrayList<>();
@@ -717,7 +720,7 @@ public class Util {
             }
         }
 
-        v.getAllObjectLabels().stream().map(l -> s.getObject(l,false)).map(Object::toString).forEach(prettyStrings::add);
+        v.getAllObjectLabels().stream().map(l -> s.getObject(l, false)).map(Object::toString).forEach(prettyStrings::add);
 
         if (v.isMaybeGetter()) {
             prettyStrings.add("[getter]");
@@ -732,7 +735,7 @@ public class Util {
     public static String simplifyPath(String path) {
         int fromIndex = -1;
         while (true) {
-            fromIndex = path.indexOf('(', fromIndex+1);
+            fromIndex = path.indexOf('(', fromIndex + 1);
             if (fromIndex == -1) {
                 break;
             }
@@ -742,7 +745,7 @@ public class Util {
         }
         fromIndex = -1;
         while (true) {
-            fromIndex = path.indexOf('{', fromIndex+1);
+            fromIndex = path.indexOf('{', fromIndex + 1);
             if (fromIndex == -1) {
                 break;
             }
@@ -752,5 +755,13 @@ public class Util {
         }
         path = path.replace(" ", "");
         return path;
+    }
+
+    public static String unixify(Path p) {
+        if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
+            return p.toAbsolutePath().toString();
+        } else {
+            return p.toAbsolutePath().toString().replace("C:\\", "/mnt/c/").replace("\\", "/");
+        }
     }
 }
