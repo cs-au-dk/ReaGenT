@@ -128,8 +128,12 @@ public class FlowParser {
         }
     }
 
-    private Type parseType(JsonObject typeJSON) {
-        return new DelayedType(() -> {
+    private final Map<JsonObject, DelayedType> parseTypeCache = new HashMap<>();
+    private DelayedType parseType(JsonObject typeJSON) {
+        if (parseTypeCache.containsKey(typeJSON)) {
+            return parseTypeCache.get(typeJSON);
+        }
+        DelayedType result = new DelayedType(() -> {
             switch (typeJSON.get("type").getAsString()) {
                 case "TypeAnnotation":
                     return parseType(typeJSON.get("typeAnnotation").getAsJsonObject());
@@ -156,6 +160,8 @@ public class FlowParser {
                     throw new RuntimeException("Unknown type: " + typeJSON.get("type").getAsString());
             }
         });
+        parseTypeCache.put(typeJSON, result);
+        return result;
     }
 
     private Type parseClass(JsonObject classJSON) {
