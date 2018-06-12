@@ -50,6 +50,18 @@ public class FlowTests {
     }
 
     @Test
+    public void parsedomApi() {
+        BenchmarkInfo.create(benchFromFolder("domapi"));
+    }
+
+    @Test
+    @Ignore // TODO:
+    public void natives() throws Exception {
+        expect(run(benchFromFolder("natives")))
+                .hasNoViolations();
+    }
+
+    @Test
     public void verifyLeftPad() throws Exception {
         expect(run(benchFromFolder("left-pad")))
                 .hasNoViolations();

@@ -10,18 +10,26 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-// TODO: prelude.js from flow. lib/dom.js lib/node.js
 public class FlowParser {
+    private static final SpecReader emptySpec = ParseDeclaration.getTypeSpecification(ParseDeclaration.Environment.ES5Core, Collections.emptyList());
+    private static final Map<String, Type> nativeNamedTypes = new HashMap<>(); {
+        for (SpecReader.NamedType namedType : emptySpec.getNamedTypes()) {
+            nativeNamedTypes.put(String.join(".", namedType.qName), namedType.type);
+        }
+    }
+
+    private final List<SpecReader.NamedType> namedTypes;
     private Map<Integer, JsonObject> resolved_types = new HashMap<>();
 
-    public FlowParser(JsonArray exportedTypes) {
+    public FlowParser(JsonArray exportedTypes, List<SpecReader.NamedType> namedTypes) {
+        this.namedTypes = namedTypes;
         for (JsonElement exportedType : exportedTypes) {
             if (exportedType.isJsonObject() && exportedType.getAsJsonObject().get("raw_type") != null) {
                 findResolvedTypes(new JsonParser().parse(exportedType.getAsJsonObject().get("raw_type").getAsString()));
-
             }
         }
     }
@@ -69,7 +77,7 @@ public class FlowParser {
         Map<String, Type> globalProperties = new HashMap<>();
 
         JsonArray exportedTypes = new JsonParser().parse(flowTypeJSON).getAsJsonArray();
-        FlowParser flowParser = new FlowParser(exportedTypes);
+        FlowParser flowParser = new FlowParser(exportedTypes, namedTypes);
 
         for (JsonElement typeDescriptionRaw : exportedTypes) {
             JsonObject typeDescription = typeDescriptionRaw.getAsJsonObject();
@@ -127,23 +135,32 @@ public class FlowParser {
                 return parseFunctionType(typeDescription.get("funType").getAsJsonObject());
             case "StrT":
                 return new SimpleType(SimpleTypeKind.String);
+            case "SingletonBoolT":
+                return new BooleanLiteral(typeDescription.get("literal").getAsBoolean());
             case "NumT":
                 return new SimpleType(SimpleTypeKind.Number);
             case "MixedT":
                 return new SimpleType(SimpleTypeKind.Any);
             case "VoidT":
                 return new SimpleType(SimpleTypeKind.Void);
-            case "MaybeT":
+            case "MaybeT":{
                 Type type = parseType(typeDescription.get("type").getAsJsonObject());
                 return new UnionType(Arrays.asList(new SimpleType(SimpleTypeKind.Null), new SimpleType(SimpleTypeKind.Undefined), type));
+            }
             case "OptionalT":
                 throw new RuntimeException("Raw optional!");
             case "UnionT":
                 return new UnionType(StreamSupport.stream(typeDescription.get("types").getAsJsonArray().spliterator(), false).map(JsonElement::getAsJsonObject).map(this::parseType).collect(Collectors.toList()));
-            case "AnnotT":
+            case "AnnotT": {
                 assert !typeDescription.get("useDesc").getAsBoolean();
+                String name = typeDescription.get("reason").getAsJsonObject().get("desc").getAsString();
+                Type nativeType = nativeNamedTypes.get(name);
+                if (nativeType != null) {
+                    namedTypes.add(new SpecReader.NamedType(nativeType, Arrays.asList(name.split(Pattern.quote(".")))));
+                    return nativeType;
+                }
                 return parseType(typeDescription.get("assume").getAsJsonObject());
-            case "ThisClassT":{
+            }case "ThisClassT":{
                 assert typeDescription.get("type").getAsJsonObject().get("kind").getAsString().equals("InstanceT");
                 ClassInstanceType instanceType = (ClassInstanceType) parseType(typeDescription.get("type").getAsJsonObject());
                 return instanceType.getClassType();
@@ -219,9 +236,17 @@ public class FlowParser {
 
         assert classJSON.get("typeArgs").getAsJsonArray().size() == 0;
         assert classJSON.get("argPolarities").getAsJsonArray().size() == 0;
-        assert classJSON.get("fieldTypes").getAsJsonArray().size() == 0;
         assert !classJSON.get("mixins").getAsBoolean();
         assert !classJSON.get("structural").getAsBoolean();
+
+        for (JsonElement fieldTypeRaw : classJSON.get("fieldTypes").getAsJsonArray()) {
+            JsonObject fieldType = fieldTypeRaw.getAsJsonObject();
+            String name = fieldType.get("name").getAsString();
+            JsonObject prop = fieldType.get("prop").getAsJsonObject();
+            assert prop.get("polarity").getAsString().equals("Neutral");
+            classType.getInstanceProperties().put(name, parseType(prop.get("field").getAsJsonObject()));
+        }
+
 
         for (JsonElement methodTypeRaw : classJSON.get("methodTypes").getAsJsonArray()) {
             JsonObject methodTypeJSON = methodTypeRaw.getAsJsonObject();
