@@ -29,33 +29,38 @@ public class FlowTests {
     }
 
     @Test
+    @Ignore
     public void parseClass() {
         BenchmarkInfo.create(benchFromFolder("class"));
     }
 
     @Test
+    @Ignore
     public void parseYargs() {
         BenchmarkInfo.create(benchFromFolder("yargs"));
     }
 
 
     @Test
+    @Ignore
     public void parseYamljs() {
         BenchmarkInfo.create(benchFromFolder("yamljs"));
     }
 
     @Test
+    @Ignore
     public void parseXterm() {
         BenchmarkInfo.create(benchFromFolder("xterm"));
     }
 
     @Test
+    @Ignore
     public void parsedomApi() {
         BenchmarkInfo.create(benchFromFolder("domapi"));
     }
 
     @Test
-    @Ignore // TODO:
+    @Ignore
     public void natives() throws Exception {
         expect(run(benchFromFolder("natives")))
                 .hasNoViolations();
@@ -68,10 +73,9 @@ public class FlowTests {
     }
 
     @Test
+    @Ignore
     public void verifyXmlEscape() throws Exception {
         expect(run(benchFromFolder("xml-escape")))
                 .hasNoViolations();
     }
-
-
 }

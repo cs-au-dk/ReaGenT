@@ -34,6 +34,7 @@ public class ParseDeclaration {
         }
     }
 
+    @SuppressWarnings("Duplicates")
     private static void markNamedTypes(List<SpecReader.NamedType> namedTypes, Map<Type, String> typeNames) {
         for (SpecReader.NamedType namedType : namedTypes) {
             StringBuilder name = new StringBuilder();
