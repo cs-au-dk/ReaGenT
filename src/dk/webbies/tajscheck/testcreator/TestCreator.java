@@ -790,21 +790,25 @@ public class TestCreator {
             TestQueueElement element = queue.poll();
             arg = element.arg;
 
-            arg = arg.withTypeContext(arg.typeContext.optimizeTypeParameters(element.type));
+            Type elemType = element.type;
+            if (elemType instanceof DelayedType) {
+                elemType = ((DelayedType) elemType).getType();
+            }
+            arg = arg.withTypeContext(arg.typeContext.optimizeTypeParameters(elemType));
 
-            if (info.freeGenericsFinder.hasThisTypes(element.type)) {
-                arg = arg.withThisType(element.type);
+            if (info.freeGenericsFinder.hasThisTypes(elemType)) {
+                arg = arg.withThisType(elemType);
             }
 
-            if (visitor.negativeTypesSeen.contains(new TypeWithContext(element.type, arg.typeContext))) {
+            if (visitor.negativeTypesSeen.contains(new TypeWithContext(elemType, arg.typeContext))) {
                 continue;
             }
-            visitor.negativeTypesSeen.add(new TypeWithContext(element.type, arg.typeContext));
+            visitor.negativeTypesSeen.add(new TypeWithContext(elemType, arg.typeContext));
 
-            element.type.accept(findPositiveVisitor, arg);
+            elemType.accept(findPositiveVisitor, arg);
 
             if (info.bench.run_method == Benchmark.RUN_METHOD.BOOTSTRAP) {
-                visitor.recurse(element.type, arg);
+                visitor.recurse(elemType, arg);
             }
         }
     }

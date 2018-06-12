@@ -84,7 +84,12 @@ public class ParseDeclaration {
 
         while (!queue.isEmpty()) {
             Arg arg = queue.poll();
-            arg.type.accept(new NameAllTypesVisitor(queue, seen, typeNames), arg);
+            assert arg != null;
+            Type type = arg.type;
+            if (type instanceof DelayedType) {
+                type = ((DelayedType) type).getType();
+            }
+            type.accept(new NameAllTypesVisitor(queue, seen, typeNames), arg);
         }
 
         return typeNames;

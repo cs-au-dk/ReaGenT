@@ -1,9 +1,10 @@
 package dk.webbies.tajscheck.benchmark;
 
 import dk.au.cs.casa.typescript.SpecReader;
+import dk.au.cs.casa.typescript.TypeResolver;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
-import dk.webbies.tajscheck.parsespec.FlowParser;
+import dk.webbies.tajscheck.parsespec.flow.FlowParser;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.Util;
@@ -85,8 +86,8 @@ public class BenchmarkInfo {
 
     private static Map<String, Type> getUserDefinedTypes(Benchmark bench, SpecReader spec, SpecReader emptySpec) {
         Map<String, Type> userDefinedTypes = new HashMap<>();
-        for (Map.Entry<String, Type> entry : ((InterfaceType) spec.getGlobal()).getDeclaredProperties().entrySet()) {
-            if (((InterfaceType)emptySpec.getGlobal()).getDeclaredProperties().containsKey(entry.getKey())) {
+        for (Map.Entry<String, Type> entry : spec.getGlobal().getDeclaredProperties().entrySet()) {
+            if (emptySpec.getGlobal().getDeclaredProperties().containsKey(entry.getKey())) {
                 continue;
             }
             if (entry.getValue() instanceof SimpleType && ((SimpleType) entry.getValue()).getKind() == SimpleTypeKind.Any) {
@@ -122,7 +123,7 @@ public class BenchmarkInfo {
     private static void applyTypeFixes(Benchmark bench, SpecReader spec, Map<Type, String> typeNames, Set<Type> nativeTypes, FreeGenericsFinder freeGenericsFinder, BenchmarkInfo info) {
         // Various fixes, to transform the types into something more consistent (+ workarounds).
         List<Type> typesToFix = new ArrayList<>();
-        for (Type type : ((InterfaceType) spec.getGlobal()).getDeclaredProperties().values()) {
+        for (Type type : spec.getGlobal().getDeclaredProperties().values()) {
             if (nativeTypes.contains(type)) {
                 continue;
             }
@@ -153,6 +154,17 @@ public class BenchmarkInfo {
 
     private static void applyTypeFixes(Benchmark bench, Map<Type, String> typeNames, List<Type> typesToFix, FreeGenericsFinder freeGenericsFinder, BenchmarkInfo info) {
         List<Type> allTypes = new ArrayList<>(TypesUtil.collectAllTypes(typesToFix, info));
+
+        TypeResolver.ResolverVisitor resolveDelayed = new TypeResolver.ResolverVisitor(t -> {
+            if (t instanceof DelayedType) {
+                return ((DelayedType) t).getType();
+            }
+            return t;
+        });
+
+        allTypes.forEach(type -> type.accept(resolveDelayed));
+
+        allTypes = new ArrayList<>(TypesUtil.collectAllTypes(typesToFix, info));
 
         for (Type type : allTypes) {
             if (type instanceof InterfaceType) {

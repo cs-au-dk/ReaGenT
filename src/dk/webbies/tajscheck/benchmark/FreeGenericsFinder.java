@@ -90,6 +90,9 @@ public class FreeGenericsFinder {
     private final Set<Type> calculatedTypes = new HashSet<>();
 
     public Collection<TypeParameterType> findFreeGenerics(Type type) {
+        if (type instanceof DelayedType) {
+            type = ((DelayedType) type).getType();
+        }
         if (calculatedTypes.contains(type)) {
             return freeGenerics.get(type);
         } else {
@@ -350,6 +353,9 @@ public class FreeGenericsFinder {
     }
 
     private boolean isThisTypeVisible(Type baseType, boolean deep, Type thisType, Set<Type> orgSeen) {
+        if (baseType instanceof DelayedType) {
+            return isThisTypeVisible(((DelayedType) baseType).getType(), deep, thisType, orgSeen);
+        }
         if (baseType == null) {
             throw new NullPointerException();
         }

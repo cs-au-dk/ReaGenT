@@ -30,13 +30,13 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
 
         t.getSignatures().forEach(this::acceptSignature);
 
-        info.typesUtil.createClassInstanceType(t).accept(this);
+        accept(info.typesUtil.createClassInstanceType(t));
 
         t.getBaseTypes().forEach(this::accept);
 
         t.getStaticProperties().values().forEach(this::accept);
 
-        t.getTarget().accept(this);
+        accept(t.getTarget());
 
         t.getTypeArguments().forEach(this::accept);
 
@@ -55,18 +55,21 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
         t.getDeclaredProperties().values().forEach(this::accept);
         Util.concat(t.getDeclaredCallSignatures(), t.getDeclaredConstructSignatures()).forEach(this::acceptSignature);
         if (t.getDeclaredStringIndexType() != null) {
-            t.getDeclaredStringIndexType().accept(this);
+            accept(t.getDeclaredStringIndexType());
         }
         if (t.getDeclaredNumberIndexType() != null) {
-            t.getDeclaredNumberIndexType().accept(this);
+            accept(t.getDeclaredNumberIndexType());
         }
-        t.getTarget().accept(this);
+        accept(t.getTarget());
         t.getTypeArguments().forEach(this::accept);
-        t.toInterface().accept(this);
+        accept(t.toInterface());
         return null;
     }
 
     protected void accept(Type type) {
+        if (type instanceof DelayedType) {
+            type = ((DelayedType) type).getType();
+        }
         type.accept(this);
     }
 
@@ -82,17 +85,17 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
         t.getDeclaredProperties().values().forEach(this::accept);
         Util.concat(t.getDeclaredCallSignatures(), t.getDeclaredConstructSignatures()).forEach(this::acceptSignature);
         if (t.getDeclaredStringIndexType() != null) {
-            t.getDeclaredStringIndexType().accept(this);
+            accept(t.getDeclaredStringIndexType());
         }
         if (t.getDeclaredNumberIndexType() != null) {
-            t.getDeclaredNumberIndexType().accept(this);
+            accept(t.getDeclaredNumberIndexType());
         }
         return null;
     }
 
     private void acceptSignature(Signature sig) {
         if (sig.getResolvedReturnType() != null) {
-            sig.getResolvedReturnType().accept(this);
+            accept(sig.getResolvedReturnType());
         }
         sig.getParameters().stream().map(Signature.Parameter::getType).forEach(this::accept);
         if (sig.getTarget() != null) {
@@ -100,7 +103,7 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
         }
         sig.getUnionSignatures().forEach(this::acceptSignature);
         if (sig.getIsolatedSignatureType() != null) {
-            sig.getIsolatedSignatureType().accept(this);
+            accept(sig.getIsolatedSignatureType());
         }
         sig.getTypeParameters().forEach(this::accept);
     }
@@ -112,7 +115,7 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
         }
         seen.add(t);
 
-        t.getTarget().accept(this);
+        accept(t.getTarget());
         t.getTypeArguments().forEach(this::accept);
         return null;
     }
@@ -166,7 +169,7 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
         }
         seen.add(t);
 
-        t.getClassType().accept(this);
+        accept(t.getClassType());
 
         return null;
     }
@@ -178,7 +181,7 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
         }
         seen.add(t);
 
-        t.getConstraint().accept(this);
+        accept(t.getConstraint());
 
         return null;
     }
@@ -190,7 +193,7 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
         }
         seen.add(t);
 
-        t.getType().accept(this);
+        accept(t.getType());
 
         return null;
     }
@@ -202,8 +205,8 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
         }
         seen.add(t);
 
-        t.getObjectType().accept(this);
-        t.getIndexType().accept(this);
+        accept(t.getObjectType());
+        accept(t.getIndexType());
 
         return null;
     }
@@ -216,7 +219,7 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
         seen.add(t);
 
         if (t.getConstraint() != null) {
-            t.getConstraint().accept(this);
+            accept(t.getConstraint());
         }
         return null;
     }
