@@ -54,13 +54,11 @@ public class FlowTests {
     }
 
     @Test
-    @Ignore
     public void parsedomApi() {
         BenchmarkInfo.create(benchFromFolder("domapi"));
     }
 
     @Test
-    @Ignore
     public void natives() throws Exception {
         expect(run(benchFromFolder("natives")))
                 .hasNoViolations();
@@ -73,7 +71,6 @@ public class FlowTests {
     }
 
     @Test
-    @Ignore
     public void verifyXmlEscape() throws Exception {
         expect(run(benchFromFolder("xml-escape")))
                 .hasNoViolations();

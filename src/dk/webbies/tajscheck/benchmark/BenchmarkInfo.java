@@ -37,11 +37,11 @@ public class BenchmarkInfo {
 
         this.spec = bench.dTSFile.endsWith(".ts") ?
                 ParseDeclaration.getTypeSpecification(bench.environment, Collections.singletonList(bench.dTSFile)) :
-                FlowParser.parse(Collections.singletonList(bench.dTSFile));
+                FlowParser.parse(bench.environment, Collections.singletonList(bench.dTSFile));
 
         SpecReader emptySpec = bench.dTSFile.endsWith(".ts") ?
                 ParseDeclaration.getTypeSpecification(bench.environment, Collections.emptyList()):
-                FlowParser.parse(Collections.emptyList());
+                FlowParser.parse(bench.environment, Collections.emptyList());
 
         this.nativeTypes = TypesUtil.collectNativeTypes(spec, emptySpec);
 
