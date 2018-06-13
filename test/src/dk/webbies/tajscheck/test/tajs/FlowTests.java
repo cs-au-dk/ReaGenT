@@ -29,7 +29,6 @@ public class FlowTests {
     }
 
     @Test
-    @Ignore
     public void parseClass() {
         BenchmarkInfo.create(benchFromFolder("class"));
     }

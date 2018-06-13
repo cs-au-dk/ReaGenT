@@ -16,14 +16,15 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("Duplicates")
 public class FlowParser {
     private final SpecReader emptySpec;
-    private final Map<String, Type> nativeNamedTypes = new HashMap<>();
+    private final Map<String, Type> namedTypes = new HashMap<>();
 
     private FlowParser(ParseDeclaration.Environment environment) {
         this.emptySpec = ParseDeclaration.getTypeSpecification(environment, Collections.emptyList());
         for (SpecReader.NamedType namedType : emptySpec.getNamedTypes()) {
-            nativeNamedTypes.put(String.join(".", namedType.qName), namedType.type);
+            namedTypes.put(String.join(".", namedType.qName), namedType.type);
         }
     }
 
@@ -33,21 +34,15 @@ public class FlowParser {
         if (declarationFiles.isEmpty()) {
             return new SpecReader(SpecReader.makeEmptySyntheticInterfaceType(), flowParser.emptySpec.getNamedTypes(), new ArrayList<>(), new HashMap<>());
         }
-        final String astJSON;
-        try {
-            astJSON = Util.runNodeScript("resources/parse-flow.js " + String.join(" ", declarationFiles));
-        } catch (IOException e) {
-            throw new RuntimeException();
-        }
+        final String astJSON = parseDeclaration(declarationFiles);
 
         List<SpecReader.NamedType> namedTypes = new ArrayList<>(flowParser.emptySpec.getNamedTypes());
         List<SpecReader.NamedType> ambientTypes = new ArrayList<>();
         Map<String, Type> globalProperties = new HashMap<>();
 
-
         JsonArray body = new JsonParser().parse(astJSON).getAsJsonObject().get("body").getAsJsonArray();
 
-
+        flowParser.namedTypes.putAll(new TypeNameCreator(flowParser::parseType).createTypeNames(body));
 
         for (JsonElement rawStatement : body) {
             JsonObject statement = rawStatement.getAsJsonObject();
@@ -64,6 +59,14 @@ public class FlowParser {
         globalProperties.forEach((name, type) -> global.getDeclaredProperties().put(name, type instanceof DelayedType ? ((DelayedType) type).getType() : type));
         return new SpecReader(global, expandDelayed(namedTypes), expandDelayed(ambientTypes), new HashMap<>());
 
+    }
+
+    private static String parseDeclaration(List<String> declarationFiles) {
+        try {
+            return Util.runNodeScript("resources/parse-flow.js " + String.join(" ", declarationFiles));
+        } catch (IOException e) {
+            throw new RuntimeException();
+        }
     }
 
     private static List<SpecReader.NamedType> expandDelayed(List<SpecReader.NamedType> namedTypes) {
@@ -90,7 +93,7 @@ public class FlowParser {
         if (moduleStatements.stream().anyMatch(stmt -> stmt.get("type").getAsString().equals("DeclareModuleExports"))) {
             //noinspection ConstantConditions
             JsonObject exports = moduleStatements.stream().filter(stmt -> stmt.get("type").getAsString().equals("DeclareModuleExports")).findFirst().get();
-            type = this.parseType(exports.get("typeAnnotation").getAsJsonObject());
+            type = this.parseType(exports.get("typeAnnotation").getAsJsonObject(), name);
         } else {
             Map<String, Type> declaredTypes = new HashMap<>();
             for (JsonObject moduleStatementRaw : moduleStatements) {
@@ -102,7 +105,7 @@ public class FlowParser {
                             case "DeclareClass":
                                 declaredTypes.put(
                                         declaration.get("id").getAsJsonObject().get("name").getAsString(),
-                                        this.parseType(declaration)
+                                        this.parseType(declaration, name)
                                 );
                                 break;
                             default:
@@ -129,33 +132,53 @@ public class FlowParser {
     }
 
     private final Map<JsonObject, DelayedType> parseTypeCache = new HashMap<>();
-    private DelayedType parseType(JsonObject typeJSON) {
+    private DelayedType parseType(JsonObject typeJSON, String nameContext) {
         if (parseTypeCache.containsKey(typeJSON)) {
             return parseTypeCache.get(typeJSON);
         }
         DelayedType result = new DelayedType(() -> {
             switch (typeJSON.get("type").getAsString()) {
                 case "TypeAnnotation":
-                    return parseType(typeJSON.get("typeAnnotation").getAsJsonObject());
+                    return parseType(typeJSON.get("typeAnnotation").getAsJsonObject(), nameContext);
                 case "FunctionTypeAnnotation":
-                    return parseFunctionType(typeJSON);
+                    return parseFunctionType(typeJSON, nameContext);
                 case "StringTypeAnnotation":
                     return new SimpleType(SimpleTypeKind.String);
                 case "NumberTypeAnnotation":
                     return new SimpleType(SimpleTypeKind.Number);
+                case "VoidTypeAnnotation":
+                    return new SimpleType(SimpleTypeKind.Void);
                 case "UnionTypeAnnotation":
-                    return new UnionType(Lists.newArrayList(typeJSON.get("types").getAsJsonArray()).stream().map(JsonObject.class::cast).map(this::parseType).collect(Collectors.toList()));
+                    return new UnionType(Lists.newArrayList(typeJSON.get("types").getAsJsonArray()).stream().map(JsonObject.class::cast).map(obj -> parseType(obj, nameContext)).collect(Collectors.toList()));
                 case "DeclareClass":
-                    return parseClass(typeJSON);
-                case "GenericTypeAnnotation":
+                    return parseClass(typeJSON, nameContext);
+                case "GenericTypeAnnotation":{
                     assert typeJSON.get("typeParameters").isJsonNull();
                     String name = typeJSON.get("id").getAsJsonObject().get("name").getAsString();
-                    assert nativeNamedTypes.containsKey(name);
-                    return nativeNamedTypes.get(name);
+                    Type type = TypeNameCreator.lookUp(namedTypes, nameContext, name);
+                    assert type != null;
+                    return type;
+                }
                 case "BooleanLiteralTypeAnnotation":
                     return new BooleanLiteral(typeJSON.get("value").getAsBoolean());
                 case "NullableTypeAnnotation":
-                    return new UnionType(Arrays.asList(new SimpleType(SimpleTypeKind.Null), new SimpleType(SimpleTypeKind.Undefined), parseType(typeJSON.get("typeAnnotation").getAsJsonObject())));
+                    return new UnionType(Arrays.asList(new SimpleType(SimpleTypeKind.Null), new SimpleType(SimpleTypeKind.Undefined), parseType(typeJSON.get("typeAnnotation").getAsJsonObject(), nameContext)));
+                case "ObjectTypeAnnotation":
+                    assert !typeJSON.get("exact").getAsBoolean();
+                    assert typeJSON.get("indexers").getAsJsonArray().size() == 0;
+                    assert typeJSON.get("callProperties").getAsJsonArray().size() == 0;
+                    assert typeJSON.get("internalSlots").getAsJsonArray().size() == 0;
+                    Map<String, Type> properties = new HashMap<>();
+                    for (JsonElement propertyRaw : typeJSON.get("properties").getAsJsonArray()) {
+                        JsonObject propertyJSON = propertyRaw.getAsJsonObject();
+                        assert propertyJSON.get("type").getAsString().equals("ObjectTypeProperty");
+                        String name = propertyJSON.get("key").getAsJsonObject().get("name").getAsString();
+                        DelayedType type = parseType(propertyJSON.get("value").getAsJsonObject(), nameContext);
+                        properties.put(name, type);
+                    }
+                    InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
+                    interfaceType.getDeclaredProperties().putAll(properties);
+                    return interfaceType;
                 default:
                     throw new RuntimeException("Unknown type: " + typeJSON.get("type").getAsString());
             }
@@ -164,7 +187,7 @@ public class FlowParser {
         return result;
     }
 
-    private Type parseClass(JsonObject classJSON) {
+    private Type parseClass(JsonObject classJSON, String nameContext) {
         ClassType classType = TypesUtil.emptyClassType();
         assert classJSON.get("extends").getAsJsonArray().size() == 0;
         assert classJSON.get("implements").getAsJsonArray().size() == 0;
@@ -182,7 +205,7 @@ public class FlowParser {
             JsonObject property = rawProperty.getAsJsonObject();
             switch (property.get("type").getAsString()) {
                 case "ObjectTypeProperty":
-                    Type propertyType = parseType(property.get("value").getAsJsonObject());
+                    Type propertyType = parseType(property.get("value").getAsJsonObject(), nameContext);
                     assert !property.get("optional").getAsBoolean();
                     assert !property.get("static").getAsBoolean();
                     assert !property.get("proto").getAsBoolean();
@@ -202,10 +225,10 @@ public class FlowParser {
         return classType;
     }
 
-    private Type parseFunctionType(JsonObject typeJSON) {
+    private Type parseFunctionType(JsonObject typeJSON, String nameContext) {
         Signature signature = TypesUtil.emptySignature();
 
-        signature.setResolvedReturnType(parseType(typeJSON.get("returnType").getAsJsonObject()));
+        signature.setResolvedReturnType(parseType(typeJSON.get("returnType").getAsJsonObject(), nameContext));
 
         ArrayList<JsonElement> rawParams = Lists.newArrayList(typeJSON.get("params").getAsJsonArray());
 
@@ -217,7 +240,7 @@ public class FlowParser {
             if (!param.get("optional").getAsBoolean()) {
                 minArgs.getAndIncrement();
             }
-            Type type = parseType(param.get("typeAnnotation").getAsJsonObject());
+            Type type = parseType(param.get("typeAnnotation").getAsJsonObject(), nameContext);
             String name = param.get("name").getAsJsonObject().get("name").getAsString();
             return new Signature.Parameter(name, type);
         }).forEach(signature.getParameters()::add);
