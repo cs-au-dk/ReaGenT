@@ -79,4 +79,12 @@ public class FlowTests {
         expect(run(benchFromFolder("xml-escape")))
                 .hasNoViolations();
     }
+
+    @Test
+    public void classInstance() throws Exception {
+        expect(run(benchFromFolder("classInstance")))
+                .hasNoViolations();
+    }
+
+
 }

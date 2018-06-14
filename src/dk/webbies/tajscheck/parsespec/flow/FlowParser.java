@@ -9,6 +9,7 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
+import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
 import java.io.IOException;
@@ -98,33 +99,7 @@ public class FlowParser {
         } else {
             Map<String, Type> declaredTypes = new HashMap<>();
             for (JsonObject moduleStatementRaw : moduleStatements) {
-                JsonObject moduleStatement = moduleStatementRaw.getAsJsonObject();
-                switch (moduleStatement.get("type").getAsString()) {
-                    case "DeclareExportDeclaration":
-                        JsonObject declaration = moduleStatement.get("declaration").getAsJsonObject();
-                        switch (declaration.get("type").getAsString()) {
-                            case "DeclareClass":
-                                declaredTypes.put(
-                                        declaration.get("id").getAsJsonObject().get("name").getAsString(),
-                                        this.parseType(declaration, name)
-                                );
-                                break;
-                            case "DeclareVariable": {
-                                JsonObject varId = declaration.get("id").getAsJsonObject();
-                                String varName = varId.get("name").getAsString();
-                                Type varType = parseType(varId.get("typeAnnotation").getAsJsonObject(), name);
-                                declaredTypes.put(varName, varType);
-                                break;
-                            }
-                            case "InterfaceDeclaration":
-                                break; // Doesn't declare any actual value, just a named-type, which has already been handled.
-                            default:
-                                throw new RuntimeException(declaration.get("type").getAsString());
-                        }
-                        break;
-                    default:
-                        throw new RuntimeException(moduleStatement.get("type").getAsString());
-                }
+                parseModuleStatement(name, declaredTypes, moduleStatementRaw.getAsJsonObject());
             }
 
             InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
@@ -141,10 +116,40 @@ public class FlowParser {
         }
     }
 
-    private final Map<JsonObject, DelayedType> parseTypeCache = new HashMap<>();
+    private void parseModuleStatement(String name, Map<String, Type> declaredTypes, JsonObject moduleStatement) {
+        switch (moduleStatement.get("type").getAsString()) {
+            case "DeclareClass":
+                declaredTypes.put(
+                        moduleStatement.get("id").getAsJsonObject().get("name").getAsString(),
+                        this.parseType(moduleStatement, name, true)
+                );
+                break;
+            case "DeclareExportDeclaration":  // For now, everything is exported.
+                parseModuleStatement(name, declaredTypes, moduleStatement.get("declaration").getAsJsonObject());
+                break;
+            case "DeclareVariable": {
+                JsonObject varId = moduleStatement.get("id").getAsJsonObject();
+                String varName = varId.get("name").getAsString();
+                Type varType = parseType(varId.get("typeAnnotation").getAsJsonObject(), name);
+                declaredTypes.put(varName, varType);
+                break;
+            }
+            case "InterfaceDeclaration":
+                break; // Doesn't declare any actual value, just a named-type, which has already been handled.
+            default:
+                throw new RuntimeException(moduleStatement.get("type").getAsString());
+        }
+    }
+
+    private final Map<Pair<JsonObject, Boolean>, DelayedType> parseTypeCache = new HashMap<>();
     private DelayedType parseType(JsonObject typeJSON, String nameContext) {
-        if (parseTypeCache.containsKey(typeJSON)) {
-            return parseTypeCache.get(typeJSON);
+        return parseType(typeJSON, nameContext, false);
+    }
+
+    private DelayedType parseType(JsonObject typeJSON, String nameContext, boolean typeof) {
+        Pair<JsonObject, Boolean> key = new Pair<>(typeJSON, typeof);
+        if (parseTypeCache.containsKey(key)) {
+            return parseTypeCache.get(key);
         }
         DelayedType result = new DelayedType(() -> {
             switch (typeJSON.get("type").getAsString()) {
@@ -160,8 +165,14 @@ public class FlowParser {
                     return new SimpleType(SimpleTypeKind.Void);
                 case "UnionTypeAnnotation":
                     return new UnionType(Lists.newArrayList(typeJSON.get("types").getAsJsonArray()).stream().map(JsonObject.class::cast).map(obj -> parseType(obj, nameContext)).collect(Collectors.toList()));
-                case "DeclareClass":
-                    return parseClass(typeJSON, nameContext);
+                case "DeclareClass": {
+                    Type classType = parseClass(typeJSON, nameContext);
+                    if (typeof) {
+                        return classType;
+                    } else {
+                        return new ClassInstanceType(classType);
+                    }
+                }
                 case "GenericTypeAnnotation":{
                     assert typeJSON.get("typeParameters").isJsonNull();
                     String name = typeJSON.get("id").getAsJsonObject().get("name").getAsString();
@@ -195,7 +206,7 @@ public class FlowParser {
                     throw new RuntimeException("Unknown type: " + typeJSON.get("type").getAsString());
             }
         });
-        parseTypeCache.put(typeJSON, result);
+        parseTypeCache.put(key, result);
         return result;
     }
 
@@ -219,14 +230,18 @@ public class FlowParser {
                 case "ObjectTypeProperty":
                     Type propertyType = parseType(property.get("value").getAsJsonObject(), nameContext);
                     assert !property.get("optional").getAsBoolean();
-                    assert !property.get("static").getAsBoolean();
                     assert !property.get("proto").getAsBoolean();
                     assert property.get("variance").isJsonNull() || !property.get("variance").getAsBoolean();
                     assert property.get("kind").getAsString().equals("init");
                     assert property.get("key").getAsJsonObject().get("type").getAsString().equals("Identifier");
 
+                    boolean isStatic = property.get("static").getAsBoolean();
                     String name = property.get("key").getAsJsonObject().get("name").getAsString();
-                    classType.getInstanceProperties().put(name, propertyType);
+                    if (isStatic) {
+                        classType.getStaticProperties().put(name, propertyType);
+                    } else {
+                        classType.getInstanceProperties().put(name, propertyType);
+                    }
                     break;
                 default:
                     throw new RuntimeException(property.get("type").getAsString());
