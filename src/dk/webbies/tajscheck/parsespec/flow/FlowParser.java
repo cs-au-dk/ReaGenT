@@ -154,6 +154,7 @@ public class FlowParser {
         DelayedType result = new DelayedType(() -> {
             switch (typeJSON.get("type").getAsString()) {
                 case "TypeAnnotation":
+                    assert !typeof;
                     return parseType(typeJSON.get("typeAnnotation").getAsJsonObject(), nameContext);
                 case "FunctionTypeAnnotation":
                     return parseFunctionType(typeJSON, nameContext);
@@ -178,7 +179,15 @@ public class FlowParser {
                     String name = typeJSON.get("id").getAsJsonObject().get("name").getAsString();
                     Type type = TypeNameCreator.lookUp(namedTypes, nameContext, name);
                     assert type != null;
+                    if (typeof) {
+                        Type instanceType = ((DelayedType) type).getType();
+                        assert instanceType instanceof ClassInstanceType;
+                        return ((ClassInstanceType) instanceType).getClassType();
+                    }
                     return type;
+                }
+                case "TypeofTypeAnnotation": {
+                    return parseType(typeJSON.get("argument").getAsJsonObject(), nameContext, true);
                 }
                 case "BooleanTypeAnnotation":
                     return new SimpleType(SimpleTypeKind.Boolean);

@@ -86,5 +86,11 @@ public class FlowTests {
                 .hasNoViolations();
     }
 
+    @Test
+    public void typoeofClassInstance() throws Exception {
+        expect(run(benchFromFolder("typeofclassInstance")))
+                .hasNoViolations();
+    }
+
 
 }
