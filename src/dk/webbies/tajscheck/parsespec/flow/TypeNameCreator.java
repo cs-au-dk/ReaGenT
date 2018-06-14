@@ -121,6 +121,7 @@ public class TypeNameCreator {
                 break;
             }
             case "DeclareTypeAlias":
+            case "TypeAlias":
                 String name = moduleStatement.get("id").getAsJsonObject().get("name").getAsString();
                 assert moduleStatement.get("typeParameters").isJsonNull();
                 result.put(newNameContext(nameContext, name), parseType(moduleStatement.get("right").getAsJsonObject(), nameContext));

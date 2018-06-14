@@ -135,6 +135,7 @@ public class FlowParser {
                 break;
             }
             case "InterfaceDeclaration":
+            case "TypeAlias":
                 break; // Doesn't declare any actual value, just a named-type, which has already been handled.
             default:
                 throw new RuntimeException(moduleStatement.get("type").getAsString());
@@ -164,6 +165,8 @@ public class FlowParser {
                     return new SimpleType(SimpleTypeKind.Number);
                 case "VoidTypeAnnotation":
                     return new SimpleType(SimpleTypeKind.Void);
+                case "MixedTypeAnnotation":
+                    return new SimpleType(SimpleTypeKind.Any);
                 case "UnionTypeAnnotation":
                     return new UnionType(Lists.newArrayList(typeJSON.get("types").getAsJsonArray()).stream().map(JsonObject.class::cast).map(obj -> parseType(obj, nameContext)).collect(Collectors.toList()));
                 case "DeclareClass": {

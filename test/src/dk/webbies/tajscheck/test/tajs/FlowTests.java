@@ -39,20 +39,17 @@ public class FlowTests {
     }
 
     @Test
-    @Ignore
     public void parseYargs() {
         BenchmarkInfo.create(benchFromFolder("yargs"));
     }
 
 
     @Test
-    @Ignore
     public void parseYamljs() {
         BenchmarkInfo.create(benchFromFolder("yamljs"));
     }
 
     @Test
-    @Ignore
     public void parseXterm() {
         BenchmarkInfo.create(benchFromFolder("xterm"));
     }
