@@ -34,6 +34,7 @@ public class FlowTests {
     }
 
     @Test
+    @Ignore
     public void parseVscode() {
         BenchmarkInfo.create(benchFromFolder("vscode"));
     }
@@ -86,6 +87,12 @@ public class FlowTests {
     @Test
     public void typoeofClassInstance() throws Exception {
         expect(run(benchFromFolder("typeofclassInstance")))
+                .hasNoViolations();
+    }
+
+    @Test
+    public void extendsInterface() throws Exception {
+        expect(run(benchFromFolder("extendsInterface")))
                 .hasNoViolations();
     }
 

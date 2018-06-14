@@ -214,6 +214,35 @@ public class FlowParser {
                     InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
                     interfaceType.getDeclaredProperties().putAll(properties);
                     return interfaceType;
+                case "InterfaceDeclaration": {
+                    String interfaceName = typeJSON.get("id").getAsJsonObject().get("name").getAsString(); // Good for debug.
+                    assert typeJSON.get("typeParameters").isJsonNull();
+
+                    List<Type> baseTypes = Lists.newArrayList(typeJSON.get("extends").getAsJsonArray()).stream().map(extend -> {
+                        assert extend.getAsJsonObject().get("type").getAsString().equals("InterfaceExtends");
+                        JsonObject id = extend.getAsJsonObject().get("id").getAsJsonObject();
+                        assert id.get("typeAnnotation").isJsonNull();
+                        assert !id.get("optional").getAsBoolean();
+                        assert id.get("type").getAsString().equals("Identifier");
+                        String name = id.get("name").getAsString();
+                        Type baseType = TypeNameCreator.lookUp(namedTypes, nameContext, name);
+                        assert baseType != null;
+                        return baseType;
+                    }).collect(Collectors.toList());
+
+                    InterfaceType resultType = SpecReader.makeEmptySyntheticInterfaceType();
+                    resultType.getBaseTypes().addAll(baseTypes);
+
+                    InterfaceType object = (InterfaceType) parseType(typeJSON.get("body").getAsJsonObject(), nameContext).getType();
+                    resultType.getDeclaredProperties().putAll(object.getDeclaredProperties());
+                    resultType.getDeclaredCallSignatures().addAll(object.getDeclaredCallSignatures());
+                    resultType.getDeclaredConstructSignatures().addAll(object.getDeclaredConstructSignatures());
+                    resultType.getReadonlyDeclarations().addAll(object.getReadonlyDeclarations());
+                    resultType.getTypeParameters().addAll(object.getTypeParameters());
+                    resultType.setDeclaredStringIndexType(object.getDeclaredStringIndexType());
+                    resultType.setDeclaredNumberIndexType(object.getDeclaredNumberIndexType());
+                    return resultType;
+                }
                 default:
                     throw new RuntimeException("Unknown type: " + typeJSON.get("type").getAsString());
             }

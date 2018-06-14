@@ -112,11 +112,9 @@ public class TypeNameCreator {
                 break;
             }
             case "InterfaceDeclaration": {
-                assert moduleStatement.get("extends").getAsJsonArray().size() == 0;
-                assert moduleStatement.get("typeParameters").isJsonNull();
                 JsonObject id = moduleStatement.get("id").getAsJsonObject();
                 String name = id.get("name").getAsString();
-                DelayedType type = parseType(moduleStatement.get("body").getAsJsonObject(), nameContext);
+                DelayedType type = parseType(moduleStatement, nameContext);
                 result.put(newNameContext(nameContext, name), type);
                 break;
             }
