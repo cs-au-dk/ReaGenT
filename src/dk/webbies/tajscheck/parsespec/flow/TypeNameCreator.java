@@ -53,25 +53,18 @@ public class TypeNameCreator {
     Map<String, DelayedType> createTypeNames(JsonArray body) {
         Map<String, DelayedType> result = new HashMap<>();
         for (JsonElement rawStatement : body) {
-            JsonObject statement = rawStatement.getAsJsonObject();
-            switch (statement.get("type").getAsString()) {
-                case "DeclareModule":
-                    result.putAll(parseModule(statement));
-                    break;
-                default:
-                    throw new RuntimeException("Unknown type of statement: " + statement.get("type").getAsString());
-            }
+            parseModuleStatement("", result, rawStatement.getAsJsonObject());
         }
 
 
         return result;
     }
 
-    private Map<String, DelayedType> parseModule(JsonObject statement) {
+    private Map<String, DelayedType> parseModule(JsonObject statement, String nameContext) {
         JsonObject id = statement.get("id").getAsJsonObject();
         assert id.get("type").getAsString().equals("Literal");
 
-        String moduleName = statement.get("id").getAsJsonObject().get("raw").getAsString();
+        nameContext = newNameContext(nameContext, statement.get("id").getAsJsonObject().get("raw").getAsString());
 
         assert statement.get("body").getAsJsonObject().get("type").getAsString().equals("BlockStatement");
 
@@ -81,35 +74,65 @@ public class TypeNameCreator {
 
         for (JsonObject moduleStatementRaw : moduleStatements) {
             JsonObject moduleStatement = moduleStatementRaw.getAsJsonObject();
-            parseModuleStatement(moduleName, result, moduleStatement);
+            parseModuleStatement(nameContext, result, moduleStatement);
         }
 
         if (moduleStatements.stream().anyMatch(stmt -> stmt.get("type").getAsString().equals("DeclareModuleExports"))) {
             //noinspection ConstantConditions
             JsonObject exports = moduleStatements.stream().filter(stmt -> stmt.get("type").getAsString().equals("DeclareModuleExports")).findFirst().get();
-            DelayedType type = this.parseType(exports.get("typeAnnotation").getAsJsonObject(), moduleName);
-            result.put(moduleName, type);
+            DelayedType type = this.parseType(exports.get("typeAnnotation").getAsJsonObject(), nameContext);
+            result.put(nameContext, type);
         }
 
         return result;
     }
 
-    private void parseModuleStatement(String prefix, Map<String, DelayedType> result, JsonObject moduleStatement) {
+    private String newNameContext(String previous, String name) {
+        if (previous.isEmpty()) {
+            return name;
+        }
+        return previous + "." + name;
+    }
+
+    private void parseModuleStatement(String nameContext, Map<String, DelayedType> result, JsonObject moduleStatement) {
         switch (moduleStatement.get("type").getAsString()) {
-            case "DeclareExportDeclaration":
             case "DeclareModuleExports":
                 // Does not produce a named type, and it has already been registered as the type for the module.
                 break;
+            case "DeclareExportDeclaration":{ // For now, everthing is assumed to be exported. Which is not an issue for my purpose.
+                JsonObject declaration = moduleStatement.get("declaration").getAsJsonObject();
+                parseModuleStatement(nameContext, result, declaration);
+                break;
+            }
+            case "DeclareVariable": {
+                JsonObject id = moduleStatement.get("id").getAsJsonObject();
+                String name = id.get("name").getAsString();
+                DelayedType type = parseType(id.get("typeAnnotation").getAsJsonObject(), nameContext);
+                result.put(newNameContext(nameContext, name), type);
+                break;
+            }
+            case "InterfaceDeclaration": {
+                assert moduleStatement.get("extends").getAsJsonArray().size() == 0;
+                assert moduleStatement.get("typeParameters").isJsonNull();
+                JsonObject id = moduleStatement.get("id").getAsJsonObject();
+                String name = id.get("name").getAsString();
+                DelayedType type = parseType(moduleStatement.get("body").getAsJsonObject(), nameContext);
+                result.put(newNameContext(nameContext, name), type);
+                break;
+            }
             case "DeclareTypeAlias":
                 String name = moduleStatement.get("id").getAsJsonObject().get("name").getAsString();
                 assert moduleStatement.get("typeParameters").isJsonNull();
-                result.put(prefix + "." + name, parseType(moduleStatement.get("right").getAsJsonObject(), prefix));
+                result.put(newNameContext(nameContext, name), parseType(moduleStatement.get("right").getAsJsonObject(), nameContext));
                 break;
             case "DeclareClass":
                 result.put(
-                        prefix + "." + moduleStatement.get("id").getAsJsonObject().get("name").getAsString(),
-                        parseType(moduleStatement, prefix)
+                        newNameContext(nameContext, moduleStatement.get("id").getAsJsonObject().get("name").getAsString()),
+                        parseType(moduleStatement, nameContext)
                 );
+                break;
+            case "DeclareModule":
+                result.putAll(parseModule(moduleStatement, nameContext));
                 break;
             default:
                 throw new RuntimeException(moduleStatement.get("type").getAsString());

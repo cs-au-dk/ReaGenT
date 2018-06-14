@@ -34,6 +34,11 @@ public class FlowTests {
     }
 
     @Test
+    public void parseVscode() {
+        BenchmarkInfo.create(benchFromFolder("vscode"));
+    }
+
+    @Test
     @Ignore
     public void parseYargs() {
         BenchmarkInfo.create(benchFromFolder("yargs"));

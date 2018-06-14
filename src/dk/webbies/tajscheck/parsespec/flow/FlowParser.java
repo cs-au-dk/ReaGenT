@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("Duplicates")
 public class FlowParser {
+    // TODO: See if declaring a variable to be instanceof a class works like it should.
     private final SpecReader emptySpec;
     private final Map<String, Type> namedTypes = new HashMap<>();
 
@@ -108,6 +109,15 @@ public class FlowParser {
                                         this.parseType(declaration, name)
                                 );
                                 break;
+                            case "DeclareVariable": {
+                                JsonObject varId = declaration.get("id").getAsJsonObject();
+                                String varName = varId.get("name").getAsString();
+                                Type varType = parseType(varId.get("typeAnnotation").getAsJsonObject(), name);
+                                declaredTypes.put(varName, varType);
+                                break;
+                            }
+                            case "InterfaceDeclaration":
+                                break; // Doesn't declare any actual value, just a named-type, which has already been handled.
                             default:
                                 throw new RuntimeException(declaration.get("type").getAsString());
                         }
@@ -159,6 +169,8 @@ public class FlowParser {
                     assert type != null;
                     return type;
                 }
+                case "BooleanTypeAnnotation":
+                    return new SimpleType(SimpleTypeKind.Boolean);
                 case "BooleanLiteralTypeAnnotation":
                     return new BooleanLiteral(typeJSON.get("value").getAsBoolean());
                 case "NullableTypeAnnotation":
