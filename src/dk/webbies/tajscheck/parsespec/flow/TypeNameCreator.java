@@ -4,24 +4,33 @@ import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.DelayedType;
-import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
+import dk.au.cs.casa.typescript.types.TypeParameterType;
+import dk.webbies.tajscheck.util.Pair;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("Duplicates")
 public class TypeNameCreator {
     private final BiFunction<JsonObject, String, DelayedType> parseType;
 
-    static Type lookUp(Map<String, Type> namedTypes, String nameContext, String name) {
+    static Type lookUp(Map<String, Type> namedTypes, String nameContext, String name, Map<String, List<Pair<Pair<Integer, Integer>, TypeParameterType>>> typeParameters, JsonArray rawRange) {
+        if (typeParameters.containsKey(name)) {
+            Pair<Integer, Integer> range = Lists.newArrayList(rawRange).stream().map(JsonElement::getAsNumber).map(Number::intValue).collect(Pair.collector());
+            for (Pair<Pair<Integer, Integer>, TypeParameterType> candidateParameter : typeParameters.get(name)) {
+                Pair<Integer, Integer> validRange = candidateParameter.getLeft();
+                if (validRange.getLeft() <= range.getLeft() && validRange.getRight() >= range.getRight()) {
+                    return candidateParameter.getRight();
+                }
+            }
+        }
+
+
         if (namedTypes.containsKey(name)) {
             return namedTypes.get(name);
         }

@@ -180,7 +180,8 @@ public class ParseDeclaration {
             seen.add(t);
             addName(t, arg.path);
 
-            return t.toInterface().accept(this, arg);
+            queue.add(new Arg(arg.path, arg.depth, t.toInterface()));
+            return null;
         }
 
         @Override
@@ -242,7 +243,8 @@ public class ParseDeclaration {
                 queue.add(arg.append("[typeArg" + i + "]", t.getTypeArguments().get(i)));
             }
 
-            return t.getTarget().accept(this, arg);
+            queue.add(new Arg(arg.path, arg.depth, t.getTarget()));
+            return null;
         }
 
         @Override

@@ -96,5 +96,11 @@ public class FlowTests {
                 .hasNoViolations();
     }
 
+    @Test
+    public void genericInterface() throws Exception {
+        expect(run(benchFromFolder("genericInterface")))
+                .hasNoViolations();
+    }
+
 
 }

@@ -36,8 +36,8 @@ public class Experiment {
     public Experiment(Collection<String> names) {
         this(
                 names.stream()
-                        .peek(name -> {assert RunBenchmarks.benchmarks.containsKey(name);})
                         .map(RunBenchmarks.benchmarks::get)
+                        .map(Objects::requireNonNull)
                         .collect(Collectors.toList())
         );
     }
