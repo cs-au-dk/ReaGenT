@@ -336,7 +336,7 @@ public class FlowParser {
     List<Type> createTypeParameters(JsonObject typeJSON, String nameContext) {
         List<Type> typeParameters = new ArrayList<>();
         if (!typeJSON.get("typeParameters").isJsonNull()) {
-            Pair<Integer, Integer> range = Lists.newArrayList(typeJSON.get("range").getAsJsonArray()).stream().map(JsonElement::getAsNumber).map(Number::intValue).collect(Pair.collector());
+            Pair<Integer, Integer> range = parseRange(typeJSON);
 
             JsonObject parametersJSON = typeJSON.get("typeParameters").getAsJsonObject();
             assert parametersJSON.get("type").getAsString().equals("TypeParameterDeclaration");
@@ -397,6 +397,17 @@ public class FlowParser {
     private Type parseFunctionType(JsonObject typeJSON, String nameContext) {
         Signature signature = TypesUtil.emptySignature();
 
+        if (!typeJSON.get("typeParameters").isJsonNull()) {
+            for (JsonElement typeParameterRaw : typeJSON.get("typeParameters").getAsJsonObject().get("params").getAsJsonArray()) {
+                JsonObject typeParameter = typeParameterRaw.getAsJsonObject();
+                Type typeParameterType = parseType(typeParameter, nameContext).getType();
+                String name = typeParameter.get("name").getAsString();
+                Pair<Integer, Integer> range = parseRange(typeJSON);
+                registerTypeParameter(name, range, typeParameterType);
+            }
+        }
+
+
         signature.setResolvedReturnType(parseType(typeJSON.get("returnType").getAsJsonObject(), nameContext));
 
         ArrayList<JsonElement> rawParams = Lists.newArrayList(typeJSON.get("params").getAsJsonArray());
@@ -419,5 +430,9 @@ public class FlowParser {
         InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
         interfaceType.getDeclaredCallSignatures().add(signature);
         return interfaceType;
+    }
+
+    private Pair<Integer, Integer> parseRange(JsonObject typeJSON) {
+        return Lists.newArrayList(typeJSON.get("range").getAsJsonArray()).stream().map(JsonElement::getAsNumber).map(Number::intValue).collect(Pair.collector());
     }
 }

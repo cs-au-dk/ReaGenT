@@ -205,4 +205,17 @@ public class FlowTests {
                 .forPath("foo.bar.[stringIndexer]")
                 .hasViolations();
     }
+
+    @Test
+    public void genericMethod() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("genericMethod"));
+
+        assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("foo.foo.gen(typeParameter).notThere")
+                .hasViolations();
+    }
+
+
 }
