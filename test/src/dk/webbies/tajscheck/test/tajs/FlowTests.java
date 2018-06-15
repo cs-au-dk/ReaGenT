@@ -228,5 +228,14 @@ public class FlowTests {
                 .hasViolations();
     }
 
+    @Test
+    public void tuple() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("tuple"));
 
+        assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("foo.foo.2")
+                .hasViolations();
+    }
 }

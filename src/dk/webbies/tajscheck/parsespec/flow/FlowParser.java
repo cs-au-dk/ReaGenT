@@ -253,6 +253,12 @@ public class FlowParser {
 
                     return resultType;
                 }
+                case "TupleTypeAnnotation": {
+                    List<Type> types = Lists.newArrayList(typeJSON.get("types").getAsJsonArray()).stream().map(JsonElement::getAsJsonObject).map(json -> parseType(json, nameContext)).collect(Collectors.toList());
+                    TupleType tupleType = new TupleType();
+                    tupleType.setElementTypes(types);
+                    return tupleType;
+                }
                 case "ObjectTypeAnnotation":
                     InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
                     assert !typeJSON.get("exact").getAsBoolean();
