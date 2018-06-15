@@ -93,13 +93,7 @@ public class FlowParser {
     private void parseModule(List<SpecReader.NamedType> ambientTypes, Map<String, Type> globalProperties, JsonObject statement) {
         JsonObject id = statement.get("id").getAsJsonObject();
 
-        String name;
-        if (id.get("type").getAsString().equals("Literal")) {
-            name = statement.get("id").getAsJsonObject().get("raw").getAsString();
-        } else {
-            assert id.get("type").getAsString().equals("Identifier");
-            name = statement.get("id").getAsJsonObject().get("name").getAsString();
-        }
+        String name = getName(id);
 
         assert statement.get("body").getAsJsonObject().get("type").getAsString().equals("BlockStatement");
 
@@ -128,6 +122,17 @@ public class FlowParser {
         } else {
             globalProperties.put(name, type);
         }
+    }
+
+    static String getName(JsonObject id) {
+        String name;
+        if (id.get("type").getAsString().equals("Literal")) {
+            name = id.get("raw").getAsString();
+        } else {
+            assert id.get("type").getAsString().equals("Identifier");
+            name = id.get("name").getAsString();
+        }
+        return name;
     }
 
     private void parseModuleStatement(String name, Map<String, Type> declaredTypes, JsonObject moduleStatement) {
@@ -181,6 +186,7 @@ public class FlowParser {
                 case "VoidTypeAnnotation":
                     return new SimpleType(SimpleTypeKind.Void);
                 case "MixedTypeAnnotation":
+                case "AnyTypeAnnotation":
                     return new SimpleType(SimpleTypeKind.Any);
                 case "UnionTypeAnnotation":
                     return new UnionType(Lists.newArrayList(typeJSON.get("types").getAsJsonArray()).stream().map(JsonObject.class::cast).map(obj -> parseType(obj, nameContext)).collect(Collectors.toList()));
@@ -229,6 +235,8 @@ public class FlowParser {
                     return new BooleanLiteral(typeJSON.get("value").getAsBoolean());
                 case "NumberLiteralTypeAnnotation":
                     return new NumberLiteral(typeJSON.get("value").getAsNumber().doubleValue());
+                case "StringLiteralTypeAnnotation":
+                    return new StringLiteral(typeJSON.get("value").getAsString());
                 case "NullableTypeAnnotation":
                     return new UnionType(Arrays.asList(new SimpleType(SimpleTypeKind.Null), new SimpleType(SimpleTypeKind.Undefined), parseType(typeJSON.get("typeAnnotation").getAsJsonObject(), nameContext)));
                 case "ArrayTypeAnnotation": {
@@ -243,19 +251,37 @@ public class FlowParser {
                     return resultType;
                 }
                 case "ObjectTypeAnnotation":
+                    InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
                     assert !typeJSON.get("exact").getAsBoolean();
-                    assert typeJSON.get("indexers").getAsJsonArray().size() == 0;
+                    JsonArray indexers = typeJSON.get("indexers").getAsJsonArray();
+                    for (JsonElement indexerJSONRaw : indexers) {
+                        JsonObject indexerJSON = indexerJSONRaw.getAsJsonObject();
+                        String keyType = indexerJSON.get("key").getAsJsonObject().get("type").getAsString();
+                        assert keyType.equals("StringTypeAnnotation") || keyType.equals("NumberTypeAnnotation");
+
+                        DelayedType indexerType = parseType(indexerJSON.get("value").getAsJsonObject(), nameContext);
+
+                        if (keyType.equals("StringTypeAnnotation")) {
+                            assert interfaceType.getDeclaredStringIndexType() == null;
+                            interfaceType.setDeclaredStringIndexType(indexerType);
+                        } else {
+                            assert keyType.equals("NumberTypeAnnotation");
+                            assert interfaceType.getDeclaredNumberIndexType() == null;
+                            interfaceType.setDeclaredNumberIndexType(indexerType);
+                        }
+                    }
+
+
                     assert typeJSON.get("callProperties").getAsJsonArray().size() == 0;
                     assert typeJSON.get("internalSlots").getAsJsonArray().size() == 0;
                     Map<String, Type> properties = new HashMap<>();
                     for (JsonElement propertyRaw : typeJSON.get("properties").getAsJsonArray()) {
                         JsonObject propertyJSON = propertyRaw.getAsJsonObject();
                         assert propertyJSON.get("type").getAsString().equals("ObjectTypeProperty");
-                        String name = propertyJSON.get("key").getAsJsonObject().get("name").getAsString();
+                        String name = getName(propertyJSON.get("key").getAsJsonObject());
                         DelayedType type = parseType(propertyJSON.get("value").getAsJsonObject(), nameContext);
                         properties.put(name, type);
                     }
-                    InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
                     interfaceType.getDeclaredProperties().putAll(properties);
                     return interfaceType;
                 case "InterfaceDeclaration": {

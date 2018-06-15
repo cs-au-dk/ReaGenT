@@ -194,4 +194,15 @@ public class FlowTests {
                 .forPath("foo.bar.[numberIndexer]")
                 .hasViolations();
     }
+
+    @Test
+    public void indexers() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("indexers"));
+
+        assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("foo.bar.[stringIndexer]")
+                .hasViolations();
+    }
 }

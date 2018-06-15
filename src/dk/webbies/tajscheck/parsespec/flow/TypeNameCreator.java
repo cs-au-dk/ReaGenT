@@ -73,12 +73,8 @@ public class TypeNameCreator {
 
     private Map<String, Type> parseModule(JsonObject statement, String nameContext) {
         JsonObject id = statement.get("id").getAsJsonObject();
-        if (id.get("type").getAsString().equals("Literal")) {
-            nameContext = newNameContext(nameContext, statement.get("id").getAsJsonObject().get("raw").getAsString());
-        } else {
-            assert id.get("type").getAsString().equals("Identifier");
-            nameContext = newNameContext(nameContext, statement.get("id").getAsJsonObject().get("name").getAsString());
-        }
+
+        nameContext = newNameContext(nameContext, FlowParser.getName(id));
 
 
         assert statement.get("body").getAsJsonObject().get("type").getAsString().equals("BlockStatement");
