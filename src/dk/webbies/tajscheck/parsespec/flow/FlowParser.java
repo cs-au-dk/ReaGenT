@@ -167,7 +167,7 @@ public class FlowParser {
         if (parseTypeCache.containsKey(key)) {
             return parseTypeCache.get(key);
         }
-        DelayedType result = new DelayedType(() -> {
+        final DelayedType result = new DelayedType(() -> {
             switch (typeJSON.get("type").getAsString()) {
                 case "TypeAnnotation":
                     assert !typeof;
@@ -227,8 +227,21 @@ public class FlowParser {
                     return new SimpleType(SimpleTypeKind.Boolean);
                 case "BooleanLiteralTypeAnnotation":
                     return new BooleanLiteral(typeJSON.get("value").getAsBoolean());
+                case "NumberLiteralTypeAnnotation":
+                    return new NumberLiteral(typeJSON.get("value").getAsNumber().doubleValue());
                 case "NullableTypeAnnotation":
                     return new UnionType(Arrays.asList(new SimpleType(SimpleTypeKind.Null), new SimpleType(SimpleTypeKind.Undefined), parseType(typeJSON.get("typeAnnotation").getAsJsonObject(), nameContext)));
+                case "ArrayTypeAnnotation": {
+                    DelayedType indexType = parseType(typeJSON.get("elementType").getAsJsonObject(), nameContext);
+
+                    Type array = namedTypes.get("Array");
+
+                    ReferenceType resultType = new ReferenceType();
+                    resultType.setTarget(array);
+                    resultType.setTypeArguments(Collections.singletonList(indexType));
+
+                    return resultType;
+                }
                 case "ObjectTypeAnnotation":
                     assert !typeJSON.get("exact").getAsBoolean();
                     assert typeJSON.get("indexers").getAsJsonArray().size() == 0;

@@ -183,4 +183,15 @@ public class FlowTests {
                 .forPath("foo.bar.base")
                 .hasViolations();
     }
+
+    @Test
+    public void array() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("array"));
+
+        assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("foo.bar.[numberIndexer]")
+                .hasViolations();
+    }
 }
