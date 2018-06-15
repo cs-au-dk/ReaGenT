@@ -36,6 +36,9 @@ public class FreeGenericsFinder {
         MultiMap<Type, Type> reverseBaseTypeMap = new ArrayListMultiMap<>();
 
         for (Type type : allTypes) {
+            if (type instanceof DelayedType) {
+                type = ((DelayedType) type).getType();
+            }
             if (type instanceof GenericType) {
                 for (Type baseType : ((GenericType) type).getBaseTypes()) {
                     reverseBaseTypeMap.put(baseType, type);
@@ -52,7 +55,11 @@ public class FreeGenericsFinder {
             } else if (type instanceof ReferenceType) {
                 reverseBaseTypeMap.put(((ReferenceType) type).getTarget(), type);
             } else if (type instanceof ClassInstanceType) {
-                Type instanceType = info.typesUtil.createClassInstanceType(((ClassType) ((ClassInstanceType) type).getClassType()));
+                Type classType = ((ClassInstanceType) type).getClassType();
+                if (classType instanceof DelayedType) {
+                    classType = ((DelayedType) classType).getType();
+                }
+                Type instanceType = info.typesUtil.createClassInstanceType(((ClassType) classType));
                 reverseBaseTypeMap.put(instanceType, type);
             }
         }

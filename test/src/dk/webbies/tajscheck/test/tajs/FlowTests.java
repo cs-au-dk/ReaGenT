@@ -166,5 +166,21 @@ public class FlowTests {
                 .hasViolations();
     }
 
-    // TODO: class extends.
+    @Test
+    public void classExtends() throws Exception {
+        expect(run(benchFromFolder("classExtends")))
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    @Test
+    public void classExtendsWithError() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("classExtendsWithError"));
+
+        assertThat(result.detectedViolations.size(), is(1));
+
+        expect(result)
+                .forPath("foo.bar.base")
+                .hasViolations();
+    }
 }

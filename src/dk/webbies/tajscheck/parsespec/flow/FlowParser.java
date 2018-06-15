@@ -92,9 +92,14 @@ public class FlowParser {
 
     private void parseModule(List<SpecReader.NamedType> ambientTypes, Map<String, Type> globalProperties, JsonObject statement) {
         JsonObject id = statement.get("id").getAsJsonObject();
-        assert id.get("type").getAsString().equals("Literal");
 
-        String name = statement.get("id").getAsJsonObject().get("raw").getAsString();
+        String name;
+        if (id.get("type").getAsString().equals("Literal")) {
+            name = statement.get("id").getAsJsonObject().get("raw").getAsString();
+        } else {
+            assert id.get("type").getAsString().equals("Identifier");
+            name = statement.get("id").getAsJsonObject().get("name").getAsString();
+        }
 
         assert statement.get("body").getAsJsonObject().get("type").getAsString().equals("BlockStatement");
 
@@ -180,10 +185,10 @@ public class FlowParser {
                 case "UnionTypeAnnotation":
                     return new UnionType(Lists.newArrayList(typeJSON.get("types").getAsJsonArray()).stream().map(JsonObject.class::cast).map(obj -> parseType(obj, nameContext)).collect(Collectors.toList()));
                 case "DeclareClass": {
-                    Type classType = parseClass(typeJSON, nameContext);
                     if (typeof) {
-                        return classType;
+                        return parseClass(typeJSON, nameContext);
                     } else {
+                        Type classType = parseType(typeJSON, nameContext, true);
                         return new ClassInstanceType(classType);
                     }
                 }
@@ -245,17 +250,7 @@ public class FlowParser {
 
                     List<Type> typeParameters = createTypeParameters(typeJSON, nameContext);
 
-                    List<Type> baseTypes = Lists.newArrayList(typeJSON.get("extends").getAsJsonArray()).stream().map(extend -> {
-                        assert extend.getAsJsonObject().get("type").getAsString().equals("InterfaceExtends");
-                        JsonObject id = extend.getAsJsonObject().get("id").getAsJsonObject();
-                        assert id.get("typeAnnotation").isJsonNull();
-                        assert !id.get("optional").getAsBoolean();
-                        assert id.get("type").getAsString().equals("Identifier");
-                        String name = id.get("name").getAsString();
-                        Type baseType = TypeNameCreator.lookUp(namedTypes, nameContext, name, this.typeParameters, typeJSON.get("range").getAsJsonArray());
-                        assert baseType != null;
-                        return baseType;
-                    }).collect(Collectors.toList());
+                    List<Type> baseTypes = parseBaseTypes(typeJSON, nameContext);
 
                     InterfaceType resultType = SpecReader.makeEmptySyntheticInterfaceType();
                     resultType.setTypeParameters(typeParameters);
@@ -279,6 +274,26 @@ public class FlowParser {
         return result;
     }
 
+    private List<Type> parseBaseTypes(JsonObject typeJSON, String nameContext) {
+        return Lists.newArrayList(typeJSON.get("extends").getAsJsonArray()).stream().map(extend -> {
+            assert extend.getAsJsonObject().get("type").getAsString().equals("InterfaceExtends");
+            JsonObject id = extend.getAsJsonObject().get("id").getAsJsonObject();
+            assert id.get("typeAnnotation").isJsonNull();
+            assert !id.get("optional").getAsBoolean();
+            assert id.get("type").getAsString().equals("Identifier");
+            String name = id.get("name").getAsString();
+            Type baseType = TypeNameCreator.lookUp(namedTypes, nameContext, name, this.typeParameters, typeJSON.get("range").getAsJsonArray());
+            if (baseType instanceof DelayedType) {
+                baseType = ((DelayedType) baseType).getType();
+            }
+            if (baseType instanceof ClassInstanceType) {
+                baseType = ((ClassInstanceType) baseType).getClassType();
+            }
+            assert baseType != null;
+            return baseType;
+        }).collect(Collectors.toList());
+    }
+
     List<Type> createTypeParameters(JsonObject typeJSON, String nameContext) {
         List<Type> typeParameters = new ArrayList<>();
         if (!typeJSON.get("typeParameters").isJsonNull()) {
@@ -300,7 +315,7 @@ public class FlowParser {
 
     private Type parseClass(JsonObject classJSON, String nameContext) {
         ClassType classType = TypesUtil.emptyClassType();
-        assert classJSON.get("extends").getAsJsonArray().size() == 0;
+        classType.getBaseTypes().addAll(parseBaseTypes(classJSON, nameContext));
         assert classJSON.get("implements").getAsJsonArray().size() == 0;
         assert classJSON.get("mixins").getAsJsonArray().size() == 0;
         assert classJSON.get("typeParameters").isJsonNull();
