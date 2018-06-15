@@ -243,7 +243,8 @@ public class TypesUtil {
         } else if (target instanceof TupleType) {
             return ((TupleType) target).getElementTypes();
         } else if (target instanceof ReferenceType) {
-            throw new RuntimeException();
+            assert ((ReferenceType) target).getTypeArguments().stream().allMatch(TypeParameterType.class::isInstance);
+            return ((ReferenceType) target).getTypeArguments();
         } else {
             throw new RuntimeException(target.getClass().getName());
         }

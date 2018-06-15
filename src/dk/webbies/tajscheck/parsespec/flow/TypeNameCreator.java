@@ -5,10 +5,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dk.au.cs.casa.typescript.types.DelayedType;
+import dk.au.cs.casa.typescript.types.ReferenceType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.webbies.tajscheck.util.Pair;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,12 +19,12 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("Duplicates")
 public class TypeNameCreator {
-    private final BiFunction<JsonObject, String, DelayedType> parseType;
+    private FlowParser flowParser;
 
-    static Type lookUp(Map<String, Type> namedTypes, String nameContext, String name, Map<String, List<Pair<Pair<Integer, Integer>, TypeParameterType>>> typeParameters, JsonArray rawRange) {
+    static Type lookUp(Map<String, Type> namedTypes, String nameContext, String name, Map<String, List<Pair<Pair<Integer, Integer>, Type>>> typeParameters, JsonArray rawRange) {
         if (typeParameters.containsKey(name)) {
             Pair<Integer, Integer> range = Lists.newArrayList(rawRange).stream().map(JsonElement::getAsNumber).map(Number::intValue).collect(Pair.collector());
-            for (Pair<Pair<Integer, Integer>, TypeParameterType> candidateParameter : typeParameters.get(name)) {
+            for (Pair<Pair<Integer, Integer>, Type> candidateParameter : typeParameters.get(name)) {
                 Pair<Integer, Integer> validRange = candidateParameter.getLeft();
                 if (validRange.getLeft() <= range.getLeft() && validRange.getRight() >= range.getRight()) {
                     return candidateParameter.getRight();
@@ -52,15 +54,15 @@ public class TypeNameCreator {
     }
 
     private DelayedType parseType(JsonObject obj, String typeContext) {
-        return parseType.apply(obj, typeContext);
+        return flowParser.parseType(obj, typeContext);
     }
 
-    TypeNameCreator(BiFunction<JsonObject, String, DelayedType> parseType) {
-        this.parseType = parseType;
+    TypeNameCreator(FlowParser flowParser) {
+        this.flowParser = flowParser;
     }
 
-    Map<String, DelayedType> createTypeNames(JsonArray body) {
-        Map<String, DelayedType> result = new HashMap<>();
+    Map<String, Type> createTypeNames(JsonArray body) {
+        Map<String, Type> result = new HashMap<>();
         for (JsonElement rawStatement : body) {
             parseModuleStatement("", result, rawStatement.getAsJsonObject());
         }
@@ -69,7 +71,7 @@ public class TypeNameCreator {
         return result;
     }
 
-    private Map<String, DelayedType> parseModule(JsonObject statement, String nameContext) {
+    private Map<String, Type> parseModule(JsonObject statement, String nameContext) {
         JsonObject id = statement.get("id").getAsJsonObject();
         assert id.get("type").getAsString().equals("Literal");
 
@@ -77,7 +79,7 @@ public class TypeNameCreator {
 
         assert statement.get("body").getAsJsonObject().get("type").getAsString().equals("BlockStatement");
 
-        Map<String, DelayedType> result = new HashMap<>();
+        Map<String, Type> result = new HashMap<>();
 
         List<JsonObject> moduleStatements = Lists.newArrayList(statement.get("body").getAsJsonObject().get("body").getAsJsonArray()).stream().map(JsonObject.class::cast).collect(Collectors.toList());
 
@@ -103,7 +105,7 @@ public class TypeNameCreator {
         return previous + "." + name;
     }
 
-    private void parseModuleStatement(String nameContext, Map<String, DelayedType> result, JsonObject moduleStatement) {
+    private void parseModuleStatement(String nameContext, Map<String, Type> result, JsonObject moduleStatement) {
         switch (moduleStatement.get("type").getAsString()) {
             case "DeclareModuleExports":
                 // Does not produce a named type, and it has already been registered as the type for the module.
@@ -130,8 +132,17 @@ public class TypeNameCreator {
             case "DeclareTypeAlias":
             case "TypeAlias":
                 String name = moduleStatement.get("id").getAsJsonObject().get("name").getAsString();
-                assert moduleStatement.get("typeParameters").isJsonNull();
-                result.put(newNameContext(nameContext, name), parseType(moduleStatement.get("right").getAsJsonObject(), nameContext));
+                List<Type> typeParameters = flowParser.createTypeParameters(moduleStatement, nameContext);
+
+                Type type = parseType(moduleStatement.get("right").getAsJsonObject(), nameContext);
+                if (!typeParameters.isEmpty()) {
+                    ReferenceType refType = new ReferenceType();
+                    refType.setTypeArguments(typeParameters);
+                    refType.setTarget(type);
+                    type = refType;
+                }
+
+                result.put(newNameContext(nameContext, name), type);
                 break;
             case "DeclareClass":
                 result.put(

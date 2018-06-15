@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class FlowParser {
     private final SpecReader emptySpec;
     private final Map<String, Type> namedTypes = new HashMap<>();
-    private final Map<String, List<Pair<Pair<Integer, Integer>, TypeParameterType>>> typeParameters = new HashMap<>();
+    private final Map<String, List<Pair<Pair<Integer, Integer>, Type>>> typeParameters = new HashMap<>();
 
     private FlowParser(ParseDeclaration.Environment environment) {
         this.emptySpec = ParseDeclaration.getTypeSpecification(environment, Collections.emptyList());
@@ -30,7 +30,7 @@ public class FlowParser {
         }
     }
 
-    private void registerTypeParameter(String name, Pair<Integer, Integer> range, TypeParameterType type) {
+    void registerTypeParameter(String name, Pair<Integer, Integer> range, Type type) {
         if (!typeParameters.containsKey(name)) {
             typeParameters.put(name, new ArrayList<>());
         }
@@ -51,7 +51,7 @@ public class FlowParser {
 
         JsonArray body = new JsonParser().parse(astJSON).getAsJsonObject().get("body").getAsJsonArray();
 
-        flowParser.namedTypes.putAll(new TypeNameCreator(flowParser::parseType).createTypeNames(body));
+        flowParser.namedTypes.putAll(new TypeNameCreator(flowParser).createTypeNames(body));
 
         for (JsonElement rawStatement : body) {
             JsonObject statement = rawStatement.getAsJsonObject();
@@ -59,6 +59,8 @@ public class FlowParser {
                 case "DeclareModule":
                     flowParser.parseModule(ambientTypes, globalProperties, statement);
                     break;
+                case "DeclareTypeAlias":
+                    break; // Just declares a name, which has already been handled.
                 default:
                     throw new RuntimeException("Unknown type of statement: " + statement.get("type").getAsString());
             }
@@ -143,6 +145,7 @@ public class FlowParser {
             }
             case "InterfaceDeclaration":
             case "TypeAlias":
+            case "DeclareTypeAlias":
                 break; // Doesn't declare any actual value, just a named-type, which has already been handled.
             default:
                 throw new RuntimeException(moduleStatement.get("type").getAsString());
@@ -150,11 +153,11 @@ public class FlowParser {
     }
 
     private final Map<Pair<JsonObject, Boolean>, DelayedType> parseTypeCache = new HashMap<>();
-    private DelayedType parseType(JsonObject typeJSON, String nameContext) {
+    DelayedType parseType(JsonObject typeJSON, String nameContext) {
         return parseType(typeJSON, nameContext, false);
     }
 
-    private DelayedType parseType(JsonObject typeJSON, String nameContext, boolean typeof) {
+    DelayedType parseType(JsonObject typeJSON, String nameContext, boolean typeof) {
         Pair<JsonObject, Boolean> key = new Pair<>(typeJSON, typeof);
         if (parseTypeCache.containsKey(key)) {
             return parseTypeCache.get(key);
@@ -208,9 +211,13 @@ public class FlowParser {
                     refType.setTypeArguments(typeArguments);
                     return refType;
                 }
-                case "TypeofTypeAnnotation": {
+                case "TypeofTypeAnnotation":
                     return parseType(typeJSON.get("argument").getAsJsonObject(), nameContext, true);
-                }
+                case "TypeParameter":
+                    assert typeJSON.get("bound").isJsonNull();
+                    assert typeJSON.get("variance").isJsonNull();
+                    assert typeJSON.get("default").isJsonNull();
+                    return new TypeParameterType();
                 case "BooleanTypeAnnotation":
                     return new SimpleType(SimpleTypeKind.Boolean);
                 case "BooleanLiteralTypeAnnotation":
@@ -236,24 +243,7 @@ public class FlowParser {
                 case "InterfaceDeclaration": {
                     String interfaceName = typeJSON.get("id").getAsJsonObject().get("name").getAsString(); // Good for debug.
 
-                    List<Type> typeParameters = new ArrayList<>();
-                    if (!typeJSON.get("typeParameters").isJsonNull()) {
-                        Pair<Integer, Integer> range = Lists.newArrayList(typeJSON.get("range").getAsJsonArray()).stream().map(JsonElement::getAsNumber).map(Number::intValue).collect(Pair.collector());
-
-                        JsonObject parametersJSON = typeJSON.get("typeParameters").getAsJsonObject();
-                        assert parametersJSON.get("type").getAsString().equals("TypeParameterDeclaration");
-                        for (JsonElement parameterJSONRaw : parametersJSON.get("params").getAsJsonArray()) {
-                            JsonObject parameterJSON = parameterJSONRaw.getAsJsonObject();
-                            assert parameterJSON.get("bound").isJsonNull();
-                            assert parameterJSON.get("variance").isJsonNull();
-                            assert parameterJSON.get("default").isJsonNull();
-                            String name = parameterJSON.get("name").getAsString();
-
-                            TypeParameterType typeParameterType = new TypeParameterType();
-                            registerTypeParameter(name, range, typeParameterType);
-                            typeParameters.add(typeParameterType);
-                        }
-                    }
+                    List<Type> typeParameters = createTypeParameters(typeJSON, nameContext);
 
                     List<Type> baseTypes = Lists.newArrayList(typeJSON.get("extends").getAsJsonArray()).stream().map(extend -> {
                         assert extend.getAsJsonObject().get("type").getAsString().equals("InterfaceExtends");
@@ -287,6 +277,25 @@ public class FlowParser {
         });
         parseTypeCache.put(key, result);
         return result;
+    }
+
+    List<Type> createTypeParameters(JsonObject typeJSON, String nameContext) {
+        List<Type> typeParameters = new ArrayList<>();
+        if (!typeJSON.get("typeParameters").isJsonNull()) {
+            Pair<Integer, Integer> range = Lists.newArrayList(typeJSON.get("range").getAsJsonArray()).stream().map(JsonElement::getAsNumber).map(Number::intValue).collect(Pair.collector());
+
+            JsonObject parametersJSON = typeJSON.get("typeParameters").getAsJsonObject();
+            assert parametersJSON.get("type").getAsString().equals("TypeParameterDeclaration");
+            for (JsonElement parameterJSONRaw : parametersJSON.get("params").getAsJsonArray()) {
+                JsonObject parameterJSON = parameterJSONRaw.getAsJsonObject();
+                String name = parameterJSON.get("name").getAsString();
+
+                Type typeParameterType = parseType(parameterJSON, nameContext);
+                registerTypeParameter(name, range, typeParameterType);
+                typeParameters.add(typeParameterType);
+            }
+        }
+        return typeParameters;
     }
 
     private Type parseClass(JsonObject classJSON, String nameContext) {
