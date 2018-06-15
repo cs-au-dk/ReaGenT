@@ -24,11 +24,10 @@ public class TypeNameCreator {
     static Type lookUp(Map<String, Type> namedTypes, String nameContext, String name, Map<String, List<Pair<Pair<Integer, Integer>, Type>>> typeParameters, JsonArray rawRange) {
         if (typeParameters.containsKey(name)) {
             Pair<Integer, Integer> range = Lists.newArrayList(rawRange).stream().map(JsonElement::getAsNumber).map(Number::intValue).collect(Pair.collector());
-            for (Pair<Pair<Integer, Integer>, Type> candidateParameter : typeParameters.get(name)) {
-                Pair<Integer, Integer> validRange = candidateParameter.getLeft();
-                if (validRange.getLeft() <= range.getLeft() && validRange.getRight() >= range.getRight()) {
-                    return candidateParameter.getRight();
-                }
+            List<Pair<Pair<Integer, Integer>, Type>> candidates = typeParameters.get(name).stream().filter(candidate -> candidate.getLeft().getLeft() <= range.getLeft() && candidate.getLeft().getRight() >= range.getRight()).collect(Collectors.toList());
+            assert candidates.size() < 2;
+            if (!candidates.isEmpty()) {
+                return candidates.iterator().next().getRight();
             }
         }
 

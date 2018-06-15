@@ -217,5 +217,16 @@ public class FlowTests {
                 .hasViolations();
     }
 
+    @Test
+    public void genericMethodWithBound() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("genericMethodWithBound"));
+
+        assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("foo.foo.gen(typeParameter).value")
+                .hasViolations();
+    }
+
 
 }

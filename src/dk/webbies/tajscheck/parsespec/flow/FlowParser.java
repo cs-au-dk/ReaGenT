@@ -224,11 +224,14 @@ public class FlowParser {
                 }
                 case "TypeofTypeAnnotation":
                     return parseType(typeJSON.get("argument").getAsJsonObject(), nameContext, true);
-                case "TypeParameter":
-                    assert typeJSON.get("bound").isJsonNull();
+                case "TypeParameter": {
+                    Type bound = typeJSON.get("bound").isJsonNull() ? null : parseType(typeJSON.get("bound").getAsJsonObject(), nameContext);
                     assert typeJSON.get("variance").isJsonNull();
                     assert typeJSON.get("default").isJsonNull();
-                    return new TypeParameterType();
+                    TypeParameterType typeParameterType = new TypeParameterType();
+                    typeParameterType.setConstraint(bound);
+                    return typeParameterType;
+                }
                 case "BooleanTypeAnnotation":
                     return new SimpleType(SimpleTypeKind.Boolean);
                 case "BooleanLiteralTypeAnnotation":
