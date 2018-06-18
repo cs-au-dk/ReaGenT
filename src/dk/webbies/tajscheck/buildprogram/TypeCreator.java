@@ -171,7 +171,7 @@ public class TypeCreator {
             Pair<InterfaceType, Map<TypeParameterType, Type>> classToInterfacePair = info.typesUtil.classToInterface(t);
             typeContext = typeContext.append(classToInterfacePair.getRight());
 
-            List<Signature> signatures = classToInterfacePair.getLeft().getDeclaredConstructSignatures();
+            List<Signature> signatures = Util.concat(classToInterfacePair.getLeft().getDeclaredConstructSignatures(), classToInterfacePair.getLeft().getDeclaredCallSignatures());
 
             assert !signatures.isEmpty();
 

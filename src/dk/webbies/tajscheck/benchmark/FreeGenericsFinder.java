@@ -134,12 +134,19 @@ public class FreeGenericsFinder {
 
             info.typesUtil.createClassInstanceType(t).accept(this, mapped);
 
-            for (Signature signature : t.getSignatures()) {
+            for (Signature signature : t.getConstructors()) {
                 assert signature.getResolvedReturnType() == null;
                 for (Signature.Parameter parameter : signature.getParameters()) {
                     parameter.getType().accept(this, mapped);
                 }
             }
+            for (Signature signature : t.getCallSignatures()) {
+                if (signature.getResolvedReturnType() != null) {
+                    signature.getResolvedReturnType().accept(this, mapped);
+                }
+                signature.getParameters().forEach(par -> par.getType().accept(this, mapped));
+            }
+
 
             t.getBaseTypes().forEach(base -> base.accept(this, mapped));
             t.getStaticProperties().values().forEach(prop -> prop.accept(this, mapped));

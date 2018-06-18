@@ -33,7 +33,8 @@ public class TypesUtil {
 
     public static ClassType emptyClassType() {
         ClassType clazz = new ClassType();
-        clazz.setSignatures(new ArrayList<>());
+        clazz.setConstructors(new ArrayList<>());
+        clazz.setCallSignatures(new ArrayList<>());
         clazz.setBaseTypes(new ArrayList<>());
         clazz.setStaticProperties(new HashMap<>());
         clazz.setInstanceProperties(new HashMap<>());
@@ -54,11 +55,14 @@ public class TypesUtil {
         Map<TypeParameterType, Type> extraParams = new HashMap<>();
 
 
-        for (Signature signature : t.getSignatures()) {
+        for (Signature signature : t.getConstructors()) {
             Signature constructor = createConstructorSignature(t, signature);
             interfaceType.getDeclaredConstructSignatures().add(constructor);
         }
-        if (t.getSignatures().isEmpty()) {
+        if (t.getCallSignatures() != null) {
+            interfaceType.getDeclaredCallSignatures().addAll(t.getCallSignatures());
+        }
+        if (t.getConstructors().isEmpty()) {
             Type baseType = t;
             while (true) { // to allow for finding signatures high up in the class hierarchy.
                 if (baseType instanceof ReferenceType) {
@@ -69,7 +73,7 @@ public class TypesUtil {
                 List<Type> baseTypes;
                 if (baseType instanceof ClassType) {
                     ClassType classBase = (ClassType) baseType;
-                    signatures = classBase.getSignatures();
+                    signatures = classBase.getConstructors();
                     baseTypes = classBase.getBaseTypes();
                 } else {
                     assert baseType instanceof InterfaceType;
@@ -924,12 +928,8 @@ public class TypesUtil {
             Map<TypeParameterType, Type> extraParams = info.typesUtil.classToInterface(classType).getRight();
             forAllSubTypes(type, typeContext.append(extraParams), seen, callback);
 
-            if (instanceType != classType.getInstance()) {
-                if (true) {
-                    throw new RuntimeException("Is this ever called?");
-                }
-                forAllSubTypes(classType.getInstance(), typeContext, seen, callback);
-            }
+            //noinspection AssertWithSideEffects
+            assert instanceType == classType.getInstance();
 
             {
                 Map<TypeParameterType, Type> map = new HashMap<>();

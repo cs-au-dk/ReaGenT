@@ -1,7 +1,5 @@
 package dk.webbies.tajscheck.parsespec;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -147,10 +145,19 @@ public class ParseDeclaration {
             seen.add(t);
             addName(t, arg.path);
 
-            for (Signature signature : t.getSignatures()) {
+            for (Signature signature : t.getConstructors()) {
+                for (int i = 0; i < signature.getParameters().size(); i++) {
+                    queue.add(arg.append("[newArg" + i + "]", signature.getParameters().get(i).getType()));
+                }
+            }
+            for (Signature signature : t.getCallSignatures()) {
                 for (int i = 0; i < signature.getParameters().size(); i++) {
                     queue.add(arg.append("[arg" + i + "]", signature.getParameters().get(i).getType()));
                 }
+            }
+
+            for (Signature signature : t.getCallSignatures()) {
+                queue.add(arg.append("()", signature.getResolvedReturnType()));
             }
             for (Type baseType : t.getBaseTypes()) {
                 queue.add(arg.append("[base]", baseType));

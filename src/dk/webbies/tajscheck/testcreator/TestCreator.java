@@ -451,6 +451,11 @@ public class TestCreator {
                 tests.add(new ConstructorCallTest(t, signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList()), t.getInstance(), arg.path, arg.typeContext, signature.isHasRestParameter(), new ArrayList<>(precedingSignatures)));
                 precedingSignatures.add(signature);
             }
+            precedingSignatures.clear();
+            for (Signature signature : inter.getDeclaredCallSignatures()) {
+                tests.add(new FunctionCallTest(t, signature.getParameters().stream().map(Signature.Parameter::getType).collect(Collectors.toList()), t.getInstance(), arg.path, arg.typeContext, signature.isHasRestParameter(), new ArrayList<>(precedingSignatures)));
+                precedingSignatures.add(signature);
+            }
 
             recurse(info.typesUtil.createClassInstanceType(t), arg.append("new()"));
 
@@ -858,6 +863,10 @@ public class TestCreator {
             assert !signatures.isEmpty();
 
             for (Signature signature : signatures) {
+                visitSignature(signature, arg);
+            }
+
+            for (Signature signature : pair.getLeft().getDeclaredCallSignatures()) {
                 visitSignature(signature, arg);
             }
 

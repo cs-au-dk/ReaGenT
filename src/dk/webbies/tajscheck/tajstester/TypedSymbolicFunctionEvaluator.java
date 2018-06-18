@@ -97,7 +97,7 @@ public class TypedSymbolicFunctionEvaluator {
 
             Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.classToInterface(clazz);
             context = context.append(pair.getRight());
-            signatures = pair.getLeft().getDeclaredConstructSignatures();
+            signatures = Util.concat(pair.getLeft().getDeclaredConstructSignatures(), pair.getLeft().getDeclaredCallSignatures());
         }
 
         if (signatures.size() == 0) {

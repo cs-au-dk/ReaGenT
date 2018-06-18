@@ -28,7 +28,8 @@ abstract public class RecursiveTypeVisitor<T> implements TypeVisitor<T> {
         }
         seen.add(t);
 
-        t.getSignatures().forEach(this::acceptSignature);
+        t.getConstructors().forEach(this::acceptSignature);
+        t.getCallSignatures().forEach(this::acceptSignature);
 
         accept(info.typesUtil.createClassInstanceType(t));
 

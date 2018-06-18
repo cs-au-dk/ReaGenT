@@ -250,7 +250,8 @@ public class BenchmarkInfo {
                     inter.setDeclaredConstructSignatures(TypesUtil.splitUnionsInSignatures(inter.getDeclaredConstructSignatures()));
                 } else if (type instanceof ClassType) {
                     ClassType inter = (ClassType) type;
-                    inter.setSignatures(TypesUtil.splitUnionsInSignatures(inter.getSignatures()));
+                    inter.setConstructors(TypesUtil.splitUnionsInSignatures(inter.getConstructors()));
+                    inter.setCallSignatures(TypesUtil.splitUnionsInSignatures(inter.getCallSignatures()));
                 }
             }
 

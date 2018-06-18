@@ -123,6 +123,12 @@ public class FlowTests {
     }
 
     @Test
+    @Ignore
+    public void parseUuid() {
+        BenchmarkInfo.create(benchFromFolder("uuid"));
+    }
+
+    @Test
     public void objectWithCallsignature() throws Exception {
         TajsAnalysisResults result = run(benchFromFolder("objectWithCallsignature"));
 

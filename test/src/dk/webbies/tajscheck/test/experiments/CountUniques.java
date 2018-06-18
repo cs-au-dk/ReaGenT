@@ -6,7 +6,6 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
@@ -183,9 +182,22 @@ public class CountUniques {
             if (firstPath(arg.path).startsWith("[static]")) {
                 return recurse(t.getStaticProperties().get(Util.removePrefix(firstPath(arg.path), "[static]")), arg.rest());
             }
+            if (firstPath(arg.path).startsWith("[newArg")) {
+                int argNumber = Integer.parseInt(firstPath(arg.path).substring("[newArg".length(), firstPath(arg.path).length() - 1));
+                for (Signature signature : t.getConstructors()) {
+                    if (signature.getParameters().size() > argNumber) {
+                        Type result = recurse(signature.getParameters().get(argNumber).getType(), arg.rest());
+                        if (result != null) {
+                            return result;
+                        }
+                    }
+                }
+                return null;
+
+            }
             if (firstPath(arg.path).startsWith("[arg")) {
                 int argNumber = Integer.parseInt(firstPath(arg.path).substring("[arg".length(), firstPath(arg.path).length() - 1));
-                for (Signature signature : t.getSignatures()) {
+                for (Signature signature : t.getCallSignatures()) {
                     if (signature.getParameters().size() > argNumber) {
                         Type result = recurse(signature.getParameters().get(argNumber).getType(), arg.rest());
                         if (result != null) {

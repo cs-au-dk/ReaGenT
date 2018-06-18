@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("Duplicates")
@@ -217,8 +216,8 @@ public class FlowParser {
                         Lists.newArrayList(typeParameterJSON.get("params").getAsJsonArray()).stream().map(json -> parseType(json.getAsJsonObject(), nameContext)).forEach(typeArguments::add);
                     }
                     String name = typeJSON.get("id").getAsJsonObject().get("name").getAsString();
-                    if (name.startsWith("$")) {
-                        return specialFunctions.get(name).apply(this, typeArguments);
+                    if (utilityTypes.containsKey(name)) {
+                        return utilityTypes.get(name).apply(this, typeArguments);
                     }
                     final Type type;
                     if (typeof) {
@@ -234,7 +233,9 @@ public class FlowParser {
                         type = TypeNameCreator.lookUp(namedTypes, nameContext, name, typeParameters, typeJSON.get("range").getAsJsonArray());
                     }
 
-                    assert type != null;
+                    if (type == null) {
+                        throw new RuntimeException("Could not find: " + name + (typeof ? " (typeof)" : ""));
+                    }
 
                     if (typeArguments.isEmpty()) {
                         return type;
@@ -502,13 +503,36 @@ public class FlowParser {
         return Lists.newArrayList(typeJSON.get("range").getAsJsonArray()).stream().map(JsonElement::getAsNumber).map(Number::intValue).collect(Pair.collector());
     }
 
-    private static Map<String, BiFunction<FlowParser, List<Type>, Type>> specialFunctions = new HashMap<>(){{
-        put("$Exports", ((flowParser, types) -> {
+    // https://flow.org/en/docs/types/utilities/
+    private static Map<String, BiFunction<FlowParser, List<Type>, Type>> utilityTypes = new HashMap<>(){{
+        put("$Exports", ((flowParser, types) -> { // <- Not in any documentation. Wtf flow?
             assert types.size() == 1;
             String moduleName = ((StringLiteral) ((DelayedType) types.get(0)).getType()).getText();
             List<SpecReader.NamedType> matchingModules = flowParser.ambientTypes.stream().filter(ambient -> ambient.qName.size() == 1 && ambient.qName.get(0).equals(moduleName)).collect(Collectors.toList());
             assert matchingModules.size() == 1;
             return matchingModules.get(0).type;
         }));
+        put("$Keys", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$Values", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$ReadOnly", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$Exact", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$Diff", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$Rest", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$PropertyType", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$ElementType", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$ObjMap", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$TupleMap", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$Call", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("Class", ((flowParser, types) -> { // Only Utility type not to start with "$", yay for consistency.
+            assert types.size() == 1;
+            Type type = types.get(0);
+            if (type instanceof DelayedType) {
+                type = ((DelayedType) type).getType();
+            }
+            assert type instanceof ClassInstanceType;
+            return ((ClassInstanceType) type).getClassType();
+        }));
+        put("$Supertype", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$Subtype", ((flowParser, types) -> { throw new RuntimeException();}));
     }};
 }
