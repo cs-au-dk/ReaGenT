@@ -127,7 +127,7 @@ public class FlowParser {
 
         if (name.startsWith("'") || name.startsWith("\"")) {
             name = name.substring(1, name.length() - 1);
-            assert !name.contains(".");
+//            assert !name.contains(".");
             ambientTypes.add(new SpecReader.NamedType(type, Collections.singletonList(name)));
         } else {
             globalProperties.put(name, type);
@@ -220,15 +220,21 @@ public class FlowParser {
                     if (name.startsWith("$")) {
                         return specialFunctions.get(name).apply(this, typeArguments);
                     }
-                    Type type = TypeNameCreator.lookUp(namedTypes, nameContext, name, typeParameters, typeJSON.get("range").getAsJsonArray());
-                    if (type == null) {
-                        throw new RuntimeException("Type: " + name + " not found");
-                    }
+                    final Type type;
                     if (typeof) {
-                        Type instanceType = ((DelayedType) type).getType();
-                        assert instanceType instanceof ClassInstanceType;
-                        type = ((ClassInstanceType) instanceType).getClassType();
+                        if (this.emptySpec.getGlobal().getDeclaredProperties().containsKey(name)) {
+                            type = this.emptySpec.getGlobal().getDeclaredProperties().get(name);
+                        } else {
+                            Type lookup = TypeNameCreator.lookUp(namedTypes, nameContext, name, typeParameters, typeJSON.get("range").getAsJsonArray());
+                            Type instanceType = lookup instanceof DelayedType ? ((DelayedType) lookup).getType(): lookup;
+                            assert instanceType instanceof ClassInstanceType;
+                            type = ((ClassInstanceType) instanceType).getClassType();
+                        }
+                    } else {
+                        type = TypeNameCreator.lookUp(namedTypes, nameContext, name, typeParameters, typeJSON.get("range").getAsJsonArray());
                     }
+
+                    assert type != null;
 
                     if (typeArguments.isEmpty()) {
                         return type;
@@ -248,6 +254,8 @@ public class FlowParser {
                     typeParameterType.setConstraint(bound);
                     return typeParameterType;
                 }
+                case "NullLiteralTypeAnnotation":
+                    return new SimpleType(SimpleTypeKind.Null);
                 case "BooleanTypeAnnotation":
                     return new SimpleType(SimpleTypeKind.Boolean);
                 case "BooleanLiteralTypeAnnotation":
@@ -274,6 +282,12 @@ public class FlowParser {
                     TupleType tupleType = new TupleType();
                     tupleType.setElementTypes(types);
                     return tupleType;
+                }
+                case "IntersectionTypeAnnotation": {
+                    List<Type> types = Lists.newArrayList(typeJSON.get("types").getAsJsonArray()).stream().map(json -> parseType(json.getAsJsonObject(), nameContext)).collect(Collectors.toList());
+                    IntersectionType intersectionType = new IntersectionType();
+                    intersectionType.setElements(types);
+                    return intersectionType;
                 }
                 case "ObjectTypeAnnotation":
                     InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();

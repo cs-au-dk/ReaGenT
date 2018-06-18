@@ -68,7 +68,7 @@ public class FlowTests {
     }
 
     static Benchmark benchFromFolder(String folderName, OptionsI.Builder options, Benchmark.RUN_METHOD run_method) {
-        return new Benchmark("flow-" + folderName, ParseDeclaration.Environment.ES5Core, "test/flowtyped/" + folderName + "/implementation.js", "test/flowtyped/" + folderName + "/declaration.js", run_method, options.build());
+        return new Benchmark("flow-" + folderName, ParseDeclaration.Environment.ES6DOM, "test/flowtyped/" + folderName + "/implementation.js", "test/flowtyped/" + folderName + "/declaration.js", run_method, options.build());
     }
 
     @Test
@@ -115,6 +115,11 @@ public class FlowTests {
     @Test
     public void parseValidator() {
         BenchmarkInfo.create(benchFromFolder("validator"));
+    }
+
+    @Test
+    public void parseValidate_js() {
+        BenchmarkInfo.create(benchFromFolder("validate_js"));
     }
 
     @Test
