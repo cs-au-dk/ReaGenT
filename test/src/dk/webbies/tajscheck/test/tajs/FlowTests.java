@@ -113,6 +113,27 @@ public class FlowTests {
     }
 
     @Test
+    @Ignore
+    public void parseValidator() {
+        BenchmarkInfo.create(benchFromFolder("validator"));
+    }
+
+    // Object with call properties (signatures...)
+    // Object with constructorSignature.
+
+
+    @Test
+    public void objectWithCallsignature() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("objectWithCallsignature"));
+
+        assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("foo.baz(boolean)")
+                .hasViolations();
+    }
+
+    @Test
     public void natives() throws Exception {
         expect(run(benchFromFolder("natives")))
                 .hasNoViolations();
@@ -243,5 +264,5 @@ public class FlowTests {
                 .hasViolations();
     }
 
-    // TODO: Top level class extends another class.
+
 }

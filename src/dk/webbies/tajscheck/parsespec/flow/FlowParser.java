@@ -289,8 +289,16 @@ public class FlowParser {
                         }
                     }
 
+                    for (JsonElement callProperty : typeJSON.get("callProperties").getAsJsonArray()) {
+                        assert callProperty.getAsJsonObject().get("type").getAsString().equals("ObjectTypeCallProperty");
+                        assert !callProperty.getAsJsonObject().get("static").getAsBoolean();
+                        InterfaceType callPropertyType = (InterfaceType) parseType(callProperty.getAsJsonObject().get("value").getAsJsonObject(), nameContext).getType();
 
-                    assert typeJSON.get("callProperties").getAsJsonArray().size() == 0;
+                        assert !callPropertyType.getDeclaredCallSignatures().isEmpty();
+                        interfaceType.getDeclaredCallSignatures().addAll(callPropertyType.getDeclaredCallSignatures());
+                    }
+
+
                     assert typeJSON.get("internalSlots").getAsJsonArray().size() == 0;
                     Map<String, Type> properties = new HashMap<>();
                     for (JsonElement propertyRaw : typeJSON.get("properties").getAsJsonArray()) {
