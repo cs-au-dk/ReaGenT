@@ -59,7 +59,15 @@ public class FlowParser {
                 case "DeclareModule":
                     flowParser.parseModule(ambientTypes, globalProperties, statement);
                     break;
+                case "ClassDeclaration":
+                case "DeclareClass": {
+                    Type classType = flowParser.parseClass(statement, "");
+                    String name = statement.get("id").getAsJsonObject().get("name").getAsString();
+                    globalProperties.put(name, classType);
+                    break;
+                }
                 case "DeclareTypeAlias":
+                case "TypeAlias":
                     break; // Just declares a name, which has already been handled.
                 default:
                     throw new RuntimeException("Unknown type of statement: " + statement.get("type").getAsString());
@@ -115,7 +123,7 @@ public class FlowParser {
             type = interfaceType;
         }
 
-        if (name.startsWith("'")) {
+        if (name.startsWith("'") || name.startsWith("\"")) {
             name = name.substring(1, name.length() - 1);
             assert !name.contains(".");
             ambientTypes.add(new SpecReader.NamedType(type, Collections.singletonList(name)));
@@ -190,6 +198,7 @@ public class FlowParser {
                     return new SimpleType(SimpleTypeKind.Any);
                 case "UnionTypeAnnotation":
                     return new UnionType(Lists.newArrayList(typeJSON.get("types").getAsJsonArray()).stream().map(JsonObject.class::cast).map(obj -> parseType(obj, nameContext)).collect(Collectors.toList()));
+                case "ClassDeclaration":
                 case "DeclareClass": {
                     if (typeof) {
                         return parseClass(typeJSON, nameContext);
@@ -323,7 +332,18 @@ public class FlowParser {
     }
 
     private List<Type> parseBaseTypes(JsonObject typeJSON, String nameContext) {
-        return Lists.newArrayList(typeJSON.get("extends").getAsJsonArray()).stream().map(extend -> {
+        final List<JsonElement> baseTypes;
+        if (typeJSON.get("extends") != null) {
+            baseTypes = Lists.newArrayList(typeJSON.get("extends").getAsJsonArray());
+        } else {
+            assert typeJSON.get("superClass") != null;
+            if (typeJSON.get("superClass").isJsonNull()) {
+                baseTypes = Collections.emptyList();
+            } else {
+                baseTypes = Collections.singletonList(typeJSON.get("superClass"));
+            }
+        }
+        return baseTypes.stream().map(extend -> {
             assert extend.getAsJsonObject().get("type").getAsString().equals("InterfaceExtends");
             JsonObject id = extend.getAsJsonObject().get("id").getAsJsonObject();
             assert id.get("typeAnnotation").isJsonNull();
@@ -365,17 +385,25 @@ public class FlowParser {
         ClassType classType = TypesUtil.emptyClassType();
         classType.getBaseTypes().addAll(parseBaseTypes(classJSON, nameContext));
         assert classJSON.get("implements").getAsJsonArray().size() == 0;
-        assert classJSON.get("mixins").getAsJsonArray().size() == 0;
+        assert classJSON.get("mixins") == null || classJSON.get("mixins").getAsJsonArray().size() == 0;
         assert classJSON.get("typeParameters").isJsonNull();
+        assert classJSON.get("superTypeParameters") == null || classJSON.get("superTypeParameters").isJsonNull();
+        assert classJSON.get("decorators") == null || classJSON.get("decorators").getAsJsonArray().size() == 0;
 
         JsonObject body = classJSON.get("body").getAsJsonObject();
-        assert body.get("type").getAsString().equals("ObjectTypeAnnotation");
-        assert !body.get("exact").getAsBoolean();
-        assert body.get("indexers").getAsJsonArray().size() == 0;
-        assert body.get("callProperties").getAsJsonArray().size() == 0;
-        assert body.get("internalSlots").getAsJsonArray().size() == 0;
+        assert body.get("type").getAsString().equals("ObjectTypeAnnotation") || body.get("type").getAsString().equals("ClassBody");
+        assert body.get("exact") == null || !body.get("exact").getAsBoolean();
+        assert body.get("indexers") == null || body.get("indexers").getAsJsonArray().size() == 0;
+        assert body.get("callProperties") == null || body.get("callProperties").getAsJsonArray().size() == 0;
+        assert body.get("internalSlots") == null || body.get("internalSlots").getAsJsonArray().size() == 0;
 
-        for (JsonElement rawProperty : body.get("properties").getAsJsonArray()) {
+        final JsonArray properties;
+        if (body.get("type").getAsString().equals("ObjectTypeAnnotation")) {
+            properties = body.get("properties").getAsJsonArray();
+        } else {
+            properties = body.get("body").getAsJsonArray();
+        }
+        for (JsonElement rawProperty : properties) {
             JsonObject property = rawProperty.getAsJsonObject();
             switch (property.get("type").getAsString()) {
                 case "ObjectTypeProperty":

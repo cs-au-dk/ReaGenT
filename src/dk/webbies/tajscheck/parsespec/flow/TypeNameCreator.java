@@ -144,6 +144,7 @@ public class TypeNameCreator {
                 result.put(newNameContext(nameContext, name), type);
                 break;
             case "DeclareClass":
+            case "ClassDeclaration":
                 result.put(
                         newNameContext(nameContext, moduleStatement.get("id").getAsJsonObject().get("name").getAsString()),
                         parseType(moduleStatement, nameContext)

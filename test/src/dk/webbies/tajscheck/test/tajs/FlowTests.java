@@ -82,9 +82,13 @@ public class FlowTests {
     }
 
     @Test
-    @Ignore
     public void parseVscode() {
         BenchmarkInfo.create(benchFromFolder("vscode"));
+    }
+
+    @Test
+    public void parseVerbalExpressions() {
+        BenchmarkInfo.create(benchFromFolder("verbal-expressions"));
     }
 
     @Test
@@ -238,4 +242,6 @@ public class FlowTests {
                 .forPath("foo.foo.2")
                 .hasViolations();
     }
+
+    // TODO: Top level class extends another class.
 }
