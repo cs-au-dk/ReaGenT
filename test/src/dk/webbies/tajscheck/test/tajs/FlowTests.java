@@ -128,6 +128,16 @@ public class FlowTests {
     }
 
     @Test
+    public void parseUrlParse() {
+        BenchmarkInfo.create(benchFromFolder("url-parse"));
+    }
+
+    @Test
+    public void parseUrlJoin() {
+        BenchmarkInfo.create(benchFromFolder("url-join"));
+    }
+
+    @Test
     public void objectWithCallsignature() throws Exception {
         TajsAnalysisResults result = run(benchFromFolder("objectWithCallsignature"));
 
@@ -136,6 +146,12 @@ public class FlowTests {
         expect(result)
                 .forPath("foo.baz(boolean)")
                 .hasViolations();
+    }
+
+    @Test
+    public void restArgs() throws Exception {
+        expect(run(benchFromFolder("restArgs")))
+                .hasNoViolations();
     }
 
     @Test

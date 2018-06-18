@@ -164,6 +164,7 @@ public class FlowParser {
                 break;
             }
             case "InterfaceDeclaration":
+            case "GenericTypeAnnotation":
             case "TypeAlias":
             case "DeclareTypeAlias":
                 break; // Doesn't declare any actual value, just a named-type, which has already been handled.
@@ -488,7 +489,6 @@ public class FlowParser {
             }
         }
 
-
         signature.setResolvedReturnType(parseType(typeJSON.get("returnType").getAsJsonObject(), nameContext));
 
         ArrayList<JsonElement> rawParams = Lists.newArrayList(typeJSON.get("params").getAsJsonArray());
@@ -505,6 +505,13 @@ public class FlowParser {
             String name = param.get("name").getAsJsonObject().get("name").getAsString();
             return new Signature.Parameter(name, type);
         }).forEach(signature.getParameters()::add);
+
+        if (!typeJSON.get("rest").isJsonNull()) {
+            Type type = parseType(typeJSON.get("rest").getAsJsonObject().get("typeAnnotation").getAsJsonObject(), nameContext);
+            String name = typeJSON.get("rest").getAsJsonObject().get("name").getAsJsonObject().get("name").getAsString();
+            signature.setHasRestParameter(true);
+            signature.getParameters().add(new Signature.Parameter(name, type));
+        }
 
         signature.setMinArgumentCount(minArgs.get());
 

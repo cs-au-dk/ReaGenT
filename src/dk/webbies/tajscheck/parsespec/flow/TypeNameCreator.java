@@ -121,6 +121,7 @@ public class TypeNameCreator {
                 result.put(newNameContext(nameContext, name), type);
                 break;
             }
+            case "GenericTypeAnnotation":
             case "InterfaceDeclaration": {
                 JsonObject id = moduleStatement.get("id").getAsJsonObject();
                 String name = id.get("name").getAsString();
@@ -129,7 +130,7 @@ public class TypeNameCreator {
                 break;
             }
             case "DeclareTypeAlias":
-            case "TypeAlias":
+            case "TypeAlias":{
                 String name = moduleStatement.get("id").getAsJsonObject().get("name").getAsString();
                 List<Type> typeParameters = flowParser.createTypeParameters(moduleStatement, nameContext);
 
@@ -143,6 +144,7 @@ public class TypeNameCreator {
 
                 result.put(newNameContext(nameContext, name), type);
                 break;
+            }
             case "DeclareClass":
             case "ClassDeclaration":
                 result.put(
