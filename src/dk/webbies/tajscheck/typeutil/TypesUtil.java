@@ -525,7 +525,7 @@ public class TypesUtil {
         return Collections.singletonList(signature);
     }
 
-    private static Signature cloneSignature(Signature signature) {
+    public static Signature cloneSignature(Signature signature) {
         Signature result = new Signature();
         result.setResolvedReturnType(signature.getResolvedReturnType());
         result.setUnionSignatures(signature.getUnionSignatures());

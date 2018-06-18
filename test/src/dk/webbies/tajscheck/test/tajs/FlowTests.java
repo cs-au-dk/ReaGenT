@@ -138,6 +138,11 @@ public class FlowTests {
     }
 
     @Test
+    public void parseUniversalRouter() {
+        BenchmarkInfo.create(benchFromFolder("universal-router"));
+    }
+
+    @Test
     public void objectWithCallsignature() throws Exception {
         TajsAnalysisResults result = run(benchFromFolder("objectWithCallsignature"));
 
@@ -145,6 +150,21 @@ public class FlowTests {
 
         expect(result)
                 .forPath("foo.baz(boolean)")
+                .hasViolations();
+    }
+
+    @Test
+    public void genericClass() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("genericClass"));
+
+        assertThat(result.detectedViolations.keySet(), hasSize(2));
+
+        expect(result)
+                .forPath("foo.MyKlass.new(typeParameter).isFalse")
+                .hasViolations();
+
+        expect(result)
+                .forPath("foo.bar().value")
                 .hasViolations();
     }
 

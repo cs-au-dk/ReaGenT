@@ -25,7 +25,17 @@ public class TypeNameCreator {
         if (typeParameters.containsKey(name)) {
             Pair<Integer, Integer> range = Lists.newArrayList(rawRange).stream().map(JsonElement::getAsNumber).map(Number::intValue).collect(Pair.collector());
             List<Pair<Pair<Integer, Integer>, Type>> candidates = typeParameters.get(name).stream().filter(candidate -> candidate.getLeft().getLeft() <= range.getLeft() && candidate.getLeft().getRight() >= range.getRight()).collect(Collectors.toList());
-            assert candidates.size() < 2;
+
+            if (candidates.size() < 2) {
+                //noinspection AssertWithSideEffects
+                assert candidates.stream().map(Pair::getRight).map(t -> {
+                    if (t instanceof DelayedType) {
+                        return ((DelayedType) t).getType();
+                    } else {
+                        return t;
+                    }
+                }).distinct().count() == 1;
+            }
             if (!candidates.isEmpty()) {
                 return candidates.iterator().next().getRight();
             }

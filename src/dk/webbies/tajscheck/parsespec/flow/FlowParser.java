@@ -198,6 +198,7 @@ public class FlowParser {
                     return new SimpleType(SimpleTypeKind.Void);
                 case "MixedTypeAnnotation":
                 case "AnyTypeAnnotation":
+                case "ExistsTypeAnnotation": // Nothing better I can do, this is a declaration file.
                     return new SimpleType(SimpleTypeKind.Any);
                 case "UnionTypeAnnotation":
                     return new UnionType(Lists.newArrayList(typeJSON.get("types").getAsJsonArray()).stream().map(JsonObject.class::cast).map(obj -> parseType(obj, nameContext)).collect(Collectors.toList()));
@@ -252,7 +253,7 @@ public class FlowParser {
                 case "TypeParameter": {
                     Type bound = typeJSON.get("bound").isJsonNull() ? null : parseType(typeJSON.get("bound").getAsJsonObject(), nameContext);
                     assert typeJSON.get("variance").isJsonNull();
-                    assert typeJSON.get("default").isJsonNull();
+//                    assert typeJSON.get("default").isJsonNull(); // Default doesn't matter for my purposes.
                     TypeParameterType typeParameterType = new TypeParameterType();
                     typeParameterType.setConstraint(bound);
                     return typeParameterType;
@@ -418,7 +419,7 @@ public class FlowParser {
         classType.getBaseTypes().addAll(parseBaseTypes(classJSON, nameContext));
         assert classJSON.get("implements").getAsJsonArray().size() == 0;
         assert classJSON.get("mixins") == null || classJSON.get("mixins").getAsJsonArray().size() == 0;
-        assert classJSON.get("typeParameters").isJsonNull();
+        createTypeParameters(classJSON, nameContext).forEach(classType.getTypeParameters()::add);
         assert classJSON.get("superTypeParameters") == null || classJSON.get("superTypeParameters").isJsonNull();
         assert classJSON.get("decorators") == null || classJSON.get("decorators").getAsJsonArray().size() == 0;
 
@@ -452,7 +453,7 @@ public class FlowParser {
             JsonObject property = rawProperty.getAsJsonObject();
             switch (property.get("type").getAsString()) {
                 case "ObjectTypeProperty":
-                    Type propertyType = parseType(property.get("value").getAsJsonObject(), nameContext);
+                    DelayedType propertyType = parseType(property.get("value").getAsJsonObject(), nameContext);
                     assert !property.get("optional").getAsBoolean();
                     assert !property.get("proto").getAsBoolean();
                     assert property.get("variance").isJsonNull() || !property.get("variance").getAsBoolean();
@@ -461,6 +462,15 @@ public class FlowParser {
 
                     boolean isStatic = property.get("static").getAsBoolean();
                     String name = property.get("key").getAsJsonObject().get("name").getAsString();
+
+                    if (name.equals("constructor")) {
+                        assert !isStatic;
+                        List<Signature> signatures = ((InterfaceType) propertyType.getType()).getDeclaredCallSignatures();
+                        assert !signatures.isEmpty();
+                        signatures.stream().map(TypesUtil::cloneSignature).peek(sig -> sig.setResolvedReturnType(null)).forEach(classType.getConstructors()::add);
+                        break;
+                    }
+
                     if (isStatic) {
                         classType.getStaticProperties().put(name, propertyType);
                     } else {
@@ -502,7 +512,7 @@ public class FlowParser {
                 minArgs.getAndIncrement();
             }
             Type type = parseType(param.get("typeAnnotation").getAsJsonObject(), nameContext);
-            String name = param.get("name").getAsJsonObject().get("name").getAsString();
+            String name = param.get("name").isJsonNull() ? "arg" : param.get("name").getAsJsonObject().get("name").getAsString();
             return new Signature.Parameter(name, type);
         }).forEach(signature.getParameters()::add);
 
@@ -547,6 +557,12 @@ public class FlowParser {
         put("Class", ((flowParser, types) -> { // Only Utility type not to start with "$", yay for consistency.
             assert types.size() == 1;
             Type type = types.get(0);
+            if (type instanceof DelayedType) {
+                type = ((DelayedType) type).getType();
+            }
+            if (type instanceof ReferenceType) {
+                type = ((ReferenceType) type).getTarget();
+            }
             if (type instanceof DelayedType) {
                 type = ((DelayedType) type).getType();
             }
