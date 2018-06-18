@@ -1,3 +1,4 @@
+interface Buffer {}
 declare module "uuid" {
     declare class uuid {
         static (

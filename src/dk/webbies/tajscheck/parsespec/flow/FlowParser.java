@@ -69,6 +69,7 @@ public class FlowParser {
                 }
                 case "DeclareTypeAlias":
                 case "TypeAlias":
+                case "InterfaceDeclaration":
                     break; // Just declares a name, which has already been handled.
                 default:
                     throw new RuntimeException("Unknown type of statement: " + statement.get("type").getAsString());
@@ -292,7 +293,7 @@ public class FlowParser {
                 }
                 case "ObjectTypeAnnotation":
                     InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
-                    assert !typeJSON.get("exact").getAsBoolean();
+                    assert typeJSON.get("exact") != null;
                     JsonArray indexers = typeJSON.get("indexers").getAsJsonArray();
                     for (JsonElement indexerJSONRaw : indexers) {
                         JsonObject indexerJSON = indexerJSONRaw.getAsJsonObject();
@@ -424,8 +425,21 @@ public class FlowParser {
         assert body.get("type").getAsString().equals("ObjectTypeAnnotation") || body.get("type").getAsString().equals("ClassBody");
         assert body.get("exact") == null || !body.get("exact").getAsBoolean();
         assert body.get("indexers") == null || body.get("indexers").getAsJsonArray().size() == 0;
-        assert body.get("callProperties") == null || body.get("callProperties").getAsJsonArray().size() == 0;
         assert body.get("internalSlots") == null || body.get("internalSlots").getAsJsonArray().size() == 0;
+
+        if (body.get("callProperties") != null) {
+            for (JsonElement callProperty : body.get("callProperties").getAsJsonArray()) {
+                boolean isStatic = callProperty.getAsJsonObject().get("static").getAsBoolean();
+                List<Signature> signatures = ((InterfaceType) parseType(callProperty.getAsJsonObject().get("value").getAsJsonObject(), nameContext).getType()).getDeclaredCallSignatures();
+                assert !signatures.isEmpty();
+
+                if (isStatic) {
+                    classType.getCallSignatures().addAll(signatures);
+                } else {
+                    throw new RuntimeException("I don't support this yet (requires extension in ClassType)");
+                }
+            }
+        }
 
         final JsonArray properties;
         if (body.get("type").getAsString().equals("ObjectTypeAnnotation")) {

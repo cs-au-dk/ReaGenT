@@ -123,7 +123,6 @@ public class FlowTests {
     }
 
     @Test
-    @Ignore
     public void parseUuid() {
         BenchmarkInfo.create(benchFromFolder("uuid"));
     }
