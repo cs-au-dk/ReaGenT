@@ -113,14 +113,9 @@ public class FlowTests {
     }
 
     @Test
-    @Ignore
     public void parseValidator() {
         BenchmarkInfo.create(benchFromFolder("validator"));
     }
-
-    // Object with call properties (signatures...)
-    // Object with constructorSignature.
-
 
     @Test
     public void objectWithCallsignature() throws Exception {

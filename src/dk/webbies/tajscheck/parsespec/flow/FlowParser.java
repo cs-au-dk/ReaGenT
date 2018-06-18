@@ -15,12 +15,15 @@ import dk.webbies.tajscheck.util.Util;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("Duplicates")
 public class FlowParser {
     private final SpecReader emptySpec;
     private final Map<String, Type> namedTypes = new HashMap<>();
+    private final List<SpecReader.NamedType> ambientTypes = new ArrayList<>();
     private final Map<String, List<Pair<Pair<Integer, Integer>, Type>>> typeParameters = new HashMap<>();
 
     private FlowParser(ParseDeclaration.Environment environment) {
@@ -46,7 +49,6 @@ public class FlowParser {
         final String astJSON = parseDeclaration(declarationFiles);
 
         List<SpecReader.NamedType> namedTypes = new ArrayList<>(flowParser.emptySpec.getNamedTypes());
-        List<SpecReader.NamedType> ambientTypes = new ArrayList<>();
         Map<String, Type> globalProperties = new HashMap<>();
 
         JsonArray body = new JsonParser().parse(astJSON).getAsJsonObject().get("body").getAsJsonArray();
@@ -57,7 +59,7 @@ public class FlowParser {
             JsonObject statement = rawStatement.getAsJsonObject();
             switch (statement.get("type").getAsString()) {
                 case "DeclareModule":
-                    flowParser.parseModule(ambientTypes, globalProperties, statement);
+                    flowParser.parseModule(flowParser.ambientTypes, globalProperties, statement);
                     break;
                 case "ClassDeclaration":
                 case "DeclareClass": {
@@ -76,7 +78,7 @@ public class FlowParser {
 
         InterfaceType global = SpecReader.makeEmptySyntheticInterfaceType();
         globalProperties.forEach((name, type) -> global.getDeclaredProperties().put(name, type instanceof DelayedType ? ((DelayedType) type).getType() : type));
-        return new SpecReader(global, expandDelayed(namedTypes), expandDelayed(ambientTypes), new HashMap<>());
+        return new SpecReader(global, expandDelayed(namedTypes), expandDelayed(flowParser.ambientTypes), new HashMap<>());
 
     }
 
@@ -215,8 +217,13 @@ public class FlowParser {
                         Lists.newArrayList(typeParameterJSON.get("params").getAsJsonArray()).stream().map(json -> parseType(json.getAsJsonObject(), nameContext)).forEach(typeArguments::add);
                     }
                     String name = typeJSON.get("id").getAsJsonObject().get("name").getAsString();
+                    if (name.startsWith("$")) {
+                        return specialFunctions.get(name).apply(this, typeArguments);
+                    }
                     Type type = TypeNameCreator.lookUp(namedTypes, nameContext, name, typeParameters, typeJSON.get("range").getAsJsonArray());
-                    assert type != null;
+                    if (type == null) {
+                        throw new RuntimeException("Type: " + name + " not found");
+                    }
                     if (typeof) {
                         Type instanceType = ((DelayedType) type).getType();
                         assert instanceType instanceof ClassInstanceType;
@@ -480,4 +487,14 @@ public class FlowParser {
     private Pair<Integer, Integer> parseRange(JsonObject typeJSON) {
         return Lists.newArrayList(typeJSON.get("range").getAsJsonArray()).stream().map(JsonElement::getAsNumber).map(Number::intValue).collect(Pair.collector());
     }
+
+    private static Map<String, BiFunction<FlowParser, List<Type>, Type>> specialFunctions = new HashMap<>(){{
+        put("$Exports", ((flowParser, types) -> {
+            assert types.size() == 1;
+            String moduleName = ((StringLiteral) ((DelayedType) types.get(0)).getType()).getText();
+            List<SpecReader.NamedType> matchingModules = flowParser.ambientTypes.stream().filter(ambient -> ambient.qName.size() == 1 && ambient.qName.get(0).equals(moduleName)).collect(Collectors.toList());
+            assert matchingModules.size() == 1;
+            return matchingModules.get(0).type;
+        }));
+    }};
 }

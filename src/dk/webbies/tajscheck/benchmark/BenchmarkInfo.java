@@ -113,6 +113,15 @@ public class BenchmarkInfo {
         }
 
         if (bench.run_method == Benchmark.RUN_METHOD.NODE) {
+            if (userDefinedTypes.size() > 1) {
+                @SuppressWarnings("ConstantConditions")
+                String minName = userDefinedTypes.keySet().stream().min(Comparator.comparingInt(String::length)).get();
+                if (userDefinedTypes.keySet().stream().allMatch(name -> name.startsWith(minName.substring(0, minName.length() - 1)))) {
+                    Type minNameType = userDefinedTypes.get(minName);
+                    userDefinedTypes.clear();
+                    userDefinedTypes.put(minName, minNameType);
+                }
+            }
             assert userDefinedTypes.size() == 1;
         }
 
