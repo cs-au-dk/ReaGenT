@@ -1,4 +1,4 @@
-package dk.webbies.tajscheck.test.tajs;
+package dk.webbies.tajscheck.test.flow;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.InterfaceType;
@@ -312,6 +312,17 @@ public class FlowTests {
 
         expect(result)
                 .forPath("foo.foo.2")
+                .hasViolations();
+    }
+
+    @Test
+    public void typeofProperty() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("typeofProperty"));
+
+        assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("foo.foo()")
                 .hasViolations();
     }
 

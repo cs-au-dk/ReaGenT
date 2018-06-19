@@ -69,6 +69,14 @@ public class FlowParser {
                     globalProperties.put(name, classType);
                     break;
                 }
+                case "DeclareFunction":
+                case "DeclareVariable": {
+                    JsonObject varId = statement.get("id").getAsJsonObject();
+                    String varName = varId.get("name").getAsString();
+                    Type varType = flowParser.parseType(varId.get("typeAnnotation").getAsJsonObject(), "");
+                    globalProperties.put(varName, varType);
+                    break;
+                }
                 case "DeclareTypeAlias":
                 case "TypeAlias":
                 case "InterfaceDeclaration":
@@ -137,14 +145,14 @@ public class FlowParser {
     }
 
     static String getName(JsonObject id) {
-        String name;
         if (id.get("type").getAsString().equals("Literal")) {
-            name = id.get("raw").getAsString();
+            return id.get("raw").getAsString();
+        } else if (id.get("type").getAsString().equals("QualifiedTypeIdentifier")) {
+            return getName(id.get("qualification").getAsJsonObject()) + "." + getName(id.get("id").getAsJsonObject());
         } else {
             assert id.get("type").getAsString().equals("Identifier");
-            name = id.get("name").getAsString();
+            return id.get("name").getAsString();
         }
-        return name;
     }
 
     private void parseModuleStatement(String name, Map<String, Type> declaredTypes, JsonObject moduleStatement) {
@@ -158,6 +166,7 @@ public class FlowParser {
             case "DeclareExportDeclaration":  // For now, everything is exported.
                 parseModuleStatement(name, declaredTypes, moduleStatement.get("declaration").getAsJsonObject());
                 break;
+            case "DeclareFunction":
             case "DeclareVariable": {
                 JsonObject varId = moduleStatement.get("id").getAsJsonObject();
                 String varName = varId.get("name").getAsString();
@@ -220,7 +229,7 @@ public class FlowParser {
                         assert typeJSON.get("typeParameters").getAsJsonObject().get("type").getAsString().equals("TypeParameterInstantiation");
                         Lists.newArrayList(typeParameterJSON.get("params").getAsJsonArray()).stream().map(json -> parseType(json.getAsJsonObject(), nameContext)).forEach(typeArguments::add);
                     }
-                    String name = typeJSON.get("id").getAsJsonObject().get("name").getAsString();
+                    String name = getName(typeJSON.get("id").getAsJsonObject());
                     if (utilityTypes.containsKey(name)) {
                         return utilityTypes.get(name).apply(this, typeArguments);
                     }
@@ -250,8 +259,11 @@ public class FlowParser {
                         } else {
                             Type lookup = TypeNameCreator.lookUp(namedTypes, nameContext, name, typeParameters, typeJSON.get("range").getAsJsonArray());
                             Type instanceType = lookup instanceof DelayedType ? ((DelayedType) lookup).getType(): lookup;
-                            assert instanceType instanceof ClassInstanceType;
-                            type = ((ClassInstanceType) instanceType).getClassType();
+                            if (instanceType instanceof ClassInstanceType) {
+                                type = ((ClassInstanceType) instanceType).getClassType();
+                            } else {
+                                type = instanceType;
+                            }
                         }
                     } else {
                         type = TypeNameCreator.lookUp(namedTypes, nameContext, name, typeParameters, typeJSON.get("range").getAsJsonArray());
@@ -356,6 +368,7 @@ public class FlowParser {
                     }
                     interfaceType.getDeclaredProperties().putAll(properties);
                     return interfaceType;
+                case "DeclareInterface":
                 case "InterfaceDeclaration": {
                     String interfaceName = typeJSON.get("id").getAsJsonObject().get("name").getAsString(); // Good for debug.
 
@@ -474,10 +487,12 @@ public class FlowParser {
             JsonObject property = rawProperty.getAsJsonObject();
             switch (property.get("type").getAsString()) {
                 case "ObjectTypeProperty":
-                    DelayedType propertyType = parseType(property.get("value").getAsJsonObject(), nameContext);
-                    assert !property.get("optional").getAsBoolean();
+                    Type propertyType = parseType(property.get("value").getAsJsonObject(), nameContext).getType();
+                    if (property.get("optional").getAsBoolean()) {
+                        propertyType = new UnionType(Arrays.asList(new SimpleType(SimpleTypeKind.Undefined), propertyType));
+                    }
                     assert !property.get("proto").getAsBoolean();
-                    assert property.get("variance").isJsonNull() || !property.get("variance").getAsBoolean();
+//                    assert property.get("variance").isJsonNull() || !property.get("variance").getAsBoolean(); // Tbh. Variance doesn't matter for my purposes, so I just ignore it.
                     assert property.get("kind").getAsString().equals("init");
                     assert property.get("key").getAsJsonObject().get("type").getAsString().equals("Identifier");
 
@@ -486,7 +501,8 @@ public class FlowParser {
 
                     if (name.equals("constructor")) {
                         assert !isStatic;
-                        List<Signature> signatures = ((InterfaceType) propertyType.getType()).getDeclaredCallSignatures();
+                        //noinspection ConstantConditions
+                        List<Signature> signatures = ((InterfaceType)propertyType).getDeclaredCallSignatures();
                         assert !signatures.isEmpty();
                         signatures.stream().map(TypesUtil::cloneSignature).peek(sig -> sig.setResolvedReturnType(null)).forEach(classType.getConstructors()::add);
                         break;
@@ -592,5 +608,16 @@ public class FlowParser {
         }));
         put("$Supertype", ((flowParser, types) -> { throw new RuntimeException();}));
         put("$Subtype", ((flowParser, types) -> { throw new RuntimeException();}));
+        put("$ReadOnlyArray", (((flowParser, types) -> { // Yet another undocumented feature. WHICH IS USED IN flow-typed!?!?
+            assert types.size() == 1;
+
+            Type array = flowParser.namedTypes.get("Array"); // For now just an ordinary array. I only read from it anyway.
+
+            ReferenceType resultType = new ReferenceType();
+            resultType.setTarget(array);
+            resultType.setTypeArguments(Collections.singletonList(types.get(0)));
+
+            return resultType;
+        })));
     }};
 }

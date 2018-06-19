@@ -55,7 +55,7 @@ public class TAJSUnitTests {
         return run(benchFromFolder(folderName, options), timeout);
     }
 
-    static TajsAnalysisResults run(Benchmark bench) throws Exception {
+    public static TajsAnalysisResults run(Benchmark bench) throws Exception {
         return run(bench, Integer.MAX_VALUE);
     }
 
@@ -95,49 +95,49 @@ public class TAJSUnitTests {
         return Benchmark.fromTSFile(tsFile, name, ParseDeclaration.Environment.ES5Core, run_method, options.build());
     }
 
-    static CheckOptions.Builder options() {
+    public static CheckOptions.Builder options() {
         return CheckOptions.builder().setCheckDepthReport(0).setCheckDepthUseValue(0);
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    static class TAJSResultTester {
+    public static class TAJSResultTester {
         private TajsAnalysisResults results;
 
         private TAJSResultTester(TajsAnalysisResults result) {
             this.results = result;
         }
 
-        TAJSUnitTests.TAJSResultTester performed(String path) {
+        public TAJSUnitTests.TAJSResultTester performed(String path) {
             MatcherAssert.assertThat("test for " + path + " hasn't been performed", results.testPerformed.stream().anyMatch(test -> test.getPath().equals(path)));
             return this;
         }
 
-        TAJSUnitTests.TAJSResultTester performedAllTests() {
+        public TAJSUnitTests.TAJSResultTester performedAllTests() {
             MatcherAssert.assertThat("some tests were not performed: " + mkString(results.testNot, ", "), results.testNot.isEmpty());
             return this;
         }
 
-        TAJSUnitTests.TAJSResultTester notPerformedAllTests() {
+        public TAJSUnitTests.TAJSResultTester notPerformedAllTests() {
             MatcherAssert.assertThat("there weere no tests that were not performed", !results.testNot.isEmpty());
             return this;
         }
 
-        TAJSUnitTests.TAJSResultTester hasNoViolations() {
+        public TAJSUnitTests.TAJSResultTester hasNoViolations() {
             MatcherAssert.assertThat("there are no violations", results.detectedViolations.size() == 0);
             return this;
         }
 
-        TAJSUnitTests.TAJSResultTester hasNoWarnings() {
+        public TAJSUnitTests.TAJSResultTester hasNoWarnings() {
             MatcherAssert.assertThat("there are no warnings", results.detectedWarnings.size() == 0);
             return this;
         }
 
-        TAJSUnitTests.TAJSResultTester hasViolations() {
+        public TAJSUnitTests.TAJSResultTester hasViolations() {
             MatcherAssert.assertThat("there are violations", results.detectedViolations.size() != 0);
             return this;
         }
 
-        TAJSResultTester forPath(String path) {
+        public TAJSResultTester forPath(String path) {
             MultiMap<String, TypeViolation> detectedViolations = results.detectedViolations.asMap().entrySet().stream().filter(entry -> entry.getKey().startsWith(path)).collect(ArrayListMultiMap.collector());
             List<dk.webbies.tajscheck.testcreator.test.Test> performedTest = results.testPerformed.stream().filter(test -> test.getPath().startsWith(path)).collect(Collectors.toList());
             List<dk.webbies.tajscheck.testcreator.test.Test> testsNot = results.testNot.stream().filter(test -> test.getPath().startsWith(path)).collect(Collectors.toList());

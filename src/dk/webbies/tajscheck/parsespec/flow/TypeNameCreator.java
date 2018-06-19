@@ -4,10 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import dk.au.cs.casa.typescript.types.DelayedType;
-import dk.au.cs.casa.typescript.types.ReferenceType;
-import dk.au.cs.casa.typescript.types.Type;
-import dk.au.cs.casa.typescript.types.TypeParameterType;
+import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tajscheck.util.Pair;
 
 import java.util.ArrayList;
@@ -24,6 +21,10 @@ public class TypeNameCreator {
     private final List<Pair<JsonObject, String>> classDefinitions = new ArrayList<>();
 
     static Type lookUp(Map<String, Type> namedTypes, String nameContext, String name, Map<String, List<Pair<Pair<Integer, Integer>, Type>>> typeParameters, JsonArray rawRange) {
+        if (name.contains(".")) {
+            Type baseType = lookUp(namedTypes, nameContext, name.substring(0, name.indexOf(".")), typeParameters, rawRange);
+            return lookUpInType(baseType, name.substring(name.indexOf(".") + 1, name.length()));
+        }
         if (typeParameters.containsKey(name)) {
             Pair<Integer, Integer> range = Lists.newArrayList(rawRange).stream().map(JsonElement::getAsNumber).map(Number::intValue).collect(Pair.collector());
             List<Pair<Pair<Integer, Integer>, Type>> candidates = typeParameters.get(name).stream().filter(candidate -> candidate.getLeft().getLeft() <= range.getLeft() && candidate.getLeft().getRight() >= range.getRight()).collect(Collectors.toList());
@@ -62,6 +63,19 @@ public class TypeNameCreator {
             }
         }
         return null;
+    }
+
+    private static Type lookUpInType(Type type, String prop) {
+        assert !prop.contains(".");
+        if (type instanceof DelayedType) {
+            return lookUpInType(((DelayedType) type).getType(), prop);
+        } else if (type instanceof InterfaceType) {
+            return ((InterfaceType) type).getDeclaredProperties().get(prop);
+        } else if (type instanceof GenericType) {
+            return lookUpInType(((GenericType) type).toInterface(), prop);
+        }
+
+        throw new RuntimeException(type.getClass().getSimpleName());
     }
 
     private DelayedType parseType(JsonObject obj, String typeContext) {
@@ -126,11 +140,12 @@ public class TypeNameCreator {
             case "DeclareModuleExports":
                 // Does not produce a named type, and it has already been registered as the type for the module.
                 break;
-            case "DeclareExportDeclaration":{ // For now, everthing is assumed to be exported. Which is not an issue for my purpose.
+            case "DeclareExportDeclaration":{ // For now, everything is assumed to be exported. Which is not an issue for my purpose.
                 JsonObject declaration = moduleStatement.get("declaration").getAsJsonObject();
                 parseModuleStatement(nameContext, result, declaration);
                 break;
             }
+            case "DeclareFunction":
             case "DeclareVariable": {
                 JsonObject id = moduleStatement.get("id").getAsJsonObject();
                 String name = id.get("name").getAsString();
@@ -138,11 +153,29 @@ public class TypeNameCreator {
                 result.put(newNameContext(nameContext, name), type);
                 break;
             }
+            case "DeclareInterface":
             case "GenericTypeAnnotation":
             case "InterfaceDeclaration": {
                 JsonObject id = moduleStatement.get("id").getAsJsonObject();
                 String name = id.get("name").getAsString();
                 DelayedType type = parseType(moduleStatement, nameContext);
+                result.put(newNameContext(nameContext, name), type);
+                break;
+            }
+            case "DeclareOpaqueType": {
+                String name = moduleStatement.get("id").getAsJsonObject().get("name").getAsString();
+                List<Type> typeParameters = flowParser.createTypeParameters(moduleStatement, nameContext);
+
+                assert moduleStatement.get("impltype").isJsonNull();
+                assert moduleStatement.get("supertype").isJsonNull();
+                Type type = new SimpleType(SimpleTypeKind.Any); // Don't really know how to handle this.
+                if (!typeParameters.isEmpty()) {
+                    ReferenceType refType = new ReferenceType();
+                    refType.setTypeArguments(typeParameters);
+                    refType.setTarget(type);
+                    type = refType;
+                }
+
                 result.put(newNameContext(nameContext, name), type);
                 break;
             }
@@ -174,6 +207,8 @@ public class TypeNameCreator {
             case "DeclareModule":
                 result.putAll(parseModule(moduleStatement, nameContext));
                 break;
+            case "EmptyStatement":
+                break; // Literally noting.
             default:
                 throw new RuntimeException(moduleStatement.get("type").getAsString());
         }
