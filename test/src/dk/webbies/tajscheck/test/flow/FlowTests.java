@@ -326,5 +326,21 @@ public class FlowTests {
                 .hasViolations();
     }
 
+    @Test
+    @Ignore // Seems the flow-parser forgets about the typeof annotation.
+    public void moduleExportsClass() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("moduleExportsClass"));
+
+        assertThat(result.detectedViolations.keySet(), hasSize(2));
+
+        expect(result)
+                .forPath("bizniz.Bizniz.bar()")
+                .hasViolations();
+
+        expect(result)
+                .forPath("bizniz.Bizniz.new().foo()")
+                .hasViolations();
+    }
+
 
 }

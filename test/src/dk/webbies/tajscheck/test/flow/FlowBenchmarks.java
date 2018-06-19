@@ -50,10 +50,18 @@ public class FlowBenchmarks {
         // TODO: Seems not to work
 //        register(new Benchmark("Chromcast-caf-receiver", ParseDeclaration.Environment.ES5Core, "test/flowtyped/chromecast-caf-receiver/cast_receiver_framework.js", "test/flowtyped/chromecast-caf-receiver/declaration.js", BROWSER, options));
 //        register(new Benchmark("amplitude-js", ParseDeclaration.Environment.ES5Core, "test/flowtyped/amplitude-js/amplitude.js", "test/flowtyped/amplitude-js/declaration.js", NODE, options));
+//        register(new Benchmark("axios", ParseDeclaration.Environment.ES5Core, "test/flowtyped/axios/axios.js", "test/flowtyped/axios/declaration.js", NODE, options));
+
+        // Might work, not sure.
+//        register(new Benchmark("base64url", ParseDeclaration.Environment.ES5Core, "test/flowtyped/base64url/base64url.js", "test/flowtyped/base64url/declaration.js", NODE, options));
 
         // Works.
 //        register(new Benchmark("aphrodite.js", ParseDeclaration.Environment.ES5Core, "test/flowtyped/aphrodite/aphrodite.js", "test/flowtyped/aphrodite/declaration.js", NODE, options));
-        register(new Benchmark("axios", ParseDeclaration.Environment.ES5Core, "test/flowtyped/axios/axios.js", "test/flowtyped/axios/declaration.js", NODE, options));
+//        register(new Benchmark("balanced-match", ParseDeclaration.Environment.ES5Core, "test/flowtyped/balanced-match/balanced-match.js", "test/flowtyped/balanced-match/declaration.js", NODE, options));
+//        register(new Benchmark("big.js", ParseDeclaration.Environment.ES5Core, "test/flowtyped/big.js/big.js", "test/flowtyped/big.js/declaration.js", NODE, options));
+//        register(new Benchmark("bigi", ParseDeclaration.Environment.ES5Core, "test/flowtyped/bigi/bigi.js", "test/flowtyped/bigi/declaration.js", NODE, options));
+        register(new Benchmark("blacklist", ParseDeclaration.Environment.ES5Core, "test/flowtyped/blacklist/blacklist.js", "test/flowtyped/blacklist/declaration.js", NODE, options));
+
 
     }
 
