@@ -24,12 +24,16 @@ public class FlowParser {
     private final Map<String, Type> namedTypes = new HashMap<>();
     private final List<SpecReader.NamedType> ambientTypes = new ArrayList<>();
     private final Map<String, List<Pair<Pair<Integer, Integer>, Type>>> typeParameters = new HashMap<>();
+    private final TypeNameCreator typeNameCreator;
 
-    private FlowParser(ParseDeclaration.Environment environment) {
+    private FlowParser(ParseDeclaration.Environment environment, JsonArray body) {
         this.emptySpec = ParseDeclaration.getTypeSpecification(environment, Collections.emptyList());
         for (SpecReader.NamedType namedType : emptySpec.getNamedTypes()) {
             namedTypes.put(String.join(".", namedType.qName), namedType.type);
         }
+
+        this.typeNameCreator = new TypeNameCreator(this, body);
+        this.namedTypes.putAll(typeNameCreator.getTypeNames());
     }
 
     void registerTypeParameter(String name, Pair<Integer, Integer> range, Type type) {
@@ -40,19 +44,17 @@ public class FlowParser {
     }
 
     public static SpecReader parse(ParseDeclaration.Environment environment, List<String> declarationFiles) {
-        FlowParser flowParser = new FlowParser(environment);
+        final String astJSON = declarationFiles.isEmpty() ? "" : parseDeclaration(declarationFiles);
+        JsonArray body = astJSON.isEmpty() ? new JsonArray() : new JsonParser().parse(astJSON).getAsJsonObject().get("body").getAsJsonArray();
+
+        FlowParser flowParser = new FlowParser(environment, body);
 
         if (declarationFiles.isEmpty()) {
             return new SpecReader(SpecReader.makeEmptySyntheticInterfaceType(), flowParser.emptySpec.getNamedTypes(), new ArrayList<>(), new HashMap<>());
         }
-        final String astJSON = parseDeclaration(declarationFiles);
 
         List<SpecReader.NamedType> namedTypes = new ArrayList<>(flowParser.emptySpec.getNamedTypes());
         Map<String, Type> globalProperties = new HashMap<>();
-
-        JsonArray body = new JsonParser().parse(astJSON).getAsJsonObject().get("body").getAsJsonArray();
-
-        flowParser.namedTypes.putAll(new TypeNameCreator(flowParser).createTypeNames(body));
 
         for (JsonElement rawStatement : body) {
             JsonObject statement = rawStatement.getAsJsonObject();
@@ -222,6 +224,25 @@ public class FlowParser {
                     if (utilityTypes.containsKey(name)) {
                         return utilityTypes.get(name).apply(this, typeArguments);
                     }
+
+                    if (name.equals("this")) {
+                        assert !typeof;
+                        assert typeArguments.isEmpty();
+                        Pair<Integer, Integer> range = parseRange(typeJSON);
+
+                        List<Pair<JsonObject, String>> matchingClasses = typeNameCreator.getClassDefinitions().stream().filter(classDef -> {
+                            Pair<Integer, Integer> classDefRange = parseRange(classDef.getLeft());
+                            return range.getLeft() >= classDefRange.getLeft() && range.getRight() <= classDefRange.getRight();
+                        }).collect(Collectors.toList());
+
+                        assert matchingClasses.size() == 1;
+
+                        ThisType thisType = new ThisType();
+                        Pair<JsonObject, String> matchingClassDef = matchingClasses.iterator().next();
+                        thisType.setConstraint(parseType(matchingClassDef.getLeft(), matchingClassDef.getRight()));
+                        return thisType;
+                    }
+
                     final Type type;
                     if (typeof) {
                         if (this.emptySpec.getGlobal().getDeclaredProperties().containsKey(name)) {

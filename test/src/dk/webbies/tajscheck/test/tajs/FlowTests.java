@@ -82,6 +82,11 @@ public class FlowTests {
     }
 
     @Test
+    public void parseUnified() {
+        BenchmarkInfo.create(benchFromFolder("unified"));
+    }
+
+    @Test
     public void parseVscode() {
         BenchmarkInfo.create(benchFromFolder("vscode"));
     }

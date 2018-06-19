@@ -19,7 +19,9 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("Duplicates")
 public class TypeNameCreator {
-    private FlowParser flowParser;
+    private final Map<String, Type> typeNames;
+    private final FlowParser flowParser;
+    private final List<Pair<JsonObject, String>> classDefinitions = new ArrayList<>();
 
     static Type lookUp(Map<String, Type> namedTypes, String nameContext, String name, Map<String, List<Pair<Pair<Integer, Integer>, Type>>> typeParameters, JsonArray rawRange) {
         if (typeParameters.containsKey(name)) {
@@ -66,17 +68,22 @@ public class TypeNameCreator {
         return flowParser.parseType(obj, typeContext);
     }
 
-    TypeNameCreator(FlowParser flowParser) {
+    TypeNameCreator(FlowParser flowParser, JsonArray body) {
         this.flowParser = flowParser;
+        this.typeNames = createTypeNames(body);
     }
 
-    Map<String, Type> createTypeNames(JsonArray body) {
+    public Map<String, Type> getTypeNames() {
+        return typeNames;
+    }
+
+    public List<Pair<JsonObject, String>> getClassDefinitions() {
+        return classDefinitions;
+    }
+
+    private Map<String, Type> createTypeNames(JsonArray body) {
         Map<String, Type> result = new HashMap<>();
-        for (JsonElement rawStatement : body) {
-            parseModuleStatement("", result, rawStatement.getAsJsonObject());
-        }
-
-
+        body.forEach(rawStatement -> parseModuleStatement("", result, rawStatement.getAsJsonObject()));
         return result;
     }
 
@@ -156,12 +163,14 @@ public class TypeNameCreator {
                 break;
             }
             case "DeclareClass":
-            case "ClassDeclaration":
+            case "ClassDeclaration": {
+                classDefinitions.add(new Pair<>(moduleStatement, nameContext));
                 result.put(
                         newNameContext(nameContext, moduleStatement.get("id").getAsJsonObject().get("name").getAsString()),
                         parseType(moduleStatement, nameContext)
                 );
                 break;
+            }
             case "DeclareModule":
                 result.putAll(parseModule(moduleStatement, nameContext));
                 break;
