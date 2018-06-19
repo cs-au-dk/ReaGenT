@@ -60,7 +60,9 @@ public class FlowBenchmarks {
 //        register(new Benchmark("balanced-match", ParseDeclaration.Environment.ES5Core, "test/flowtyped/balanced-match/balanced-match.js", "test/flowtyped/balanced-match/declaration.js", NODE, options));
 //        register(new Benchmark("big.js", ParseDeclaration.Environment.ES5Core, "test/flowtyped/big.js/big.js", "test/flowtyped/big.js/declaration.js", NODE, options));
 //        register(new Benchmark("bigi", ParseDeclaration.Environment.ES5Core, "test/flowtyped/bigi/bigi.js", "test/flowtyped/bigi/declaration.js", NODE, options));
-        register(new Benchmark("blacklist", ParseDeclaration.Environment.ES5Core, "test/flowtyped/blacklist/blacklist.js", "test/flowtyped/blacklist/declaration.js", NODE, options));
+//        register(new Benchmark("blacklist", ParseDeclaration.Environment.ES5Core, "test/flowtyped/blacklist/blacklist.js", "test/flowtyped/blacklist/declaration.js", NODE, options));
+//        register(new Benchmark("bound-points", ParseDeclaration.Environment.ES5Core, "test/flowtyped/bound-points/bound-points.js", "test/flowtyped/bound-points/declaration.js", NODE, options));
+        register(new Benchmark("bunyan", ParseDeclaration.Environment.ES5Core, "test/flowtyped/bunyan/bunyan.js", "test/flowtyped/bunyan/declaration.js", NODE, options));
 
 
     }

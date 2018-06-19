@@ -178,6 +178,7 @@ public class FlowParser {
             case "GenericTypeAnnotation":
             case "TypeAlias":
             case "DeclareTypeAlias":
+            case "DeclareInterface":
                 break; // Doesn't declare any actual value, just a named-type, which has already been handled.
             default:
                 throw new RuntimeException(moduleStatement.get("type").getAsString());
