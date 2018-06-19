@@ -68,7 +68,7 @@ public class FlowTests {
     }
 
     static Benchmark benchFromFolder(String folderName, OptionsI.Builder options, Benchmark.RUN_METHOD run_method) {
-        return new Benchmark("flow-" + folderName, ParseDeclaration.Environment.ES6DOM, "test/flowtyped/" + folderName + "/implementation.js", "test/flowtyped/" + folderName + "/declaration.js", run_method, options.build());
+        return new Benchmark("flow-" + folderName, ParseDeclaration.Environment.ES6DOM, "test/flowtests/" + folderName + "/implementation.js", "test/flowtests/" + folderName + "/declaration.js", run_method, options.build());
     }
 
     @Test
@@ -84,6 +84,11 @@ public class FlowTests {
     @Test
     public void parseUnified() {
         BenchmarkInfo.create(benchFromFolder("unified"));
+    }
+
+    @Test
+    public void parseUnderscoreDotString() {
+        BenchmarkInfo.create(benchFromFolder("underscore.string"));
     }
 
     @Test
