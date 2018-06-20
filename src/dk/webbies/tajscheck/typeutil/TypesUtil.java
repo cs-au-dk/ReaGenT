@@ -933,7 +933,7 @@ public class TypesUtil {
 
             {
                 Map<TypeParameterType, Type> map = new HashMap<>();
-                for (int i = 0; i < classType.getTypeParameters().size(); i++) {
+                for (int i = 0; i < Math.min(classType.getTypeParameters().size(), classType.getTypeArguments().size()); i++) {
                     map.put((TypeParameterType) classType.getTypeParameters().get(i), classType.getTypeArguments().get(i));
                 }
                 map.keySet().removeAll(typeContext.getMap().keySet());

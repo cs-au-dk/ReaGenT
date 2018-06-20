@@ -748,7 +748,11 @@ public class TypeChecker {
 
         @Override
         public List<TypeCheck> visit(ThisType t, Arg arg) {
-            return arg.typeContext.getThisType().accept(this, arg);
+            Type thisType = arg.typeContext.getThisType();
+            if (thisType == null) {
+                thisType = t.getConstraint();
+            }
+            return thisType.accept(this, arg);
         }
 
         @Override

@@ -767,7 +767,11 @@ public class TestCreator {
 
         @Override
         public Void visit(ThisType t, Arg arg) {
-            return recurse(arg.typeContext.getThisType(), arg);
+            Type thisType = arg.typeContext.getThisType();
+            if (thisType == null) {
+                thisType = t.getConstraint();
+            }
+            return recurse(thisType, arg);
         }
 
         @Override

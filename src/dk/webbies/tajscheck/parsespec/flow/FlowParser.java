@@ -88,6 +88,13 @@ public class FlowParser {
 
         InterfaceType global = SpecReader.makeEmptySyntheticInterfaceType();
         globalProperties.forEach((name, type) -> global.getDeclaredProperties().put(name, type instanceof DelayedType ? ((DelayedType) type).getType() : type));
+
+        flowParser.emptySpec.getGlobal().getDeclaredProperties().forEach((name, type) -> {
+            if (!global.getDeclaredProperties().containsKey(name)) {
+                global.getDeclaredProperties().put(name, type);
+            }
+        });
+
         return new SpecReader(global, expandDelayed(namedTypes), expandDelayed(flowParser.ambientTypes), new HashMap<>());
 
     }
@@ -500,8 +507,7 @@ public class FlowParser {
                     boolean isStatic = property.get("static").getAsBoolean();
                     String name = property.get("key").getAsJsonObject().get("name").getAsString();
 
-                    if (name.equals("constructor")) {
-                        assert !isStatic;
+                    if (name.equals("constructor") && !isStatic) {
                         //noinspection ConstantConditions
                         List<Signature> signatures = ((InterfaceType)propertyType).getDeclaredCallSignatures();
                         assert !signatures.isEmpty();
@@ -619,6 +625,32 @@ public class FlowParser {
             resultType.setTypeArguments(Collections.singletonList(types.get(0)));
 
             return resultType;
+        })));
+        put("$Shape", (((flowParser, types) -> { // Yet another undocumented feature. Which is used in flow-typed, and their own documentation?!?!?!?
+            assert types.size() == 1;
+
+            Type type = types.iterator().next();
+            if (type instanceof DelayedType) {
+                type = ((DelayedType) type).getType();
+            }
+            if (type instanceof InterfaceType) {
+                InterfaceType org = (InterfaceType) type;
+                InterfaceType interfaceType = SpecReader.makeEmptySyntheticInterfaceType();
+                interfaceType.setBaseTypes(org.getBaseTypes());
+                interfaceType.setDeclaredCallSignatures(org.getDeclaredCallSignatures());
+                interfaceType.setDeclaredConstructSignatures(org.getDeclaredConstructSignatures());
+                interfaceType.setReadonlyDeclarations(org.getReadonlyDeclarations());
+                interfaceType.setDeclaredNumberIndexType(org.getDeclaredNumberIndexType());
+                interfaceType.setDeclaredProperties(org.getDeclaredProperties().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> new UnionType(Arrays.asList(new SimpleType(SimpleTypeKind.Undefined), entry.getValue())))));
+                interfaceType.setDeclaredStringIndexType(org.getDeclaredStringIndexType());
+                interfaceType.setTypeParameters(org.getTypeParameters());
+                return interfaceType;
+            }
+            if (type instanceof TypeParameterType) {
+                return type; // good enough.
+            }
+
+            throw new RuntimeException(type.getClass().getSimpleName());
         })));
     }};
 }

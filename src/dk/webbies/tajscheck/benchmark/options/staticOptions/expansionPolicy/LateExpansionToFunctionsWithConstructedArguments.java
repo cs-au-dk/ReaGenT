@@ -143,7 +143,13 @@ public class LateExpansionToFunctionsWithConstructedArguments implements Expansi
                 return true;
             }
             TypeWithContext nested = typeContext.get(t);
-            return inWhiteList.test(t) || nested.getType().accept(new CanEasilyConstructVisitor(nested.getTypeContext(), info, whiteList));
+            if (nested.getType().equals(t)) {
+                return true;
+            }
+            if (Thread.currentThread().getStackTrace().length > 1000) {
+                System.out.println();
+            }
+            return inWhiteList.test(t) || nested.getType().accept(new CanEasilyConstructVisitor(nested.getTypeContext(), info, (innerT) -> innerT.getType() == t || whiteList.test(innerT)));
         }
 
         @Override

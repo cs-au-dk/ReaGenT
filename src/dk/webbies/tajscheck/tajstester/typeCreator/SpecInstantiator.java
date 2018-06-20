@@ -646,11 +646,15 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(TypeParameterType t, MiscInfo info) {
-            if (info.context.containsKey(t)) {
+            boolean seemsRecursive = false;
+            if (info.path.size() > 50 && info.path.subList(info.path.size() - 30, info.path.size()).stream().allMatch("<>"::equals)) {
+                seemsRecursive = true;
+            }
+            if (!seemsRecursive && info.context.containsKey(t)) {
                 TypeWithContext lookup = info.context.get(t);
-                return instantiate(lookup.getType(), info.withContext(lookup.getTypeContext()), null);
+                return instantiate(lookup.getType(), info.withContext(lookup.getTypeContext()), "<>");
             } else {
-                if (t.getConstraint() == null && !TypesUtil.isEmptyInterface(t.getConstraint())) {
+                if (t.getConstraint() == null) {
                     System.err.println("Just returning a dummy object for unbound type parameters."); // TODO:
                     return instantiate(unboundTypeParameter, info, null);
                 } else {
