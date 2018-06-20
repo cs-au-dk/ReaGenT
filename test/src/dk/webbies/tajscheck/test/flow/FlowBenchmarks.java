@@ -62,7 +62,11 @@ public class FlowBenchmarks {
 //        register(new Benchmark("bigi", ParseDeclaration.Environment.ES5Core, "test/flowtyped/bigi/bigi.js", "test/flowtyped/bigi/declaration.js", NODE, options));
 //        register(new Benchmark("blacklist", ParseDeclaration.Environment.ES5Core, "test/flowtyped/blacklist/blacklist.js", "test/flowtyped/blacklist/declaration.js", NODE, options));
 //        register(new Benchmark("bound-points", ParseDeclaration.Environment.ES5Core, "test/flowtyped/bound-points/bound-points.js", "test/flowtyped/bound-points/declaration.js", NODE, options));
-        register(new Benchmark("bunyan", ParseDeclaration.Environment.ES5Core, "test/flowtyped/bunyan/bunyan.js", "test/flowtyped/bunyan/declaration.js", NODE, options));
+//        register(new Benchmark("bunyan", ParseDeclaration.Environment.ES5Core, "test/flowtyped/bunyan/bunyan.js", "test/flowtyped/bunyan/declaration.js", NODE, options));
+//        register(new Benchmark("camelcase", ParseDeclaration.Environment.ES5Core, "test/flowtyped/camelcase/camelcase.js", "test/flowtyped/camelcase/declaration.js", NODE, options));
+//        register(new Benchmark("canvas-starfield", ParseDeclaration.Environment.ES5Core, "test/flowtyped/canvas-starfield/canvas-starfield.js", "test/flowtyped/canvas-starfield/declaration.js", BROWSER, options));
+//        register(new Benchmark("chance", ParseDeclaration.Environment.ES5Core, "test/flowtyped/chance/chance.js", "test/flowtyped/chance/declaration.js", NODE, options));
+        register(new Benchmark("checkdigit", ParseDeclaration.Environment.ES5Core, "test/flowtyped/checkdigit/checkdigit.js", "test/flowtyped/checkdigit/declaration.js", NODE, options));
 
 
     }
