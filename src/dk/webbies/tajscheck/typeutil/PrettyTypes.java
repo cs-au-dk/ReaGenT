@@ -106,6 +106,8 @@ public class PrettyTypes {
             return "class";
         } else if (type instanceof ThisType) {
             return "this";
+        } else if (type instanceof TupleType) {
+            return "tuple";
         }
 
         throw new RuntimeException(type.getClass().getName());

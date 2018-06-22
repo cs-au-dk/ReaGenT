@@ -1,28 +1,16 @@
 package dk.webbies.tajscheck.test.flow;
 
-import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
-import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
-import dk.webbies.tajscheck.test.TestParsing;
-import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
-import dk.webbies.tajscheck.test.experiments.CountUniques;
-import dk.webbies.tajscheck.util.MultiMap;
-import dk.webbies.tajscheck.util.Pair;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static dk.webbies.tajscheck.benchmark.Benchmark.RUN_METHOD.*;
 import static dk.webbies.tajscheck.test.dynamic.RunBenchmarks.printErrors;
@@ -89,10 +77,30 @@ public class FlowBenchmarks {
 //        register(new Benchmark("es6-error", ParseDeclaration.Environment.ES5Core, "test/flowtyped/es6-error/es6-error.js", "test/flowtyped/es6-error/declaration.js", NODE, options));
 //        register(new Benchmark("escape-html", ParseDeclaration.Environment.ES5Core, "test/flowtyped/escape-html/escape-html.js", "test/flowtyped/escape-html/declaration.js", NODE, options));
 //        register(new Benchmark("escape-string-regexp", ParseDeclaration.Environment.ES5Core, "test/flowtyped/escape-string-regexp/escape-string-regexp.js", "test/flowtyped/escape-string-regexp/declaration.js", NODE, options));
-        register(new Benchmark("fast-safe-stringify", ParseDeclaration.Environment.ES5Core, "test/flowtyped/fast-safe-stringify/fast-safe-stringify.js", "test/flowtyped/fast-safe-stringify/declaration.js", NODE, options));
+//        register(new Benchmark("fast-safe-stringify", ParseDeclaration.Environment.ES5Core, "test/flowtyped/fast-safe-stringify/fast-safe-stringify.js", "test/flowtyped/fast-safe-stringify/declaration.js", NODE, options));
+//        register(new Benchmark("filesize-parser", ParseDeclaration.Environment.ES5Core, "test/flowtyped/filesize-parser/filesize-parser.js", "test/flowtyped/filesize-parser/declaration.js", NODE, options));
+//        register("filesize", options);
+//        register("flatbuffers", options);
+//        register("framesync", options);
+//        register("fuzzaldrin", options);
+//        register("gl-matrix", options); // <- crashes ReaGenT, but TSTest works ok.
+//        register("he", options);
+//        register("highlight.js", options); // <- when ReaGenT tries to parse the implementation, it runs into a stack-overflow (look like a recursive ast???).
+//        register("http-status", options);
+//        register("humanize-number", options);
+//        register("icepick", options); // <- uses a little to much ES6 for TAJS.
+//        register("imurmurhash", options);
+//        register("indent-string", options); // <- uses a little to much ES6 for TAJS
+//        register("inline-style-prefix", options);
+//        register("intl-messageformat", options);
+//        register("is-absolute-url", options);
+        register("natural-sort", options);
 
 
+    }
 
+    private static void register(String name, CheckOptions options) {
+        register(new Benchmark(name, ParseDeclaration.Environment.ES5Core, "test/flowtyped/" + name + "/" + name + ".js", "test/flowtyped/" + name + "/declaration.js", NODE, options));
     }
 
     private static void register(Benchmark benchmark) {

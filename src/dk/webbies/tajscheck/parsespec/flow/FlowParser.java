@@ -161,6 +161,14 @@ public class FlowParser {
             return id.get("name").getAsString();
         }
     }
+    static String getPropertyName(JsonObject id) {
+        if (id.get("type").getAsString().equals("Literal")) {
+            return id.get("value").getAsString();
+        } else {
+            assert id.get("type").getAsString().equals("Identifier");
+            return id.get("name").getAsString();
+        }
+    }
 
     private void parseModuleStatement(String name, Map<String, Type> declaredTypes, JsonObject moduleStatement) {
         switch (moduleStatement.get("type").getAsString()) {
@@ -370,7 +378,7 @@ public class FlowParser {
                     for (JsonElement propertyRaw : typeJSON.get("properties").getAsJsonArray()) {
                         JsonObject propertyJSON = propertyRaw.getAsJsonObject();
                         assert propertyJSON.get("type").getAsString().equals("ObjectTypeProperty");
-                        String name = getName(propertyJSON.get("key").getAsJsonObject());
+                        String name = getPropertyName(propertyJSON.get("key").getAsJsonObject());
                         DelayedType type = parseType(propertyJSON.get("value").getAsJsonObject(), nameContext);
                         properties.put(name, type);
                     }
