@@ -50,7 +50,13 @@ public class FlowParser {
         FlowParser flowParser = new FlowParser(environment, body);
 
         if (declarationFiles.isEmpty()) {
-            return new SpecReader(SpecReader.makeEmptySyntheticInterfaceType(), flowParser.emptySpec.getNamedTypes(), new ArrayList<>(), new HashMap<>());
+            InterfaceType global = SpecReader.makeEmptySyntheticInterfaceType();
+            flowParser.emptySpec.getGlobal().getDeclaredProperties().forEach((name, type) -> {
+                if (!global.getDeclaredProperties().containsKey(name)) {
+                    global.getDeclaredProperties().put(name, type);
+                }
+            });
+            return new SpecReader(global, flowParser.emptySpec.getNamedTypes(), new ArrayList<>(), new HashMap<>());
         }
 
         List<SpecReader.NamedType> namedTypes = new ArrayList<>(flowParser.emptySpec.getNamedTypes());
@@ -79,6 +85,7 @@ public class FlowParser {
                 }
                 case "DeclareTypeAlias":
                 case "TypeAlias":
+                case "DeclareInterface":
                 case "InterfaceDeclaration":
                     break; // Just declares a name, which has already been handled.
                 default:
@@ -427,8 +434,8 @@ public class FlowParser {
             }
         }
         return baseTypes.stream().map(extend -> {
-            assert extend.getAsJsonObject().get("type").getAsString().equals("InterfaceExtends");
-            JsonObject id = extend.getAsJsonObject().get("id").getAsJsonObject();
+            assert extend.getAsJsonObject().get("type").getAsString().equals("InterfaceExtends") || extend.getAsJsonObject().get("type").getAsString().equals("Identifier");
+            JsonObject id = extend.getAsJsonObject().get("type").getAsString().equals("Identifier") ? extend.getAsJsonObject() : extend.getAsJsonObject().get("id").getAsJsonObject();
             assert id.get("typeAnnotation").isJsonNull();
             assert !id.get("optional").getAsBoolean();
             assert id.get("type").getAsString().equals("Identifier");
@@ -503,13 +510,21 @@ public class FlowParser {
             JsonObject property = rawProperty.getAsJsonObject();
             switch (property.get("type").getAsString()) {
                 case "ObjectTypeProperty":
-                    Type propertyType = parseType(property.get("value").getAsJsonObject(), nameContext).getType();
-                    if (property.get("optional").getAsBoolean()) {
+                case "ClassProperty":
+                case "MethodDefinition":
+                    assert property.get("computed") == null || !property.get("computed").getAsBoolean();
+                    Type propertyType;
+                    if (property.get("value").isJsonNull()) {
+                        propertyType = parseType(property.get("typeAnnotation").getAsJsonObject(), nameContext).getType();
+                    } else {
+                        propertyType = parseType(property.get("value").getAsJsonObject(), nameContext).getType();
+                    }
+                    if (property.get("optional") != null && property.get("optional").getAsBoolean()) {
                         propertyType = new UnionType(Arrays.asList(new SimpleType(SimpleTypeKind.Undefined), propertyType));
                     }
-                    assert !property.get("proto").getAsBoolean();
+                    assert property.get("proto") == null || !property.get("proto").getAsBoolean();
 //                    assert property.get("variance").isJsonNull() || !property.get("variance").getAsBoolean(); // Tbh. Variance doesn't matter for my purposes, so I just ignore it.
-                    assert property.get("kind").getAsString().equals("init");
+                    assert property.get("kind") == null || property.get("kind").getAsString().equals("init");
                     assert property.get("key").getAsJsonObject().get("type").getAsString().equals("Identifier");
 
                     boolean isStatic = property.get("static").getAsBoolean();
@@ -569,7 +584,14 @@ public class FlowParser {
         }).forEach(signature.getParameters()::add);
 
         if (!typeJSON.get("rest").isJsonNull()) {
-            Type type = parseType(typeJSON.get("rest").getAsJsonObject().get("typeAnnotation").getAsJsonObject(), nameContext);
+            Type type = parseType(typeJSON.get("rest").getAsJsonObject().get("typeAnnotation").getAsJsonObject(), nameContext).getType();
+            if (type instanceof SimpleType) {
+                assert ((SimpleType) type).getKind() == SimpleTypeKind.Any;
+                ReferenceType refType = new ReferenceType();
+                refType.setTypeArguments(Collections.singletonList(new SimpleType(SimpleTypeKind.Any)));
+                refType.setTarget(namedTypes.get("Array"));
+                type = refType;
+            }
             String name = typeJSON.get("rest").getAsJsonObject().get("name").getAsJsonObject().get("name").getAsString();
             signature.setHasRestParameter(true);
             signature.getParameters().add(new Signature.Parameter(name, type));

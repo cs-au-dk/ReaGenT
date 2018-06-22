@@ -229,10 +229,10 @@ public class TypesUtil {
         Map<TypeParameterType, Type> parameterMap = new HashMap<>();
 
         List<Type> typeParameters = getTypeParameters(ref.getTarget());
-        assert typeParameters.size() == arguments.size();
+        assert typeParameters.size() <= arguments.size();
         List<TypeParameterType> parameters = Util.cast(TypeParameterType.class, typeParameters);
         parameterMap = new HashMap<>(parameterMap);
-        for (int i = 0; i < arguments.size(); i++) {
+        for (int i = 0; i < parameters.size(); i++) {
             parameterMap.put(parameters.get(i), arguments.get(i));
         }
         return parameterMap;

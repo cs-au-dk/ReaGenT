@@ -73,6 +73,12 @@ public class TypeNameCreator {
             return ((InterfaceType) type).getDeclaredProperties().get(prop);
         } else if (type instanceof GenericType) {
             return lookUpInType(((GenericType) type).toInterface(), prop);
+        } else if (type instanceof ClassInstanceType) {
+            return lookUpInType(((ClassInstanceType) type).getClassType(), prop);
+        } else if (type instanceof ClassType) {
+            Type result = ((ClassType) type).getStaticProperties().get(prop);
+            assert result != null;
+            return result;
         }
 
         throw new RuntimeException(type.getClass().getSimpleName());

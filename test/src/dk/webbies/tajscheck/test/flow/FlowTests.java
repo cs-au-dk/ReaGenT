@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.test.flow;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
@@ -79,6 +80,10 @@ public class FlowTests {
     @Test
     public void parseClass() {
         BenchmarkInfo.create(benchFromFolder("class"));
+    }
+    @Test
+    public void parseRestArgs() throws Exception {
+        Main.generateFullDriver(benchFromFolder("parseRestArgs"));
     }
 
     @Test

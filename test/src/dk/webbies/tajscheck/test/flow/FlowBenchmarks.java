@@ -39,6 +39,7 @@ public class FlowBenchmarks {
 //        register(new Benchmark("Chromcast-caf-receiver", ParseDeclaration.Environment.ES5Core, "test/flowtyped/chromecast-caf-receiver/cast_receiver_framework.js", "test/flowtyped/chromecast-caf-receiver/declaration.js", BROWSER, options));
 //        register(new Benchmark("amplitude-js", ParseDeclaration.Environment.ES5Core, "test/flowtyped/amplitude-js/amplitude.js", "test/flowtyped/amplitude-js/declaration.js", NODE, options));
 //        register(new Benchmark("axios", ParseDeclaration.Environment.ES5Core, "test/flowtyped/axios/axios.js", "test/flowtyped/axios/declaration.js", NODE, options));
+//        register("joi-to-json-schema", options); // <- does not work with TAJS (require())
 
         // Might work, not sure.
 //        register(new Benchmark("base64url", ParseDeclaration.Environment.ES5Core, "test/flowtyped/base64url/base64url.js", "test/flowtyped/base64url/declaration.js", NODE, options));
@@ -94,13 +95,58 @@ public class FlowBenchmarks {
 //        register("inline-style-prefix", options);
 //        register("intl-messageformat", options);
 //        register("is-absolute-url", options);
-        register("natural-sort", options);
+//        register("natural-sort", options);
+        // 50 working above here.
+//        register("joi-browser", options);
+//        register("js-beautify", options);
+//        register("js-cookie", options);
+//        register("json-stringify-safe", options);
+//        register("jsuri", options);
+//        register("keymirror", options);
+//        register("latlon-geohash", options);
+//        register("leven", options);
+//        register("localforage", options);
+//        register("loglevel", options);
+        // 60 working above here
+//        register("luxon", options); // <- ReaGenT loops.
+//        register("marked", options);
+//        register("match-sorter", options);
+//        register("mersenne-twister", options);
+//        register("minimist", options);
+//        register("mitt", options);
+//        register("mixpanel-browser", options);
+//        register("mobile-detect", options);
+//        register("moment", options);
+//        register("mousetrap", options, BROWSER);
+        // 70 above here.
+//        register("ms", options);
+//        register("multi-typeof", options);
+//        register("nano-md5", options);
+//        register("nanoevents", options);
+//        register("node-int64", options);
+//        register("node-uuid", options);
+//        register("normalizr", options);
+//        register("number-is-nan", options);
+//        register("numeral", options);
+//        register("object-assign", options);
+        // 80 above here.
+//        register("opentracing", options);
+//        register("pify", options);
+//        register("platform", options);
+        register("plow-js", options);
 
 
     }
 
     private static void register(String name, CheckOptions options) {
-        register(new Benchmark(name, ParseDeclaration.Environment.ES5Core, "test/flowtyped/" + name + "/" + name + ".js", "test/flowtyped/" + name + "/declaration.js", NODE, options));
+        if (name.isEmpty()) {
+            return;
+        }
+        register(name, options, NODE);
+    }
+
+    private static void register(String name, CheckOptions options, Benchmark.RUN_METHOD run_method) {
+        register(new Benchmark(name, ParseDeclaration.Environment.ES5Core, "test/flowtyped/" + name + "/" + name + ".js", "test/flowtyped/" + name + "/declaration.js", run_method, options));
     }
 
     private static void register(Benchmark benchmark) {
