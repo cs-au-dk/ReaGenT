@@ -437,6 +437,7 @@ public class TypeChecker {
                     case "CustomEvent":
                     case "HTMLLinkElement":
                     case "MediaStream":
+                    case "DOMParser":
                         return Collections.singletonList(new SimpleTypeCheck(Check.instanceOf(identifier(name)), name));
                     case "WebGLRenderingContext":
                         return Collections.singletonList(new SimpleTypeCheck(Check.or(Check.instanceOf(identifier(name)), Check.equalTo(nullLiteral())), name)); // TODO: Headless chrome doesn't have WebGL context.

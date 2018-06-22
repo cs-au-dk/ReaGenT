@@ -422,9 +422,13 @@ public class FlowParser {
     }
 
     private List<Type> parseBaseTypes(JsonObject typeJSON, String nameContext) {
+        return parseBaseTypes(typeJSON, nameContext, "extends");
+    }
+
+    private List<Type> parseBaseTypes(JsonObject typeJSON, String nameContext, String propertyName) {
         final List<JsonElement> baseTypes;
-        if (typeJSON.get("extends") != null) {
-            baseTypes = Lists.newArrayList(typeJSON.get("extends").getAsJsonArray());
+        if (typeJSON.get(propertyName) != null) {
+            baseTypes = Lists.newArrayList(typeJSON.get(propertyName).getAsJsonArray());
         } else {
             assert typeJSON.get("superClass") != null;
             if (typeJSON.get("superClass").isJsonNull()) {
@@ -475,7 +479,7 @@ public class FlowParser {
         ClassType classType = TypesUtil.emptyClassType();
         classType.getBaseTypes().addAll(parseBaseTypes(classJSON, nameContext));
         assert classJSON.get("implements").getAsJsonArray().size() == 0;
-        assert classJSON.get("mixins") == null || classJSON.get("mixins").getAsJsonArray().size() == 0;
+        classType.getBaseTypes().addAll(parseBaseTypes(classJSON, nameContext, "mixins"));
         createTypeParameters(classJSON, nameContext).forEach(classType.getTypeParameters()::add);
         assert classJSON.get("superTypeParameters") == null || classJSON.get("superTypeParameters").isJsonNull();
         assert classJSON.get("decorators") == null || classJSON.get("decorators").getAsJsonArray().size() == 0;

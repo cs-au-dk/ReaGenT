@@ -133,7 +133,16 @@ public class FlowBenchmarks {
 //        register("opentracing", options);
 //        register("pify", options);
 //        register("platform", options);
-        register("plow-js", options);
+//        register("plow-js", options);
+//        register("pluralize", options);
+        // 85
+//        register("pretty-bytes", options);
+//        register("prismic.io", options);
+//        register("qs", options);
+//        register("ramda", options);
+//        register("random-js", options);
+        // 90 above here.
+        register("remarkable", options);
 
 
     }
