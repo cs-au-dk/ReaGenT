@@ -86,11 +86,10 @@ public class TypesUtil {
                     break;
                 }
                 baseTypes = baseTypes.stream().filter(base -> base instanceof ClassType || (base instanceof ReferenceType && ((ReferenceType) base).getTarget() instanceof ClassType)).collect(Collectors.toList());
-                if (baseTypes.isEmpty()) {
+                if (baseTypes.size() != 1) {
                     interfaceType.getDeclaredConstructSignatures().add(createConstructorSignature(t, emptySignature()));
                     break;
                 } else {
-                    assert baseTypes.size() == 1;
                     baseType = baseTypes.get(0);
                 }
             }

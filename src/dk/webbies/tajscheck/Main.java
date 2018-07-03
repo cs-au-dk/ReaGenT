@@ -130,7 +130,7 @@ public class Main {
 
 
     public static String getFolderPath(Benchmark bench) {
-        String jsPath = bench.jsFile;
+        String jsPath = bench.jsFile.replace("\\", "/");
         int lastIndex = jsPath.lastIndexOf('/');
 
         return jsPath.substring(0, lastIndex + 1);

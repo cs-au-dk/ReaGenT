@@ -18,5 +18,5 @@ declare module "component-emitter" {
         hasListeners(event: string): boolean;
     }
 
-    declare export default Class<Emitter>
+    declare module.exports: Class<Emitter>
 }

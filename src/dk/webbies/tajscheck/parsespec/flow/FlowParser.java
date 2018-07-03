@@ -308,7 +308,7 @@ public class FlowParser {
                     return parseType(typeJSON.get("argument").getAsJsonObject(), nameContext, true);
                 case "TypeParameter": {
                     Type bound = typeJSON.get("bound").isJsonNull() ? null : parseType(typeJSON.get("bound").getAsJsonObject(), nameContext);
-                    assert typeJSON.get("variance").isJsonNull();
+//                    assert typeJSON.get("variance").isJsonNull(); // Doesn't matter for my purposes, so i just ignore variance
 //                    assert typeJSON.get("default").isJsonNull(); // Default doesn't matter for my purposes.
                     TypeParameterType typeParameterType = new TypeParameterType();
                     typeParameterType.setConstraint(bound);
@@ -318,6 +318,8 @@ public class FlowParser {
                     return new SimpleType(SimpleTypeKind.Null);
                 case "BooleanTypeAnnotation":
                     return new SimpleType(SimpleTypeKind.Boolean);
+                case "EmptyTypeAnnotation":
+                    return new SimpleType(SimpleTypeKind.Never);
                 case "BooleanLiteralTypeAnnotation":
                     return new BooleanLiteral(typeJSON.get("value").getAsBoolean());
                 case "NumberLiteralTypeAnnotation":
@@ -385,8 +387,14 @@ public class FlowParser {
                     for (JsonElement propertyRaw : typeJSON.get("properties").getAsJsonArray()) {
                         JsonObject propertyJSON = propertyRaw.getAsJsonObject();
                         assert propertyJSON.get("type").getAsString().equals("ObjectTypeProperty");
+                        assert !propertyJSON.get("static").getAsBoolean();
+                        assert propertyJSON.get("kind").getAsString().equals("init");
+                        assert !propertyJSON.get("proto").getAsBoolean();
                         String name = getPropertyName(propertyJSON.get("key").getAsJsonObject());
-                        DelayedType type = parseType(propertyJSON.get("value").getAsJsonObject(), nameContext);
+                        Type type = parseType(propertyJSON.get("value").getAsJsonObject(), nameContext);
+                        if (propertyJSON.get("optional").getAsBoolean()) {
+                            type = new UnionType(Arrays.asList(type, new SimpleType(SimpleTypeKind.Undefined)));
+                        }
                         properties.put(name, type);
                     }
                     interfaceType.getDeclaredProperties().putAll(properties);

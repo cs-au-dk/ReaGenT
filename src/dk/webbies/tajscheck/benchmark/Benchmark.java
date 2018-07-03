@@ -222,6 +222,10 @@ public class Benchmark {
         );
     }
 
+    public Benchmark possilyPatched() {
+        return Optional.of(patched()).orElse(this);
+    }
+
     public Benchmark patched() {
         Path dtspath = Paths.get(this.dTSFile);
         Path entryPath = Paths.get(this.jsFile);

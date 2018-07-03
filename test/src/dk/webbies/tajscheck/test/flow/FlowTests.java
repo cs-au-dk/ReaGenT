@@ -321,6 +321,24 @@ public class FlowTests {
     }
 
     @Test
+    public void optionalField() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("optionalField"));
+
+        expect(result)
+                .hasNoViolations();
+    }
+
+    @Test
+    @Ignore // There is a big issue with getters in TAJS, things gets mixed up the wrong way.
+    public void newCallPrimitive() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("newCallPrimitive"));
+
+        System.out.println(result);
+        expect(result)
+                .hasNoViolations();
+    }
+
+    @Test
     public void typeofProperty() throws Exception {
         TajsAnalysisResults result = run(benchFromFolder("typeofProperty"));
 

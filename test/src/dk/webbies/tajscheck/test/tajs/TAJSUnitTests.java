@@ -1925,13 +1925,8 @@ public class TAJSUnitTests {
     }
 
     /* TODO: Things to do before the camera ready version:
-        - Make gradle targets that directly produce the tables in the paper.
-        - write artifact stuff.
         - Reduce the number of @ignored test-cases in TAJSUnitTests.
-        - Make an updated version of the tstools webpage.
-
-
-        - Possibly do 100 violations of each variant to determine false positive rates.
+        - Reduce the number of @ignored test-cases in FlowTests.
      */
 
 

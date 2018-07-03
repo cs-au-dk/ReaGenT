@@ -15,7 +15,7 @@ declare module "big.js" {
         static E_NEG: number;
         static E_POS: number;
 
-        c: Array<DIGIT>;
+        c: Array<DIGIT>; // <- index -1 is NaN.
         e: number;
         s: -1 | 1;
 

@@ -8,125 +8,127 @@
  * Inspired by clojure/mori and Immutable.js
  */
 
-'use strict'
+'use strict';
 
-const i = exports
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-const identity = coll => coll
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+var i = exports;
+
+var identity = function identity(coll) {
+    return coll;
+};
 
 // we only care about objects or arrays for now
-const weCareAbout = val => val !== null &&
-    (Array.isArray(val) ||
+var weCareAbout = function weCareAbout(val) {
+    return val !== null && (Array.isArray(val) ||
         // This will skip objects created with `new Foo()`
         // and objects created with `Object.create(proto)`
         // The benefit is ignoring DOM elements and event emitters,
         // which are often circular.
-        isObjectLike(val))
+        isObjectLike(val));
+};
 
-const isObjectLike = val => typeof val === 'object' &&
-    val.constructor === Object &&
-    Object.getPrototypeOf(val) === Object.prototype
+var isObjectLike = function isObjectLike(val) {
+    return (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object' && val.constructor === Object && Object.getPrototypeOf(val) === Object.prototype;
+};
 
-const forKeys = (obj, iter) => {
-    let idx, keys
+var forKeys = function forKeys(obj, iter) {
+    var idx = void 0,
+        keys = void 0;
     if (Array.isArray(obj)) {
-        idx = obj.length
+        idx = obj.length;
         while (idx--) {
-            iter(idx)
+            iter(idx);
         }
-        return
+        return;
     }
-    keys = Object.keys(obj)
-    idx = keys.length
+    keys = Object.keys(obj);
+    idx = keys.length;
     while (idx--) {
-        iter(keys[idx])
+        iter(keys[idx]);
     }
-}
+};
 
-const cloneObj = obj => {
-    const newObj = {}
-    const keys = Object.keys(obj)
-    let idx = keys.length
-    let key
+var cloneObj = function cloneObj(obj) {
+    var newObj = {};
+    var keys = Object.keys(obj);
+    var idx = keys.length;
+    var key = void 0;
     while (idx--) {
-        key = keys[idx]
-        newObj[key] = obj[key]
+        key = keys[idx];
+        newObj[key] = obj[key];
     }
-    return newObj
-}
+    return newObj;
+};
 
-const clone = (coll) => {
+var clone = function clone(coll) {
     if (Array.isArray(coll)) {
-        return coll.slice()
+        return coll.slice();
     } else {
-        return cloneObj(coll)
+        return cloneObj(coll);
     }
-}
+};
 
-const freezeIfNeeded = process.env.NODE_ENV === 'production'
-    ? identity
-    : coll => {
-        if (weCareAbout(coll) && !Object.isFrozen(coll)) {
-            return baseFreeze(coll)
-        }
-        return coll
+var freezeIfNeeded = function (coll) {
+    if (weCareAbout(coll) && !Object.isFrozen(coll)) {
+        return baseFreeze(coll);
     }
+    return coll;
+};
 
-const _freeze = process.env.NODE_ENV === 'production'
-    ? identity
-    : coll => {
-        if (typeof coll === 'object') {
-            return Object.freeze(coll)
-        } else {
-            return coll
-        }
+var _freeze = function (coll) {
+    if ((typeof coll === 'undefined' ? 'undefined' : _typeof(coll)) === 'object') {
+        return Object.freeze(coll);
+    } else {
+        return coll;
     }
+};
 
-const prevNodes = []
+var prevNodes = [];
 
-const baseFreeze = (coll) => {
-    if (prevNodes.some(val => val === coll)) {
-        throw new Error('object has a reference cycle')
+var baseFreeze = function baseFreeze(coll) {
+    if (prevNodes.some(function (val) {
+        return val === coll;
+    })) {
+        throw new Error('object has a reference cycle');
     }
-    prevNodes.push(coll)
-    forKeys(coll, key => {
-        const prop = coll[key]
+    prevNodes.push(coll);
+    forKeys(coll, function (key) {
+        var prop = coll[key];
         if (weCareAbout(prop)) {
-            baseFreeze(prop)
+            baseFreeze(prop);
         }
-    })
-    prevNodes.pop()
+    });
+    prevNodes.pop();
 
-    Object.freeze(coll)
-    return coll
-}
+    Object.freeze(coll);
+    return coll;
+};
 
 /**
  * recrursively freeze an object and all its child objects
  * @param  {Object|Array} coll
  * @return {Object|Array}
  */
-exports.freeze = process.env.NODE_ENV === 'production'
-    ? identity
-    : baseFreeze
+exports.freeze = baseFreeze;
 
 /**
  * recursively un-freeze an object, by cloning frozen collections
  * @param  {[type]} coll [description]
  * @return {[type]}      [description]
  */
-exports.thaw = function thaw (coll) {
-    if (!weCareAbout(coll) || !Object.isFrozen(coll)) return coll
+exports.thaw = function thaw(coll) {
+    if (!weCareAbout(coll) || !Object.isFrozen(coll)) return coll;
 
-    const newColl = Array.isArray(coll)
-        ? new Array(coll.length)
-        : {}
+    var newColl = Array.isArray(coll) ? new Array(coll.length) : {};
 
-    forKeys(coll, key => {
-        newColl[key] = thaw(coll[key])
-    })
-    return newColl
-}
+    forKeys(coll, function (key) {
+        newColl[key] = thaw(coll[key]);
+    });
+    return newColl;
+};
 
 /**
  * set a value on an object or array
@@ -135,18 +137,18 @@ exports.thaw = function thaw (coll) {
  * @param  {Object}        value
  * @return {Object|Array}        new object hierarchy with modifications
  */
-exports.assoc = function assoc (coll, key, value) {
+exports.assoc = function assoc(coll, key, value) {
     if (coll[key] === value) {
-        return _freeze(coll)
+        return _freeze(coll);
     }
 
-    const newObj = clone(coll)
+    var newObj = clone(coll);
 
-    newObj[key] = freezeIfNeeded(value)
+    newObj[key] = freezeIfNeeded(value);
 
-    return _freeze(newObj)
-}
-exports.set = exports.assoc
+    return _freeze(newObj);
+};
+exports.set = exports.assoc;
 
 /**
  * un-set a value on an object or array
@@ -154,14 +156,14 @@ exports.set = exports.assoc
  * @param  {String|Number} key  Key or Index
  * @return {Object|Array}       New object or array
  */
-exports.dissoc = function dissoc (coll, key) {
-    const newObj = clone(coll)
+exports.dissoc = function dissoc(coll, key) {
+    var newObj = clone(coll);
 
-    delete newObj[key]
+    delete newObj[key];
 
-    return _freeze(newObj)
-}
-exports.unset = exports.dissoc
+    return _freeze(newObj);
+};
+exports.unset = exports.dissoc;
 
 /**
  * set a value deep in a hierarchical structure
@@ -170,18 +172,18 @@ exports.unset = exports.dissoc
  * @param  {Object}       value
  * @return {Object|Array}       new object hierarchy with modifications
  */
-exports.assocIn = function assocIn (coll, path, value) {
-    const key0 = path[0]
+exports.assocIn = function assocIn(coll, path, value) {
+    var key0 = path[0];
     if (path.length === 1) {
         // simplest case is a 1-element array.  Just a simple assoc.
-        return i.assoc(coll, key0, value)
+        return i.assoc(coll, key0, value);
     } else {
         // break the problem down.  Assoc this object with the first key
         // and the result of assocIn with the rest of the keys
-        return i.assoc(coll, key0, assocIn(coll[key0] || {}, path.slice(1), value))
+        return i.assoc(coll, key0, assocIn(coll[key0] || {}, path.slice(1), value));
     }
-}
-exports.setIn = exports.assocIn
+};
+exports.setIn = exports.assocIn;
 
 /**
  * un-set a value on an object or array
@@ -189,21 +191,21 @@ exports.setIn = exports.assocIn
  * @param  {Array} path  A list of keys to traverse
  * @return {Object|Array}       New object or array
  */
-exports.dissocIn = function dissocIn (coll, path) {
-    const key0 = path[0]
+exports.dissocIn = function dissocIn(coll, path) {
+    var key0 = path[0];
     if (!coll.hasOwnProperty(key0)) {
-        return coll
+        return coll;
     }
     if (path.length === 1) {
         // simplest case is a 1-element array.  Just a simple dissoc.
-        return i.dissoc(coll, key0)
+        return i.dissoc(coll, key0);
     } else {
         // break the problem down.  Assoc this object with the first key
         // and the result of dissocIn with the rest of the keys
-        return i.assoc(coll, key0, dissocIn(coll[key0], path.slice(1)))
+        return i.assoc(coll, key0, dissocIn(coll[key0], path.slice(1)));
     }
-}
-exports.unsetIn = exports.dissocIn
+};
+exports.unsetIn = exports.dissocIn;
 
 /**
  * get an object from a hierachy based on an array of keys
@@ -211,14 +213,16 @@ exports.unsetIn = exports.dissocIn
  * @param  {Array}        path    list of keys
  * @return {Object}       value, or undefined
  */
-function baseGet (coll, path) {
-    return (path || []).reduce((curr, key) => {
-        if (!curr) { return }
-        return curr[key]
-    }, coll)
+function baseGet(coll, path) {
+    return (path || []).reduce(function (curr, key) {
+        if (!curr) {
+            return;
+        }
+        return curr[key];
+    }, coll);
 }
 
-exports.getIn = baseGet
+exports.getIn = baseGet;
 
 /**
  * Update a value in a hierarchy
@@ -228,143 +232,145 @@ exports.getIn = baseGet
  *                             Return the new value to set
  * @return {Object|Array}      new object hierarchy with modifications
  */
-exports.updateIn = function updateIn (coll, path, callback) {
-    const existingVal = baseGet(coll, path)
-    return i.assocIn(coll, path, callback(existingVal))
+exports.updateIn = function updateIn(coll, path, callback) {
+    var existingVal = baseGet(coll, path);
+    return i.assocIn(coll, path, callback(existingVal));
 };
 
 // generate wrappers for the mutative array methods
-['push', 'unshift', 'pop', 'shift', 'reverse', 'sort']
-    .forEach((methodName) => {
-        exports[methodName] = function (arr, val) {
-            const newArr = [...arr]
+['push', 'unshift', 'pop', 'shift', 'reverse', 'sort'].forEach(function (methodName) {
+    exports[methodName] = function (arr, val) {
+        var newArr = [].concat(_toConsumableArray(arr));
 
-            newArr[methodName](freezeIfNeeded(val))
+        newArr[methodName](freezeIfNeeded(val));
 
-            return _freeze(newArr)
-        }
+        return _freeze(newArr);
+    };
 
-        exports[methodName].displayName = 'icepick.' + methodName
-    })
+    exports[methodName].displayName = 'icepick.' + methodName;
+});
 
 // splice is special because it is variadic
-exports.splice = function splice (arr, ..._args) {
-    const newArr = [...arr]
-    const args = _args.map(freezeIfNeeded)
+exports.splice = function splice(arr) {
+    var newArr = [].concat(_toConsumableArray(arr));
 
-    newArr.splice.apply(newArr, args)
+    for (var _len = arguments.length, _args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+        _args[_key - 1] = arguments[_key];
+    }
 
-    return _freeze(newArr)
-}
+    var args = _args.map(freezeIfNeeded);
 
-// slice is non-mutative
-exports.slice = function slice (arr, arg1, arg2) {
-    const newArr = arr.slice(arg1, arg2)
+    newArr.splice.apply(newArr, args);
 
-    return _freeze(newArr)
+    return _freeze(newArr);
 };
 
-['map', 'filter'].forEach((methodName) => {
+// slice is non-mutative
+exports.slice = function slice(arr, arg1, arg2) {
+    var newArr = arr.slice(arg1, arg2);
+
+    return _freeze(newArr);
+};
+
+['map', 'filter'].forEach(function (methodName) {
     exports[methodName] = function (fn, arr) {
-        const newArr = arr[methodName](fn)
+        var newArr = arr[methodName](fn);
 
-        return _freeze(newArr)
+        return _freeze(newArr);
+    };
+
+    exports[methodName].displayName = 'icepick.' + methodName;
+});
+
+exports.extend = exports.assign = function assign(obj) {
+    for (var _len2 = arguments.length, objs = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+        objs[_key2 - 1] = arguments[_key2];
     }
 
-    exports[methodName].displayName = 'icepick.' + methodName
-})
+    var newObj = objs.reduce(singleAssign, obj);
 
-exports.extend =
-    exports.assign = function assign (obj, ...objs) {
-        const newObj = objs.reduce(singleAssign, obj)
+    return _freeze(newObj);
+};
 
-        return _freeze(newObj)
-    }
-
-function singleAssign (obj1, obj2) {
-    return Object.keys(obj2).reduce((obj, key) => {
-        return i.assoc(obj, key, obj2[key])
-    }, obj1)
+function singleAssign(obj1, obj2) {
+    return Object.keys(obj2).reduce(function (obj, key) {
+        return i.assoc(obj, key, obj2[key]);
+    }, obj1);
 }
 
-exports.merge = merge
-function merge (target, source, resolver) {
+exports.merge = merge;
+function merge(target, source, resolver) {
     if (target == null || source == null) {
-        return target
+        return target;
     }
-    return Object.keys(source).reduce((obj, key) => {
-        const sourceVal = source[key]
-        const targetVal = obj[key]
+    return Object.keys(source).reduce(function (obj, key) {
+        var sourceVal = source[key];
+        var targetVal = obj[key];
 
-        const resolvedSourceVal =
-            resolver ? resolver(targetVal, sourceVal, key) : sourceVal
+        var resolvedSourceVal = resolver ? resolver(targetVal, sourceVal, key) : sourceVal;
 
         if (weCareAbout(sourceVal) && weCareAbout(targetVal)) {
             // if they are both frozen and reference equal, assume they are deep equal
-            if (
-                resolvedSourceVal === targetVal &&
-                (
-                    process.env.NODE_ENV === 'production' ||
-                    (
-                        Object.isFrozen(resolvedSourceVal) &&
-                        Object.isFrozen(targetVal)
-                    )
-                )
-            ) {
-                return obj
+            if (resolvedSourceVal === targetVal && (false || Object.isFrozen(resolvedSourceVal) && Object.isFrozen(targetVal))) {
+                return obj;
             }
             if (Array.isArray(sourceVal)) {
-                return i.assoc(obj, key, resolvedSourceVal)
+                return i.assoc(obj, key, resolvedSourceVal);
             }
             // recursively merge pairs of objects
-            return assocIfDifferent(obj, key,
-                merge(targetVal, resolvedSourceVal, resolver))
+            return assocIfDifferent(obj, key, merge(targetVal, resolvedSourceVal, resolver));
         }
 
         // primitive values, stuff with prototypes
-        return assocIfDifferent(obj, key, resolvedSourceVal)
-    }, target)
+        return assocIfDifferent(obj, key, resolvedSourceVal);
+    }, target);
 }
 
-function assocIfDifferent (target, key, value) {
+function assocIfDifferent(target, key, value) {
     if (target[key] === value) {
-        return target
+        return target;
     }
-    return i.assoc(target, key, value)
+    return i.assoc(target, key, value);
 }
 
-const chainProto = {
-    value: function value () {
-        return this.val
+var chainProto = {
+    value: function value() {
+        return this.val;
     },
-    thru: function thru (fn) {
-        this.val = freezeIfNeeded(fn(this.val))
-        return this
+    thru: function thru(fn) {
+        this.val = freezeIfNeeded(fn(this.val));
+        return this;
     }
-}
+};
 
-Object.keys(exports).forEach((methodName) => {
+Object.keys(exports).forEach(function (methodName) {
     if (methodName.match(/^(map|filter)$/)) {
         chainProto[methodName] = function (fn) {
-            this.val = exports[methodName](fn, this.val)
-            return this
-        }
-        return
+            this.val = exports[methodName](fn, this.val);
+            return this;
+        };
+        return;
     }
-    chainProto[methodName] = function (...args) {
-        this.val = exports[methodName](this.val, ...args)
-        return this
-    }
-})
+    chainProto[methodName] = function () {
+        var _exports;
 
-exports.chain = function chain (val) {
-    const wrapped = Object.create(chainProto)
-    wrapped.val = val
-    return wrapped
-}
+        for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+            args[_key3] = arguments[_key3];
+        }
+
+        this.val = (_exports = exports)[methodName].apply(_exports, [this.val].concat(args));
+        return this;
+    };
+});
+
+exports.chain = function chain(val) {
+    var wrapped = Object.create(chainProto);
+    wrapped.val = val;
+    return wrapped;
+};
 
 // for testing
-if (process.env.NODE_ENV !== 'development' &&
-    process.env.NODE_ENV !== 'production') {
-    exports._weCareAbout = weCareAbout
-}
+/*if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'production') {
+    exports._weCareAbout = weCareAbout;
+}*/
+
