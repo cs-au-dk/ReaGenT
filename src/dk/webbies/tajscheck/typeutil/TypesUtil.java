@@ -161,6 +161,11 @@ public class TypesUtil {
             if (baseType instanceof DelayedType) {
                 baseType = ((DelayedType) baseType).getType();
             }
+            if (baseType instanceof ReferenceType) {
+                if (((ReferenceType) baseType).getTarget() instanceof DelayedType) {
+                    ((ReferenceType) baseType).setTarget(((DelayedType) ((ReferenceType) baseType).getTarget()).getType());
+                }
+            }
             if (baseType instanceof ClassType) {
                 return this.createClassInstanceType(((ClassType) baseType));
             } else if (baseType instanceof ReferenceType && ((ReferenceType) baseType).getTarget() instanceof ClassType) {

@@ -374,6 +374,14 @@ public class FlowTests {
     }
 
     @Test
+    public void genericInBaseClass() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("genericInBaseClass"));
+
+        expect(result)
+                .hasNoViolations();
+    }
+
+    @Test
     public void parseAllBenchmarks() {
         List<Benchmark> benchmarks = FlowBenchmarks.getBenchmarks();
         for (int i = 0; i < benchmarks.size(); i++) {
