@@ -460,6 +460,20 @@ public class FlowParser {
                 baseType = ((ClassInstanceType) baseType).getClassType();
             }
             assert baseType != null;
+
+            if (extend.getAsJsonObject().get("typeParameters") != null && !extend.getAsJsonObject().get("typeParameters").isJsonNull()) {
+                JsonObject parameters = extend.getAsJsonObject().get("typeParameters").getAsJsonObject();
+                assert parameters.get("type").getAsString().equals("TypeParameterInstantiation");
+                List<Type> typeArguments = Lists.newArrayList(parameters.get("params").getAsJsonArray()).stream().map(param -> parseType(param.getAsJsonObject(), nameContext)).collect(Collectors.toList());
+
+                assert !typeArguments.isEmpty();
+
+                ReferenceType refType = new ReferenceType();
+                refType.setTarget(baseType);
+                refType.setTypeArguments(typeArguments);
+                baseType = refType;
+            }
+
             return baseType;
         }).collect(Collectors.toList());
     }

@@ -3,14 +3,18 @@ package dk.webbies.tajscheck.test.flow;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.paser.*;
+import dk.webbies.tajscheck.paser.AST.FunctionExpression;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.test.experiments.Experiment;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Test;
 
 import java.util.function.BiConsumer;
+import java.util.regex.Pattern;
 
 public class FlowExperiment {
+
     @Test
     public void doThaThing() {
         System.out.println(new Experiment(FlowBenchmarks.getBenchmarks())
@@ -22,6 +26,8 @@ public class FlowExperiment {
                 }).calculate().toCSV());
 
     }
+
+    private static final int TIMEOUT = 10 * 60;
 
     private void doThaThingOnBench(Benchmark bench, BiConsumer<String, String> registrator, String prefix) {
         int tstestErrors = 0;
@@ -42,15 +48,52 @@ public class FlowExperiment {
         int reagentErrors = 0;
         try { // ReaGenT.
             long startTime = System.currentTimeMillis();
-            TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 2 * 60);
+            TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, TIMEOUT);
             reagentErrors = result.detectedViolations.size();
             registrator.accept(prefix + "ReaGenT-errors", result.detectedViolations.size() + "");
             Util.writeFile(Main.getFolderPath(bench) + prefix + "reagent.txt", result.toString());
-            registrator.accept(prefix + "ReaGenT-time", ((System.currentTimeMillis() - startTime) / 1000) + "s");
+            registrator.accept(prefix + "ReaGenT-time", (result.timedout ? "(timeout)" : "") + ((System.currentTimeMillis() - startTime) / 1000) + "s");
+
+            registrator.accept(prefix + "ReaGenT-retracted", result.retractedTests.size() + "");
         } catch (Exception e) {
             registrator.accept(prefix + "ReaGenT-exception", e.getClass().getSimpleName());
         }
 
         registrator.accept(prefix + "total-errors", (tstestErrors + reagentErrors) + "");
+
+        try {
+            String declarationFile = Util.readFile(bench.dTSFile);
+            int decLines = declarationFile.split(Pattern.quote("\n")).length + 1;
+            registrator.accept(prefix + "declaration-lines", decLines + "");
+
+            String jsFile = Util.readFile(bench.jsFile);
+            int jsLines = jsFile.split(Pattern.quote("\n")).length + 1;
+            registrator.accept(prefix + "jsFile-lines", jsLines + "");
+
+            CountFunctionsVisitor counter = new CountFunctionsVisitor();
+            AstBuilder.stmtFromString(jsFile).accept(counter);
+            registrator.accept(prefix + "jsFile-functions", counter.counter + "");
+        } catch (Throwable e) {
+            registrator.accept("counter-exception", e.getClass().getSimpleName());
+        }
+    }
+
+    private class CountFunctionsVisitor implements StatementTransverse<Void>, ExpressionTransverse<Void> {
+        private int counter = 0;
+        @Override
+        public Void visit(FunctionExpression function) {
+            counter++;
+            return ExpressionTransverse.super.visit(function);
+        }
+
+        @Override
+        public StatementVisitor<Void> getStatementVisitor() {
+            return this;
+        }
+
+        @Override
+        public ExpressionVisitor<Void> getExpressionVisitor() {
+            return this;
+        }
     }
 }

@@ -365,5 +365,20 @@ public class FlowTests {
                 .hasViolations();
     }
 
+    @Test
+    public void genericInBaseInterface() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("genericInBaseInterface"));
 
+        expect(result)
+                .hasNoViolations();
+    }
+
+    @Test
+    public void parseAllBenchmarks() {
+        List<Benchmark> benchmarks = FlowBenchmarks.getBenchmarks();
+        for (int i = 0; i < benchmarks.size(); i++) {
+            System.out.println(i + "/" + benchmarks.size());
+            BenchmarkInfo.create(benchmarks.get(i));
+        }
+    }
 }

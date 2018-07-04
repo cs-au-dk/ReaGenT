@@ -32,7 +32,7 @@ public class FlowBenchmarks {
     static {
         CheckOptions options = CheckOptions.builder()
                 .setSplitUnions(true) // The flow-benchmarks are manageable with split-unions (and e.g. the constructor in big.js would never execute under ReaGenT if not for split signatures).
-                .setCompactOutput(true)
+                .setCompactOutput(false)
                 .build();
 
         // TODO: Seems not to work
@@ -47,6 +47,7 @@ public class FlowBenchmarks {
         // Might work, not sure.
 //        register(new Benchmark("base64url", ParseDeclaration.Environment.ES5Core, "test/flowtyped/base64url/base64url.js", "test/flowtyped/base64url/declaration.js", NODE, options));
 //        register(new Benchmark("dropzone", ParseDeclaration.Environment.ES5Core, "test/flowtyped/dropzone/dropzone.js", "test/flowtyped/dropzone/declaration.js", NODE, options)); // File API?
+//        register("inline-style-prefix", options); // Wrong version? Couldn't find the implementation again.
 
         // Works.
         register(new Benchmark("aphrodite.js", ParseDeclaration.Environment.ES5Core, "test/flowtyped/aphrodite/aphrodite.js", "test/flowtyped/aphrodite/declaration.js", NODE, options));
@@ -93,10 +94,8 @@ public class FlowBenchmarks {
         register("icepick", options); // <- uses a little to much ES6 for TAJS.
         register("imurmurhash", options);
         register("indent-string", options); // <- uses a little to much ES6 for TAJS
-        register("inline-style-prefix", options);
-        register("intl-messageformat", options);
+        register("intl-messageformat", options, BROWSER);
         register("is-absolute-url", options);
-        register("natural-sort", options);
         register("joi-browser", options);
         register("js-beautify", options);
         register("js-cookie", options);
@@ -120,6 +119,7 @@ public class FlowBenchmarks {
         register("multi-typeof", options);
         register("nano-md5", options);
         register("nanoevents", options);
+        register("natural-sort", options);
         register("node-int64", options);
         register("node-uuid", options);
         register("normalizr", options);
@@ -149,7 +149,8 @@ public class FlowBenchmarks {
         register("turf-polygon", options);
         register("ua-parser-js", options);
         register("url-join", options);
-        // 100. Start at "url-parse" from flow-typed to add more. (only 21 left...)
+        register("url-parse", options);
+        // 100. Start from user-home to add more. (only 20 left...)
     }
 
     private static void register(String name, CheckOptions options) {
@@ -170,7 +171,9 @@ public class FlowBenchmarks {
 
     @Parameterized.Parameters(name = "{0}")
     public static List<Benchmark> getBenchmarks() {
-        return new ArrayList<>(benchmarks.values());
+        ArrayList<Benchmark> result = new ArrayList<>(FlowBenchmarks.benchmarks.values());
+        result.sort(Comparator.comparing(o -> o.name));
+        return result;
     }
 
     @Test
@@ -203,13 +206,13 @@ public class FlowBenchmarks {
         assert !out.trim().isEmpty();
     }
 
-    @Test
+    @Test // TODO: Is actually genPatched.
     public void runTSTestPatched() throws Exception {
         if (this.benchmark.patched() == null) {
             return;
         }
         this.benchmark = this.benchmark.patched();
-        runTSTest();
+        Main.writeFullDriver(this.benchmark);
     }
 
 
