@@ -200,16 +200,6 @@ public class DeltaDebug {
         };
 //        debug(bench.dTSFile, predicate);
         testPredicate(predicate);
-        testPredicate(predicate);
-        testPredicate(predicate);
-        testPredicate(predicate);
-        testPredicate(predicate);
-        testPredicate(predicate);
-        testPredicate(predicate);
-        testPredicate(predicate);
-        testPredicate(predicate);
-        testPredicate(predicate);
-        testPredicate(predicate);
         System.exit(0);
     }
 

@@ -400,9 +400,10 @@ public class FlowTests {
     }
 
     @Test
-    @Ignore // TODO: Periodic error.
     public void genericsAndFunctions() throws IOException {
-        String driver = Main.generateFullDriver(benchFromFolder("genericsAndFunctions")).getRight();
-        assertThat(driver, not(containsString("_isUnboundGeneric")));
+        for (int i = 0; i < 5; i++) {
+            String driver = Main.generateFullDriver(benchFromFolder("genericsAndFunctions")).getRight();
+            assertThat(driver, not(containsString("_isUnboundGeneric")));
+        }
     }
 }

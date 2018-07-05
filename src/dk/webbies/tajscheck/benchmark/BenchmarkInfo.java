@@ -332,6 +332,10 @@ public class BenchmarkInfo {
                 } else if (type instanceof ReferenceType) {
                     List<TypeParameterType> typeArguments = ((ReferenceType) type).getTypeArguments().stream().filter(TypeParameterType.class::isInstance).map(TypeParameterType.class::cast).collect(Collectors.toList());
                     arguments.addAll(typeArguments);
+                    if (((ReferenceType) type).getTarget() instanceof ReferenceType) {
+                        List<Type> subArguments = ((ReferenceType) ((ReferenceType) type).getTarget()).getTypeArguments();
+                        subArguments.stream().filter(TypeParameterType.class::isInstance).map(TypeParameterType.class::cast).forEach(parameters::add);
+                    }
                 }
             }
             arguments.removeAll(parameters); // Now i only have the ones that are only arguments.
