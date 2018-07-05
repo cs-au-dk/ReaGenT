@@ -67,7 +67,7 @@ interface ValidationError extends Error {
     annotate(stripColorCodes: boolean): string,
     details: ValidationErrorItem[],
     message: string,
-    simple(): string
+    // simple(): string
 }
 
 interface ValidationErrorItem {
@@ -78,7 +78,7 @@ interface ValidationErrorItem {
 }
 
 interface ValidationResult<T> {
-    error: ValidationError,
+    error: ?ValidationError,
     value: T
 }
 
@@ -176,8 +176,9 @@ declare interface npm$joiBrowser$BooleanSchema
 
 declare interface npm$joiBrowser$DateSchema
     extends AnySchema<npm$joiBrowser$DateSchema> {
-    format(format: string): npm$joiBrowser$DateSchema,
-    format(format: string[]): npm$joiBrowser$DateSchema,
+    // format(format: string): npm$joiBrowser$DateSchema,
+    // format(format: string[]): npm$joiBrowser$DateSchema,
+    // missing: toDate(value, format, timestamp, multiplier): Date.
     iso(): npm$joiBrowser$DateSchema,
     max(date: Date): npm$joiBrowser$DateSchema,
     max(date: number): npm$joiBrowser$DateSchema,
@@ -326,21 +327,22 @@ declare module "joi-browser" {
         }): npm$joiBrowser$ObjectSchema,
         ref(key: string, options?: ReferenceOptions): Reference,
         string(): npm$joiBrowser$StringSchema,
+        // TODO: Still has benign (value is not always T in the callback, I observed an empty object, but it seems benign).
         validate<T>(
             value: T,
             schema: npm$joiBrowser$Schema,
-            callback: (err: ValidationError, value: T) => void
+            callback: (err: ?ValidationError, value: T) => void
         ): void,
         validate<T>(
             value: T,
             schema: Object,
-            callback: (err: ValidationError, value: T) => void
+            callback: (err: ?ValidationError, value: T) => void
         ): void,
         validate<T>(
             value: T,
             schema: Object,
             options?: ValidationOptions,
-            callback?: (err: ValidationError, value: T) => void
+            callback?: (err: ?ValidationError, value: T) => void
         ): ValidationResult<T>
     };
 }

@@ -60,7 +60,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class FlowTests {
-    static Benchmark benchFromFolder(String folderName) {
+    public static Benchmark benchFromFolder(String folderName) {
         return benchFromFolder(folderName, options());
     }
 
@@ -374,6 +374,15 @@ public class FlowTests {
     }
 
     @Test
+    public void genericInBaseInterface2() throws Exception {
+        // Using TSTest, because massive implementation copied from library.
+        OutputParser.RunResult result = UnitTests.run(benchFromFolder("genericInBaseInterface2"));
+
+        UnitTests.expect(result)
+                .toPass();
+    }
+
+    @Test
     public void genericInBaseClass() throws Exception {
         TajsAnalysisResults result = run(benchFromFolder("genericInBaseClass"));
 
@@ -388,5 +397,12 @@ public class FlowTests {
             System.out.println(i + "/" + benchmarks.size());
             BenchmarkInfo.create(benchmarks.get(i));
         }
+    }
+
+    @Test
+    @Ignore // TODO: Periodic error.
+    public void genericsAndFunctions() throws IOException {
+        String driver = Main.generateFullDriver(benchFromFolder("genericsAndFunctions")).getRight();
+        assertThat(driver, not(containsString("_isUnboundGeneric")));
     }
 }

@@ -11,14 +11,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("Duplicates")
 public class TypeNameCreator {
     private final Map<String, Type> typeNames;
     private final FlowParser flowParser;
-    private final List<Pair<JsonObject, String>> classDefinitions = new ArrayList<>();
+    private final List<Pair<JsonObject, String>> classAndInterfaceDefinitions = new ArrayList<>();
 
     static Type lookUp(Map<String, Type> namedTypes, String nameContext, String name, Map<String, List<Pair<Pair<Integer, Integer>, Type>>> typeParameters, JsonArray rawRange) {
         if (name.contains(".")) {
@@ -97,8 +96,8 @@ public class TypeNameCreator {
         return typeNames;
     }
 
-    public List<Pair<JsonObject, String>> getClassDefinitions() {
-        return classDefinitions;
+    public List<Pair<JsonObject, String>> getClassAndInterfaceDefinitions() {
+        return classAndInterfaceDefinitions;
     }
 
     private Map<String, Type> createTypeNames(JsonArray body) {
@@ -162,6 +161,7 @@ public class TypeNameCreator {
             case "DeclareInterface":
             case "GenericTypeAnnotation":
             case "InterfaceDeclaration": {
+                classAndInterfaceDefinitions.add(new Pair<>(moduleStatement, nameContext));
                 JsonObject id = moduleStatement.get("id").getAsJsonObject();
                 String name = id.get("name").getAsString();
                 DelayedType type = parseType(moduleStatement, nameContext);
@@ -203,7 +203,7 @@ public class TypeNameCreator {
             }
             case "DeclareClass":
             case "ClassDeclaration": {
-                classDefinitions.add(new Pair<>(moduleStatement, nameContext));
+                classAndInterfaceDefinitions.add(new Pair<>(moduleStatement, nameContext));
                 result.put(
                         newNameContext(nameContext, moduleStatement.get("id").getAsJsonObject().get("name").getAsString()),
                         parseType(moduleStatement, nameContext)

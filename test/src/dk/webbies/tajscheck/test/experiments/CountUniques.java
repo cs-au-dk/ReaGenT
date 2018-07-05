@@ -403,6 +403,9 @@ public class CountUniques {
 
         @Override
         public Type visit(ClassInstanceType t, Arg arg) {
+            if (firstPath(arg.path).equals("[instanceOf]")) {
+                return recurse(t.getClassType(), arg.rest());
+            }
             return recurse(info.typesUtil.createClassInstanceType(((ClassType) t.getClassType())), arg);
         }
 

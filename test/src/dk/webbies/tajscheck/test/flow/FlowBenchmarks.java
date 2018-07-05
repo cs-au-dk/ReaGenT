@@ -44,10 +44,12 @@ public class FlowBenchmarks {
 //        register("rivets", options, BROWSER); // Don't know, something with modules...
 //        register("rxjs", options); // A unionType is apparently a generic type
 
+
         // Might work, not sure.
 //        register(new Benchmark("base64url", ParseDeclaration.Environment.ES5Core, "test/flowtyped/base64url/base64url.js", "test/flowtyped/base64url/declaration.js", NODE, options));
 //        register(new Benchmark("dropzone", ParseDeclaration.Environment.ES5Core, "test/flowtyped/dropzone/dropzone.js", "test/flowtyped/dropzone/declaration.js", NODE, options)); // File API?
 //        register("inline-style-prefix", options); // Wrong version? Couldn't find the implementation again.
+//        register("js-beautify", options); // Completely incompatible browser and node versions. So to get this to work, I would need the node version to work with TAJS.
 
         // Works.
         register(new Benchmark("aphrodite.js", ParseDeclaration.Environment.ES5Core, "test/flowtyped/aphrodite/aphrodite.js", "test/flowtyped/aphrodite/declaration.js", NODE, options));
@@ -97,8 +99,7 @@ public class FlowBenchmarks {
         register("intl-messageformat", options, BROWSER);
         register("is-absolute-url", options);
         register("joi-browser", options);
-        register("js-beautify", options);
-        register("js-cookie", options);
+        register("js-cookie", options, BROWSER);
         register("json-stringify-safe", options);
         register("jsuri", options);
         register("latlon-geohash", options);
@@ -113,7 +114,7 @@ public class FlowBenchmarks {
         register("mitt", options);
         register("mixpanel-browser", options);
         register("mobile-detect", options);
-        register("moment", options);
+        register("moment", options.getBuilder().setSplitUnions(false).build());
         register("mousetrap", options, BROWSER);
         register("ms", options);
         register("multi-typeof", options);
@@ -150,7 +151,8 @@ public class FlowBenchmarks {
         register("ua-parser-js", options);
         register("url-join", options);
         register("url-parse", options);
-        // 100. Start from user-home to add more. (only 20 left...)
+        register("uuid-js", options);
+        // 100. Start from uuid to add more. (only 20 left...)
     }
 
     private static void register(String name, CheckOptions options) {
@@ -203,7 +205,7 @@ public class FlowBenchmarks {
 
         System.out.println();
 
-        assert !out.trim().isEmpty();
+//        assert !out.trim().isEmpty();
     }
 
     @Test // TODO: Is actually genPatched.
@@ -213,6 +215,7 @@ public class FlowBenchmarks {
         }
         this.benchmark = this.benchmark.patched();
         Main.writeFullDriver(this.benchmark);
+//        runTSTest();
     }
 
 

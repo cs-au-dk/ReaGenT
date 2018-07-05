@@ -262,7 +262,7 @@ public class FlowParser {
                         assert typeArguments.isEmpty();
                         Pair<Integer, Integer> range = parseRange(typeJSON);
 
-                        List<Pair<JsonObject, String>> matchingClasses = typeNameCreator.getClassDefinitions().stream().filter(classDef -> {
+                        List<Pair<JsonObject, String>> matchingClasses = typeNameCreator.getClassAndInterfaceDefinitions().stream().filter(classDef -> {
                             Pair<Integer, Integer> classDefRange = parseRange(classDef.getLeft());
                             return range.getLeft() >= classDefRange.getLeft() && range.getRight() <= classDefRange.getRight();
                         }).collect(Collectors.toList());

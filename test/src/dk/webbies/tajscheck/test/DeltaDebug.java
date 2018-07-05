@@ -4,11 +4,15 @@ import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
+import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
+import dk.webbies.tajscheck.test.flow.FlowTests;
 import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks;
+import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.util.MinimizeArray;
+import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Test;
 
@@ -181,32 +185,30 @@ public class DeltaDebug {
     public static void main(String[] args) throws IOException {
         Util.isDeltaDebugging = true;
         Util.alwaysRecreate = false;
-        Benchmark bench = RunBenchmarks.benchmarks.get("semver").withOptions(AnalyzeBenchmarks.options()).patched();
+        Benchmark bench = FlowTests.benchFromFolder("genericsAndFunctions");
         BooleanSupplier predicate = () -> {
             //noinspection TryWithIdenticalCatches
             try {
-                TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, 180);
-                System.out.println(result);
-                if (!result.detectedViolations.containsKey("SemVer.SemVer.new(classInstance).raw")) {
-                    return false;
-                }
-                return result.detectedViolations.get("SemVer.SemVer.new(classInstance).raw").toString().contains("Maybe: Expected string but found Undef in test SemVer.SemVer.new(classInstance).raw");
-            } catch (NullPointerException e) {
-                return false;
-            } catch (AnalysisException e) {
-                return false;
-            } catch (IllegalArgumentException e) {
-                return true;
-            } catch (AssertionError e) {
-                return false;
-            } catch (RuntimeException e) {
-                return false;
-            } catch (Error | Exception e) {
-                e.printStackTrace();
+                BenchmarkInfo.create(bench);
+                /*List<dk.webbies.tajscheck.testcreator.test.Test> tests = new TestCreator(info).createTests();
+
+                return new Pair<>(info, generateFullDriver(info, tests, recording));*/
+                return Main.generateFullDriver(bench).getRight().contains("_isUnboundGeneric");
+            } catch (Exception e) {
                 return false;
             }
         };
-//        debug(bench.jsFile, predicate);
+//        debug(bench.dTSFile, predicate);
+        testPredicate(predicate);
+        testPredicate(predicate);
+        testPredicate(predicate);
+        testPredicate(predicate);
+        testPredicate(predicate);
+        testPredicate(predicate);
+        testPredicate(predicate);
+        testPredicate(predicate);
+        testPredicate(predicate);
+        testPredicate(predicate);
         testPredicate(predicate);
         System.exit(0);
     }
