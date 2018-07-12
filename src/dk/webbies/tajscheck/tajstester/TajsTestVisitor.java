@@ -98,11 +98,20 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
     @Override
     public Boolean visit(MethodCallTest test) {
         final Value receiver = attemptGetValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
-        Value function = UnknownValueResolver.getRealValue(pv.readPropertyValue(receiver.getAllObjectLabels(), Value.makeStr(test.getPropertyName())), c.getState());
-        return functionTest(test, receiver, function, false);
+
+        //noinspection AssertWithSideEffects
+        assert receiver.restrictToNotObject().isNone();
+
+        boolean typeChecked = true;
+        for (ObjectLabel receiverLabel : receiver.getObjectLabels()) {
+            Value function = UnknownValueResolver.getRealValue(pv.readPropertyValue(Collections.singleton(receiverLabel), Value.makeStr(test.getPropertyName())), c.getState());
+            typeChecked &= functionTest(test, Value.makeObject(receiverLabel), function, false);
+        }
+
+        return typeChecked;
     }
 
-    public Boolean functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
+    public boolean functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
         List<Value> arguments = test.getParameters().stream().map(paramType -> valueHandler.createValue(paramType, test.getTypeContext())).collect(Collectors.toList());
 
         if (arguments.stream().anyMatch(Value::isNone)) {
