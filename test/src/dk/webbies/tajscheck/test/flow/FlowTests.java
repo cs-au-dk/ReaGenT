@@ -9,6 +9,7 @@ import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
+import dk.webbies.tajscheck.test.tajs.TAJSUnitTests;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -68,7 +69,7 @@ public class FlowTests {
         return benchFromFolder(folderName, options, Benchmark.RUN_METHOD.NODE);
     }
 
-    static Benchmark benchFromFolder(String folderName, OptionsI.Builder options, Benchmark.RUN_METHOD run_method) {
+    public static Benchmark benchFromFolder(String folderName, OptionsI.Builder options, Benchmark.RUN_METHOD run_method) {
         return new Benchmark("flow-" + folderName, ParseDeclaration.Environment.ES6DOM, "test/flowtests/" + folderName + "/implementation.js", "test/flowtests/" + folderName + "/declaration.js", run_method, options.build());
     }
 
@@ -383,6 +384,19 @@ public class FlowTests {
     }
 
     @Test
+    public void superMethods() throws Exception {
+        OutputParser.RunResult result = UnitTests.run(benchFromFolder("superMethods", options().setMaxIterationsToRun(1000)));
+
+        UnitTests.expect(result)
+                .toPass();
+
+        TajsAnalysisResults tajsResult = run(benchFromFolder("superMethods"));
+
+        expect(tajsResult)
+                .hasNoViolations();
+    }
+
+    @Test
     public void genericInBaseClass() throws Exception {
         TajsAnalysisResults result = run(benchFromFolder("genericInBaseClass"));
 
@@ -405,5 +419,12 @@ public class FlowTests {
             String driver = Main.generateFullDriver(benchFromFolder("genericsAndFunctions")).getRight();
             assertThat(driver, not(containsString("_isUnboundGeneric")));
         }
+    }
+
+    @Test
+    public void documentClass() throws Exception {
+        TajsAnalysisResults result = run(benchFromFolder("documentClass"));
+        expect(result)
+                .hasNoViolations();
     }
 }
