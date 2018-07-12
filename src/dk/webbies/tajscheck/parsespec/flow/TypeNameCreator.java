@@ -44,12 +44,6 @@ public class TypeNameCreator {
         }
 
 
-        if (namedTypes.containsKey(name)) {
-            return namedTypes.get(name);
-        }
-        if (nameContext.equals("")) {
-            return namedTypes.get(name);
-        }
         while (true) {
             String key = nameContext + "." + name;
             if (namedTypes.containsKey(key)) {
@@ -58,10 +52,9 @@ public class TypeNameCreator {
             if (nameContext.contains(".")) {
                 nameContext = nameContext.substring(0, nameContext.lastIndexOf("."));
             } else {
-                break;
+                return namedTypes.get(name);
             }
         }
-        return null;
     }
 
     private static Type lookUpInType(Type type, String prop) {
