@@ -27,10 +27,8 @@ declare class marked$Renderer {
     constructor(o?: marked$MarkedOptions): marked$Renderer;
 }
 
-type marked$HighlightFunction =
-    ((c: string, l: string, cb: marked$NodeCallback<string>) => void)
-    | ((c: string, cb: marked$NodeCallback<string>) => void)
-    | ((c: string, l?: string) => string)
+type marked$HighlightFunction = ((c: string, l: ?string) => string) // ctrl + f ".highlight(". It is only used once in the implementation. Possibly benign that the string is a maybe-type.
+
 
 type marked$MarkedOptions = {
     highlight?: ?marked$HighlightFunction;
@@ -57,8 +55,8 @@ type marked$BlockquoteStart = { type: 'blockquote_start' }
 type marked$BlockquoteEnd = { type: 'blockquote_end' }
 type marked$ListStart = { type: 'list_start' }
 type marked$ListEnd = { type: 'list_end' }
-type marked$Paragraph = { type: 'paragraph'; pre: boolean; text: string; }
-type marked$Html = { type: 'paragraph'; pre: boolean; text: string; }
+type marked$Paragraph = { type: 'paragraph'; pre?: boolean; text: string; }
+type marked$Html = { type: 'html'; pre: boolean; text: string; }
 type marked$Text = { type: 'text'; text: string; }
 
 type marked$Token =
@@ -80,7 +78,7 @@ type marked$Link = {
     href: string;
 }
 
-type marked$Tokens = { links: Array<marked$Link> } & Array<marked$Token>;
+type marked$Tokens = { links: {[tag: string]: marked$Link} } & Array<marked$Token>;
 
 type marked$NoopRule = {
     (i: mixed): void;
@@ -93,11 +91,11 @@ type marked$lex = (t: string) => marked$Tokens;
 
 declare class marked$Lexer {
     static lex: (t: string, o?: marked$MarkedOptions) => marked$Tokens;
-    static rules: { [key: string]: marked$Rule };
+    static rules: { [key: string]: marked$Rule }; // Not entirely correct, but looks bening.
 
     constructor(o?: marked$MarkedOptions): marked$Lexer;
 
-    rules: { [key: string]: marked$Rule };
+    rules: { [key: string]: marked$Rule }; // Not entirely correct, but looks bening.
     lex: marked$lex;
     tokens: marked$Tokens;
     options: marked$MarkedOptions;
@@ -106,11 +104,11 @@ declare class marked$Lexer {
 declare class marked$Parser {
     static parse: (t: marked$Tokens, o?: marked$MarkedOptions) => string;
     parse: (t: marked$Tokens) => string;
-    next: () => marked$Token;
-    peek: () => marked$Token;
-    parsemarked$Text: () => string;
+    next: () => marked$Token; // actually returns a maybe marked$Token. But that seems benign (peek() should be called first).
+    peek: () => marked$Token | 0;
+    parseText: () => string;
     tok: () => string;
-    tokens: marked$Tokens;
+    tokens: marked$Tokens; // The "links" property is not always present, but it seems benign, because the links property is present if the parse method has been called. (Maybe a pull-request to initialize "links" in the Parser constructor?)
     token: ?marked$Token;
     options: marked$MarkedOptions;
     renderer: marked$Renderer;
@@ -118,15 +116,15 @@ declare class marked$Parser {
 }
 
 declare class marked$InlineLexer {
-    static rules: {[name: string] : marked$Rule};
+    static rules: {[name: string] : marked$Rule}; // Benign.
     static output: (s: string, l: Array<marked$Link>, o?: marked$MarkedOptions) => string;
     output: (s: string) => string;
-    outputmarked$Link: (c: Array<string>, l: marked$Link) => string;
+    outputLink: (c: Array<string>, l: marked$Link) => string;
     smartypants: (t: string) => string;
     mangle: (t: string) => string;
     options: marked$MarkedOptions;
     links: Array<marked$Link>;
-    rules: Array<marked$Rule>;
+    rules: {[name: string] : marked$Rule};
     renderer: marked$Renderer;
     constructor(l: Array<marked$Link>, o?: marked$MarkedOptions): marked$InlineLexer;
 }
