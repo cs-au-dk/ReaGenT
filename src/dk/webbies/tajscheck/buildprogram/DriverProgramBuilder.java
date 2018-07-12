@@ -349,25 +349,30 @@ public class DriverProgramBuilder {
             if (info.options.dynamicOptions.makeTSInferLike) {
                 return Collections.singletonList(throwStatement(newCall(identifier("Error"))));
             } else {
-                return Collections.singletonList(block(
+                 return Collections.singletonList(block(
                         variable("method", getTypeExpression(test.getFunction(), test.getTypeContext())),
-                        block(callFunction(test, test.getObject(), test.getParameters(), test.isRestArgs(), (base, parameters) ->
-                            methodCall(identifier("method"), "call", Util.concat(Collections.singletonList(identifier("base")), parameters.stream().map(Pair::getLeft).collect(Collectors.toList())))
-                        ))
-                ));
+                        block(
+                                block(callFunction(test, test.getObject(), test.getParameters(), test.isRestArgs(), (base, parameters) ->
+                                        new Pair<>(
+                                                ifThen(binary(identifier("method"), Operator.NOT_EQUAL_EQUAL, member(identifier("base"), test.getPropertyName())),
+                                                        AstBuilder.Return()),
+                                                methodCall(identifier("method"), "call", Util.concat(Collections.singletonList(identifier("base")), parameters.stream().map(Pair::getLeft).collect(Collectors.toList())))
+                                        )
+                                ))
+                        )));
             }
         }
 
         @Override
         public List<Statement> visit(ConstructorCallTest test) {
             if (info.options.dynamicOptions.makeTSInferLike) {
-                return callFunction(test, test.getFunction(), Collections.emptyList(), false, (exp, parameters) -> {
-                    return AstBuilder.newCall(exp, parameters.stream().map(Pair::getLeft).collect(Collectors.toList()));
-                });
+                return callFunction(test, test.getFunction(), Collections.emptyList(), false, (exp, parameters) ->
+                    new Pair<>(null, AstBuilder.newCall(exp, parameters.stream().map(Pair::getLeft).collect(Collectors.toList())))
+                );
             } else {
-                return callFunction(test, test.getFunction(), test.getParameters(), test.isRestArgs(), (exp, parameters) -> {
-                    return AstBuilder.newCall(exp, parameters.stream().map(Pair::getLeft).collect(Collectors.toList()));
-                });
+                return callFunction(test, test.getFunction(), test.getParameters(), test.isRestArgs(), (exp, parameters) ->
+                    new Pair<>(null, AstBuilder.newCall(exp, parameters.stream().map(Pair::getLeft).collect(Collectors.toList())))
+                );
             }
         }
 
@@ -376,13 +381,13 @@ public class DriverProgramBuilder {
             if (info.options.dynamicOptions.makeTSInferLike) {
                 return Collections.singletonList(throwStatement(newCall(identifier("Error"))));
             } else {
-                return callFunction(test, test.getFunction(), test.getParameters(), test.isRestArgs(), (exp, parameters) -> {
-                    return AstBuilder.call(exp, parameters.stream().map(Pair::getLeft).collect(Collectors.toList()));
-                });
+                return callFunction(test, test.getFunction(), test.getParameters(), test.isRestArgs(), (exp, parameters) ->
+                    new Pair<>(null, AstBuilder.call(exp, parameters.stream().map(Pair::getLeft).collect(Collectors.toList())))
+                );
             }
         }
 
-        private List<Statement> callFunction(FunctionTest test, Type object, List<Type> orgParameterTypes, boolean restArgs, BiFunction<Expression, List<Pair<Expression, Type>>, Expression> callGenerator) {
+        private List<Statement> callFunction(FunctionTest test, Type object, List<Type> orgParameterTypes, boolean restArgs, BiFunction<Expression, List<Pair<Expression, Type>>, Pair<Statement, Expression>> callGenerator) {
             if (restArgs) {
                 Type restArgType = TypesUtil.extractRestArgsType(orgParameterTypes);
 
@@ -421,7 +426,7 @@ public class DriverProgramBuilder {
             }
         }
 
-        private List<Statement> callFunction(FunctionTest test, Type object, List<Type> parameterTypes, BiFunction<Expression, List<Pair<Expression, Type>>, Expression> callGenerator) {
+        private List<Statement> callFunction(FunctionTest test, Type object, List<Type> parameterTypes, BiFunction<Expression, List<Pair<Expression, Type>>, Pair<Statement, Expression>> callGenerator) {
             List<Statement> result = new ArrayList<>();
 
             result.add(variable("base", getTypeExpression(object, test.getTypeContext())));
@@ -453,8 +458,11 @@ public class DriverProgramBuilder {
 
 
             List<Pair<Expression, Type>> parametersWithTypes = Util.zip(parameters, parameterTypes);
-            Expression newCall = callGenerator.apply(identifier("base"), parametersWithTypes);
-            result.add(variable("result", newCall));
+            Pair<Statement, Expression> callResult = callGenerator.apply(identifier("base"), parametersWithTypes);
+            if (callResult.getLeft() != null) {
+                result.add(callResult.getLeft());
+            }
+            result.add(variable("result", callResult.getRight()));
 
             return result;
         }
