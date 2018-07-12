@@ -133,7 +133,7 @@ public class FlowBenchmarks {
         register("plow-js", options);
         register("pluralize", options);
         register("pretty-bytes", options);
-        register("prismic.io", options);
+        register("prismic.io", options, BROWSER);
         register("qs", options);
         register("random-js", options);
         register("remarkable", options);
