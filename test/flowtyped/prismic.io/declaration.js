@@ -1,4 +1,4 @@
-declare module 'prismic.io' {
+declare module Prismic {
     declare type LinkResolver = (doc: Document) => string;
 
     declare type DaysOfWeek =
@@ -348,7 +348,7 @@ declare module 'prismic.io' {
 
     declare type getAPI = (url: string, options: ?APIOptions) => Promise<API>;
 
-    declare type Prismic = {
+    declare type PrismicType = {
         experimentCookie: string,
         previewCookie: 'io.prismic.preview',
         Document: Document,
@@ -362,5 +362,5 @@ declare module 'prismic.io' {
         parseDoc: (json: Object) => Document
     }
 
-    declare module.exports: Prismic;
+    declare module.exports: PrismicType;
 }

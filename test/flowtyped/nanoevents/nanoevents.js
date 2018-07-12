@@ -55,10 +55,6 @@
      * @method
      */
     on: function on (event, cb) {
-        if (process.env.NODE_ENV !== 'production' && typeof cb !== 'function') {
-            throw new Error('Listener must be a function')
-        }
-
         // event variable is reused and repurposed, now it's an array of handlers
         event = this.events[event] = this.events[event] || []
         event.push(cb)
