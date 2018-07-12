@@ -212,6 +212,8 @@ public class FlowParser {
         return parseType(typeJSON, nameContext, false);
     }
 
+    private boolean eager = false;
+
     DelayedType parseType(JsonObject typeJSON, String nameContext, boolean typeof) {
         Pair<JsonObject, Boolean> key = new Pair<>(typeJSON, typeof);
         if (parseTypeCache.containsKey(key)) {
@@ -275,18 +277,21 @@ public class FlowParser {
                         return thisType;
                     }
 
-                    final Type type;
+                    Type type = null;
                     if (typeof) {
-                        if (this.emptySpec.getGlobal().getDeclaredProperties().containsKey(name)) {
-                            type = this.emptySpec.getGlobal().getDeclaredProperties().get(name);
-                        } else {
+                        {
                             Type lookup = TypeNameCreator.lookUp(namedTypes, nameContext, name, typeParameters, typeJSON.get("range").getAsJsonArray());
-                            Type instanceType = lookup instanceof DelayedType ? ((DelayedType) lookup).getType(): lookup;
-                            if (instanceType instanceof ClassInstanceType) {
-                                type = ((ClassInstanceType) instanceType).getClassType();
-                            } else {
-                                type = instanceType;
+                            if (lookup != null) {
+                                Type instanceType = lookup instanceof DelayedType ? ((DelayedType) lookup).getType(): lookup;
+                                if (instanceType instanceof ClassInstanceType) {
+                                    type = ((ClassInstanceType) instanceType).getClassType();
+                                } else {
+                                    type = instanceType;
+                                }
                             }
+                        }
+                        if (type == null && this.emptySpec.getGlobal().getDeclaredProperties().containsKey(name)) {
+                            type = this.emptySpec.getGlobal().getDeclaredProperties().get(name);
                         }
                     } else {
                         type = TypeNameCreator.lookUp(namedTypes, nameContext, name, typeParameters, typeJSON.get("range").getAsJsonArray());
@@ -425,6 +430,9 @@ public class FlowParser {
                     throw new RuntimeException("Unknown type: " + typeJSON.get("type").getAsString());
             }
         });
+        if (eager) {
+            result.getType();
+        }
         parseTypeCache.put(key, result);
         return result;
     }
