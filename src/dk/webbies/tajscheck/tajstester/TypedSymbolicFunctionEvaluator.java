@@ -101,7 +101,7 @@ public class TypedSymbolicFunctionEvaluator {
         }
 
         if (signatures.size() == 0) {
-            tajsTypeTester.addViolation(TypeViolation.definite("Called a non function", path.apply("")), c);
+            tajsTypeTester.addWarning(TypeViolation.definite("Called a non function", path.apply("")), c);
             return Value.makeNone();
         }
 
