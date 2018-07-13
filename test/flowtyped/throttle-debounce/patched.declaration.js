@@ -8,18 +8,18 @@ declare module "throttle-debounce" {
         noTrailing: boolean,
         callback: (...args: Array<any>) => T,
         debounceMode: boolean
-    ): (...args: Array<any>) => T;
+    ): (...args: Array<any>) => void;
     declare function throttle<T>(
         delay: number,
         noTrailing: boolean,
         callback: (...args: Array<any>) => T
-    ): (...args: Array<any>) => T;
+    ): (...args: Array<any>) => void;
     declare function throttle<T>(
         delay: number,
         callback: (...args: Array<any>) => T,
         debounceMode: boolean
-    ): (...args: Array<any>) => T;
-    declare function throttle<T>(delay: number, callback: (...args: Array<any>) => T): (...args: Array<any>) => T;
+    ): (...args: Array<any>) => void;
+    declare function throttle<T>(delay: number, callback: (...args: Array<any>) => T): (...args: Array<any>) => void;
 
     /**
      * Debounce execution of a function. Debouncing, unlike throttling, guarantees that a function is only executed a single time,
@@ -29,7 +29,7 @@ declare module "throttle-debounce" {
         delay: number,
         atBegin: boolean,
         callback: (...args: Array<any>) => T
-    ): (...args: Array<any>) => T;
+    ): (...args: Array<any>) => void;
 
-    declare function debounce<T>(delay: number, callback: (...args: Array<any>) => T): (...args: Array<any>) => T;
+    declare function debounce<T>(delay: number, callback: (...args: Array<any>) => T): (...args: Array<any>) => void;
 }

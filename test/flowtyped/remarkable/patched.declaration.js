@@ -5,7 +5,7 @@ declare module 'remarkable' {
 
     declare type State = any;
 
-    declare type RemarkablePlugin<Option> = (md: Remarkable, option: Option) => void;
+    declare type RemarkablePlugin<Option> = (md: Remarkable, option: ?Option) => void;
 
     declare type RemarkableOptions = {
         html: boolean; // Enable HTML tags in source
@@ -47,6 +47,11 @@ declare module 'remarkable' {
         renderInline(tokens: Array<Token>, options: RemarkableOptions, env: Env): string;
     }
 
+    declare class Core {
+        ruler: Ruler;
+        process(state: State): void;
+    }
+
     declare class Remarkable {
         constructor(settings?: RemarkableSettings): void;
         use<Option>(plugin: RemarkablePlugin<Option>, options?: Option): this;
@@ -58,7 +63,7 @@ declare module 'remarkable' {
         //parsers
         inline: Parser;
         block: Parser;
-        core: Parser;
+        core: Core;
         renderer: Renderer;
     }
 

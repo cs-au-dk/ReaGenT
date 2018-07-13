@@ -52,8 +52,7 @@
              * @api public
              */
             function lolcation(loc) {
-                var location = global && global.location || {};
-                loc = loc || location;
+                loc = loc || global.location || {};
 
                 var finaldestination = {}
                     , type = typeof loc
