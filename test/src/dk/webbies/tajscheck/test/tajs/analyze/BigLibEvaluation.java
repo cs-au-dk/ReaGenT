@@ -75,7 +75,7 @@ public class BigLibEvaluation {
         experiment.addExperiment(experiment("no-check-types", AnalyzeBenchmarks.strongMode()));
         experiment.addExperiment(experiment("all-assumptions", AnalyzeBenchmarks.weakMode()));
 
-        System.out.println(experiment.calculate().print("|", "\n"));
+        System.out.println(experiment.calculate("biglib.csv").print("|", "\n"));
     }
 
     private static BiConsumer<Benchmark, BiConsumer<String, String>> experiment(String prefix, Function<CheckOptions.Builder, StaticOptions.Builder> optionsTransformer) {
