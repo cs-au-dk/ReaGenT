@@ -15,6 +15,8 @@ import java.util.regex.Pattern;
 
 public class FlowExperiment {
 
+    private static final int TIMEOUT = 3 * 60 * 60;
+
     public static void main(String[] args) {
         new FlowExperiment().doThaThing();
     }
@@ -30,8 +32,6 @@ public class FlowExperiment {
                 }).calculate("flowExperiment.csv").toCSV());
 
     }
-
-    private static final int TIMEOUT = 10 * 60;
 
     private void doThaThingOnBench(Benchmark bench, BiConsumer<String, String> registrator, String prefix) {
         int tstestErrors = 0;
