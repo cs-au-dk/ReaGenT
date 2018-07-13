@@ -15,6 +15,10 @@ import java.util.regex.Pattern;
 
 public class FlowExperiment {
 
+    public static void main(String[] args) {
+        new FlowExperiment().doThaThing();
+    }
+
     @Test
     public void doThaThing() {
         System.out.println(new Experiment(FlowBenchmarks.getBenchmarks())
@@ -23,7 +27,7 @@ public class FlowExperiment {
                     if (bench.patched() != null) {
                         doThaThingOnBench(bench.patched(), registrator, "patched-");
                     }
-                }).calculate().toCSV());
+                }).calculate("flowExperiment.csv").toCSV());
 
     }
 

@@ -130,6 +130,15 @@ task bigBenchEval(type: JavaExec) {
 
 
 // Example usage:
+// ./gradlew flowExperiment
+task flowExperiment(type: JavaExec) {
+    classpath sourceSets.test.runtimeClasspath
+    jvmArgs = ["-Xmx30G"]
+    main = 'dk.webbies.tajscheck.test.flow.FlowExperiment'
+}
+
+
+// Example usage:
 // ./gradlew deltaDebugRetractedTestInAll"
 task deltaDebugRetractedTestInAll(type: JavaExec) {
     classpath sourceSets.test.runtimeClasspath
