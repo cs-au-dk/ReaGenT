@@ -208,14 +208,14 @@ public class FlowBenchmarks {
 //        assert !out.trim().isEmpty();
     }
 
-    @Test // TODO: Is actually genPatched.
+    @Test
     public void runTSTestPatched() throws Exception {
         if (this.benchmark.patched() == null) {
             return;
         }
         this.benchmark = this.benchmark.patched();
-        Main.writeFullDriver(this.benchmark);
-//        runTSTest();
+//        Main.writeFullDriver(this.benchmark);
+        runTSTest();
     }
 
 
