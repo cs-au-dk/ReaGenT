@@ -429,4 +429,10 @@ public class FlowTests {
     }
 
     // TODO: Exact objects.
+    /* TODO: Things to do before the camera ready version:
+        - Reduce the number of @ignored test-cases in TAJSUnitTests.
+        - Reduce the number of @ignored test-cases in FlowTests.
+     */
+    // TODO: Rest-parameters in tuple-types.
+    // TODO: Use TupleType.minLength when instantiating a tuple-type. 
 }
