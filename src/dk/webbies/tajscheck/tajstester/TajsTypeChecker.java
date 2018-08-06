@@ -264,12 +264,13 @@ public class TajsTypeChecker {
                         case DATE:
                         case MATH:
                         case ARGUMENTS:
-                            return Value.makeBool(true);
-                        case FUNCTION:
-                        case SYMBOL:
+                        // these are boxed primitives, and they are therefore objects.
                         case BOOLEAN:
                         case STRING:
                         case NUMBER:
+                            return Value.makeBool(true);
+                        case FUNCTION:
+                        case SYMBOL:
                             return Value.makeBool(false);
                         default:
                             throw new RuntimeException("Didn't consider: " + kind);
