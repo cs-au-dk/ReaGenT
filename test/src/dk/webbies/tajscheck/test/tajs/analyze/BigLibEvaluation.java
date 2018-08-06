@@ -46,7 +46,6 @@ public class BigLibEvaluation {
             "PeerJS",
             "PDF.js",
             "PhotoSwipe",
-            "PleaseJS",
             "QUnit",
             "Redux",
             "reveal.js",
@@ -58,10 +57,7 @@ public class BigLibEvaluation {
             "minimist",
             "semver",
             "uuid",
-            "PeerJS",
-            "PleaseJS",
-            "classnames",
-            "uuid"
+            "PleaseJS"
     );
 
 
