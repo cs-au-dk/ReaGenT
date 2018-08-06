@@ -18,6 +18,7 @@ import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static dk.webbies.tajscheck.paser.AstBuilder.*;
 
@@ -647,16 +648,19 @@ public class TypeChecker {
 
         @Override
         public List<TypeCheck> visit(TupleType tuple, Arg arg) {
-            int size = tuple.getElementTypes().size();
+            int minLength = tuple.getMinLength();
+            int maxSize = tuple.getElementTypes().size();
             List<TypeCheck> result = new ArrayList<>(Arrays.asList(
                     expectNotNull(),
                     new SimpleTypeCheck(Check.instanceOf(identifier("Array")), "tuple"),
-                    new SimpleTypeCheck(Check.field("length", new TypeWithContext(new NumberLiteral(size), arg.typeContext), Check.equalTo(number(size))), "tuple of " + size + " elements")
+                    new SimpleTypeCheck(Check.or(IntStream.range(minLength, maxSize + 1).mapToObj(size ->
+                            Check.field("length", new TypeWithContext(new NumberLiteral(size), TypeContext.create(info)), Check.equalTo(number(size)))
+                    ).collect(Collectors.toList())), minLength == maxSize ? "tuple of " + maxSize + " elements" : "tuple between " + minLength + " and " + maxSize + " elements")
             ));
 
             if (arg.depthRemaining > 0) {
                 arg = arg.decreaseDepth();
-                for (int i = 0; i < size; i++) {
+                for (int i = 0; i < maxSize; i++) {
                     Type subType = tuple.getElementTypes().get(i);
                     List<TypeCheck> subCheck = subType.accept(this, arg);
                     if (!subCheck.isEmpty()) {

@@ -347,6 +347,7 @@ public class FlowParser {
                 case "TupleTypeAnnotation": {
                     List<Type> types = Lists.newArrayList(typeJSON.get("types").getAsJsonArray()).stream().map(JsonElement::getAsJsonObject).map(json -> parseType(json, nameContext)).collect(Collectors.toList());
                     TupleType tupleType = new TupleType();
+                    tupleType.setMinLength(types.size());
                     tupleType.setElementTypes(types);
                     return tupleType;
                 }

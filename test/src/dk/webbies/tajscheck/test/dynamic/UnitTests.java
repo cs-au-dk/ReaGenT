@@ -1733,4 +1733,12 @@ public class UnitTests {
 
         assertThat(driver, not(containsString(TypeParameterIndexer.IS_UNSTRAINED_GENERIC_MARKER)));
     }
+
+    @Test
+    public void optionalInTuple() throws Exception {
+        RunResult result = run("optionalInTuple");
+
+        expect(result)
+                .toPass();
+    }
 }
