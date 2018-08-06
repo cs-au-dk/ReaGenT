@@ -1924,10 +1924,7 @@ public class TAJSUnitTests {
         assertThat(results.possiblyProblematicReads.stream().map(r -> r.getSourceLocation().toString()).distinct().collect(Collectors.toList()), hasSize(3));
     }
 
-    /* TODO: Things to do before the camera ready version:
-        - Reduce the number of @ignored test-cases in TAJSUnitTests.
-        - Reduce the number of @ignored test-cases in FlowTests.
-     */
+
 
 
 }
