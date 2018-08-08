@@ -61,6 +61,7 @@ public class FlowExperiment {
             registrator.accept(prefix + "ReaGenT-retracted", result.retractedTests.size() + "");
         } catch (Exception e) {
             registrator.accept(prefix + "ReaGenT-exception", e.getClass().getSimpleName());
+            e.printStackTrace();
         }
 
         registrator.accept(prefix + "total-errors", (tstestErrors + reagentErrors) + "");
@@ -79,6 +80,7 @@ public class FlowExperiment {
             registrator.accept(prefix + "jsFile-functions", counter.counter + "");
         } catch (Throwable e) {
             registrator.accept("counter-exception", e.getClass().getSimpleName());
+            e.printStackTrace();
         }
     }
 
