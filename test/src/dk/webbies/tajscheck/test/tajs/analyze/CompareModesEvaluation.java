@@ -11,6 +11,7 @@ import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.experiments.AutomaticExperiments;
 import dk.webbies.tajscheck.test.experiments.Experiment;
 import dk.webbies.tajscheck.test.experiments.Table;
+import dk.webbies.tajscheck.test.flow.FlowBenchmarks;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Test;
 
@@ -56,6 +57,20 @@ public class CompareModesEvaluation {
 
 
     @Test
+    public void doEvaluationOnAllFlowBenchmarks() { // TODO: RUN!
+        Experiment experiment = new Experiment(FlowBenchmarks.getBenchmarks());
+
+        modes.forEach((name, options) -> {
+            experiment.addExperiment(experiment(name, options));
+        });
+
+        Table table = experiment.calculate("compareModesFlow.csv");
+
+        printPaperTable(table);
+    }
+
+
+    @Test
     public void doEvaluation() {
         Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
 
@@ -63,7 +78,7 @@ public class CompareModesEvaluation {
             experiment.addExperiment(experiment(name, options));
         });
 
-        Table table = experiment.calculate("experiment.csv");
+        Table table = experiment.calculate("compareModes.csv");
 
         printPaperTable(table);
     }
@@ -178,7 +193,7 @@ public class CompareModesEvaluation {
 
             TAJSUtil.TajsAnalysisResults result;
             try {
-                result = TAJSUtil.runNoDriver(benchmark, 3 * 60 * 60);
+                result = TAJSUtil.runNoDriver(benchmark, 20 * 60);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -208,6 +223,15 @@ public class CompareModesEvaluation {
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 0) {
+            if (args[0].equalsIgnoreCase("flow")) {
+                System.out.println("Using flow benchmarks");
+                long startTime = System.currentTimeMillis();
+                new CompareModesEvaluation().doEvaluationOnAllFlowBenchmarks();
+                System.out.println("Took: " + (System.currentTimeMillis() - startTime) + "ms");
+                return;
+            }
+        }
         long startTime = System.currentTimeMillis();
         new CompareModesEvaluation().doEvaluation();
         System.out.println("Took: " + (System.currentTimeMillis() - startTime) + "ms");

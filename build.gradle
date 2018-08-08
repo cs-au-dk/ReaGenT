@@ -99,8 +99,11 @@ task doEvaluation(type: JavaExec) {
 }
 
 // Example usage:
-// ./gradlew compareModes"
+// ./gradlew compareModes  -PappArgs="['flow']"
 task compareModes(type: JavaExec) {
+    if (project.hasProperty("appArgs")) {
+        args Eval.me(appArgs)
+    }
     classpath sourceSets.test.runtimeClasspath
     jvmArgs = ["-Xmx30G"]
     main = 'dk.webbies.tajscheck.test.tajs.analyze.CompareModesEvaluation'
