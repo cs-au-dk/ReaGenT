@@ -748,7 +748,14 @@ public class TypeChecker {
 
         @Override
         public List<TypeCheck> visit(ClassInstanceType t, Arg arg) {
-            return info.typesUtil.createClassInstanceType(((ClassType) t.getClassType())).accept(this, arg);
+            InterfaceType classInstanceType = info.typesUtil.createClassInstanceType(((ClassType) t.getClassType()));
+            if (TypesUtil.isEmptyInterface(classInstanceType)) {
+                return Collections.singletonList(new SimpleTypeCheck(
+                        Check.typeOf("object"),
+                        "object"
+                ));
+            }
+            return classInstanceType.accept(this, arg);
         }
 
         @Override
