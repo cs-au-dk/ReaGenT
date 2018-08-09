@@ -1924,7 +1924,17 @@ public class TAJSUnitTests {
         assertThat(results.possiblyProblematicReads.stream().map(r -> r.getSourceLocation().toString()).distinct().collect(Collectors.toList()), hasSize(3));
     }
 
-
-
-
+    @Test
+    @Ignore
+    public void semverParse() throws Exception {
+        TajsAnalysisResults result = run("semverParse", options()
+                .setSplitUnions(false)
+                .setConstructClassInstances(false)
+                .setConstructClassTypes(false)
+                .staticOptions
+                .setUseInspector(false)
+        );
+        expect(result)
+                .hasNoViolations();
+    }
 }
