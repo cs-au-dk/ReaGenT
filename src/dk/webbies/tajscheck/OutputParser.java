@@ -143,10 +143,15 @@ public class OutputParser {
     }
 
     private static TypeError parseSingleResult(List<String> lines, Set<Integer> testsCalled, boolean collectCalledTests, String filterPath) {
-        assert lines.size() == 6 || lines.size() == 5;
+        if (!(lines.size() == 6 || lines.size() == 5)) {
+            return null;
+        }
 
         String header = lines.get(0);
         assert header.substring(header.lastIndexOf('('), header.length()).startsWith("(iteration: ");
+        if (header.startsWith("<---")) {
+            return null;
+        }
         if (header.lastIndexOf('(') == -1) {
             throw new RuntimeException();
         }
