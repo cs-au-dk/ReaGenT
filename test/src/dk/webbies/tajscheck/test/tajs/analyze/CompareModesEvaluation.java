@@ -49,6 +49,16 @@ public class CompareModesEvaluation {
         //experiment.addExperiment(experiment("callbacks-not-rmgc", options -> options.staticOptions.setCallbacksAreMGC(false)));
         put("no-safe-strings", AnalyzeBenchmarks.weakMode().andThen(options -> options.setBetterAnyString(false)));
 
+        put("no-assumptions",
+                AnalyzeBenchmarks.strongMode().andThen(options -> // no-check-type
+                        options
+                                .setProperWidthSubtyping(true) // width-subtyping
+                                .getOuterBuilder().setWriteAll(true).staticOptions // writes
+                                .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED) // no-prefer-lib-values
+                                .setBetterAnyString(false) // no-safe-strings.
+                )
+        );
+
         new HashSet<>(entrySet()).forEach(entry -> {
             Function<CheckOptions.Builder, StaticOptions.Builder> value = entry.getValue();
             put(entry.getKey(), AnalyzeBenchmarks.options().andThen(options -> value.apply(options.getOuterBuilder())));
@@ -206,10 +216,10 @@ public class CompareModesEvaluation {
             String exhaustiveness = Util.toFixed(100 * finishedTests / totalTests, 1) + "%";
 
             register.accept(prefix + " action-coverage", exhaustiveness);
-            register.accept(prefix + " statement-coverage", String.format("%.2f", result.statementCoverage) + "");
+//            register.accept(prefix + " statement-coverage", String.format("%.2f", result.statementCoverage) + "");
 //            register.accept(prefix + " scale-issues", result.exceptionsEncountered.size() + result.retractedTests.size() + "");
             register.accept(prefix + " violations", result.detectedViolations.keySet().size() + "");
-//            register.accept(prefix + " time", time);
+            register.accept(prefix + " time", time);
 
             //noinspection ResultOfMethodCallIgnored
             new File("results").mkdir();
