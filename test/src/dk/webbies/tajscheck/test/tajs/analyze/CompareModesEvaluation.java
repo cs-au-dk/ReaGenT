@@ -203,7 +203,7 @@ public class CompareModesEvaluation {
 
             TAJSUtil.TajsAnalysisResults result;
             try {
-                result = TAJSUtil.runNoDriver(benchmark, 20 * 60);
+                result = TAJSUtil.runNoDriver(benchmark, 3 * 60 * 60);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
