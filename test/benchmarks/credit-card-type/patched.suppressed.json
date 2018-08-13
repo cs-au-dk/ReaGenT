@@ -1,0 +1,20 @@
+{
+  "suppressions": [
+    {
+      "path": "creditCardType.getTypeInfo(string)",
+      "comment": "Spurious dataflow (think it is through the clone method. "
+    },
+    {
+      "path": "creditCardType(string).[numberIndexer]",
+      "comment": "Spurious dataflow (think it is through the clone method. "
+    },
+    {
+      "path": "creditCardType().<>.[numberIndexer]",
+      "comment": "Spurious dataflow (think it is through the clone method. "
+    },
+    {
+      "path": "creditCardType.getTypeInfo()",
+      "comment": "Values matched none of the unions..."
+    }
+  ]
+}

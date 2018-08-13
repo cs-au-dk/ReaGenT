@@ -1,0 +1,52 @@
+{
+  "suppressions": [
+    {
+      "path": "log.getLevel()",
+      "comment": "UInt imprecision"
+    },
+    {
+      "path": "log.getLogger().getLevel()",
+      "comment": "UInt imprecision"
+    },
+    {
+      "path": "log.getLogger(string).error",
+      "comment": "Maybe undef"
+    },
+    {
+      "path": "log.getLogger(string).warn",
+      "comment": "Maybe undef"
+    },
+    {
+      "path": "log.getLogger(string).info",
+      "comment": "Maybe undef"
+    },
+    {
+      "path": "log.getLogger(string).debug",
+      "comment": "Maybe undef"
+    },
+    {
+      "path": "log.getLogger(string).trace",
+      "comment": "Maybe undef"
+    },
+    {
+      "path": "log.getLogger().error",
+      "comment": "Maybe undef"
+    },
+    {
+      "path": "log.getLogger().warn",
+      "comment": "Maybe undef"
+    },
+    {
+      "path": "log.getLogger().info",
+      "comment": "Maybe undef"
+    },
+    {
+      "path": "log.getLogger().debug",
+      "comment": "Maybe undef"
+    },
+    {
+      "path": "log.getLogger().trace",
+      "comment": "Maybe undef"
+    }
+  ]
+}

@@ -18,6 +18,7 @@ import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
+import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -285,7 +286,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
             }).collect(Collectors.toList());
 
             if (matchingTypes.isEmpty()) {
-                TypeViolation violation = TypeViolation.definite("Values matched none of the unions", test.getPath());
+                TypeViolation violation = TypeViolation.definite("Values (" + Util.prettyValue(value, c.getState()) + ") matched none of the unions", test.getPath());
                 violationsAdded.add(violation);
                 typeChecked = false;
             } else {

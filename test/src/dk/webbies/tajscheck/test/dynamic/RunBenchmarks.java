@@ -195,6 +195,39 @@ public class RunBenchmarks {
         register(new Benchmark("mime", ParseDeclaration.Environment.ES5Core, "test/benchmarks/mime/mime.js", "test/benchmarks/mime/mime.d.ts", BROWSER, options));
 
         // If need more benchmarks, get some from here: https://www.javascripting.com/?p=5
+
+        // benchmarks originally from flow.
+
+        // on break.
+        register(new Benchmark("credit-card-type", ParseDeclaration.Environment.ES5Core, "test/benchmarks/credit-card-type/credit-card-type.js", "test/benchmarks/credit-card-type/declaration.d.ts", NODE, options)); // Found errors using TSTest. ReaGenT has some false positives due to imprecision. After pacthing TSTest is clean (not ReaGenT).
+
+        // don't support the features in this.
+        register(new Benchmark("deep-freeze", ParseDeclaration.Environment.ES5Core, "test/benchmarks/deep-freeze/deep-freeze.js", "test/benchmarks/deep-freeze/declaration.d.ts", BROWSER, options)); // TSTest clean. ReaGenT single false positive.
+
+        // requires feature ReaGenT doesn't support to fix.
+        register(new Benchmark("throttle-debounce", ParseDeclaration.Environment.ES5Core, "test/benchmarks/throttle-debounce/throttle-debounce.js", "test/benchmarks/throttle-debounce/declaration.d.ts", NODE, options)); // Had two very real errors. Found both by TSTest and ReaGenT. Both clean after patch.
+
+        // fixed.
+        register(new Benchmark("loglevel", ParseDeclaration.Environment.ES5Core, "test/benchmarks/loglevel/loglevel.js", "test/benchmarks/loglevel/declaration.d.ts", NODE, options)); // TSTest Clean. ReaGenT has false positives due to maybe undef and a single due to imprecision (missing Set of numbers abstraction).
+        register(new Benchmark("component-emitter", ParseDeclaration.Environment.ES5Core, "test/benchmarks/component-emitter/component-emitter.js", "test/benchmarks/component-emitter/declaration.d.ts", BROWSER, options)); // TSTest clean. Some "maybe undef" false positives in ReaGenT. (When maybe undefs are removed, only thing left is a method that ReaGenT thinks returns exceptionally).
+        register(new Benchmark("pluralize", ParseDeclaration.Environment.ES5Core, "test/benchmarks/pluralize/pluralize.js", "test/benchmarks/pluralize/declaration.d.ts", BROWSER, options)); // TSTest clean. ReaGenT has a bug in detecting where the value for the initialized library is.
+        register(new Benchmark("js-cookie", ParseDeclaration.Environment.ES5Core, "test/benchmarks/js-cookie/js-cookie.js", "test/benchmarks/js-cookie/declaration.d.ts", BROWSER, options)); // Had small errors. 1 Benign error left with TSTest. ReaGenT has a single false positive after patch.
+        register(new Benchmark("platform", ParseDeclaration.Environment.ES5Core, "test/benchmarks/platform/platform.js", "test/benchmarks/platform/declaration.d.ts", BROWSER, options)); // ReaGenT found an error that TSTest missed (the library is platform detection, TSTest only tests on Node, ReaGenT is abstract).
+
+
+        // TODO: Add an "ignore function arg-types" option in StaticOptions.
+
+        // If we need more fixed declaration files, pick from there:
+        register(new Benchmark("deep-merge", ParseDeclaration.Environment.ES5Core, "test/benchmarks/deep-merge/deep-merge.js", "test/benchmarks/deep-merge/declaration.d.ts", BROWSER, options)); // A single benign error (array empty, output also empty...), found by both TSTest and ReaGenT. ReaGenT additionally has a single false positive.
+        register(new Benchmark("clampjs", ParseDeclaration.Environment.ES5Core, "test/benchmarks/clampjs/clampjs.js", "test/benchmarks/clampjs/declaration.d.ts", BROWSER, options)); // clean
+        register(new Benchmark("cuid", ParseDeclaration.Environment.ES5Core, "test/benchmarks/cuid/cuid.js", "test/benchmarks/cuid/declaration.d.ts", BROWSER, options)); // TSTest clean. ReaGenT has some false positives related to "always returns exceptionally".
+        register(new Benchmark("json-stringify-safe", ParseDeclaration.Environment.ES5Core, "test/benchmarks/json-stringify-safe/json-stringify-safe.js", "test/benchmarks/json-stringify-safe/declaration.d.ts", BROWSER, options)); // clean
+        register(new Benchmark("pretty-bytes", ParseDeclaration.Environment.ES5Core, "test/benchmarks/pretty-bytes/pretty-bytes.js", "test/benchmarks/pretty-bytes/declaration.d.ts", BROWSER, options)); // clean
+        register(new Benchmark("dateformat", ParseDeclaration.Environment.ES5Core, "test/benchmarks/dateformat/dateformat.js", "test/benchmarks/dateformat/declaration.d.ts", BROWSER, options)); // clean.
+        register(new Benchmark("mersenne-twister", ParseDeclaration.Environment.ES5Core, "test/benchmarks/mersenne-twister/mersenne-twister.js", "test/benchmarks/mersenne-twister/declaration.d.ts", BROWSER, options)); // clean
+        register(new Benchmark("random-js", ParseDeclaration.Environment.ES5Core, "test/benchmarks/random-js/random-js.js", "test/benchmarks/random-js/declaration.d.ts", BROWSER, options)); // plenty of real errors.
+        register(new Benchmark("filesize", ParseDeclaration.Environment.ES5Core, "test/benchmarks/filesize/filesize.js", "test/benchmarks/filesize/declaration.d.ts", BROWSER, options)); // clean.
+        register(new Benchmark("qs", ParseDeclaration.Environment.ES5Core, "test/benchmarks/qs/qs.js", "test/benchmarks/qs/declaration.d.ts", BROWSER, options)); // Had a real error related to the any type. TSTest clean afterwards. ReaGenT still has some false positives.
     }
 
     @Parameterized.Parameters(name = "{0}")
@@ -224,9 +257,14 @@ public class RunBenchmarks {
                 .withOptions(CheckOptions::errorFindingOptions)
                 .withOptions(options -> options.setConstructAllTypes(true));
 //                .withOptions(CheckOptions::monitorUnknownPropertyAccesses);
+
+        if (b.patched() != null) {
+            b = b.patched();
+        }
+
         Main.writeFullDriver(b);
 
-        String out = Main.runBenchmark(benchmark);
+        String out = Main.runBenchmark(b);
 //        System.out.println(out);
 
         // Parse and print the result

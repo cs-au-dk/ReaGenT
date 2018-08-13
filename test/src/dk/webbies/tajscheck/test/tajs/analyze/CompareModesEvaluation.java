@@ -30,12 +30,12 @@ public class CompareModesEvaluation {
             "mime",
             "pathjs",
             "PleaseJS",
-            "uuid"
-
-            /* Excluded: "Swiper","Hammer.js","Sortable","Knockout","lunr.js","accounting.js","async","axios","bluebird",
-            "box2dweb","CreateJS","Handlebars","highlight.js","Intro.js","CodeMirror","Moment.js","Medium Editor","PDF.js",
-            "PhotoSwipe","QUnit","reveal.js","RxJS","semver", "minimist", "jsyaml"
-             */
+            "uuid",
+            "platform",
+            "loglevel",
+            "component-emitter",
+            "pluralize",
+            "js-cookie"
     );
 
     public static final Map<String, Function<CheckOptions.Builder, StaticOptions.Builder>> modes = new LinkedHashMap<>(){{
@@ -203,7 +203,7 @@ public class CompareModesEvaluation {
 
             TAJSUtil.TajsAnalysisResults result;
             try {
-                result = TAJSUtil.runNoDriver(benchmark, 3 * 60 * 60);
+                result = TAJSUtil.runNoDriver(benchmark, 20 * 60); // Could up to 3 hours, but that doesn't change that PathJS times out.
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

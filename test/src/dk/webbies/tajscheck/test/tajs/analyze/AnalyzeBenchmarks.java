@@ -63,14 +63,31 @@ public class AnalyzeBenchmarks extends TestCase {
             "jsyaml", // hopeless
             "Moment.js", // Timeout.
             "Zepto.js",  // Call eval very imprecisely. (line 914)
-            "PeerJS" // TAJS does not support WebRTC
+            "PeerJS", // TAJS does not support WebRTC
+
+            "credit-card-type",
+            "throttle-debounce",
+            "loglevel",
+            "deep-freeze",
+            "component-emitter",
+            "pluralize",
+            "js-cookie",
+            "platform",
+            "deep-merge",
+            "clampjs",
+            "cuid",
+            "json-stringify-safe",
+            "pretty-bytes",
+            "dateformat",
+            "mersenne-twister",
+            "random-js",
+            "filesize",
+            "qs"
     ));
 
     static final Set<String> blackList = new HashSet<>(Arrays.asList(
             "AngularJS", // Includes jQuery
             "jQuery", // is jQuery :)
-            "Zepto.js", // Call eval very imprecisely. (line 914)
-            "PeerJS", // TAJS does not support WebRTC
             "Underscore.js", // massive amount of overloads and generics, including recursively defined generic types.
             "Ionic", // includes jQuery
             "three.js", // simply massive, even TSTest has a hard time with it.
