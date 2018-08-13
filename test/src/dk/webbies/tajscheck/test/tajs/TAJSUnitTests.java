@@ -1924,6 +1924,12 @@ public class TAJSUnitTests {
     }
 
     @Test
+    public void warningsReadFromStdlibPrimitive() throws Exception {
+        TajsAnalysisResults results = run("warningsReadFromStdlibPrimitive");
+        assertThat(results.possiblyProblematicReads.stream().map(r -> r.getSourceLocation().toString()).distinct().collect(Collectors.toList()), hasSize(3));
+    }
+
+    @Test
     @Ignore
     public void semverParse() throws Exception {
         TajsAnalysisResults result = run("semverParse", options()

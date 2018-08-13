@@ -42,9 +42,9 @@ public class ReadFromStdlibMonitor extends DefaultAnalysisMonitoring {
         if (nodesReadDuringInit.contains(n)) {
             return;
         }
-        if (!hasHostObject(v)) {
-            return;
-        }
+//        if (!hasHostObject(v)) {
+//            return;
+//        }
         if (n.getSourceLocation().toString().startsWith("HOST")) {
             return;
         }
