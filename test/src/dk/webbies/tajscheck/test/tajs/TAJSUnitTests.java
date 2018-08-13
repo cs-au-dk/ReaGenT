@@ -22,8 +22,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryUsage;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -1918,6 +1916,7 @@ public class TAJSUnitTests {
                 .hasViolations();
     }
 
+
     @Test
     public void warningAboutReadOfStdLibValue() throws Exception {
         TajsAnalysisResults results = run("warningsReadFromStdlib");
@@ -1936,5 +1935,14 @@ public class TAJSUnitTests {
         );
         expect(result)
                 .hasNoViolations();
+    }
+
+    @Test
+    public void ignoreTypes() throws Exception {
+        expect(run("ignoreTypes", options()))
+                .hasNoViolations();
+
+        expect(run("ignoreTypes", options().staticOptions.setIgnoreTypeDecs(true)))
+                .hasViolations();
     }
 }

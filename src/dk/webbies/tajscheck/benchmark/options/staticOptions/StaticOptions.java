@@ -30,6 +30,7 @@ public class StaticOptions implements OptionsI {
     public final boolean simpleTypeFilter;
     public final boolean ignoreMaybeUndefined;
     public final boolean callbacksAreMGC;
+    public final boolean ignoreTypeDecs;
 
     public enum ArgumentValuesStrategy {
         MIX_FEEDBACK_AND_CONSTRUCTED,
@@ -56,6 +57,7 @@ public class StaticOptions implements OptionsI {
         this.simpleTypeFilter = builder.simpleTypeFilter;
         this.ignoreMaybeUndefined = builder.ignoreMaybeUndefined;
         this.callbacksAreMGC = builder.callbacksAreMGC;
+        this.ignoreTypeDecs = builder.ignoreTypeDecs;
         this.builder = builder;
 
         if (useValuesWithMismatches && !propagateStateFromFailingTest) {
@@ -87,6 +89,7 @@ public class StaticOptions implements OptionsI {
         private boolean simpleTypeFilter = true;
         private boolean ignoreMaybeUndefined = false;
         private boolean callbacksAreMGC = true;
+        private boolean ignoreTypeDecs = false; // if true, ALL methods will be called with the "any" type.
 
         private final CheckOptions.Builder outerBuilder;
 
@@ -120,6 +123,11 @@ public class StaticOptions implements OptionsI {
 
         public Builder setUseValuesWithMismatches(boolean useValuesWithMismatches) {
             this.useValuesWithMismatches = useValuesWithMismatches;
+            return this;
+        }
+
+        public Builder setIgnoreTypeDecs(boolean ignoreTypeDecs) {
+            this.ignoreTypeDecs = ignoreTypeDecs;
             return this;
         }
 

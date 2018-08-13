@@ -58,6 +58,16 @@ public class CompareModesEvaluation {
                                 .setBetterAnyString(false) // no-safe-strings.
                 )
         );
+        put("MGC",
+                AnalyzeBenchmarks.strongMode().andThen(options -> // no-check-type
+                        options
+                                .setProperWidthSubtyping(true) // width-subtyping
+                                .getOuterBuilder().setWriteAll(true).staticOptions // writes
+                                .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED) // no-prefer-lib-values
+                                .setBetterAnyString(false) // no-safe-strings.
+                                .setIgnoreTypeDecs(true) // making it quite close to an MGC.
+                )
+        );
 
         new HashSet<>(entrySet()).forEach(entry -> {
             Function<CheckOptions.Builder, StaticOptions.Builder> value = entry.getValue();

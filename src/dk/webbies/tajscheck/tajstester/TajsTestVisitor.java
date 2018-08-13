@@ -113,19 +113,28 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
     }
 
     public boolean functionTest(FunctionTest test, Value receiver, Value function, final boolean isConstructorCall) {
-        List<Value> arguments = test.getParameters().stream().map(paramType -> valueHandler.createValue(paramType, test.getTypeContext())).collect(Collectors.toList());
+        List<Value> arguments;
+        boolean restArgs;
+        final Value restArgType;
+        if (info.options.staticOptions.ignoreTypeDecs) {
+            arguments = Collections.emptyList();
+            restArgs = true;
+            restArgType = valueHandler.createValue(new TypeWithContext(new SimpleType(SimpleTypeKind.Any), TypeContext.create(info)));
+        } else {
+            arguments = test.getParameters().stream().map(paramType -> valueHandler.createValue(paramType, test.getTypeContext())).collect(Collectors.toList());
 
-        if (arguments.stream().anyMatch(Value::isNone)) {
-            // A test for a function that is triggered but it is not able to get to the function call is definitely a problem
-            // in theory this should not happen because the test should be skipped in this case, but better safe than sorry
-            throw new RuntimeException("Function " + function + " triggered without arguments @" + test.getPath());
-        }
+            if (arguments.stream().anyMatch(Value::isNone)) {
+                // A test for a function that is triggered but it is not able to get to the function call is definitely a problem
+                // in theory this should not happen because the test should be skipped in this case, but better safe than sorry
+                throw new RuntimeException("Function " + function + " triggered without arguments @" + test.getPath());
+            }
 
-        boolean restArgs = test.isRestArgs();
+            restArgs = test.isRestArgs();
 
-        final Value restArgType = restArgs ? valueHandler.createValue(TypesUtil.extractRestArgsType(test.getParameters()), test.getTypeContext()) : null;
-        if (restArgs) {
-            arguments.remove(arguments.size() - 1);
+            restArgType = restArgs ? valueHandler.createValue(TypesUtil.extractRestArgsType(test.getParameters()), test.getTypeContext()) : null;
+            if (restArgs) {
+                arguments.remove(arguments.size() - 1);
+            }
         }
 
         boolean typeChecked = true;
