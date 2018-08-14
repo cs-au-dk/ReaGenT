@@ -213,7 +213,7 @@ public class CompareModesEvaluation {
 
             TAJSUtil.TajsAnalysisResults result;
             try {
-                result = TAJSUtil.runNoDriver(benchmark, 20 * 60); // Could up to 3 hours, but that doesn't change that PathJS times out.
+                result = TAJSUtil.runNoDriver(benchmark, 3 * 60 * 60);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
