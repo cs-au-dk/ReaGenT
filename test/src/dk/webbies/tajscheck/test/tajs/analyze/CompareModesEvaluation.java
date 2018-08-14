@@ -230,6 +230,8 @@ public class CompareModesEvaluation {
 //            register.accept(prefix + " scale-issues", result.exceptionsEncountered.size() + result.retractedTests.size() + "");
             register.accept(prefix + " violations", result.detectedViolations.keySet().size() + "");
             register.accept(prefix + " time", time);
+            boolean scales = result.exceptionsEncountered.isEmpty() && result.exceptionsEncountered.isEmpty() && !result.timedout && result.timeoutTests.isEmpty() && result.retractedTests.isEmpty();
+            register.accept(prefix + " scales", scales ? "YES": "NO");
 
             //noinspection ResultOfMethodCallIgnored
             new File("results").mkdir();
