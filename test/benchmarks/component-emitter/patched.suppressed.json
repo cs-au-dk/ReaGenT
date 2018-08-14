@@ -1,0 +1,52 @@
+{
+  "suppressions": [
+    {
+      "path": "Emitter(object).emit ",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "Emitter.new(object).emit ",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "Emitter(object).hasListeners",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "Emitter(object).listeners",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "Emitter.new(object).off",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "Emitter.new(object).listeners",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "Emitter.new(object).on",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "Emitter(object).once",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "Emitter(object).off",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "Emitter(object).on",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "Emitter.new(object).once",
+      "comment": "Spurious Undef"
+    },
+    {
+      "path": "Emitter.new(object).hasListeners",
+      "comment": "PrecisionIssue6"
+    }
+  ]
+}
