@@ -99,7 +99,7 @@ task doEvaluation(type: JavaExec) {
 }
 
 // Example usage:
-// ./gradlew compareModes  -PappArgs="['flow']"
+// ./gradlew compareModes
 task compareModes(type: JavaExec) {
     if (project.hasProperty("appArgs")) {
         args Eval.me(appArgs)

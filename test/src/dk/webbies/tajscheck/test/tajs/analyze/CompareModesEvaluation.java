@@ -39,21 +39,22 @@ public class CompareModesEvaluation {
     );
 
     public static final Map<String, Function<CheckOptions.Builder, StaticOptions.Builder>> modes = new LinkedHashMap<>(){{
-        put("all-assumptions", AnalyzeBenchmarks.weakMode());
-        put("no-check-types", AnalyzeBenchmarks.strongMode());
-        put("width-subtyping", AnalyzeBenchmarks.weakMode().andThen(options -> options.setProperWidthSubtyping(true)));
-        put("writes", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWriteAll(true).staticOptions));
-        put("no-prefer-lib-values", AnalyzeBenchmarks.weakMode().andThen(options -> options.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)));
+//        put("writes", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWriteAll(false).setWritePrimitives(true).staticOptions)); // We always write.
+
+        put("all-assumptions", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions));
+        put("no-check-types", AnalyzeBenchmarks.strongMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions));
+        put("width-subtyping", AnalyzeBenchmarks.weakMode().andThen(options -> options.setProperWidthSubtyping(true).getOuterBuilder().setWritePrimitives(true).staticOptions));
+        put("no-prefer-lib-values", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)));
         //experiment.addExperiment(experiment("only-constructed", options -> options.staticOptions.setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED)));
         //experiment.addExperiment(experiment("only-feedback", options -> options.staticOptions.setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE).setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments(false))));
         //experiment.addExperiment(experiment("callbacks-not-rmgc", options -> options.staticOptions.setCallbacksAreMGC(false)));
-        put("no-safe-strings", AnalyzeBenchmarks.weakMode().andThen(options -> options.setBetterAnyString(false)));
+        put("no-safe-strings", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions.setBetterAnyString(false)));
 
         put("no-assumptions",
                 AnalyzeBenchmarks.strongMode().andThen(options -> // no-check-type
                         options
                                 .setProperWidthSubtyping(true) // width-subtyping
-                                .getOuterBuilder().setWriteAll(true).staticOptions // writes
+                                .getOuterBuilder().setWriteAll(false).setWritePrimitives(true).staticOptions // writes (all have this now)
                                 .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED) // no-prefer-lib-values
                                 .setBetterAnyString(false) // no-safe-strings.
                 )
@@ -62,7 +63,7 @@ public class CompareModesEvaluation {
                 AnalyzeBenchmarks.strongMode().andThen(options -> // no-check-type
                         options
                                 .setProperWidthSubtyping(true) // width-subtyping
-                                .getOuterBuilder().setWriteAll(true).staticOptions // writes
+                                .getOuterBuilder().setWriteAll(false).setWriteAll(true).staticOptions // writes, and writes all properties.
                                 .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED) // no-prefer-lib-values
                                 .setBetterAnyString(false) // no-safe-strings.
                                 .setIgnoreTypeDecs(true) // making it quite close to an MGC.
@@ -74,20 +75,6 @@ public class CompareModesEvaluation {
             put(entry.getKey(), AnalyzeBenchmarks.options().andThen(options -> value.apply(options.getOuterBuilder())));
         });
     }};
-
-
-    @Test
-    public void doEvaluationOnAllFlowBenchmarks() { // TODO: RUN!
-        Experiment experiment = new Experiment(FlowBenchmarks.getBenchmarks());
-
-        modes.forEach((name, options) -> {
-            experiment.addExperiment(experiment(name, options));
-        });
-
-        Table table = experiment.calculate("compareModesFlow.csv");
-
-        printPaperTable(table);
-    }
 
 
     @Test
@@ -153,7 +140,11 @@ public class CompareModesEvaluation {
             List<String> column = getColumn(result, columnIndex);
             column = column.subList(1, column.size());
             for (String cell : column) {
-                List<Double> values = Stream.of(cell.split(Pattern.quote("/"))).map(String::trim).map(str -> str.replace("%", "").replace(",", ".")).map(Double::parseDouble).collect(Collectors.toList());
+                List<Double> values = Stream.of(cell.split(Pattern.quote("/"))).map(String::trim).map(str -> str.replace("%", "").replace(",", ".")).map(str -> {try {
+                    return Double.parseDouble(str);
+                } catch (Exception e) {
+                    return 0d;
+                }}).collect(Collectors.toList());
                 for (int i = 0; i < values.size(); i++) {
                     sums.set(i, sums.get(i) + values.get(i));
                 }
@@ -245,15 +236,6 @@ public class CompareModesEvaluation {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 0) {
-            if (args[0].equalsIgnoreCase("flow")) {
-                System.out.println("Using flow benchmarks");
-                long startTime = System.currentTimeMillis();
-                new CompareModesEvaluation().doEvaluationOnAllFlowBenchmarks();
-                System.out.println("Took: " + (System.currentTimeMillis() - startTime) + "ms");
-                return;
-            }
-        }
         long startTime = System.currentTimeMillis();
         new CompareModesEvaluation().doEvaluation();
         System.out.println("Took: " + (System.currentTimeMillis() - startTime) + "ms");

@@ -98,7 +98,7 @@ public class BigLibEvaluation {
 
             register.accept(prefix + " statement-coverage", String.format("%.2f", result.statementCoverage) + "");
             register.accept(prefix + " action-coverage", exhaustiveness);
-            boolean scales = result.exceptionsEncountered.isEmpty() && result.exceptionsEncountered.isEmpty() && !result.timedout && result.timeoutTests.isEmpty();
+            boolean scales = result.exceptionsEncountered.isEmpty() && result.exceptionsEncountered.isEmpty() && !result.timedout && result.timeoutTests.isEmpty() && result.retractedTests.isEmpty();
             register.accept(prefix + " scales", scales ? "YES": "NO");
             register.accept(prefix + " violations", result.detectedViolations.keySet().size() + "");
             register.accept(prefix + " time", time);
