@@ -7,6 +7,7 @@ import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.Expa
 import dk.webbies.tajscheck.util.Util;
 
 import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.*;
+import static dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator.*;
 
 /**
  * Created by erik1 on 31-07-2017.
@@ -31,6 +32,7 @@ public class StaticOptions implements OptionsI {
     public final boolean ignoreMaybeUndefined;
     public final boolean callbacksAreMGC;
     public final boolean ignoreTypeDecs;
+    public final InstantiationFilter instantiationFilter;
 
     public enum ArgumentValuesStrategy {
         MIX_FEEDBACK_AND_CONSTRUCTED,
@@ -58,6 +60,7 @@ public class StaticOptions implements OptionsI {
         this.ignoreMaybeUndefined = builder.ignoreMaybeUndefined;
         this.callbacksAreMGC = builder.callbacksAreMGC;
         this.ignoreTypeDecs = builder.ignoreTypeDecs;
+        this.instantiationFilter = builder.instantiationFilter;
         this.builder = builder;
 
         if (useValuesWithMismatches && !propagateStateFromFailingTest) {
@@ -90,6 +93,7 @@ public class StaticOptions implements OptionsI {
         private boolean ignoreMaybeUndefined = false;
         private boolean callbacksAreMGC = true;
         private boolean ignoreTypeDecs = false; // if true, ALL methods will be called with the "any" type.
+        private InstantiationFilter instantiationFilter = (t, v, c, i) -> v;
 
         private final CheckOptions.Builder outerBuilder;
 
@@ -108,6 +112,11 @@ public class StaticOptions implements OptionsI {
 
         public Builder setIgnoreMaybeUndefined(boolean ignoreMaybeUndefined) {
             this.ignoreMaybeUndefined = ignoreMaybeUndefined;
+            return this;
+        }
+
+        public Builder setInstantiationFilter(InstantiationFilter instantiationFilter) {
+            this.instantiationFilter = instantiationFilter;
             return this;
         }
 

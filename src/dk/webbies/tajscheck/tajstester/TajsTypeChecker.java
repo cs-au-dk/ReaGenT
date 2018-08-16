@@ -84,7 +84,7 @@ public class TajsTypeChecker {
     }
 
 
-    List<TypeViolation> typeCheck(Value v, Type type, TypeContext context, BenchmarkInfo info, String path) {
+    List<TypeViolation> typeCheck(Value v, Type type, TypeContext context, String path) {
         List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type, context, info, 1);
 
         List<Value> split = split(v);
@@ -132,7 +132,7 @@ public class TajsTypeChecker {
                         }
                         if (v.isMaybePrimitive()) {
                             TypeViolation violation = definiteViolation(path, v, typeCheck);
-                            if (this.violationsOracle.canEmit(violation)) {
+                            if (this.violationsOracle == null || this.violationsOracle.canEmit(violation)) {
                                 return Collections
                                         .singletonList(violation);
                             } else {
@@ -150,7 +150,7 @@ public class TajsTypeChecker {
                         if (resultBool.isMaybeAnyBool()) {
                             violation = violation.asMaybeViolation();
                         }
-                        if(this.violationsOracle.canEmit(violation)) {
+                        if(this.violationsOracle == null || this.violationsOracle.canEmit(violation)) {
                             return Collections.singletonList(violation);
                         } else {
                             return Collections.singletonList(ViolationsOracle.suppresedViolationMarker);

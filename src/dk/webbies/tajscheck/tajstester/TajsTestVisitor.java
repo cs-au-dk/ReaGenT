@@ -287,7 +287,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         boolean definiteViolation = true;
         for (Value splitValue : TajsTypeChecker.split(value)) {
             List<Type> matchingTypes = test.getGetUnionType().getElements().stream().filter(subType -> {
-                boolean matched = typeChecker.typeCheck(splitValue, subType, test.getTypeContext(), info, test.getPath()).isEmpty();
+                boolean matched = typeChecker.typeCheck(splitValue, subType, test.getTypeContext(), test.getPath()).isEmpty();
                 if (matched) {
                     nonMatchedTypes.remove(subType);
                 }

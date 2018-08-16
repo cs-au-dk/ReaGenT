@@ -278,16 +278,23 @@ public class SpecInstantiator {
 
     private static final class CannotConstructType extends RuntimeException { }
 
+    public interface InstantiationFilter {
+        Value filter(TypeWithContext type, Value value, Solver.SolverInterface c, BenchmarkInfo info);
+    }
+
     Value instantiate(Type type, MiscInfo info, String step) {
-        Value feedbackValue = valueHandler.findFeedbackValue(new TypeWithContext(type, info.context));
         if (!this.info.shouldConstructType(type) && !nativesInstantiator.shouldConstructAsNative(type)) {
+            Value feedbackValue = this.info.options.staticOptions.instantiationFilter.filter(new TypeWithContext(type, info.context), valueHandler.findFeedbackValue(new TypeWithContext(type, info.context)), c, this.info);
             if (feedbackValue == null || this.info.options.staticOptions.argumentValuesStrategy == ONLY_CONSTRUCTED) {
                 throw new CannotConstructType(); // this will be catched by the top-most construction method.
             }
             return feedbackValue;
         }
-        if (this.info.options.staticOptions.argumentValuesStrategy == FEEDBACK_IF_POSSIBLE && feedbackValue != null && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
-            return feedbackValue;
+        if (this.info.options.staticOptions.argumentValuesStrategy == FEEDBACK_IF_POSSIBLE && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
+            Value feedbackValue = this.info.options.staticOptions.instantiationFilter.filter(new TypeWithContext(type, info.context), valueHandler.findFeedbackValue(new TypeWithContext(type, info.context)), c, this.info);
+            if (feedbackValue != null) {
+                return feedbackValue;
+            }
         }
 
         info = info.withContext(info.context.optimizeTypeParameters(type));
@@ -351,16 +358,13 @@ public class SpecInstantiator {
         assert !result.isNone();
 
         if (this.info.options.staticOptions.argumentValuesStrategy == MIX_FEEDBACK_AND_CONSTRUCTED) {
+            Value feedbackValue = this.info.options.staticOptions.instantiationFilter.filter(new TypeWithContext(type, info.context), valueHandler.findFeedbackValue(new TypeWithContext(type, info.context)), c, this.info);
             if (feedbackValue != null) {
                 result = result.join(feedbackValue);
             }
         }
 
         return result;
-    }
-
-    private boolean isSimpleType(Type type, TypeContext context) {
-        return type.accept(new CanEasilyConstructVisitor(context, info, subType -> nativesInstantiator.shouldConstructAsNative(subType.getType())));
     }
 
     public Value createValue(TypeWithContext type, String path) {
