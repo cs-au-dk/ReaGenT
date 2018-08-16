@@ -307,10 +307,10 @@ public class TAJSUtil {
                 }
 
             }
-            if (!this.possiblyProblematicReads.isEmpty()) {
-                builder.append("Reads performed by the library that could be affected by the client: \n");
-                this.possiblyProblematicReads.stream().map(AbstractNode::getSourceLocation).map(Object::toString).distinct().sorted().forEach(str -> builder.append(str).append("\n"));
-            }
+//            if (!this.possiblyProblematicReads.isEmpty()) {
+//                builder.append("Reads performed by the library that could be affected by the client: \n");
+//                this.possiblyProblematicReads.stream().map(AbstractNode::getSourceLocation).map(Object::toString).distinct().sorted().forEach(str -> builder.append(str).append("\n"));
+//            }
             return builder.toString();
         }
 
