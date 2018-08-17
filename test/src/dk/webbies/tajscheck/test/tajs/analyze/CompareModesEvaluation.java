@@ -6,6 +6,7 @@ import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandImmediatelyPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.filter.CopyObjectInstantiation;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.experiments.AutomaticExperiments;
@@ -27,23 +28,24 @@ import java.util.stream.Stream;
 public class CompareModesEvaluation {
     static final List<String> benchmarksToEvaluate = Arrays.asList(
             "classnames",
+            "component-emitter",
+            "js-cookie",
+            "loglevel",
             "mime",
+            "platform",
             "pathjs",
             "PleaseJS",
-            "uuid",
-            "platform",
-            "loglevel",
-            "component-emitter",
             "pluralize",
-            "js-cookie"
-    );
+            "uuid"
+            );
 
     public static final Map<String, Function<CheckOptions.Builder, StaticOptions.Builder>> modes = new LinkedHashMap<>(){{
+        // TODO:
 //        put("writes", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWriteAll(false).setWritePrimitives(true).staticOptions)); // We always write.
 
-        put("all-assumptions", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions));
-        put("no-check-types", AnalyzeBenchmarks.strongMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions));
-        put("width-subtyping", AnalyzeBenchmarks.weakMode().andThen(options -> options.setProperWidthSubtyping(true).getOuterBuilder().setWritePrimitives(true).staticOptions));
+//        put("all-assumptions", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions));
+        put("no-check-types", AnalyzeBenchmarks.strongMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions.setInstantiationFilter(new CopyObjectInstantiation())));
+        /*put("width-subtyping", AnalyzeBenchmarks.weakMode().andThen(options -> options.setProperWidthSubtyping(true).getOuterBuilder().setWritePrimitives(true).staticOptions));
         put("no-prefer-lib-values", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)));
         //experiment.addExperiment(experiment("only-constructed", options -> options.staticOptions.setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED)));
         //experiment.addExperiment(experiment("only-feedback", options -> options.staticOptions.setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE).setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments(false))));
@@ -68,7 +70,7 @@ public class CompareModesEvaluation {
                                 .setBetterAnyString(false) // no-safe-strings.
                                 .setIgnoreTypeDecs(true) // making it quite close to an MGC.
                 )
-        );
+        );*/
 
         new HashSet<>(entrySet()).forEach(entry -> {
             Function<CheckOptions.Builder, StaticOptions.Builder> value = entry.getValue();
@@ -196,7 +198,7 @@ public class CompareModesEvaluation {
 
     private static BiConsumer<Benchmark, BiConsumer<String, String>> experiment(String prefix, Function<CheckOptions.Builder, StaticOptions.Builder> optionsTransformer) {
         return (benchmark, register) -> {
-            benchmark = benchmark.withOptions(optionsTransformer);
+            benchmark = benchmark.withOptions(AnalyzeBenchmarks.options().andThen(options -> optionsTransformer.apply(options.getOuterBuilder())));
 
             BenchmarkInfo.create(benchmark); // <- Just populating cache.
 

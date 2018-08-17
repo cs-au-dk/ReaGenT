@@ -20,8 +20,6 @@ import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static dk.brics.tajs.util.Collections.newList;
-
 public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFilter, TypeVisitorWithArgument<Value, CopyObjectInstantiation.Arg> {
     @Override
     public Value filter(TypeWithContext type, Value value, Solver.SolverInterface c, BenchmarkInfo info) {
@@ -36,12 +34,12 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
         if (results.isEmpty()) {
-            return null;
+            throw new NoSuchTypePossible();
         }
         return Value.join(results);
     }
 
-    private static final class NoSuchTypePossible extends RuntimeException {}
+    public static final class NoSuchTypePossible extends RuntimeException {}
 
 
     public Value filter(Type type, Arg arg) {
@@ -70,7 +68,6 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
     }
 
     private final Map<Pair<ObjectLabel, TypeWithContext>, ObjectLabel> copiedObjects = new HashMap<>();
-    private final Map<Pair<ObjectLabel, PKey>, Value> previouslyWritten = new HashMap<>();
 
     @Override
     public Value visit(InterfaceType t, Arg arg) {
@@ -91,6 +88,10 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         assert t.getDeclaredNumberIndexType() == null;
         assert t.getDeclaredStringIndexType() == null;
 
+        if (!value.isMaybeObject()) {
+            throw new NoSuchTypePossible();
+        }
+
         Set<ObjectLabel> newLabels = value.getObjectLabels().stream().map(orgLabel -> {
             if (orgLabel.getHostObject() != null && orgLabel.getHostObject() instanceof CopiedObjectLabel) {
                 if (((CopiedObjectLabel) orgLabel.getHostObject()).type.equals(new TypeWithContext(t, arg.context))) {
@@ -109,11 +110,9 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
             Obj object = c.getState().getObject(label, true);
             {
                 Value internalPrototype = UnknownValueResolver.getInternalPrototype(orgLabel, c.getState(), false);
-                Pair<ObjectLabel, PKey> previouslyWrittenKey = Pair.make(label, PKey.StringPKey.make("$^InternalPrototype^$"));
-                Value previous = previouslyWritten.get(previouslyWrittenKey);
-                if (!internalPrototype.equals(previous)) {
+                Value previous = UnknownValueResolver.getInternalPrototype(label, c.getState(), false);
+                if (!valueEquals(internalPrototype, previous, c.getState())) {
                     object.setInternalPrototype(internalPrototype);
-                    previouslyWritten.put(previouslyWrittenKey, internalPrototype);
                 }
             }
 
@@ -126,8 +125,7 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
             UnknownValueResolver.getProperties(orgLabel, c.getState()).forEach((PKey propKey, Value propValue) -> {
                 assert propKey instanceof PKey.StringPKey;
                 String propName = ((PKey.StringPKey) propKey).getStr();
-                Pair<ObjectLabel, PKey> previouslyWrittenKey = Pair.make(label, propKey);
-                Value previousPropValue = previouslyWritten.get(previouslyWrittenKey);
+                Value previousPropValue = object.getProperty(propKey);
                 Value newPropValue;
                 if (propDecs.containsKey(propName)) {
                     newPropValue = filter(new TypeWithContext(propDecs.get(propName), arg.context), propValue, c, arg.info);
@@ -135,10 +133,8 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
                     newPropValue = propValue;
                 }
                 previousPropValue = previousPropValue == null ? null : UnknownValueResolver.getRealValue(previousPropValue, c.getState());
-                newPropValue = UnknownValueResolver.getRealValue(newPropValue, c.getState());
-                if (!newPropValue.equals(previousPropValue)) {
-                    previouslyWritten.put(previouslyWrittenKey, newPropValue);
-                    object.setProperty(propKey, newPropValue);
+                if (!valueEquals(newPropValue, previousPropValue, c.getState())) {
+                    object.setProperty(propKey, newPropValue.setAttributes(propValue));
                 }
             });
             return label;
@@ -147,6 +143,30 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
 
         return Value.makeObject(newLabels);
     }
+
+    private boolean valueEquals(Value newValue, Value previous, State state) {
+        if (newValue == null || previous == null) {
+            return newValue == null && previous == null;
+        }
+        newValue = allLabelsToSingleton(UnknownValueResolver.getRealValue(newValue, state)).restrictToNonAttributes();
+        previous = allLabelsToSingleton(UnknownValueResolver.getRealValue(previous, state)).restrictToNonAttributes();
+        return newValue.equals(previous);
+    }
+
+    public static Value allLabelsToSingleton(Value value) {
+        value = Value.makeNone().join(value);
+        Set<ObjectLabel> labels = value.getObjectLabels();
+        value = value.restrictToNotObject();
+        value = value.join(Value.makeObject(labels.stream().map(label -> {
+            if (label.isSingleton()) {
+                return label;
+            } else {
+                return label.makeSingleton();
+            }
+        }).collect(Collectors.toSet())));
+        return value;
+    }
+
     @Override
     public Value visit(ReferenceType t, Arg arg) {
         throw new RuntimeException();
@@ -193,7 +213,11 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
 
     @Override
     public Value visit(NumberLiteral t, Arg arg) {
-        return Value.makeNum(t.getValue());
+        if (arg.value.isMaybeNum(t.getValue())) {
+            return Value.makeNum(t.getValue());
+        } else {
+            throw new NoSuchTypePossible();
+        }
     }
 
     @Override
