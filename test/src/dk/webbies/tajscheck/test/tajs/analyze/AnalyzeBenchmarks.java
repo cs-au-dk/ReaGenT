@@ -162,7 +162,6 @@ public class AnalyzeBenchmarks extends TestCase {
                 .setCheckAllPropertiesAfterFunctionCall(false) // Enabling this doesn't make sense in strong-mode. The errornous state will be propagated anyway, which will result in a flood of "Error after FunctionCall:".
                 .setUseValuesWithMismatches(true)
                 .setPropagateStateFromFailingTest(true)
-                .setSimpleTypeFilter(true)
                 ;
     }
 
@@ -174,7 +173,6 @@ public class AnalyzeBenchmarks extends TestCase {
                 .setCheckAllPropertiesAfterFunctionCall(true) // ended up not being used in the paper.
                 .setUseValuesWithMismatches(false)
                 .setPropagateStateFromFailingTest(false)
-                .setSimpleTypeFilter(false) // doesn't do anything, therefore disabling it.
                 ;
     }
 

@@ -400,7 +400,7 @@ public class SpecInstantiator {
             coInductiveAssumptions.add(subType);
 
             try {
-                if (getFeedbackValue(type.getType(), type.getTypeContext()) != null && this.info.options.staticOptions.argumentValuesStrategy != ONLY_CONSTRUCTED) {
+                if (getFeedbackValue(subType.getType(), subType.getTypeContext()) != null && this.info.options.staticOptions.argumentValuesStrategy != ONLY_CONSTRUCTED) {
                     return true;
                 }
                 if (nativesInstantiator.shouldConstructAsNative(subType.getType())) {

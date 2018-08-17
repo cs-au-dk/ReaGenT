@@ -10,6 +10,7 @@ import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.Fixe
 import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.filter.CopyObjectInstantiation;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
@@ -1934,4 +1935,34 @@ public class TAJSUnitTests {
         expect(run("ignoreTypes", options().staticOptions.setIgnoreTypeDecs(true)))
                 .hasViolations();
     }
+
+
+    @Test
+    public void newTypeCreation() throws Exception {
+        TajsAnalysisResults result = run("newTypeCreation", options().staticOptions
+                .setCheckAllPropertiesAfterFunctionCall(false) // Enabling this doesn't make sense in strong-mode. The errornous state will be propagated anyway, which will result in a flood of "Error after FunctionCall:".
+                .setUseValuesWithMismatches(true)
+                .setPropagateStateFromFailingTest(true)
+                .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
+                .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
+
+                .setInstantiationFilter(new CopyObjectInstantiation())
+        );
+
+        assert result.exceptionsEncountered.isEmpty();
+
+        assertThat(result.detectedViolations.size(), is(1));
+
+        expect(result)
+                .forPath("module.getFoo().dirty")
+                .hasViolations();
+    }
+
+    // when value saved to vmap, actually save filtered materialized value.
+    // TODO: Do filter when saving value instead of when obtaining?
+    // TODO: One result label, many input labels. (Completely filter away infeasible labels?).
+    // TODO: Redirect existing object-labels. Make sure they point to both the existing and the new singleton label.
+    // TODO: side-effects for filter.
+    // TODO: (if i decide to do filter when value is obtained): Apply filter on receiver for MethodCallTest in TajsTestVisitor. (This means that a MethodCallTest should only be invoked if a filtered receiver is available...).
+    // TODO: Object equality. (Should be handled by redirect. Do it anyway).
 }
