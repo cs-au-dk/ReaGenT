@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 public class CompareModesEvaluation {
     static final List<String> benchmarksToEvaluate = Arrays.asList(
-            "classnames",
+            /*"classnames",
             "component-emitter",
             "js-cookie",
             "loglevel",
@@ -35,16 +35,19 @@ public class CompareModesEvaluation {
             "platform",
             "pathjs",
             "PleaseJS",
-            "pluralize",
+            "pluralize",*/
             "uuid"
             );
 
     public static final Map<String, Function<CheckOptions.Builder, StaticOptions.Builder>> modes = new LinkedHashMap<>(){{
+        put("width-subtyping", AnalyzeBenchmarks.weakMode().andThen(options -> options.setProperWidthSubtyping(true).getOuterBuilder().setWritePrimitives(true).staticOptions));
+
         // TODO:
+//        put("no-check-types", AnalyzeBenchmarks.strongMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions.setInstantiationFilter(new CopyObjectInstantiation())));
+
 //        put("writes", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWriteAll(false).setWritePrimitives(true).staticOptions)); // We always write.
 
 //        put("all-assumptions", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions));
-        put("no-check-types", AnalyzeBenchmarks.strongMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions.setInstantiationFilter(new CopyObjectInstantiation())));
         /*put("width-subtyping", AnalyzeBenchmarks.weakMode().andThen(options -> options.setProperWidthSubtyping(true).getOuterBuilder().setWritePrimitives(true).staticOptions));
         put("no-prefer-lib-values", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)));
         //experiment.addExperiment(experiment("only-constructed", options -> options.staticOptions.setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED)));

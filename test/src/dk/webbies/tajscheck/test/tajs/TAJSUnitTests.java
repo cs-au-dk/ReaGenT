@@ -1940,7 +1940,6 @@ public class TAJSUnitTests {
     @Test
     public void newTypeCreation() throws Exception {
         TajsAnalysisResults result = run("newTypeCreation", options().staticOptions
-                .setCheckAllPropertiesAfterFunctionCall(false) // Enabling this doesn't make sense in strong-mode. The errornous state will be propagated anyway, which will result in a flood of "Error after FunctionCall:".
                 .setUseValuesWithMismatches(true)
                 .setPropagateStateFromFailingTest(true)
                 .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
@@ -1958,11 +1957,68 @@ public class TAJSUnitTests {
                 .hasViolations();
     }
 
+    @Test
+    public void typeFilterMultipleObjects() throws Exception {
+        TajsAnalysisResults result = run("typeFilterMultipleObjects", options().staticOptions
+                .setUseValuesWithMismatches(true)
+                .setPropagateStateFromFailingTest(true)
+                .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
+                .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
+
+
+//                .setUseInspector(true)
+
+                .setInstantiationFilter(new CopyObjectInstantiation())
+        );
+
+        assert result.exceptionsEncountered.isEmpty();
+
+        assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("module.getFoo().dirty")
+                .hasViolations();
+    }
+
+    @Test
+    public void widthSubtypingMotivating() throws Exception {
+        TajsAnalysisResults result = run("widthSubtypingMotivating", options().staticOptions.setProperWidthSubtyping(true));
+
+        expect(result)
+                .forPath("module.v4(obj,obj).[numberIndexer]")
+                .hasViolations();
+    }
+
+    @Test
+    public void newObjectCreationEquality() throws Exception {
+        TajsAnalysisResults result = run("newObjectCreationEquality", options().staticOptions
+                .setUseValuesWithMismatches(true)
+                .setPropagateStateFromFailingTest(true)
+                .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
+                .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
+
+
+//                .setUseInspector(true)
+
+                .setInstantiationFilter(new CopyObjectInstantiation())
+        );
+
+
+                assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("module.equalFoo(obj)")
+                .hasViolations();
+
+        assert result.detectedViolations.asMap().values().iterator().next().iterator().next().toString().contains("Bool");
+    }
+
+
+
     // when value saved to vmap, actually save filtered materialized value.
-    // TODO: Do filter when saving value instead of when obtaining?
-    // TODO: One result label, many input labels. (Completely filter away infeasible labels?).
-    // TODO: Redirect existing object-labels. Make sure they point to both the existing and the new singleton label.
-    // TODO: side-effects for filter.
-    // TODO: (if i decide to do filter when value is obtained): Apply filter on receiver for MethodCallTest in TajsTestVisitor. (This means that a MethodCallTest should only be invoked if a filtered receiver is available...).
-    // TODO: Object equality. (Should be handled by redirect. Do it anyway).
+    // One result label, many input labels. (Completely filter away infeasible labels?).
+
+    // TODO: Object equality. (Should be handled by redirect, test it anyway).
+
+    // TODO: Warning that our tool does not support class extensions.
 }

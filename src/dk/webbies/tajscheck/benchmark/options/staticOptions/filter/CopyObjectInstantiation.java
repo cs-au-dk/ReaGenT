@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.benchmark.options.staticOptions.filter;
 import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.HostAPIs;
+import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
@@ -16,17 +17,33 @@ import dk.webbies.tajscheck.tajstester.TajsTypeChecker;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
+import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static dk.brics.tajs.util.Collections.newList;
+import static dk.brics.tajs.util.Collections.newMap;
+
 public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFilter, TypeVisitorWithArgument<Value, CopyObjectInstantiation.Arg> {
+
+    public static List<Value> split(Value v) {
+        if (v.restrictToNotObject().isNone()) {
+            return Collections.singletonList(v);
+        }
+        Set<ObjectLabel> labels = v.getObjectLabels();
+        v = v.restrictToNotObject();
+        List<Value> list = TajsTypeChecker.split(v);
+        return Util.concat(list, Collections.singletonList(Value.makeObject(labels)));
+    }
+
     @Override
     public Value filter(TypeWithContext type, Value value, Solver.SolverInterface c, BenchmarkInfo info) {
         if (value == null) {
             return null;
         }
-        List<Value> results = TajsTypeChecker.split(value).stream().map(v -> {
+        List<Value> results = split(value).stream().map(v -> {
             try {
                 return type.getType().accept(this, new Arg(type.getTypeContext(), v, c, info));
             } catch (NoSuchTypePossible e) {
@@ -67,13 +84,14 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         throw new RuntimeException();
     }
 
-    private final Map<Pair<ObjectLabel, TypeWithContext>, ObjectLabel> copiedObjects = new HashMap<>();
+    private final Map<Pair<Set<ObjectLabel>, TypeWithContext>, ObjectLabel> copiedObjects = new HashMap<>();
 
     @Override
     public Value visit(InterfaceType t, Arg arg) {
         Value value = arg.value;
         TypeContext context = arg.context;
         Solver.SolverInterface c = arg.c;
+        PropVarOperations pv = c.getAnalysis().getPropVarOperations();
 
         assert value.restrictToNotObject().isNone();
         assert t.getBaseTypes().isEmpty(); // TypesUtil.constructSyntheticInterfaceWithBaseTypes
@@ -92,65 +110,77 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
             throw new NoSuchTypePossible();
         }
 
-        Set<ObjectLabel> newLabels = value.getObjectLabels().stream().map(orgLabel -> {
-            if (orgLabel.getHostObject() != null && orgLabel.getHostObject() instanceof CopiedObjectLabel) {
-                if (((CopiedObjectLabel) orgLabel.getHostObject()).type.equals(new TypeWithContext(t, arg.context))) {
-                    return orgLabel;
-                }
+        if (value.getObjectLabels().stream().allMatch(orgLabel -> orgLabel.getHostObject() != null && orgLabel.getHostObject() instanceof CopiedObjectLabel)) {
+            return value;
+        }
+
+        Set<ObjectLabel> orgLabels = value.getObjectLabels().stream().filter(Util.not(orgLabel -> orgLabel.getHostObject() != null && orgLabel.getHostObject() instanceof CopiedObjectLabel)).collect(Collectors.toSet());
+
+        Pair<Set<ObjectLabel>, TypeWithContext> labelKey = Pair.make(orgLabels, new TypeWithContext(t, arg.context));
+        if (!copiedObjects.containsKey(labelKey)) {
+            ObjectLabel label = ObjectLabel.make(new CopiedObjectLabel(orgLabels, new TypeWithContext(t, arg.context)), ObjectLabel.Kind.OBJECT);
+            c.getState().newObject(label); // this takes care of summarizing old objects (of which there are always none...)
+            copiedObjects.put(labelKey, label);
+        }
+        ObjectLabel label = copiedObjects.get(labelKey);
+
+
+        addToExistingLabels(orgLabels, label, c.getState());
+
+        Obj object = c.getState().getObject(label, true);
+        {
+            Value internalPrototype = readSomething(orgLabels, c.getState(), Obj::getInternalPrototype);
+            Value previous = UnknownValueResolver.getInternalPrototype(label, c.getState(), false);
+            if (!hasNothingNew(internalPrototype, previous, c.getState())) {
+                object.setInternalPrototype(internalPrototype);
             }
+        }
 
-            Pair<ObjectLabel, TypeWithContext> labelKey = Pair.make(orgLabel, new TypeWithContext(t, arg.context));
-            if (!copiedObjects.containsKey(labelKey)) {
-                ObjectLabel label = ObjectLabel.make(new CopiedObjectLabel(orgLabel, new TypeWithContext(t, arg.context)), ObjectLabel.Kind.OBJECT);
-                c.getState().newObject(label);
-                copiedObjects.put(labelKey, label);
+
+        assert !readSomething(orgLabels, c.getState(), Obj::getDefaultNonArrayProperty).isMaybePresent();
+        assert !readSomething(orgLabels, c.getState(), Obj::getDefaultArrayProperty).isMaybePresent();
+        assert !readSomething(orgLabels, c.getState(), Obj::getInternalValue).isMaybePresent();
+        // TODO: scope, scope_unknown
+
+        Set<PKey> properties = readProperties(orgLabels, c.getState());
+
+        Map<String, Type> propDecs = t.getDeclaredProperties();
+        for (PKey propKey : properties) {
+            Value propValue = readSomething(orgLabels, c.getState(), obj -> obj.getProperty(propKey));
+            assert propKey instanceof PKey.StringPKey;
+            String propName = ((PKey.StringPKey) propKey).getStr();
+            Value existingPropValue = object.getProperty(propKey);
+            Value newPropValue;
+            if (propDecs.containsKey(propName)) {
+                newPropValue = filter(new TypeWithContext(propDecs.get(propName), arg.context), propValue, c, arg.info);
+            } else {
+                newPropValue = propValue;
             }
-            ObjectLabel label = copiedObjects.get(labelKey);
-
-            Obj object = c.getState().getObject(label, true);
-            {
-                Value internalPrototype = UnknownValueResolver.getInternalPrototype(orgLabel, c.getState(), false);
-                Value previous = UnknownValueResolver.getInternalPrototype(label, c.getState(), false);
-                if (!valueEquals(internalPrototype, previous, c.getState())) {
-                    object.setInternalPrototype(internalPrototype);
-                }
+            existingPropValue = existingPropValue == null ? null : UnknownValueResolver.getRealValue(existingPropValue, c.getState());
+            if (!hasNothingNew(newPropValue, existingPropValue, c.getState())) {
+                object.setProperty(propKey, newPropValue.setAttributes(propValue));
             }
+        }
 
-
-            assert !UnknownValueResolver.getDefaultNonArrayProperty(orgLabel, c.getState()).isMaybePresent();
-            assert !UnknownValueResolver.getDefaultArrayProperty(orgLabel, c.getState()).isMaybePresent();
-            assert !UnknownValueResolver.getInternalValue(orgLabel, c.getState(), false).isMaybePresent();
-
-            Map<String, Type> propDecs = t.getDeclaredProperties();
-            UnknownValueResolver.getProperties(orgLabel, c.getState()).forEach((PKey propKey, Value propValue) -> {
-                assert propKey instanceof PKey.StringPKey;
-                String propName = ((PKey.StringPKey) propKey).getStr();
-                Value previousPropValue = object.getProperty(propKey);
-                Value newPropValue;
-                if (propDecs.containsKey(propName)) {
-                    newPropValue = filter(new TypeWithContext(propDecs.get(propName), arg.context), propValue, c, arg.info);
-                } else {
-                    newPropValue = propValue;
-                }
-                previousPropValue = previousPropValue == null ? null : UnknownValueResolver.getRealValue(previousPropValue, c.getState());
-                if (!valueEquals(newPropValue, previousPropValue, c.getState())) {
-                    object.setProperty(propKey, newPropValue.setAttributes(propValue));
-                }
-            });
-            return label;
-        }).collect(Collectors.toSet());
-
-
-        return Value.makeObject(newLabels);
+        return Value.makeObject(label);
     }
 
-    private boolean valueEquals(Value newValue, Value previous, State state) {
-        if (newValue == null || previous == null) {
-            return newValue == null && previous == null;
+    private Set<PKey> readProperties(Set<ObjectLabel> labels, State state) {
+        return labels.stream().map(label -> UnknownValueResolver.getProperties(label, state).keySet()).reduce(new HashSet<>(), Util::reduceSet);
+    }
+
+    private Value readSomething(Set<ObjectLabel> labels, State state, Function<Obj, Value> foo) {
+        return Value.join(labels.stream().map(label -> foo.apply(state.getObject(label, false))).collect(Collectors.toList()));
+    }
+
+    private boolean hasNothingNew(Value newValue, Value existing, State state) {
+        if (newValue == null || existing == null) {
+            return newValue == null && existing == null;
         }
         newValue = allLabelsToSingleton(UnknownValueResolver.getRealValue(newValue, state)).restrictToNonAttributes();
-        previous = allLabelsToSingleton(UnknownValueResolver.getRealValue(previous, state)).restrictToNonAttributes();
-        return newValue.equals(previous);
+        existing = allLabelsToSingleton(UnknownValueResolver.getRealValue(existing, state)).restrictToNonAttributes();
+        existing = newValue.meet(existing);
+        return newValue.equals(existing);
     }
 
     public static Value allLabelsToSingleton(Value value) {
@@ -208,7 +238,19 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
 
     @Override
     public Value visit(BooleanLiteral t, Arg arg) {
-        throw new RuntimeException();
+        if (t.getValue()) {
+            if (arg.value.isMaybeTrue()) {
+                return Value.makeBool(true);
+            } else {
+                return null;
+            }
+        } else {
+            if (arg.value.isMaybeFalse()) {
+                return Value.makeBool(false);
+            } else {
+                return null;
+            }
+        }
     }
 
     @Override
@@ -266,18 +308,18 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
             return HostAPIs.SPEC;
         }
 
-        private final ObjectLabel orgLabel;
+        private final Set<ObjectLabel> orgLabels;
         private final TypeWithContext type;
 
-        public CopiedObjectLabel(ObjectLabel orgLabel, TypeWithContext type) {
-            this.orgLabel = orgLabel;
+        public CopiedObjectLabel(Set<ObjectLabel> orgLabels, TypeWithContext type) {
+            this.orgLabels = orgLabels;
             this.type = type;
         }
 
         @Override
         public String toString() {
             return "CopiedObjectLabel{" +
-                    "orgLabel=" + orgLabel +
+                    "orgLabels=" + orgLabels +
                     ", type=" + type +
                     '}';
         }
@@ -287,14 +329,60 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             CopiedObjectLabel that = (CopiedObjectLabel) o;
-            return Objects.equals(orgLabel, that.orgLabel) &&
+            return Objects.equals(orgLabels, that.orgLabels) &&
                     Objects.equals(type, that.type);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(orgLabel, type);
+            return Objects.hash(orgLabels, type);
         }
     }
 
+    private void addToExistingLabels(Set<ObjectLabel> orgLabels, ObjectLabel newLabel, State state) {
+        for (ObjectLabel objlabel2 : state.getStore().keySet()) { // redirect.
+            if (orgLabels.stream().anyMatch(orgLabel -> state.getObject(objlabel2, false).containsObjectLabel(orgLabel))) {
+                Obj obj = state.getObject(objlabel2, true);
+                addToExistingLabels(objlabel2, obj, orgLabels, newLabel, state);
+            }
+        }
+    }
+
+
+    private void addToExistingLabels(ObjectLabel objectLabel, Obj obj, Set<ObjectLabel> oldlabels, ObjectLabel newlabel, State state) {
+        Map<PKey, Value> newproperties = newMap();
+        for (Map.Entry<PKey, Value> me : obj.getProperties().entrySet())
+            newproperties.put(me.getKey(), addToExistingLabels(me.getValue(), oldlabels, newlabel));
+        obj.setProperties(newproperties);
+
+        obj.setScopeChain(addToExistingScope(UnknownValueResolver.getScopeChain(objectLabel, state), oldlabels, newlabel));
+
+        obj.setDefaultArrayProperty(addToExistingLabels(obj.getDefaultArrayProperty(), oldlabels, newlabel));
+        obj.setDefaultArrayProperty(addToExistingLabels(obj.getDefaultArrayProperty(), oldlabels, newlabel));
+        obj.setInternalPrototype(addToExistingLabels(obj.getInternalPrototype(), oldlabels, newlabel));
+        obj.setInternalValue(addToExistingLabels(obj.getInternalValue(), oldlabels, newlabel));
+    }
+
+    private ScopeChain addToExistingScope(ScopeChain scopeChain, Set<ObjectLabel> oldlabels, ObjectLabel newlabel) {
+        if (scopeChain == null) {
+            return null;
+        }
+        return ScopeChain.make(addToExistingLabels(scopeChain.getObject(), oldlabels, newlabel), addToExistingScope(scopeChain.next(), oldlabels, newlabel));
+    }
+
+    private Set<ObjectLabel> addToExistingLabels(Set<ObjectLabel> objects, Set<ObjectLabel> oldlabels, ObjectLabel newlabel) {
+        if (objects.stream().anyMatch(oldlabels::contains)) {
+            return Util.concatSet(objects, Collections.singleton(newlabel));
+        } else {
+            return objects;
+        }
+    }
+
+    private Value addToExistingLabels(Value value, Set<ObjectLabel> oldLabels, ObjectLabel newlabel) {
+        if (value.getObjectLabels().stream().anyMatch(oldLabels::contains)) {
+            return value.join(Value.makeObject(newlabel));
+        } else {
+            return value;
+        }
+    }
 }
