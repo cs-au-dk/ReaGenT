@@ -93,7 +93,13 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         Solver.SolverInterface c = arg.c;
         PropVarOperations pv = c.getAnalysis().getPropVarOperations();
 
-        assert value.restrictToNotObject().isNone();
+        if (!value.isMaybeObject()) {
+            throw new NoSuchTypePossible();
+        }
+
+        Set<ObjectLabel> objectLabels = value.getObjectLabels().stream().filter(label -> label.getKind() != ObjectLabel.Kind.SYMBOL).collect(Collectors.toSet()); // the symbol is mostly to remove my "any" type.
+
+        assert value.restrictToNotSymbol().restrictToNotObject().isNone();
         assert t.getBaseTypes().isEmpty(); // TypesUtil.constructSyntheticInterfaceWithBaseTypes
 
         if (!t.getDeclaredCallSignatures().isEmpty() || !t.getDeclaredConstructSignatures().isEmpty()) {
@@ -106,19 +112,26 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         assert t.getDeclaredNumberIndexType() == null;
         assert t.getDeclaredStringIndexType() == null;
 
-        if (!value.isMaybeObject()) {
-            throw new NoSuchTypePossible();
-        }
 
-        if (value.getObjectLabels().stream().allMatch(orgLabel -> orgLabel.getHostObject() != null && orgLabel.getHostObject() instanceof CopiedObjectLabel)) {
+
+        if (objectLabels.stream().allMatch(orgLabel -> orgLabel.getHostObject() != null && orgLabel.getHostObject() instanceof CopiedObjectLabel)) {
             return value;
         }
 
-        Set<ObjectLabel> orgLabels = value.getObjectLabels().stream().filter(Util.not(orgLabel -> orgLabel.getHostObject() != null && orgLabel.getHostObject() instanceof CopiedObjectLabel)).collect(Collectors.toSet());
+        Set<ObjectLabel> orgLabels = objectLabels.stream().filter(Util.not(orgLabel -> orgLabel.getHostObject() != null && orgLabel.getHostObject() instanceof CopiedObjectLabel)).collect(Collectors.toSet());
+
+        if (!orgLabels.stream().allMatch(label -> label.getKind() == orgLabels.iterator().next().getKind())) {
+            Map<ObjectLabel.Kind, ObjectLabel> labelMap = new HashMap<>();
+            orgLabels.forEach(label -> labelMap.put(label.getKind(), label));
+            return Value.join(labelMap.values().stream().map(labels -> {
+                return visit(t, new Arg(arg.context, Value.makeObject(labels), arg.c, arg.info));
+            }).collect(Collectors.toSet()));
+        }
+
 
         Pair<Set<ObjectLabel>, TypeWithContext> labelKey = Pair.make(orgLabels, new TypeWithContext(t, arg.context));
         if (!copiedObjects.containsKey(labelKey)) {
-            ObjectLabel label = ObjectLabel.make(new CopiedObjectLabel(orgLabels, new TypeWithContext(t, arg.context)), ObjectLabel.Kind.OBJECT);
+            ObjectLabel label = ObjectLabel.make(new CopiedObjectLabel(orgLabels, new TypeWithContext(t, arg.context)), orgLabels.iterator().next().getKind());
             c.getState().newObject(label); // this takes care of summarizing old objects (of which there are always none...)
             copiedObjects.put(labelKey, label);
         }
@@ -137,7 +150,14 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         }
 
 
-        assert !readSomething(orgLabels, c.getState(), Obj::getDefaultNonArrayProperty).isMaybePresent();
+        {
+            Value nonArrayProperty = readSomething(orgLabels, c.getState(), Obj::getDefaultNonArrayProperty);
+            Value previous = UnknownValueResolver.getDefaultNonArrayProperty(label, c.getState());
+            if (!hasNothingNew(nonArrayProperty, previous, c.getState())) {
+                object.setDefaultNonArrayProperty(nonArrayProperty);
+            }
+        }
+
         assert !readSomething(orgLabels, c.getState(), Obj::getDefaultArrayProperty).isMaybePresent();
         assert !readSomething(orgLabels, c.getState(), Obj::getInternalValue).isMaybePresent();
         // TODO: scope, scope_unknown
@@ -308,6 +328,11 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
             return HostAPIs.SPEC;
         }
 
+        @Override
+        public Collection<ObjectLabel> getRealLabels() {
+            return orgLabels;
+        }
+
         private final Set<ObjectLabel> orgLabels;
         private final TypeWithContext type;
 
@@ -316,12 +341,17 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
             this.type = type;
         }
 
+        public Set<ObjectLabel> getOrgLabels() {
+            return orgLabels;
+        }
+
+        public TypeWithContext getType() {
+            return type;
+        }
+
         @Override
         public String toString() {
-            return "CopiedObjectLabel{" +
-                    "orgLabels=" + orgLabels +
-                    ", type=" + type +
-                    '}';
+            return "CopiedObjectLabel;";
         }
 
         @Override

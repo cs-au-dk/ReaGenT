@@ -13,6 +13,7 @@ import dk.brics.tajs.solver.ICallEdge;
 import dk.brics.tajs.util.AnalysisException;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.filter.CopyObjectInstantiation;
 import dk.webbies.tajscheck.tajstester.data.TestCertificate;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.testcreator.test.*;
@@ -95,10 +96,11 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
     @Override
     public Boolean visit(MethodCallTest test) {
         final Value receiver = valueHandler.getInstantiator().getFeedbackValue(test.getObject(), test.getTypeContext());
+//        final Value receiver = valueHandler.findFeedbackValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
         assert receiver != null;
 
         //noinspection AssertWithSideEffects
-        assert receiver.restrictToNotObject().isNone();
+//        assert receiver.restrictToNotObject().isNone();
 
         boolean typeChecked = true;
         for (ObjectLabel receiverLabel : receiver.getObjectLabels()) {
@@ -138,7 +140,15 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
         FunctionCalls.CallInfo callinfo = createCallInfo(receiver, isConstructorCall, arguments, restArgs, restArgType, c.getNode());
 
-        for (ObjectLabel l : function.getAllObjectLabels()) {
+        Set<ObjectLabel> labels = function.getAllObjectLabels().stream().map(l -> {
+            if (l.getHostObject() instanceof CopyObjectInstantiation.CopiedObjectLabel) {
+                return ((CopyObjectInstantiation.CopiedObjectLabel) l.getHostObject()).getOrgLabels();
+            } else {
+                return Collections.singleton(l);
+            }
+        }).reduce(new HashSet<>(), Util::reduceSet);
+
+        for (ObjectLabel l : labels) {
             Value returnedValue = callFunction(test, receiver, function, isConstructorCall, callinfo, l);
             typeChecked &= tajsTypeTester.attemptAddValue(returnedValue, new TypeWithContext(test.getReturnType(), test.getTypeContext()), test.getPath(), c, typeChecker, test);
         }

@@ -36,6 +36,7 @@ public class TypedSymbolicFunctionEvaluator {
     }
 
     public Value evaluateCallToSymbolicFunction(HostObject hostObject, FunctionCalls.CallInfo call, Solver.SolverInterface c) {
+        assert hostObject instanceof SpecObjects.TypedObject;
 
         TypeWithContext typeWithContext = ((SpecObjects.TypedObject) hostObject).getType();
 

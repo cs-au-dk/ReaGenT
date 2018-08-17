@@ -2014,11 +2014,7 @@ public class TAJSUnitTests {
     }
 
 
-
-    // when value saved to vmap, actually save filtered materialized value.
-    // One result label, many input labels. (Completely filter away infeasible labels?).
-
-    // TODO: Object equality. (Should be handled by redirect, test it anyway).
+    // TODO: Should receiver of methodCall get filtered?
 
     // TODO: Warning that our tool does not support class extensions.
 }

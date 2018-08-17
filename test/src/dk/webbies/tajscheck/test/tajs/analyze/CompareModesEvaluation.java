@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 public class CompareModesEvaluation {
     static final List<String> benchmarksToEvaluate = Arrays.asList(
-            /*"classnames",
+            "classnames",
             "component-emitter",
             "js-cookie",
             "loglevel",
@@ -35,45 +35,36 @@ public class CompareModesEvaluation {
             "platform",
             "pathjs",
             "PleaseJS",
-            "pluralize",*/
+            "pluralize",
             "uuid"
-            );
+    );
 
     public static final Map<String, Function<CheckOptions.Builder, StaticOptions.Builder>> modes = new LinkedHashMap<>(){{
-        put("width-subtyping", AnalyzeBenchmarks.weakMode().andThen(options -> options.setProperWidthSubtyping(true).getOuterBuilder().setWritePrimitives(true).staticOptions));
 
-        // TODO:
-//        put("no-check-types", AnalyzeBenchmarks.strongMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions.setInstantiationFilter(new CopyObjectInstantiation())));
+        put("all-assumptions", options -> options.staticOptions);
 
-//        put("writes", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWriteAll(false).setWritePrimitives(true).staticOptions)); // We always write.
+        put("width-subtyping", options -> options.staticOptions.setProperWidthSubtyping(true));
+        put("no-safe-strings", options -> options.staticOptions.setBetterAnyString(false));
+        put("no-prefer-lib-values", options -> options.staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED));
 
-//        put("all-assumptions", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions));
-        /*put("width-subtyping", AnalyzeBenchmarks.weakMode().andThen(options -> options.setProperWidthSubtyping(true).getOuterBuilder().setWritePrimitives(true).staticOptions));
-        put("no-prefer-lib-values", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)));
-        //experiment.addExperiment(experiment("only-constructed", options -> options.staticOptions.setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED)));
-        //experiment.addExperiment(experiment("only-feedback", options -> options.staticOptions.setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE).setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments(false))));
-        //experiment.addExperiment(experiment("callbacks-not-rmgc", options -> options.staticOptions.setCallbacksAreMGC(false)));
-        put("no-safe-strings", AnalyzeBenchmarks.weakMode().andThen(options -> options.getOuterBuilder().setWritePrimitives(true).staticOptions.setBetterAnyString(false)));
 
         put("no-assumptions",
-                AnalyzeBenchmarks.strongMode().andThen(options -> // no-check-type
-                        options
-                                .setProperWidthSubtyping(true) // width-subtyping
-                                .getOuterBuilder().setWriteAll(false).setWritePrimitives(true).staticOptions // writes (all have this now)
-                                .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED) // no-prefer-lib-values
-                                .setBetterAnyString(false) // no-safe-strings.
-                )
+                options ->
+                        options.staticOptions
+                                .setProperWidthSubtyping(true)
+                                .setBetterAnyString(false)
+                                .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
+
         );
         put("MGC",
-                AnalyzeBenchmarks.strongMode().andThen(options -> // no-check-type
-                        options
-                                .setProperWidthSubtyping(true) // width-subtyping
-                                .getOuterBuilder().setWriteAll(false).setWriteAll(true).staticOptions // writes, and writes all properties.
-                                .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED) // no-prefer-lib-values
-                                .setBetterAnyString(false) // no-safe-strings.
+                options ->
+                        options.staticOptions
+                                .setProperWidthSubtyping(true)
+                                .setBetterAnyString(false)
+                                .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
                                 .setIgnoreTypeDecs(true) // making it quite close to an MGC.
-                )
-        );*/
+
+        );
 
         new HashSet<>(entrySet()).forEach(entry -> {
             Function<CheckOptions.Builder, StaticOptions.Builder> value = entry.getValue();

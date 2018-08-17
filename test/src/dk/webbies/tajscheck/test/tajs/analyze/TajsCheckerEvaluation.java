@@ -98,7 +98,7 @@ public class TajsCheckerEvaluation {
 
     private static BiConsumer<Benchmark, BiConsumer<String, String>> experiment() {
         return (benchmark, register) -> {
-            benchmark = benchmark.withOptions(AnalyzeBenchmarks.options().andThen(((StaticOptions.Builder builder) -> AnalyzeBenchmarks.weakMode().apply(builder.getOuterBuilder()))));
+            benchmark = benchmark.withOptions(AnalyzeBenchmarks.options());
 
             BenchmarkInfo.create(benchmark); // <- Just populating cache.
 

@@ -3,8 +3,10 @@ package dk.webbies.tajscheck.tajstester.typeCreator;
 import dk.brics.tajs.analysis.HostAPIs;
 import dk.brics.tajs.lattice.HostAPI;
 import dk.brics.tajs.lattice.HostObject;
+import dk.brics.tajs.lattice.ObjectLabel;
 import dk.webbies.tajscheck.TypeWithContext;
 
+import java.util.Collection;
 import java.util.List;
 
 import static dk.brics.tajs.util.Collections.newList;
@@ -19,6 +21,11 @@ public class SpecObjects implements HostObject {
     @Override
     public HostAPI getAPI() {
         return HostAPIs.SPEC;
+    }
+
+    @Override
+    public Collection<ObjectLabel> getRealLabels() {
+        return null;
     }
 
     public static class TypedObject extends SpecObjects {

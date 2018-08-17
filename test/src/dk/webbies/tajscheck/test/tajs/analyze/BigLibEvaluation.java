@@ -67,9 +67,8 @@ public class BigLibEvaluation {
 
 //        experiment.addSingleExperiment(AutomaticExperiments.type);
 
-        // Weak mode is default, so no need to change anything there.
-        experiment.addExperiment(experiment("no-check-types", AnalyzeBenchmarks.strongMode()));
-        experiment.addExperiment(experiment("all-assumptions", AnalyzeBenchmarks.weakMode()));
+        // Weak mode is default, so no need to change anything there. strong mode doesn't exist anymore.
+        experiment.addExperiment(experiment("all-assumptions", options -> options.staticOptions));
 
         System.out.println(experiment.calculate("biglib.csv").print("|", "\n"));
     }
