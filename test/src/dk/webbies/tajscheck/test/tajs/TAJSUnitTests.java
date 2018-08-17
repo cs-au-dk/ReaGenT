@@ -719,14 +719,6 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations();
     }
-
-    @Test
-    public void deepChecking() throws Exception {
-        TajsAnalysisResults result = run("deepChecking", options().staticOptions.setUseValuesWithMismatches(false).setPropagateStateFromFailingTest(false).setSimpleTypeFilter(false));
-
-        assertTrue(result.testNot.stream().map(dk.webbies.tajscheck.testcreator.test.Test::getPath).anyMatch("foo().foo"::equals));
-    }
-
     @Test
     public void checkRecursiveObject() throws Exception {
         TajsAnalysisResults result = run("checkRecursiveObject");
@@ -1783,15 +1775,6 @@ public class TAJSUnitTests {
                 .performedAllTests()
                 .hasNoViolations()
                 .hasNoWarnings();
-    }
-
-    @Test
-    public void simpleTypeFilter() throws Exception {
-        TajsAnalysisResults result = run("simpleTypeFilter", options().staticOptions.setSimpleTypeFilter(true));
-
-        expect(result)
-                .performedAllTests()
-                .hasNoViolations();
     }
 
     @Test

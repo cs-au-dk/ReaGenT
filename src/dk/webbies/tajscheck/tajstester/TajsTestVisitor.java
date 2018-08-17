@@ -43,10 +43,6 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         this.valueHandler = valueHandler;
     }
 
-    public Value attemptGetValue(Type t, TypeContext context) {
-        return valueHandler.findFeedbackValue(new TypeWithContext(t, context));
-    }
-
     public Value attemptGetValue(TypeWithContext t) {
         return valueHandler.findFeedbackValue(t);
     }
@@ -264,20 +260,20 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     @Override
     public Boolean visit(ConstructorCallTest test) {
-        Value function = attemptGetValue(test.getFunction(), test.getTypeContext());
+        Value function = attemptGetValue(new TypeWithContext(test.getFunction(), test.getTypeContext()));
         return functionTest(test, null, function, true); // receiver is ignored, since it is a constructor-call.
     }
 
     @Override
     public Boolean visit(FunctionCallTest test) {
         Value receiver = Value.makeObject(InitialStateBuilder.GLOBAL).joinUndef();
-        Value function = attemptGetValue(test.getFunction(), test.getTypeContext());
+        Value function = attemptGetValue(new TypeWithContext(test.getFunction(), test.getTypeContext()));
         return functionTest(test, receiver, function, false);
     }
 
     @Override
     public Boolean visit(UnionTypeTest test) {
-        Value value = attemptGetValue(test.getGetUnionType(), test.getTypeContext());
+        Value value = attemptGetValue(new TypeWithContext(test.getGetUnionType(), test.getTypeContext()));
 
         Set<Type> nonMatchedTypes = new HashSet<>(test.getGetUnionType().getElements());
 
@@ -320,7 +316,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     @Override
     public Boolean visit(NumberIndexTest test) {
-        Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(),test.getTypeContext()));
+        Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(), test.getTypeContext()));
         Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(baseValue.getAllObjectLabels(), Value.makeAnyStrUInt()), c.getState());
         tajsTypeTester.addCertificate(new TestCertificate(test, "numberIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, c.getState()), c);
         TypeWithContext resultType = new TypeWithContext(test.getReturnType(), test.getTypeContext());
@@ -329,7 +325,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     @Override
     public Boolean visit(StringIndexTest test) {
-        Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(),test.getTypeContext()));
+        Value baseValue = attemptGetValue(new TypeWithContext(test.getObj(), test.getTypeContext()));
         Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(baseValue.getAllObjectLabels(), Value.makeAnyStr()), c.getState());
         tajsTypeTester.addCertificate(new TestCertificate(test, "stringIndexer accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, c.getState()), c);
         TypeWithContext resultType = new TypeWithContext(test.getReturnType(), test.getTypeContext());
@@ -338,7 +334,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     @Override
     public Boolean visit(PropertyWriteTest test) {
-        Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(),test.getTypeContext()));
+        Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(), test.getTypeContext()));
         for (ObjectLabel label : baseValue.getObjectLabels()) {
             pv.writeProperty(label, test.getProperty(), valueHandler.createValue(test.getToWrite(), test.getTypeContext()));
         }

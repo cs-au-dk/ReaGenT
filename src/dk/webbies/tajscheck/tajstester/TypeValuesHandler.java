@@ -87,12 +87,6 @@ public class TypeValuesHandler {
     }
 
     public boolean addFeedbackValue(Object key, TypeWithContext type, Value v, Solver.SolverInterface c) {
-        if (info.options.staticOptions.simpleTypeFilter) {
-            v = simpleTypeFilter(v, type, c);
-            if (v.isNone()) {
-                return false;
-            }
-        }
         if (!hasBeenUpdatedMap.containsKey(type)) {
             hasBeenUpdatedMap.put(type, Value.makeNone());
         }
@@ -111,21 +105,6 @@ public class TypeValuesHandler {
             typeValueMap.put(subType, ref);
         });
         return valueWasAdded.get();
-    }
-
-    private Value simpleTypeFilter(Value value, TypeWithContext type, Solver.SolverInterface c) {
-        List<Value> result = new ArrayList<>();
-        TajsTypeChecker checker = new TajsTypeChecker(null, c, info, ViolationsOracle.empty());
-        for (Value splitValue : TajsTypeChecker.split(value)) {
-            List<TypeCheck> typeChecks = TypeChecker.getTypeChecks(type.getType(), type.getTypeContext(), info, 0);
-
-            List<TypeViolation> violations = checker.getTypeViolations(type, splitValue, typeChecks, "whatever");
-            if (violations.isEmpty()) {
-                result.add(splitValue);
-            }
-        }
-
-        return Value.join(result);
     }
 
     public SpecInstantiator getInstantiator() {

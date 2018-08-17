@@ -5,7 +5,7 @@ import dk.brics.tajs.analysis.Solver;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
-import dk.webbies.tajscheck.tajstester.TypeValuesHandler;
+import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
 import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
@@ -64,12 +64,11 @@ public class LateExpansionToFunctionsWithConstructedArguments implements Expansi
         if (!typeTester.getBenchmarkInfo().shouldConstructType(type)) {
             return false; // if we cannot construct it, it is not a constructed type.
         }
-        TypeValuesHandler valueHandler = typeTester.getValueHandler();
-
+        SpecInstantiator instantiator = typeTester.getValueHandler().getInstantiator();
         Predicate<TypeWithContext> whiteList = subType ->
-                valueHandler.findFeedbackValue(subType) != null ||
-                argumentsThatAreConstructedAnyway.contains(subType) ||
-                valueHandler.getInstantiator().getNativesInstantiator().shouldConstructAsNative(subType.getType());
+                instantiator.getFeedbackValue(subType.getType(), subType.getTypeContext()) != null ||
+                        argumentsThatAreConstructedAnyway.contains(subType) ||
+                        instantiator.getNativesInstantiator().shouldConstructAsNative(subType.getType());
 
         return type.accept(new CanEasilyConstructVisitor(typeContext, typeTester.getBenchmarkInfo(), whiteList));
     }

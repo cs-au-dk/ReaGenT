@@ -28,7 +28,6 @@ public class StaticOptions implements OptionsI {
     public final boolean checkAllPropertiesAfterFunctionCall;
     public final boolean useInspector;
     public final boolean useValuesWithMismatches;
-    public final boolean simpleTypeFilter;
     public final boolean ignoreMaybeUndefined;
     public final boolean callbacksAreMGC;
     public final boolean ignoreTypeDecs;
@@ -56,7 +55,6 @@ public class StaticOptions implements OptionsI {
         this.checkAllPropertiesAfterFunctionCall = builder.checkAllPropertiesAfterFunctionCall;
         this.useInspector = builder.useInspector;
         this.useValuesWithMismatches = builder.useValuesWithMismatches;
-        this.simpleTypeFilter = builder.simpleTypeFilter;
         this.ignoreMaybeUndefined = builder.ignoreMaybeUndefined;
         this.callbacksAreMGC = builder.callbacksAreMGC;
         this.ignoreTypeDecs = builder.ignoreTypeDecs;
@@ -65,9 +63,6 @@ public class StaticOptions implements OptionsI {
 
         if (useValuesWithMismatches && !propagateStateFromFailingTest) {
             throw new RuntimeException("This set of options does not make sense");
-        }
-        if (ignoreMaybeUndefined && !simpleTypeFilter) {
-            throw new RuntimeException("If ignoring maybe undef, you should have simple type filter on.");
         }
     }
 
@@ -89,7 +84,6 @@ public class StaticOptions implements OptionsI {
         private boolean checkAllPropertiesAfterFunctionCall = false; // then we run through all the PropertyReadTests after a function-call, to see if it had any harmful side-effects.
         private boolean useInspector = false;
         private boolean useValuesWithMismatches = false;
-        private boolean simpleTypeFilter = true;
         private boolean ignoreMaybeUndefined = false;
         private boolean callbacksAreMGC = true;
         private boolean ignoreTypeDecs = false; // if true, ALL methods will be called with the "any" type.
@@ -137,11 +131,6 @@ public class StaticOptions implements OptionsI {
 
         public Builder setIgnoreTypeDecs(boolean ignoreTypeDecs) {
             this.ignoreTypeDecs = ignoreTypeDecs;
-            return this;
-        }
-
-        public Builder setSimpleTypeFilter(boolean simpleTypeFilter) {
-            this.simpleTypeFilter = simpleTypeFilter;
             return this;
         }
 

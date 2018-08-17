@@ -132,6 +132,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         do {
             progress = iterateAllNonPerformedTests(c);
 
+            // If getting values out from side-effects, this is where to do it. new value = new test.
+
             if (progress) {
                 continue;
             }
@@ -399,7 +401,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
         violations.forEach(violation -> addViolation(violation, c));
 
-        if((violations.isEmpty() || info.options.staticOptions.useValuesWithMismatches) && !value.isNone()) {
+        boolean wasAdded = false;
+        if((violations.isEmpty() || info.options.staticOptions.useValuesWithMismatches) && !value.isNone() && violations.stream().noneMatch(v -> v.definite)) {
+            wasAdded = true;
             boolean newValue = valueHandler.addFeedbackValue(key, t, value, c);
             if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + value);
             if(newValue && c.isScanning()) {
@@ -410,11 +414,11 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
 
 
-        return violations.isEmpty() || info.options.staticOptions.useValuesWithMismatches;
+        return violations.isEmpty() || wasAdded;
     }
 
     List<TypeViolation> getViolations(Value v, TypeWithContext t, String path, Solver.SolverInterface c, TajsTypeChecker tajsTypeChecker) {
-        return tajsTypeChecker.typeCheck(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), info, path)
+        return tajsTypeChecker.typeCheck(UnknownValueResolver.getRealValue(v, c.getState()), t.getType(), t.getTypeContext(), path)
                 .stream()
                 .filter(this.violationsOracle::canEmit)
                 .filter(violation -> {

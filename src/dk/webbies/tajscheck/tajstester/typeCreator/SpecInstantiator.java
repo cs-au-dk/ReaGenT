@@ -12,7 +12,6 @@ import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.Late
 import dk.webbies.tajscheck.benchmark.options.staticOptions.filter.CopyObjectInstantiation;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.tajstester.TypeValuesHandler;
-import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
@@ -285,14 +284,14 @@ public class SpecInstantiator {
 
     Value instantiate(Type type, MiscInfo info, String step) {
         if (!this.info.shouldConstructType(type) && !nativesInstantiator.shouldConstructAsNative(type)) {
-            Value feedbackValue = getFeedbackValue(type, info);
+            Value feedbackValue = getFeedbackValue(type, info.context);
             if (feedbackValue == null || this.info.options.staticOptions.argumentValuesStrategy == ONLY_CONSTRUCTED) {
                 throw new CannotConstructType(); // this will be catched by the top-most construction method.
             }
             return feedbackValue;
         }
         if (this.info.options.staticOptions.argumentValuesStrategy == FEEDBACK_IF_POSSIBLE && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
-            Value feedbackValue = getFeedbackValue(type, info);
+            Value feedbackValue = getFeedbackValue(type, info.context);
             if (feedbackValue != null) {
                 return feedbackValue;
             }
@@ -359,7 +358,7 @@ public class SpecInstantiator {
         assert !result.isNone();
 
         if (this.info.options.staticOptions.argumentValuesStrategy == MIX_FEEDBACK_AND_CONSTRUCTED) {
-            Value feedbackValue = getFeedbackValue(type, info);
+            Value feedbackValue = getFeedbackValue(type, info.context);
             if (feedbackValue != null) {
                 result = result.join(feedbackValue);
             }
@@ -368,9 +367,9 @@ public class SpecInstantiator {
         return result;
     }
 
-    private Value getFeedbackValue(Type type, MiscInfo info) {
+    public Value getFeedbackValue(Type type, TypeContext context) {
         try {
-            return this.info.options.staticOptions.instantiationFilter.filter(new TypeWithContext(type, info.context), valueHandler.findFeedbackValue(new TypeWithContext(type, info.context)), c, this.info);
+            return this.info.options.staticOptions.instantiationFilter.filter(new TypeWithContext(type, context), valueHandler.findFeedbackValue(new TypeWithContext(type, context)), c, this.info);
         } catch (CopyObjectInstantiation.NoSuchTypePossible e) {
             return null;
         }
@@ -401,7 +400,7 @@ public class SpecInstantiator {
             coInductiveAssumptions.add(subType);
 
             try {
-                if (valueHandler.findFeedbackValue(subType) != null && this.info.options.staticOptions.argumentValuesStrategy != ONLY_CONSTRUCTED) {
+                if (getFeedbackValue(type.getType(), type.getTypeContext()) != null && this.info.options.staticOptions.argumentValuesStrategy != ONLY_CONSTRUCTED) {
                     return true;
                 }
                 if (nativesInstantiator.shouldConstructAsNative(subType.getType())) {
