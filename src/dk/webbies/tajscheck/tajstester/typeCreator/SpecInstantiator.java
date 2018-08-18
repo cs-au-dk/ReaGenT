@@ -357,7 +357,7 @@ public class SpecInstantiator {
 
         assert !result.isNone();
 
-        if (this.info.options.staticOptions.argumentValuesStrategy == MIX_FEEDBACK_AND_CONSTRUCTED) {
+        if (this.info.options.staticOptions.argumentValuesStrategy == MIX_FEEDBACK_AND_CONSTRUCTED && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
             Value feedbackValue = getFeedbackValue(type, info.context);
             if (feedbackValue != null) {
                 result = result.join(feedbackValue);
