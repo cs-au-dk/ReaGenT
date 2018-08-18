@@ -402,15 +402,30 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         violations.forEach(violation -> addViolation(violation, c));
 
         boolean wasAdded = false;
-        if((violations.isEmpty() || info.options.staticOptions.useValuesWithMismatches) && !value.isNone() && violations.stream().noneMatch(v -> v.definite)) {
-            wasAdded = true;
-            boolean newValue = valueHandler.addFeedbackValue(key, t, value, c);
-            if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + value);
-            if(newValue && c.isScanning()) {
-                throw new RuntimeException("New values should not appear in scanning!");
+
+        // If we have potential mismatches, then we only want the parts that have no definite mismatches.
+        if (!info.options.staticOptions.useValuesWithMismatches) {
+            if((violations.isEmpty())) {
+                wasAdded = true;
+                boolean newValue = valueHandler.addFeedbackValue(key, t, value, c);
+                if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + value);
+                if(newValue && c.isScanning()) {
+                    throw new RuntimeException("New values should not appear in scanning!");
+                }
+            } else {
+                if(DEBUG_VALUES) System.out.println("Value " + value + " not added because it violates type " + t + " path:" + path);
             }
         } else {
-            if(DEBUG_VALUES) System.out.println("Value " + value + " not added because it violates type " + t + " path:" + path);
+            for (Value v : TajsTypeChecker.split(value)) {
+                if (getViolations(v, t, path, c, tajsTypeChecker).stream().noneMatch(violation -> violation.definite)) {
+                    wasAdded = true;
+                    boolean newValue = valueHandler.addFeedbackValue(key, t, v, c);
+                    if(DEBUG_VALUES && newValue) System.out.println("Value added for type:" + t + " path:" + path + ", value: " + value);
+                    if(newValue && c.isScanning()) {
+                        throw new RuntimeException("New values should not appear in scanning!");
+                    }
+                }
+            }
         }
 
 
