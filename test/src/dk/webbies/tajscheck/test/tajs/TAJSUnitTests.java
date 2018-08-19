@@ -2013,8 +2013,35 @@ public class TAJSUnitTests {
         assert result.detectedViolations.asMap().values().iterator().next().iterator().next().toString().contains("Bool");
     }
 
-    // TODO: Split value and check each before saving.
-    // TODO: See if "any" leaks anywhere (use assert simple.getKind() != ANY).
+    @Test
+    public void newObjectCreationBadObjectsGoAway() throws Exception {
+        TajsAnalysisResults result = run("newObjectCreationBadObjectsGoAway", options().staticOptions
+                .setUseValuesWithMismatches(true)
+                .setPropagateStateFromFailingTest(true)
+                .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
+                .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
+
+
+//                .setUseInspector(true)
+
+                .setInstantiationFilter(new CopyObjectInstantiation())
+        );
+
+
+                assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("module.createFoo().foo")
+                .hasViolations();
+
+        expect(result)
+                .forPath("module.useFoo")
+                .hasNoViolations();
+
+        assert result.detectedViolations.asMap().values().iterator().next().iterator().next().toString().contains("Bool");
+    }
+
+    // TODO: Test that bad objects are completely gone.
     // TODO: When materializing, continue with the prototype.
 
     // TODO: "any" really screws up PathJS, even though I don't see how that should be possible.
