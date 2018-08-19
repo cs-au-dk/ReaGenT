@@ -97,7 +97,7 @@ public class TestCreator {
                     boolean shouldWrite = info.bench.options.writeAll;
                     assert test.getProduces().size() == 1;
                     Type produces = test.getProduces().iterator().next();
-                    shouldWrite |= produces instanceof SimpleType;
+                    shouldWrite |= produces instanceof SimpleType && (((SimpleType) produces).getKind() != SimpleTypeKind.Any);
 
                     if (shouldWrite) {
                         tests.add(
