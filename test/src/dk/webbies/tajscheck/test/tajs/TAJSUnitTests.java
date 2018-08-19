@@ -2013,6 +2013,11 @@ public class TAJSUnitTests {
         assert result.detectedViolations.asMap().values().iterator().next().iterator().next().toString().contains("Bool");
     }
 
+    // TODO: Split value and check each before saving.
+    // TODO: See if "any" leaks anywhere (use assert simple.getKind() != ANY).
+    // TODO: When materializing, continue with the prototype.
+
+    // TODO: "any" really screws up PathJS, even though I don't see how that should be possible.
 
     // TODO: Should receiver of methodCall get filtered?
 
