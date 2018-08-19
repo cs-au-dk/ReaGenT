@@ -20,6 +20,7 @@ import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,25 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         if (value == null) {
             return null;
         }
+        value = UnknownValueResolver.getRealValue(value, c.getState());
+
+        Set<ObjectLabel> labels = value.getObjectLabels();
+        Set<ObjectLabel> filteredAwayObjectLabels = new HashSet<>();
+        value = value
+                .restrictToNotObject()
+                .join(
+                        Value.makeObject(labels.stream().filter(Util.not(
+                                label -> {
+                                    if (label.getHostObject() instanceof CopiedObjectLabel && ((CopiedObjectLabel) label.getHostObject()).type.equals(type)) {
+                                        filteredAwayObjectLabels.add(label);
+                                        return true;
+                                    }  else {
+                                        return false;
+                                    }
+                                }
+                        )).collect(Collectors.toSet()))
+                );
+
         List<Value> results = split(value).stream().map(v -> {
             try {
                 return type.getType().accept(this, new Arg(type.getTypeContext(), v, c, info));
@@ -53,10 +73,16 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         if (results.isEmpty()) {
             throw new NoSuchTypePossible();
         }
-        return Value.join(results);
+        if (filteredAwayObjectLabels.isEmpty()) {
+            return Value.join(results);
+        } else {
+            return Value.join(results).join(Value.makeObject(filteredAwayObjectLabels));
+        }
     }
 
-    public static final class NoSuchTypePossible extends RuntimeException {}
+    public static final class NoSuchTypePossible extends RuntimeException {
+        public NoSuchTypePossible() {}
+    }
 
 
     public Value filter(Type type, Arg arg) {
@@ -83,8 +109,6 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
     public Value visit(GenericType t, Arg arg) {
         throw new RuntimeException();
     }
-
-    private final Map<Pair<Set<ObjectLabel>, TypeWithContext>, ObjectLabel> copiedObjects = new HashMap<>();
 
     @Override
     public Value visit(InterfaceType t, Arg arg) {
@@ -130,19 +154,34 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
 
 
         Pair<Set<ObjectLabel>, TypeWithContext> labelKey = Pair.make(orgLabels, new TypeWithContext(t, arg.context));
-        if (!copiedObjects.containsKey(labelKey)) {
-            ObjectLabel label = ObjectLabel.make(new CopiedObjectLabel(orgLabels, new TypeWithContext(t, arg.context)), orgLabels.iterator().next().getKind());
+        ObjectLabel label = ObjectLabel.make(new CopiedObjectLabel(orgLabels, new TypeWithContext(t, arg.context)), orgLabels.iterator().next().getKind());
+        if (!c.getState().getStore().containsKey(label)) {
             c.getState().newObject(label); // this takes care of summarizing old objects (of which there are always none...)
-            copiedObjects.put(labelKey, label);
+            Obj tempObject = c.getState().getObject(label, true);
+            tempObject.setInternalPrototype(Value.makeNull());
+            tempObject.setDefaultNonArrayProperty(Value.makeAbsent());
+            tempObject.setDefaultArrayProperty(Value.makeAbsent());
+            tempObject.setInternalValue(Value.makeAbsent());
         }
-        ObjectLabel label = copiedObjects.get(labelKey);
+
+        if (c.getState().getObject(label, false).getInternalPrototype() == null) {
+            c.getState().getObject(label, true).setInternalPrototype(Value.makeNull());
+        }
 
 
         addToExistingLabels(orgLabels, label, c.getState());
 
         Obj object = c.getState().getObject(label, true);
         {
-            Value internalPrototype = readSomething(orgLabels, c.getState(), Obj::getInternalPrototype);
+            Value originalPrototype = readSomething(orgLabels, c.getState(), (objectLabel, obj) -> obj.getInternalPrototype());
+            Value internalPrototype = originalPrototype;
+            if (!originalPrototype.restrictToObject().isNone()) {
+                object.setInternalPrototype(Value.makeNull());
+                internalPrototype = filter(new TypeWithContext(t, context), originalPrototype, c, arg.info);
+                if (internalPrototype == null) {
+                    throw new NoSuchTypePossible();
+                }
+            }
             Value previous = UnknownValueResolver.getInternalPrototype(label, c.getState(), false);
             if (!hasNothingNew(internalPrototype, previous, c.getState())) {
                 object.setInternalPrototype(internalPrototype);
@@ -151,22 +190,26 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
 
 
         {
-            Value nonArrayProperty = readSomething(orgLabels, c.getState(), Obj::getDefaultNonArrayProperty);
+            Value nonArrayProperty = readSomething(orgLabels, c.getState(), (objectLabel, obj) -> obj.getDefaultNonArrayProperty());
             Value previous = UnknownValueResolver.getDefaultNonArrayProperty(label, c.getState());
             if (!hasNothingNew(nonArrayProperty, previous, c.getState())) {
                 object.setDefaultNonArrayProperty(nonArrayProperty);
             }
         }
 
-        assert !readSomething(orgLabels, c.getState(), Obj::getDefaultArrayProperty).isMaybePresent();
-        assert !readSomething(orgLabels, c.getState(), Obj::getInternalValue).isMaybePresent();
+        assert !readSomething(orgLabels, c.getState(), (objectLabel, obj) -> obj.getDefaultArrayProperty()).isMaybePresent();
+        assert !readSomething(orgLabels, c.getState(), (objectLabel, obj) -> obj.getInternalValue()).isMaybePresent();
         // TODO: scope, scope_unknown
 
         Set<PKey> properties = readProperties(orgLabels, c.getState());
 
         Map<String, Type> propDecs = t.getDeclaredProperties();
         for (PKey propKey : properties) {
-            Value propValue = readSomething(orgLabels, c.getState(), obj -> obj.getProperty(propKey));
+            Value propValue = readSomething(orgLabels, c.getState(), (subLabel, obj) -> UnknownValueResolver.getProperty(subLabel, propKey, c.getState(), false));
+            if (propValue.isMaybeAbsent() && propValue.restrictToNotAbsent().isNone()) {
+                object.setProperty(propKey, propValue);
+                continue;
+            }
             assert propKey instanceof PKey.StringPKey;
             String propName = ((PKey.StringPKey) propKey).getStr();
             Value existingPropValue = object.getProperty(propKey);
@@ -175,6 +218,14 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
                 newPropValue = filter(new TypeWithContext(propDecs.get(propName), arg.context), propValue, c, arg.info);
             } else {
                 newPropValue = propValue;
+            }
+            if (propName.equals("__proto__")) {
+                if (!newPropValue.restrictToObject().isNone()) {
+                    newPropValue = filter(new TypeWithContext(t, context), newPropValue, c, arg.info);
+                    if (newPropValue == null) {
+                        throw new NoSuchTypePossible();
+                    }
+                }
             }
             existingPropValue = existingPropValue == null ? null : UnknownValueResolver.getRealValue(existingPropValue, c.getState());
             if (!hasNothingNew(newPropValue, existingPropValue, c.getState())) {
@@ -189,8 +240,8 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         return labels.stream().map(label -> UnknownValueResolver.getProperties(label, state).keySet()).reduce(new HashSet<>(), Util::reduceSet);
     }
 
-    private Value readSomething(Set<ObjectLabel> labels, State state, Function<Obj, Value> foo) {
-        return Value.join(labels.stream().map(label -> foo.apply(state.getObject(label, false))).collect(Collectors.toList()));
+    private Value readSomething(Set<ObjectLabel> labels, State state, BiFunction<ObjectLabel, Obj, Value> foo) {
+        return Value.join(labels.stream().map(label -> foo.apply(label, state.getObject(label, false))).collect(Collectors.toList()));
     }
 
     private boolean hasNothingNew(Value newValue, Value existing, State state) {
@@ -370,10 +421,17 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
     }
 
     private void addToExistingLabels(Set<ObjectLabel> orgLabels, ObjectLabel newLabel, State state) {
+        if (orgLabels == null) {
+            return;
+        }
         for (ObjectLabel objlabel2 : state.getStore().keySet()) { // redirect.
-            if (orgLabels.stream().anyMatch(orgLabel -> state.getObject(objlabel2, false).containsObjectLabel(orgLabel))) {
-                Obj obj = state.getObject(objlabel2, true);
-                addToExistingLabels(objlabel2, obj, orgLabels, newLabel, state);
+            try {
+                if (orgLabels.stream().anyMatch(orgLabel -> state.getObject(objlabel2, false).containsObjectLabel(orgLabel))) {
+                    Obj obj = state.getObject(objlabel2, true);
+                    addToExistingLabels(objlabel2, obj, orgLabels, newLabel, state);
+                }
+            } catch (NullPointerException e) {
+                continue; // TODO: Ugly sauce.
             }
         }
     }
