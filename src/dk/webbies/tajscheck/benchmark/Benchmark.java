@@ -223,7 +223,7 @@ public class Benchmark {
     }
 
     public Benchmark possilyPatched() {
-        return Optional.of(patched()).orElse(this);
+        return Optional.ofNullable(patched()).orElse(this);
     }
 
     public Benchmark patched() {
