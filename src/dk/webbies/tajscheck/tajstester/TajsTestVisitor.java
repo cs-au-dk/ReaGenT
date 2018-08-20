@@ -95,8 +95,8 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     @Override
     public Boolean visit(MethodCallTest test) {
-        final Value receiver = valueHandler.getInstantiator().getFeedbackValue(test.getObject(), test.getTypeContext());
-//        final Value receiver = valueHandler.findFeedbackValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
+//        final Value receiver = valueHandler.getInstantiator().getFeedbackValue(test.getObject(), test.getTypeContext());
+        final Value receiver = valueHandler.findFeedbackValue(new TypeWithContext(test.getObject(), test.getTypeContext()));
         assert receiver != null;
 
         //noinspection AssertWithSideEffects

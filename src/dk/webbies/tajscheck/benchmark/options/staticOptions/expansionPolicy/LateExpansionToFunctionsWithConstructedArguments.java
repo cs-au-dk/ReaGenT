@@ -66,9 +66,9 @@ public class LateExpansionToFunctionsWithConstructedArguments implements Expansi
         }
         SpecInstantiator instantiator = typeTester.getValueHandler().getInstantiator();
         Predicate<TypeWithContext> whiteList = subType ->
-                instantiator.getFeedbackValue(subType.getType(), subType.getTypeContext()) != null ||
-                        argumentsThatAreConstructedAnyway.contains(subType) ||
-                        instantiator.getNativesInstantiator().shouldConstructAsNative(subType.getType());
+                instantiator.getNativesInstantiator().shouldConstructAsNative(subType.getType()) ||
+                argumentsThatAreConstructedAnyway.contains(subType) ||
+                instantiator.getFeedbackValue(subType.getType(), subType.getTypeContext()) != null;
 
         return type.accept(new CanEasilyConstructVisitor(typeContext, typeTester.getBenchmarkInfo(), whiteList));
     }
