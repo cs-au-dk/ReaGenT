@@ -47,6 +47,230 @@
     {
       "path": "Emitter.new(object).hasListeners",
       "comment": "PrecisionIssue6"
+    },
+    {
+      "path": "Emitter.new(object).emit",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().on(string,obj).off",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().emit(string,...any).on",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().once",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().once(string,obj).listeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(undefined,undefined).emit",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().emit(string,...any).listeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off().once",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().emit(string,...any).hasListeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().once(string,obj).on",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,obj).listeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().once(string,obj).emit",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().on(string,obj).hasListeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(undefined,undefined).on",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off().on",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string).emit",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,obj).once",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off().off",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().emit(string,...any).emit",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().on(string,obj).once",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,undefined).listeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off().emit",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string).on",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().once(string,obj).off",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,obj).emit",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,undefined).off",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string).listeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().hasListeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,undefined).once",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(undefined,undefined).hasListeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().on",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().emit",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().on(string,obj).listeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,obj).off",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string).off",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string).once",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,obj).on",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,undefined).hasListeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off().listeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter(object).emit",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(undefined,undefined).once",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().listeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().emit(string,...any).once",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().emit(string,...any).off",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().on(string,obj).emit",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,obj).hasListeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off().hasListeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(undefined,undefined).off",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string).hasListeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(undefined,undefined).listeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,undefined).emit",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().once(string,obj).once",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().on(string,obj).on",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().once(string,obj).hasListeners",
+      "comment": "Spurious undef"
+    },
+    {
+      "path": "Emitter().off(string,undefined).on",
+      "comment": "Spurious undef"
     }
   ]
 }

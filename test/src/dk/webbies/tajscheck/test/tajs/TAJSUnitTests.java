@@ -2070,10 +2070,6 @@ public class TAJSUnitTests {
         assert result.detectedViolations.asMap().values().iterator().next().iterator().next().toString().contains("Bool");
     }
 
-
-
-    // TODO: When materializing, continue with the prototype.
-
     // TODO: Should receiver of methodCall get filtered?
 
     // TODO: Warning that our tool does not support class extensions.

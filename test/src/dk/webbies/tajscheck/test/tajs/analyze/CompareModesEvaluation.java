@@ -86,6 +86,17 @@ public class CompareModesEvaluation {
         printPaperTable(table);
     }
 
+    @Test
+    public void allAssumptionsOnFixed() {
+        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(Benchmark::possilyPatched).collect(Collectors.toList()));
+
+        experiment.addExperiment(experiment("all-assumptions", modes.get("all-assumptions")));
+
+        Table table = experiment.calculate("fixed.csv");
+
+        printPaperTable(table);
+    }
+
     private void printPaperTable(Table table) {
         List<List<String>> result = new ArrayList<>();
 

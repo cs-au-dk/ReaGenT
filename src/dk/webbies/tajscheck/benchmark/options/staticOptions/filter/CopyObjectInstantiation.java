@@ -16,6 +16,7 @@ import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
 import dk.webbies.tajscheck.tajstester.TajsTypeChecker;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Util;
 
@@ -29,7 +30,11 @@ import static dk.brics.tajs.util.Collections.newMap;
 
 public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFilter, TypeVisitorWithArgument<Value, CopyObjectInstantiation.Arg> {
 
+    // splitting the value, but keeping the objects in one lump.
     public static List<Value> split(Value v) {
+        if (v.isNone()) {
+            return Collections.emptyList();
+        }
         if (v.restrictToNotObject().isNone()) {
             return Collections.singletonList(v);
         }
@@ -53,7 +58,11 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
                 .join(
                         Value.makeObject(labels.stream().filter(Util.not(
                                 label -> {
-                                    if (label.getHostObject() instanceof CopiedObjectLabel && ((CopiedObjectLabel) label.getHostObject()).type.equals(type)) {
+                                    if (
+                                            label.toString().equals("@Object.prototype[native]") ||
+                                            label.toString().equals("@Function.prototype[native]") ||
+                                            label.getHostObject() instanceof CopiedObjectLabel && ((CopiedObjectLabel) label.getHostObject()).type.equals(type)
+                                    ) {
                                         filteredAwayObjectLabels.add(label);
                                         return true;
                                     }  else {
@@ -70,14 +79,11 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
                 return null;
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
-        if (results.isEmpty()) {
+        Value resultValue = Value.join(results).join(Value.makeObject(filteredAwayObjectLabels));
+        if (resultValue.isNone()) {
             throw new NoSuchTypePossible();
         }
-        if (filteredAwayObjectLabels.isEmpty()) {
-            return Value.join(results);
-        } else {
-            return Value.join(results).join(Value.makeObject(filteredAwayObjectLabels));
-        }
+        return resultValue;
     }
 
     public static final class NoSuchTypePossible extends RuntimeException {
@@ -291,7 +297,18 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
 
     @Override
     public Value visit(UnionType t, Arg arg) {
-        throw new RuntimeException();
+        List<Value> possibleValues = t.getElements().stream().map(element -> {
+            try {
+                return filter(element, arg);
+            } catch (NoSuchTypePossible e) {
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+        if (possibleValues.isEmpty()) {
+            throw new NoSuchTypePossible();
+        } else {
+            return Value.join(possibleValues);
+        }
     }
 
     @Override
