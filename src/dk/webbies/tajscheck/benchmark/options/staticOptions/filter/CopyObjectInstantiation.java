@@ -163,11 +163,6 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         ObjectLabel label = ObjectLabel.make(new CopiedObjectLabel(orgLabels, new TypeWithContext(t, arg.context)), orgLabels.iterator().next().getKind());
         if (!c.getState().getStore().containsKey(label)) {
             c.getState().newObject(label); // this takes care of summarizing old objects (of which there are always none...)
-            Obj tempObject = c.getState().getObject(label, true);
-            tempObject.setInternalPrototype(Value.makeNull());
-            tempObject.setDefaultNonArrayProperty(Value.makeAbsent());
-            tempObject.setDefaultArrayProperty(Value.makeAbsent());
-            tempObject.setInternalValue(Value.makeAbsent());
         }
 
         if (c.getState().getObject(label, false).getInternalPrototype() == null) {
