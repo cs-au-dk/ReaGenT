@@ -1,10 +1,14 @@
 package dk.webbies.tajscheck.benchmark.options.staticOptions;
 
+import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandImmediatelyPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpansionPolicy;
 import dk.webbies.tajscheck.util.Util;
+
+import java.util.function.Function;
 
 import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.*;
 import static dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator.*;
@@ -24,7 +28,7 @@ public class StaticOptions implements OptionsI {
     public final ExpansionPolicy expansionPolicy;
     public final boolean propagateStateFromFailingTest;
     public final boolean properWidthSubtyping;
-    public final ArgumentValuesStrategy argumentValuesStrategy;
+    public final Function<TypeWithContext, ArgumentValuesStrategy> argumentValuesStrategy;
     public final boolean checkAllPropertiesAfterFunctionCall;
     public final boolean useInspector;
     public final boolean useValuesWithMismatches;
@@ -37,7 +41,8 @@ public class StaticOptions implements OptionsI {
     public enum ArgumentValuesStrategy {
         MIX_FEEDBACK_AND_CONSTRUCTED,
         ONLY_CONSTRUCTED, // <- except if BenchmarkInfo::shouldConstruct states that the type cannot be constructed, then a feedback-value is used.
-        FEEDBACK_IF_POSSIBLE
+        FEEDBACK_IF_POSSIBLE,
+        FORCE_FEEDBACK,
     }
 
 
@@ -81,7 +86,7 @@ public class StaticOptions implements OptionsI {
         private RetractionPolicy retractionPolicy = new NoRetractPolicy();
         private ExpansionPolicy expansionPolicy = new ExpandImmediatelyPolicy();
         private boolean propagateStateFromFailingTest = false;
-        private ArgumentValuesStrategy argumentValuesStrategy = MIX_FEEDBACK_AND_CONSTRUCTED;
+        private Function<TypeWithContext, ArgumentValuesStrategy> argumentValuesStrategy = t -> MIX_FEEDBACK_AND_CONSTRUCTED;
         private boolean properWidthSubtyping = false;
         private boolean checkAllPropertiesAfterFunctionCall = false; // then we run through all the PropertyReadTests after a function-call, to see if it had any harmful side-effects.
         private boolean useInspector = false;
@@ -148,6 +153,11 @@ public class StaticOptions implements OptionsI {
         }
 
         public Builder setArgumentValuesStrategy(ArgumentValuesStrategy argumentValuesStrategy) {
+            this.argumentValuesStrategy = t -> argumentValuesStrategy;
+            return this;
+        }
+
+        public Builder setArgumentValuesStrategy(Function<TypeWithContext, ArgumentValuesStrategy> argumentValuesStrategy) {
             this.argumentValuesStrategy = argumentValuesStrategy;
             return this;
         }

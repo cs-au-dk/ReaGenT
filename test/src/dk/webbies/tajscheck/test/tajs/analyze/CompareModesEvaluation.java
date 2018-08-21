@@ -5,14 +5,10 @@ import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandImmediatelyPolicy;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.filter.CopyObjectInstantiation;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
-import dk.webbies.tajscheck.test.experiments.AutomaticExperiments;
 import dk.webbies.tajscheck.test.experiments.Experiment;
 import dk.webbies.tajscheck.test.experiments.Table;
-import dk.webbies.tajscheck.test.flow.FlowBenchmarks;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Test;
 
@@ -43,7 +39,7 @@ public class CompareModesEvaluation {
 
         put("all-assumptions", options -> options.staticOptions);
 
-        put("width-subtyping", options -> options.staticOptions.setProperWidthSubtyping(true));
+        put("width-subtyping", options -> options.staticOptions.setProperWidthSubtyping(true).setWidthSubtpyingIncludesAllObjects(true));
         put("no-safe-strings", options -> options.staticOptions.setBetterAnyString(false));
         put("no-prefer-lib-values", options -> options.staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED));
 
@@ -58,7 +54,10 @@ public class CompareModesEvaluation {
         );
         put("MGC",
                 options ->
-                        options.staticOptions
+                        options
+                                .setWriteAll(true) // this is part of required assumption. Now we break it.
+                        .staticOptions
+                                .setWidthSubtpyingIncludesAllObjects(true) // destroy everything!
                                 .setProperWidthSubtyping(true)
                                 .setBetterAnyString(false)
                                 .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
@@ -87,12 +86,83 @@ public class CompareModesEvaluation {
     }
 
     @Test
+    public void allAssumptions() {
+        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
+
+        experiment.addExperiment(experiment("all-assumptions", modes.get("all-assumptions")));
+
+        Table table = experiment.calculate("fixed.csv");
+
+        printPaperTable(table);
+    }
+
+    @Test
     public void allAssumptionsOnFixed() {
         Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(Benchmark::possilyPatched).collect(Collectors.toList()));
 
         experiment.addExperiment(experiment("all-assumptions", modes.get("all-assumptions")));
 
         Table table = experiment.calculate("fixed.csv");
+
+        printPaperTable(table);
+    }
+
+    @Test
+    public void newWidthSubtyping() {
+        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
+
+        experiment.addExperiment(experiment("width-subtyping-new", modes.get("width-subtyping").andThen(options -> options.setWidthSubtpyingIncludesAllObjects(true))));
+
+        Table table = experiment.calculate("new-width.csv");
+
+        printPaperTable(table);
+    }
+
+    /*
+    Comparison of RMGC variants. Each column contains: action-coverage / violations / time / scales
+    Library|no-assumptions
+    Classnames|50,0% / 0 / 9,4 / NO
+    component-emitter|47,8% / 0 / 3,1 / NO
+    js-cookie|100,0% / 2 / 66,2 / YES
+    loglevel|100,0% / 7 / 40,4 / YES
+    Mime|100,0% / 0 / 118,8 / YES
+    PathJS|91,5% / 5 / 1644,8 / NO
+    Platform.js|100,0% / 0 / 181,3 / YES
+    PleaseJS|100,0% / 6 / 154,4 / YES
+    pluralize|100,0% / 0 / 34,1 / YES
+    uuid|100,0% / 6 / 109,0 / YES
+    Average|88.92999999999999 / 2.6 / 236.15 / 0.0
+     */
+    @Test
+    public void noAssumptionsOnFixed() {
+        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(Benchmark::possilyPatched).collect(Collectors.toList()));
+
+        experiment.addExperiment(experiment("no-assumptions", modes.get("no-assumptions")));
+
+        Table table = experiment.calculate("fixed-no-assumptions.csv");
+
+        printPaperTable(table);
+    }
+
+
+    @Test // no extra violations.
+    public void noPreferLibValueOnFixed() {
+        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(Benchmark::possilyPatched).collect(Collectors.toList()));
+
+        experiment.addExperiment(experiment("no-prefer-lib-values", modes.get("no-prefer-lib-values")));
+
+        Table table = experiment.calculate("fixed-no-prefer-lib.csv");
+
+        printPaperTable(table);
+    }
+
+    @Test
+    public void mgcOnFixed() {
+        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(Benchmark::possilyPatched).collect(Collectors.toList()));
+
+        experiment.addExperiment(experiment("MGC", modes.get("MGC")));
+
+        Table table = experiment.calculate("fixed-MGC.csv");
 
         printPaperTable(table);
     }

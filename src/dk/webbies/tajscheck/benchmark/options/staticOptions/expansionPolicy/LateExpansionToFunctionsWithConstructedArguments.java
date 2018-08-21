@@ -56,18 +56,18 @@ public class LateExpansionToFunctionsWithConstructedArguments implements Expansi
 
     private boolean hasEasilyConstructedArguments(FunctionTest test, TajsTypeTester typeTester) {
         return test.getParameters().stream()
-                .map(type -> this.isEasilyConstructType(type, test.getTypeContext(), typeTester))
+                .map(type -> this.isEasilyConstructType(type, test.getTypeContext(), typeTester, argumentsThatAreConstructedAnyway))
                 .reduce(true, Boolean::logicalAnd);
     }
 
-    private boolean isEasilyConstructType(Type type, TypeContext typeContext, TajsTypeTester typeTester) {
+    public static boolean isEasilyConstructType(Type type, TypeContext typeContext, TajsTypeTester typeTester, Set<TypeWithContext> isConstructable) {
         if (!typeTester.getBenchmarkInfo().shouldConstructType(type)) {
             return false; // if we cannot construct it, it is not a constructed type.
         }
         SpecInstantiator instantiator = typeTester.getValueHandler().getInstantiator();
         Predicate<TypeWithContext> whiteList = subType ->
                 instantiator.getNativesInstantiator().shouldConstructAsNative(subType.getType()) ||
-                argumentsThatAreConstructedAnyway.contains(subType) ||
+                isConstructable.contains(subType) ||
                 instantiator.getFeedbackValue(subType.getType(), subType.getTypeContext()) != null;
 
         return type.accept(new CanEasilyConstructVisitor(typeContext, typeTester.getBenchmarkInfo(), whiteList));

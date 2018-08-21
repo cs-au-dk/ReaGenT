@@ -8,6 +8,7 @@ import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.*;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments.CanEasilyConstructVisitor;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.filter.CopyObjectInstantiation;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
@@ -18,16 +19,11 @@ import dk.webbies.tajscheck.util.Util;
 import org.apache.log4j.Logger;
 
 import java.util.*;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.*;
-import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE;
-import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED;
-import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED;
+import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.*;
 import static java.util.Collections.singletonList;
 
 public class SpecInstantiator {
@@ -304,17 +300,21 @@ public class SpecInstantiator {
     }
 
     Value instantiate(Type type, MiscInfo info, String step) {
+        StaticOptions.ArgumentValuesStrategy argumentValuesStrategy = this.info.options.staticOptions.argumentValuesStrategy.apply(new TypeWithContext(type, info.context));
         if (!this.info.shouldConstructType(type) && !nativesInstantiator.shouldConstructAsNative(type)) {
             Value feedbackValue = getFeedbackValue(type, info.context);
-            if (feedbackValue == null || this.info.options.staticOptions.argumentValuesStrategy == ONLY_CONSTRUCTED) {
+            if (feedbackValue == null || argumentValuesStrategy == ONLY_CONSTRUCTED) {
                 throw new CannotConstructType(); // this will be catched by the top-most construction method.
             }
             return feedbackValue;
         }
-        if (this.info.options.staticOptions.argumentValuesStrategy == FEEDBACK_IF_POSSIBLE && !nativesInstantiator.shouldConstructAsNative(type) && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
+        if (argumentValuesStrategy == FEEDBACK_IF_POSSIBLE || argumentValuesStrategy == FORCE_FEEDBACK && !nativesInstantiator.shouldConstructAsNative(type) && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
             Value feedbackValue = getFeedbackValue(type, info.context);
             if (feedbackValue != null) {
                 return feedbackValue;
+            }
+            if (argumentValuesStrategy == FORCE_FEEDBACK) {
+                throw new CannotConstructType();
             }
         }
 
@@ -378,7 +378,7 @@ public class SpecInstantiator {
 
         assert !result.isNone();
 
-        if (this.info.options.staticOptions.argumentValuesStrategy == MIX_FEEDBACK_AND_CONSTRUCTED && !nativesInstantiator.shouldConstructAsNative(type) && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
+        if (argumentValuesStrategy == MIX_FEEDBACK_AND_CONSTRUCTED && !nativesInstantiator.shouldConstructAsNative(type) && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
             Value feedbackValue = getFeedbackValue(type, info.context);
             if (feedbackValue != null) {
                 result = result.join(feedbackValue);
@@ -424,7 +424,7 @@ public class SpecInstantiator {
                 if (nativesInstantiator.shouldConstructAsNative(subType.getType())) {
                     return true;
                 }
-                if (getFeedbackValue(subType.getType(), subType.getTypeContext()) != null && this.info.options.staticOptions.argumentValuesStrategy != ONLY_CONSTRUCTED) {
+                if (getFeedbackValue(subType.getType(), subType.getTypeContext()) != null && this.info.options.staticOptions.argumentValuesStrategy.apply(subType) != ONLY_CONSTRUCTED) {
                     return true;
                 }
                 if (!this.info.shouldConstructType(subType.getType())) {
@@ -538,6 +538,9 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(InterfaceType t, MiscInfo info) {
+            if (t.getDeclaredProperties().keySet().contains("foo")) {
+                System.out.println();
+            }
             if (SpecInstantiator.this.info.freeGenericsFinder.hasThisTypes(t)) {
                 info = info.withContext(info.context.withThisType(t));
             }

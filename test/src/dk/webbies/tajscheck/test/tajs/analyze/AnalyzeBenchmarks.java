@@ -7,6 +7,7 @@ import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetrac
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.filter.CopyObjectInstantiation;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.preferlibvalues.PreferLibValuesPolicy;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.testcreator.test.check.Check;
@@ -137,36 +138,36 @@ public class AnalyzeBenchmarks extends TestCase {
     }
 
     public static Function<CheckOptions.Builder, StaticOptions.Builder> options() {
-        Function<CheckOptions.Builder, StaticOptions.Builder> analysisOptions = options -> options
-                .setCombineNullAndUndefined(true) // because no-one cares.
+        return options -> {
+            PreferLibValuesPolicy preferLibValuesPolicy = new PreferLibValuesPolicy();
+            return options
+                    .setCombineNullAndUndefined(true) // because no-one cares.
 
-                .setConstructClassInstances(true) // due to our expansion-policy, this should only happen rarely.
-                // same as default, but just to be explicit about it.
-                .setConstructClassTypes(false)
-                .setConstructAllTypes(false)
+                    .setConstructClassInstances(true) // due to our expansion-policy, this should only happen rarely.
+                    // same as default, but just to be explicit about it.
+                    .setConstructClassTypes(false)
+                    .setConstructAllTypes(false)
 
-                .setWritePrimitives(true)
+                    .setWritePrimitives(true)
 
-                .staticOptions
+                    .staticOptions
                     .setKillGetters(true) // because getters currently causes the analysis to loop. // TODO: Still?
                     .setBetterAnyString(true) // left == bad any-str, right == better any-str.
                     .setRetractionPolicy(new LimitTransfersRetractionPolicy(100000, 0))
 
-                    .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
-                    .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
-
                     // the old strong-mode/NO-CHECK-TYPE
                     .setUseValuesWithMismatches(true)
                     .setPropagateStateFromFailingTest(true)
-                    .setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE)
-                    .setExpansionPolicy(new LateExpansionToFunctionsWithConstructedArguments())
+
+                    // The new prefer lib values thinghy. That determines only based on types.
+                    .setArgumentValuesStrategy(preferLibValuesPolicy::getArgumentStrategy)
+                    .setExpansionPolicy(preferLibValuesPolicy)
 
 
                     // materialize new values satisfying the types.
                     .setInstantiationFilter(new CopyObjectInstantiation()
-                );
-
-        return analysisOptions;
+                    );
+        };
     }
 
     @Test(timeout = (int)(BENCHMARK_TIMEOUT * 1000 * 1.3))

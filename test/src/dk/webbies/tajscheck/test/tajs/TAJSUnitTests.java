@@ -11,6 +11,7 @@ import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetrac
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.filter.CopyObjectInstantiation;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.preferlibvalues.PreferLibValuesPolicy;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
@@ -2079,11 +2080,29 @@ public class TAJSUnitTests {
 
     }
 
+    @Test
+    public void newDecidingLibraryConstructedAlgo() throws Exception {
+        PreferLibValuesPolicy preferLibValuesPolicy = new PreferLibValuesPolicy();
+        TajsAnalysisResults result = run("newDecidingLibraryConstructedAlgo", options().staticOptions.setArgumentValuesStrategy(preferLibValuesPolicy::getArgumentStrategy).setExpansionPolicy(preferLibValuesPolicy));
 
-    // TODO: Subtyping is handled soundly by including the allocation-sites of supertypes when creating the new abstract objects.
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
 
-    // TODO: setWidthSubtpyingIncludesAllObjects in CompareModesEvaluation! (See how it behaves on the fixed first).
+    @Test
+    public void preferLibValuesInWaves() throws Exception {
+        PreferLibValuesPolicy preferLibValuesPolicy = new PreferLibValuesPolicy();
+        TajsAnalysisResults result = run("preferLibValuesInWaves", options().staticOptions.setArgumentValuesStrategy(preferLibValuesPolicy::getArgumentStrategy).setExpansionPolicy(preferLibValuesPolicy));
+
+        expect(result)
+                .performedAllTests()
+                .hasNoViolations();
+    }
+
+    // TODO: expand on waves in the above.
     // TODO: other algorithm for deciding library/client-constructed values.
+    // TODO: setWidthSubtpyingIncludesAllObjects in CompareModesEvaluation! (See how it behaves on the fixed first).
 
     // TODO: Should receiver of methodCall get filtered?
 
