@@ -2070,6 +2070,21 @@ public class TAJSUnitTests {
         assert result.detectedViolations.asMap().values().iterator().next().iterator().next().toString().contains("Bool");
     }
 
+    @Test
+    public void widthSubtypingDoesntLeak() throws Exception {
+        TajsAnalysisResults result = run("widthSubtypingDoesntLeak", options().staticOptions.setProperWidthSubtyping(true).setWidthSubtpyingIncludesAllObjects(true));
+
+        expect(result)
+                .hasNoViolations();
+
+    }
+
+
+    // TODO: Subtyping is handled soundly by including the allocation-sites of supertypes when creating the new abstract objects.
+
+    // TODO: setWidthSubtpyingIncludesAllObjects in CompareModesEvaluation! (See how it behaves on the fixed first).
+    // TODO: other algorithm for deciding library/client-constructed values.
+
     // TODO: Should receiver of methodCall get filtered?
 
     // TODO: Warning that our tool does not support class extensions.

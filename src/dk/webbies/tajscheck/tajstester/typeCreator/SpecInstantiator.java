@@ -56,6 +56,7 @@ public class SpecInstantiator {
 
     private Value defaultAnyString;
     private NativesInstantiator nativesInstantiator;
+    private UnionType anyType;
 
     public SpecInstantiator(Solver.SolverInterface c, BenchmarkInfo info, TypeValuesHandler valueHandler, TajsTypeTester tajsTypeTester) {
         this.global = info.getSpec().getGlobal();
@@ -100,8 +101,8 @@ public class SpecInstantiator {
     private void initAny() {
         InterfaceType anyObj = SpecReader.makeEmptySyntheticInterfaceType();
 
-        UnionType any = new UnionType();
-        any.setElements(Arrays.asList(
+        this.anyType = new UnionType();
+        anyType.setElements(Arrays.asList(
                 anyObj,
                 new SimpleType(SimpleTypeKind.String),
                 new SimpleType(SimpleTypeKind.Number),
@@ -112,7 +113,7 @@ public class SpecInstantiator {
                 new SimpleType(SimpleTypeKind.Object))
         );
 
-        anyObj.setDeclaredStringIndexType(any);
+        anyObj.setDeclaredStringIndexType(anyType);
         Signature signature = new Signature();
         signature.setHasRestParameter(true);
 
@@ -124,17 +125,32 @@ public class SpecInstantiator {
         anyParameter.setName("any");
         anyParameter.setType(anyArray);
         signature.setMinArgumentCount(0);
-        signature.setResolvedReturnType(any);
+        signature.setResolvedReturnType(anyType);
         signature.setParameters(Collections.singletonList(anyParameter));
 
         anyObj.getDeclaredCallSignatures().add(signature);
         anyObj.getDeclaredConstructSignatures().add(signature);
 
         info.typeNames.put(anyObj, "any-obj");
-        info.typeNames.put(any, "any");
+        info.typeNames.put(anyType, "any");
 
-        this.any = instantiate(any, new MiscInfo("any", TypeContext.create(info), null), "theAny");
+        this.any = instantiate(anyType, new MiscInfo("any", TypeContext.create(info), null), "theAny");
     }
+
+
+
+    public Value getTheAny(boolean anyIncludesAllObjects) {
+        if (any == null) {
+            initAny();
+        }
+        if (anyIncludesAllObjects) {
+            Value allObjects = Value.makeObject(c.getState().getStore().keySet());
+            return any.join(allObjects);
+        } else {
+            return any;
+        }
+    }
+
 
     private TypeWithContext resolveType(List<String> path) {
         TypeWithContext root = new TypeWithContext(global, TypeContext.create(info));
@@ -259,6 +275,11 @@ public class SpecInstantiator {
     }
 
     private ObjectLabel getObjectLabel(Type type, MiscInfo info) {
+//        List<TypeWithContext> subTypes = new ArrayList<>();
+//        this.info.typesUtil.forAllSubTypes(type, info.context, subTypes::add);
+//        if (subTypes.size() > 1 && !nativesInstantiator.shouldConstructAsNative(type)) {
+//            System.out.println();
+//        }
         TypeWithContext key = new TypeWithContext(type, info.context);
         if (!labelCache.containsKey(key)) {
             ObjectLabel label;
@@ -478,13 +499,6 @@ public class SpecInstantiator {
         return Value.makeObject(label);
     }
 
-    public Value getTheAny() {
-        if (any == null) {
-            initAny();
-        }
-        return any;
-    }
-
     public void clearValueCache() {
         valueCache.clear();
     }
@@ -562,7 +576,7 @@ public class SpecInstantiator {
                 writeProperties(label, declaredProperties, info);
 
                 if (type.getDeclaredStringIndexType() == null && SpecInstantiator.this.info.options.staticOptions.properWidthSubtyping) {
-                    effects.writeStringIndexer(label, getTheAny());
+                    effects.writeStringIndexer(label, getTheAny(SpecInstantiator.this.info.options.staticOptions.widthSubtpyingIncludesAllObjects));
                 }
             });
         }
@@ -594,7 +608,7 @@ public class SpecInstantiator {
         public Value visit(SimpleType t, MiscInfo info) {
             switch (t.getKind()) {
                 case Any:
-                    return getTheAny();
+                    return getTheAny(false);
                 case String:
                     return makeString();
                 case Enum:

@@ -80,7 +80,7 @@ public class TypedSymbolicFunctionEvaluator {
 
         if (type instanceof SimpleType && ((SimpleType) type).getKind() == SimpleTypeKind.Any || ((SpecObjects.TypedObject) hostObject).asText().startsWith("any.")) {
 //            Exceptions.throwException(c.getState().clone(), valueHandler.getTheAny(), c, c.getNode());
-            return valueHandler.getTheAny();
+            return valueHandler.getInstantiator().getTheAny(false);
         }
 
         if (!(type instanceof InterfaceType) && !(type instanceof ClassType)) {

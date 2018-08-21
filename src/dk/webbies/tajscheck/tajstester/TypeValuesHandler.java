@@ -34,10 +34,6 @@ public class TypeValuesHandler {
         this.instantiator = new SpecInstantiator(c, info, this, tajsTypeTester);
     }
 
-    public Value getTheAny() {
-        return instantiator.getTheAny();
-    }
-
     public Value findFeedbackValue(TypeWithContext t) {
         List<Value> result = typeValueMap.get(t).stream().map(Reference::getValue).filter(Objects::nonNull).collect(Collectors.toList());
         if (result.isEmpty()) {

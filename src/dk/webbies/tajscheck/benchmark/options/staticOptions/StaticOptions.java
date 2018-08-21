@@ -31,6 +31,7 @@ public class StaticOptions implements OptionsI {
     public final boolean ignoreMaybeUndefined;
     public final boolean callbacksAreMGC;
     public final boolean ignoreTypeDecs;
+    public final boolean widthSubtpyingIncludesAllObjects;
     public final InstantiationFilter instantiationFilter;
 
     public enum ArgumentValuesStrategy {
@@ -59,6 +60,7 @@ public class StaticOptions implements OptionsI {
         this.callbacksAreMGC = builder.callbacksAreMGC;
         this.ignoreTypeDecs = builder.ignoreTypeDecs;
         this.instantiationFilter = builder.instantiationFilter;
+        this.widthSubtpyingIncludesAllObjects = builder.widthSubtpyingIncludesAllObjects;
         this.builder = builder;
 
         if (useValuesWithMismatches && !propagateStateFromFailingTest) {
@@ -86,6 +88,7 @@ public class StaticOptions implements OptionsI {
         private boolean useValuesWithMismatches = false;
         private boolean ignoreMaybeUndefined = false;
         private boolean callbacksAreMGC = true;
+        private boolean widthSubtpyingIncludesAllObjects = false;
         private boolean ignoreTypeDecs = false; // if true, ALL methods will be called with the "any" type.
         private InstantiationFilter instantiationFilter = (t, v, c, i) -> v;
 
@@ -116,6 +119,11 @@ public class StaticOptions implements OptionsI {
 
         public Builder setCallbacksAreMGC(boolean callbacksAreMGC) {
             this.callbacksAreMGC = callbacksAreMGC;
+            return this;
+        }
+
+        public Builder setWidthSubtpyingIncludesAllObjects(boolean widthSubtpyingIncludesAllObjects) {
+            this.widthSubtpyingIncludesAllObjects = widthSubtpyingIncludesAllObjects;
             return this;
         }
 
