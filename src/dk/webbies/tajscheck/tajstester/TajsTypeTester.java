@@ -445,8 +445,12 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 .collect(Collectors.toList());
     }
 
+    private Set<WorkList<Context>.Entry> entriesToSkip = new HashSet<>();
     @Override
     public boolean shouldSkipEntry(WorkList<Context>.Entry e) {
+        if (entriesToSkip.contains(e)) {
+            return true;
+        }
         if (sensitivity != null && TesterContextSensitivity.isTestContext(e.getContext())) {
             Test test = sensitivity.getTest(e.getContext());
             return retractionPolicy.isRetracted(test) || retractionPolicy.isTimeout(test) || exceptionsEncountered.containsKey(test);
@@ -463,6 +467,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             return true;
         }
         exceptionsEncountered.put(null, e);
+        entriesToSkip.add(p);
         return true; // Still try to recover.
     }
 
