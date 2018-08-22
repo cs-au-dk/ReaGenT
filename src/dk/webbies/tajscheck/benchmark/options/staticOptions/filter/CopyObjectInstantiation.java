@@ -245,7 +245,7 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         return Value.join(labels.stream().map(label -> foo.apply(label, state.getObject(label, false))).collect(Collectors.toList()));
     }
 
-    private boolean hasNothingNew(Value newValue, Value existing, State state) {
+    public static boolean hasNothingNew(Value newValue, Value existing, State state) {
         if (newValue == null || existing == null) {
             return newValue == null && existing == null;
         }

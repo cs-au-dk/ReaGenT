@@ -4,12 +4,9 @@ import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.DelayAllTestsExpansionPolicy;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandOneAtATimeWhenWorkListEmpty;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.FixedExpansionOrder;
+import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.*;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.filter.CopyObjectInstantiation;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.preferlibvalues.PreferLibValuesPolicy;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
@@ -2100,8 +2097,14 @@ public class TAJSUnitTests {
                 .hasNoViolations();
     }
 
-    // TODO: expand on waves in the above.
-    // TODO: other algorithm for deciding library/client-constructed values.
+    @Test(timeout = 60 * 1000)
+    public void anotherInfiniteLoop() throws Exception {
+        run("anotherInfiniteLoop", options().setWriteAll(true));
+
+
+    }
+
+    // TODO: I did some delta-debugging. The result of that.
     // TODO: setWidthSubtpyingIncludesAllObjects in CompareModesEvaluation! (See how it behaves on the fixed first).
 
     // TODO: Should receiver of methodCall get filtered?

@@ -347,7 +347,11 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
     public Boolean visit(PropertyWriteTest test) {
         Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(), test.getTypeContext()));
         for (ObjectLabel label : baseValue.getObjectLabels()) {
-            pv.writeProperty(label, test.getProperty(), valueHandler.createValue(test.getToWrite(), test.getTypeContext()));
+            Value previous = UnknownValueResolver.getProperty(label, PKey.StringPKey.make(test.getProperty()), c.getState(), false);
+            Value newValue = valueHandler.createValue(test.getToWrite(), test.getTypeContext());
+            if (!CopyObjectInstantiation.hasNothingNew(newValue, previous, c.getState())) {
+                pv.writeProperty(label, test.getProperty(), newValue);
+            }
         }
         return true;
     }
