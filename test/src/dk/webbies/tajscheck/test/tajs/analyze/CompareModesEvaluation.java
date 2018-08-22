@@ -9,6 +9,7 @@ import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.test.experiments.Experiment;
 import dk.webbies.tajscheck.test.experiments.Table;
+import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Test;
 
@@ -35,40 +36,55 @@ public class CompareModesEvaluation {
             "uuid"
     );
 
-    public static final Map<String, Function<CheckOptions.Builder, StaticOptions.Builder>> modes = new LinkedHashMap<>(){{
+    public static final Map<String, Pair<Function<Benchmark, Benchmark>, Function<CheckOptions.Builder, StaticOptions.Builder>>> modes = new LinkedHashMap<>(){{
 
-        put("all-assumptions", options -> options.staticOptions);
+        put("all-assumptions", new Pair<>(Function.identity(), options -> options.staticOptions));
 
-        put("width-subtyping", options -> options.staticOptions.setProperWidthSubtyping(true).setWidthSubtpyingIncludesAllObjects(true));
-        put("no-safe-strings", options -> options.staticOptions.setBetterAnyString(false));
-        put("no-prefer-lib-values", options -> options.staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED));
+        put("width-subtyping", new Pair<>(Function.identity(), options -> options.staticOptions.setProperWidthSubtyping(true).setWidthSubtpyingIncludesAllObjects(true)));
+        put("no-safe-strings", new Pair<>(Function.identity(), options -> options.staticOptions.setBetterAnyString(false)));
+        put("no-prefer-lib-values", new Pair<>(Function.identity(), options -> options.staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)));
 
 
-        put("no-assumptions",
+        put("no-assumptions", new Pair<>(Function.identity(),
                 options ->
                         options.staticOptions
                                 .setProperWidthSubtyping(true)
                                 .setBetterAnyString(false)
                                 .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
-
+                )
         );
-        put("MGC",
-                options ->
+        put("MGC", new Pair<>(Function.identity(), options ->
+                options
+                        .setWriteAll(true) // this is part of required assumption. Now we break it.
+                        .staticOptions
+                        .setWidthSubtpyingIncludesAllObjects(true) // destroy everything!
+                        .setProperWidthSubtyping(true)
+                        .setBetterAnyString(false)
+                        .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
+                        .setIgnoreTypeDecs(true) // making it quite close to an MGC.
+                )
+        );
+
+        put("all-assumptions-fixed", new Pair<>(Benchmark::possilyPatched, options -> options.staticOptions));
+        put("no-assumptions-fixed", new Pair<>(Benchmark::possilyPatched,
+                        options ->
+                                options.staticOptions
+                                        .setProperWidthSubtyping(true)
+                                        .setBetterAnyString(false)
+                                        .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
+                )
+        );
+        put("MGC-fixed", new Pair<>(Benchmark::possilyPatched, options ->
                         options
                                 .setWriteAll(true) // this is part of required assumption. Now we break it.
-                        .staticOptions
+                                .staticOptions
                                 .setWidthSubtpyingIncludesAllObjects(true) // destroy everything!
                                 .setProperWidthSubtyping(true)
                                 .setBetterAnyString(false)
                                 .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
                                 .setIgnoreTypeDecs(true) // making it quite close to an MGC.
-
+                )
         );
-
-        new HashSet<>(entrySet()).forEach(entry -> {
-            Function<CheckOptions.Builder, StaticOptions.Builder> value = entry.getValue();
-            put(entry.getKey(), AnalyzeBenchmarks.options().andThen(options -> value.apply(options.getOuterBuilder())));
-        });
     }};
 
 
@@ -103,17 +119,6 @@ public class CompareModesEvaluation {
         experiment.addExperiment(experiment("all-assumptions", modes.get("all-assumptions")));
 
         Table table = experiment.calculate("fixed.csv");
-
-        printPaperTable(table);
-    }
-
-    @Test
-    public void newWidthSubtyping() {
-        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
-
-        experiment.addExperiment(experiment("width-subtyping-new", modes.get("width-subtyping").andThen(options -> options.setWidthSubtpyingIncludesAllObjects(true))));
-
-        Table table = experiment.calculate("new-width.csv");
 
         printPaperTable(table);
     }
@@ -271,9 +276,10 @@ public class CompareModesEvaluation {
         return result;
     }
 
-    private static BiConsumer<Benchmark, BiConsumer<String, String>> experiment(String prefix, Function<CheckOptions.Builder, StaticOptions.Builder> optionsTransformer) {
+    private static BiConsumer<Benchmark, BiConsumer<String, String>> experiment(String prefix, Pair<Function<Benchmark, Benchmark>, Function<CheckOptions.Builder, StaticOptions.Builder>> optionsTransformer) {
         return (benchmark, register) -> {
-            benchmark = benchmark.withOptions(AnalyzeBenchmarks.options().andThen(options -> optionsTransformer.apply(options.getOuterBuilder())));
+            benchmark = optionsTransformer.getLeft().apply(benchmark);
+            benchmark = benchmark.withOptions(AnalyzeBenchmarks.options().andThen(options -> optionsTransformer.getRight().apply(options.getOuterBuilder())));
 
             BenchmarkInfo.create(benchmark); // <- Just populating cache.
 
