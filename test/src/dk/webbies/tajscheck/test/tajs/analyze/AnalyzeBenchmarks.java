@@ -152,7 +152,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
                     .staticOptions
                     .setKillGetters(true) // because getters currently causes the analysis to loop. // TODO: Still?
-                    .setBetterAnyString(true) // left == bad any-str, right == better any-str.
+                    .setBetterAnyString(true)
                     .setRetractionPolicy(new LimitTransfersRetractionPolicy(100000, 0))
 
                     // the old strong-mode/NO-CHECK-TYPE
