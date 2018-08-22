@@ -65,26 +65,9 @@ public class CompareModesEvaluation {
                 )
         );
 
-        put("all-assumptions-fixed", new Pair<>(Benchmark::possilyPatched, options -> options.staticOptions));
-        put("no-assumptions-fixed", new Pair<>(Benchmark::possilyPatched,
-                        options ->
-                                options.staticOptions
-                                        .setProperWidthSubtyping(true)
-                                        .setBetterAnyString(false)
-                                        .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
-                )
-        );
-        put("MGC-fixed", new Pair<>(Benchmark::possilyPatched, options ->
-                        options
-                                .setWriteAll(true) // this is part of required assumption. Now we break it.
-                                .staticOptions
-                                .setWidthSubtpyingIncludesAllObjects(true) // destroy everything!
-                                .setProperWidthSubtyping(true)
-                                .setBetterAnyString(false)
-                                .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
-                                .setIgnoreTypeDecs(true) // making it quite close to an MGC.
-                )
-        );
+        put("all-assumptions-fixed", new Pair<>(Benchmark::possilyPatched, get("all-assumptions").getRight()));
+        put("no-assumptions-fixed", new Pair<>(Benchmark::possilyPatched, get("no-assumptions").getRight()));
+        put("MGC-fixed", new Pair<>(Benchmark::possilyPatched, get("MGC").getRight()));
     }};
 
 
