@@ -48,7 +48,7 @@ public class CompareModesEvaluation {
         put("no-assumptions", new Pair<>(Function.identity(),
                 options ->
                         options.staticOptions
-                                .setProperWidthSubtyping(true)
+                                .setProperWidthSubtyping(true).setWidthSubtpyingIncludesAllObjects(true) // destroy everything!
                                 .setBetterAnyString(false)
                                 .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
                 )
@@ -270,7 +270,7 @@ public class CompareModesEvaluation {
 
             TAJSUtil.TajsAnalysisResults result;
             try {
-                result = TAJSUtil.runNoDriver(benchmark, 3 * 60 * 60);
+                result = TAJSUtil.runNoDriver(benchmark, 60 * 60);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
