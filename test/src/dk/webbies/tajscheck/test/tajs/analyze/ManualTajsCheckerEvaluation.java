@@ -89,7 +89,8 @@ public class ManualTajsCheckerEvaluation {
         if (cleanBenchmarks.contains(benchmarkName)) {
             return;
         }
-        Benchmark bench = RunBenchmarks.benchmarks.get(benchmarkName).withOptions(CompareModesEvaluation.modes.get(mode));
+        Benchmark bench = CompareModesEvaluation.modes.get(mode).getLeft().apply(RunBenchmarks.benchmarks.get(benchmarkName));
+        bench = bench.withOptions(CompareModesEvaluation.modes.get(mode).getRight());
 
         TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, TIMEOUT);
 
