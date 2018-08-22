@@ -2,24 +2,25 @@
 
 interface Foo { // <- library constructed
     foo: true;
+    getBar(): Bar;
     getBaz(): Baz;
     useBaz(b: Baz): true;
-
 }
 interface Baz { // <- library constructed.
     baz: true;
     // lib: true;
 }
+interface Bar {
+    bar: true // <- client constructed.
+}
 
 export module module {
-    function createBar(f: {
-        bar: true // <- client constructed.
-    }): Foo;
+    function createBar(f: Bar): Foo;
 }
 */
 
 module.exports = {
-    createBar: function (f) {
+    createBar: function (bar) {
         return {
             foo: true,
             getBaz: function () {
@@ -31,6 +32,9 @@ module.exports = {
             },
             useBaz: function (b) {
                 return b.lib;
+            },
+            getBar: function () {
+                return bar;
             }
         }
     }

@@ -110,10 +110,10 @@ public class PreferLibValuesPolicy implements ExpansionPolicy {
 
     public StaticOptions.ArgumentValuesStrategy getArgumentStrategy(TypeWithContext type) {
         assert initialized;
-        if (libraryConstructed.contains(type)) {
-            return StaticOptions.ArgumentValuesStrategy.FORCE_FEEDBACK;
-        } else {
+        if (clientConstructed.contains(type)) {
             return StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED;
+        } else {
+            return StaticOptions.ArgumentValuesStrategy.FORCE_FEEDBACK;
         }
 
     }
