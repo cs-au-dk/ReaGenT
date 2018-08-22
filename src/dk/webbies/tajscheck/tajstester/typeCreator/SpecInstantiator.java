@@ -300,7 +300,17 @@ public class SpecInstantiator {
     }
 
     Value instantiate(Type type, MiscInfo info, String step) {
+        info = info.withContext(info.context.optimizeTypeParameters(type));
+        if (step != null) {
+            info = info.apendPath(step);
+        }
+
+        if (type instanceof UnionType) {
+            MiscInfo finalInfo = info;
+            return Value.join(Util.withIndex(((UnionType) type).getElements()).map(subType -> instantiate(subType.getLeft(), finalInfo, "[union" + subType.getRight() + "]")).collect(Collectors.toList()));
+        }
         StaticOptions.ArgumentValuesStrategy argumentValuesStrategy = this.info.options.staticOptions.argumentValuesStrategy.apply(new TypeWithContext(type, info.context));
+
         if (!this.info.shouldConstructType(type) && !nativesInstantiator.shouldConstructAsNative(type)) {
             Value feedbackValue = getFeedbackValue(type, info.context);
             if (feedbackValue == null || argumentValuesStrategy == ONLY_CONSTRUCTED) {
@@ -316,16 +326,6 @@ public class SpecInstantiator {
             if (argumentValuesStrategy == FORCE_FEEDBACK) {
                 throw new CannotConstructType();
             }
-        }
-
-        info = info.withContext(info.context.optimizeTypeParameters(type));
-        if (step != null) {
-            info = info.apendPath(step);
-        }
-
-        if (type instanceof UnionType) {
-            MiscInfo finalInfo = info;
-            return Value.join(Util.withIndex(((UnionType) type).getElements()).map(subType -> instantiate(subType.getLeft(), finalInfo, "[union" + subType.getRight() + "]")).collect(Collectors.toList()));
         }
 
         TypeWithContext key = new TypeWithContext(type, info.context);
@@ -405,7 +405,6 @@ public class SpecInstantiator {
             MiscInfo misc = new MiscInfo(path, type.getTypeContext(), null);
             return instantiate(type.getType(), misc, null);
         } catch (CannotConstructType e) {
-            assert false;
             return Value.makeNone();
         }
     }
@@ -538,9 +537,6 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(InterfaceType t, MiscInfo info) {
-            if (t.getDeclaredProperties().keySet().contains("foo")) {
-                System.out.println();
-            }
             if (SpecInstantiator.this.info.freeGenericsFinder.hasThisTypes(t)) {
                 info = info.withContext(info.context.withThisType(t));
             }

@@ -26,7 +26,6 @@ public class PreferLibValuesPolicy implements ExpansionPolicy {
 
     @Override
     public void nextRound() {
-        assert initialized;
         // do nothing. All statically determined.
     }
 
@@ -98,13 +97,29 @@ public class PreferLibValuesPolicy implements ExpansionPolicy {
                     }
                 }
             }
+
+            if (!outerProgress && !tests.isEmpty()) {
+                outerProgress = true;
+                // all arguments in all remaining tests are client-constructed!
+                for (Test test : tests) {
+                    if (!test.getTypeToTest().stream().allMatch(typeToTest -> initializeable(new TypeWithContext(typeToTest, test.getTypeContext())))) {
+                        continue; // If the "base" type of the test is unavailable, it is not interesting.
+                    }
+                    for (Type dependsOn : test.getDependsOn()) {
+                        typeTester.getBenchmarkInfo().typesUtil.forAllSubTypes(dependsOn, test.getTypeContext(), subType -> {
+                            if (!initializeable(subType)) {
+                                clientConstructed.add(subType);
+                            }
+                        });
+                    }
+                }
+            }
         }
         assert tests.isEmpty();
     }
 
     @Override
     public Collection<Test> getTestsToPerformAnyway(GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
-        assert initialized;
         return Collections.emptyList(); // nothing to do, all statically determined.
     }
 
