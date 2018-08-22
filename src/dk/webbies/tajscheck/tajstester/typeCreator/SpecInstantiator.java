@@ -308,7 +308,7 @@ public class SpecInstantiator {
             }
             return feedbackValue;
         }
-        if (argumentValuesStrategy == FEEDBACK_IF_POSSIBLE || argumentValuesStrategy == FORCE_FEEDBACK && !nativesInstantiator.shouldConstructAsNative(type) && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
+        if ((argumentValuesStrategy == FEEDBACK_IF_POSSIBLE || argumentValuesStrategy == FORCE_FEEDBACK) && !nativesInstantiator.shouldConstructAsNative(type) && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
             Value feedbackValue = getFeedbackValue(type, info.context);
             if (feedbackValue != null) {
                 return feedbackValue;
