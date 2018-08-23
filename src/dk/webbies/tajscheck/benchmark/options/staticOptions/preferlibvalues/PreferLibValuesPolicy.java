@@ -1,6 +1,7 @@
 package dk.webbies.tajscheck.benchmark.options.staticOptions.preferlibvalues;
 
 import dk.au.cs.casa.typescript.types.Type;
+import dk.au.cs.casa.typescript.types.TypeParameterType;
 import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.lattice.CallEdge;
 import dk.brics.tajs.lattice.Context;
@@ -12,12 +13,15 @@ import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpansionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
+import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
 import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
+import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class PreferLibValuesPolicy implements ExpansionPolicy {
@@ -49,7 +53,19 @@ public class PreferLibValuesPolicy implements ExpansionPolicy {
         if (clientConstructed.contains(type)) {
             return true;
         }
-        return LateExpansionToFunctionsWithConstructedArguments.isEasilyConstructType(type.getType(), type.getTypeContext(), typeTester, libraryConstructed);
+        return isEasilyConstructType(type.getType(), type.getTypeContext(), libraryConstructed);
+    }
+
+    private boolean isEasilyConstructType(Type type, TypeContext typeContext, Set<TypeWithContext> isConstructable) {
+        if (!typeTester.getBenchmarkInfo().shouldConstructType(type)) {
+            return false; // if we cannot construct it, it is not a constructed type.
+        }
+        SpecInstantiator instantiator = typeTester.getValueHandler().getInstantiator();
+        Predicate<TypeWithContext> whiteList = subType ->
+                instantiator.getNativesInstantiator().shouldConstructAsNative(subType.getType()) ||
+                isConstructable.contains(subType);
+
+        return type.accept(new LateExpansionToFunctionsWithConstructedArguments.CanEasilyConstructVisitor(typeContext, typeTester.getBenchmarkInfo(), whiteList));
     }
 
     private void initialize() {
@@ -125,7 +141,7 @@ public class PreferLibValuesPolicy implements ExpansionPolicy {
 
     public StaticOptions.ArgumentValuesStrategy getArgumentStrategy(TypeWithContext type) {
         assert initialized;
-        if (clientConstructed.contains(type) || !libraryConstructed.contains(type)) {
+        if (isEasilyConstructType(type.getType(), type.getTypeContext(), Collections.emptySet())  || clientConstructed.contains(type) || !libraryConstructed.contains(type)) {
             return StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED;
         } else {
             return StaticOptions.ArgumentValuesStrategy.FORCE_FEEDBACK;
