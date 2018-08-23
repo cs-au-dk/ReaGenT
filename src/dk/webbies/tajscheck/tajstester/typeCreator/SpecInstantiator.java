@@ -89,7 +89,7 @@ public class SpecInstantiator {
             forbidden.add(PKey.StringPKey.make("prototype"));
             forbidden.add(PKey.StringPKey.__PROTO__);
 
-            defaultAnyString = Value.makeAnyStrNotUInt().removeStringsAndSymbols(forbidden);
+            defaultAnyString = Value.makeAnyStr().removeStringsAndSymbols(forbidden);
         }
     }
 
