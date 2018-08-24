@@ -1,5 +1,7 @@
 package dk.webbies.tajscheck.test.tajs.analyze;
 
+import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
@@ -24,13 +26,13 @@ import java.util.stream.Stream;
 
 public class CompareModesEvaluation {
     static final List<String> benchmarksToEvaluate = Arrays.asList(
-            "classnames",
-            "component-emitter",
-            "js-cookie",
-            "loglevel",
-            "mime",
+//            "classnames",
+//            "component-emitter",
+//            "js-cookie",
+//            "loglevel",
+//            "mime",
+//            "pathjs",
             "platform",
-            "pathjs",
             "PleaseJS",
             "pluralize",
             "uuid"
@@ -39,10 +41,10 @@ public class CompareModesEvaluation {
     public static final Map<String, Pair<Function<Benchmark, Benchmark>, Function<CheckOptions.Builder, StaticOptions.Builder>>> modes = new LinkedHashMap<>(){{
 
         put("all-assumptions", new Pair<>(Function.identity(), options -> options.staticOptions));
-
-        put("width-subtyping", new Pair<>(Function.identity(), options -> options.staticOptions.setProperWidthSubtyping(true).setWidthSubtpyingIncludesAllObjects(true)));
+//
+//        put("width-subtyping", new Pair<>(Function.identity(), options -> options.staticOptions.setProperWidthSubtyping(true).setWidthSubtpyingIncludesAllObjects(true)));
         put("no-safe-strings", new Pair<>(Function.identity(), options -> options.staticOptions.setBetterAnyString(false)));
-        put("no-prefer-lib-values", new Pair<>(Function.identity(), options -> options.staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)));
+        /*put("no-prefer-lib-values", new Pair<>(Function.identity(), options -> options.staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)));
 
 
         put("no-assumptions", new Pair<>(Function.identity(),
@@ -52,8 +54,8 @@ public class CompareModesEvaluation {
                                 .setBetterAnyString(false)
                                 .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
                 )
-        );
-        put("MGC", new Pair<>(Function.identity(), options ->
+        );*/
+        /*put("MGC", new Pair<>(Function.identity(), options ->
                 options
                         .setWriteAll(true) // this is part of required assumption. Now we break it.
                         .staticOptions
@@ -67,7 +69,7 @@ public class CompareModesEvaluation {
 
         put("all-assumptions-fixed", new Pair<>(Benchmark::possilyPatched, get("all-assumptions").getRight()));
         put("no-assumptions-fixed", new Pair<>(Benchmark::possilyPatched, get("no-assumptions").getRight()));
-        put("MGC-fixed", new Pair<>(Benchmark::possilyPatched, get("MGC").getRight()));
+        put("MGC-fixed", new Pair<>(Benchmark::possilyPatched, get("MGC").getRight()));*/
     }};
 
 
@@ -130,6 +132,31 @@ public class CompareModesEvaluation {
         Table table = experiment.calculate("fixed-no-assumptions.csv");
 
         printPaperTable(table);
+    }
+
+
+    @Test
+    public void tsTest() throws Exception {
+        List<Benchmark> benches = benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(bench -> bench.withOptions(options -> options.dynamicOptions.setCheckDepthReport(2).setCheckDepthUseValue(0))).collect(Collectors.toList());
+
+        for (Benchmark bench : benches) {
+            Main.writeFullDriver(bench);
+            OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+            RunBenchmarks.printErrors(bench, result);
+            System.out.println();
+        }
+
+// how many of the true positives TSTest found.
+// classnames: no error
+// component-emitter: found them all
+// js-cookies. Found 3/4
+// loglevel: found them all
+// mime: found them all (there is only 1)
+// pathjs: found them all
+// platform: found 1 of 4.
+// pleasejs: found 3/5
+// pluralize: no error
+// uuid: no error
     }
 
 

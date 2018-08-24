@@ -2079,8 +2079,7 @@ public class TAJSUnitTests {
 
     @Test
     public void newDecidingLibraryConstructedAlgo() throws Exception {
-        PreferLibValuesPolicy preferLibValuesPolicy = new PreferLibValuesPolicy();
-        TajsAnalysisResults result = run("newDecidingLibraryConstructedAlgo", options().staticOptions.setArgumentValuesStrategy(preferLibValuesPolicy::getArgumentStrategy).setExpansionPolicy(preferLibValuesPolicy));
+        TajsAnalysisResults result = run("newDecidingLibraryConstructedAlgo", options().staticOptions.setArgumentValuesStrategy(new PreferLibValuesPolicy()::getArgumentStrategy));
 
         expect(result)
                 .performedAllTests()
@@ -2089,8 +2088,7 @@ public class TAJSUnitTests {
 
     @Test
     public void preferLibValuesInWaves() throws Exception {
-        PreferLibValuesPolicy preferLibValuesPolicy = new PreferLibValuesPolicy();
-        TajsAnalysisResults result = run("preferLibValuesInWaves", options().staticOptions.setArgumentValuesStrategy(preferLibValuesPolicy::getArgumentStrategy).setExpansionPolicy(preferLibValuesPolicy));
+        TajsAnalysisResults result = run("preferLibValuesInWaves", options().staticOptions.setArgumentValuesStrategy(new PreferLibValuesPolicy()::getArgumentStrategy));
 
         expect(result)
                 .performedAllTests()
@@ -2104,8 +2102,7 @@ public class TAJSUnitTests {
 
     }
 
-    // TODO: I did some delta-debugging. The result of that.
-    // TODO: setWidthSubtpyingIncludesAllObjects in CompareModesEvaluation! (See how it behaves on the fixed first).
+    // TODO: Sound aliasing of subtyping on client-constructed values.
 
     // TODO: Should receiver of methodCall get filtered?
 

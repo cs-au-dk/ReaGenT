@@ -24,24 +24,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class PreferLibValuesPolicy implements ExpansionPolicy {
+public class PreferLibValuesPolicy {
     private boolean initialized = false;
     private TajsTypeTester typeTester;
-
-    @Override
-    public void nextRound() {
-        // do nothing. All statically determined.
-    }
-
-    @Override
-    public boolean expandTo(FunctionTest test, TajsTypeTester typeTester) {
-        if (!initialized) {
-            initialized = true;
-            this.typeTester = typeTester;
-            initialize();
-        }
-        return true;
-    }
 
     private final Set<TypeWithContext> libraryConstructed = new HashSet<>();
     private final Set<TypeWithContext> clientConstructed = new HashSet<>();
@@ -134,13 +119,12 @@ public class PreferLibValuesPolicy implements ExpansionPolicy {
         assert tests.isEmpty();
     }
 
-    @Override
-    public Collection<Test> getTestsToPerformAnyway(GenericSolver<State, Context, CallEdge, IAnalysisMonitoring, Analysis>.SolverInterface c) {
-        return Collections.emptyList(); // nothing to do, all statically determined.
-    }
-
-    public StaticOptions.ArgumentValuesStrategy getArgumentStrategy(TypeWithContext type) {
-        assert initialized;
+    public StaticOptions.ArgumentValuesStrategy getArgumentStrategy(TypeWithContext type, TajsTypeTester typeTester) {
+        if (!initialized) {
+            this.typeTester = typeTester;
+            initialize();
+            initialized = true;
+        }
         if (isEasilyConstructType(type.getType(), type.getTypeContext(), Collections.emptySet())  || clientConstructed.contains(type) || !libraryConstructed.contains(type)) {
             return StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED;
         } else {

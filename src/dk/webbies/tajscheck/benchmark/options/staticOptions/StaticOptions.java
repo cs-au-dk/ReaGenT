@@ -6,8 +6,10 @@ import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandImmediatelyPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpansionPolicy;
+import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.util.Util;
 
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.*;
@@ -28,7 +30,7 @@ public class StaticOptions implements OptionsI {
     public final ExpansionPolicy expansionPolicy;
     public final boolean propagateStateFromFailingTest;
     public final boolean properWidthSubtyping;
-    public final Function<TypeWithContext, ArgumentValuesStrategy> argumentValuesStrategy;
+    public final BiFunction<TypeWithContext, TajsTypeTester, ArgumentValuesStrategy> argumentValuesStrategy;
     public final boolean checkAllPropertiesAfterFunctionCall;
     public final boolean useInspector;
     public final boolean useValuesWithMismatches;
@@ -86,7 +88,7 @@ public class StaticOptions implements OptionsI {
         private RetractionPolicy retractionPolicy = new NoRetractPolicy();
         private ExpansionPolicy expansionPolicy = new ExpandImmediatelyPolicy();
         private boolean propagateStateFromFailingTest = false;
-        private Function<TypeWithContext, ArgumentValuesStrategy> argumentValuesStrategy = t -> MIX_FEEDBACK_AND_CONSTRUCTED;
+        private BiFunction<TypeWithContext, TajsTypeTester, ArgumentValuesStrategy> argumentValuesStrategy = (type, tester) -> MIX_FEEDBACK_AND_CONSTRUCTED;
         private boolean properWidthSubtyping = false;
         private boolean checkAllPropertiesAfterFunctionCall = false; // then we run through all the PropertyReadTests after a function-call, to see if it had any harmful side-effects.
         private boolean useInspector = false;
@@ -153,11 +155,11 @@ public class StaticOptions implements OptionsI {
         }
 
         public Builder setArgumentValuesStrategy(ArgumentValuesStrategy argumentValuesStrategy) {
-            this.argumentValuesStrategy = t -> argumentValuesStrategy;
+            this.argumentValuesStrategy = (type, tester) -> argumentValuesStrategy;
             return this;
         }
 
-        public Builder setArgumentValuesStrategy(Function<TypeWithContext, ArgumentValuesStrategy> argumentValuesStrategy) {
+        public Builder setArgumentValuesStrategy(BiFunction<TypeWithContext, TajsTypeTester, ArgumentValuesStrategy> argumentValuesStrategy) {
             this.argumentValuesStrategy = argumentValuesStrategy;
             return this;
         }

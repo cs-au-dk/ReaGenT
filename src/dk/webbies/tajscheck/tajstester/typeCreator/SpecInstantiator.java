@@ -32,6 +32,7 @@ public class SpecInstantiator {
     private static final String globalObjectPath = "<the global object>";
 
     private final Type global;
+    private final TajsTypeTester tajsTypeTester;
     private TypeValuesHandler valueHandler;
 
     private final InstantiatorVisitor visitor;
@@ -63,7 +64,8 @@ public class SpecInstantiator {
         this.valueCache = newMap();
         this.processing = newSet();
         this.effects = new Effects(c);
-        this.nativesInstantiator = new NativesInstantiator(info, this, tajsTypeTester, c);
+        this.tajsTypeTester = tajsTypeTester;
+        this.nativesInstantiator = new NativesInstantiator(info, this, this.tajsTypeTester, c);
         this.info = info;
         this.c = c;
     }
@@ -309,7 +311,7 @@ public class SpecInstantiator {
             MiscInfo finalInfo = info;
             return Value.join(Util.withIndex(((UnionType) type).getElements()).map(subType -> instantiate(subType.getLeft(), finalInfo, "[union" + subType.getRight() + "]")).collect(Collectors.toList()));
         }
-        StaticOptions.ArgumentValuesStrategy argumentValuesStrategy = this.info.options.staticOptions.argumentValuesStrategy.apply(new TypeWithContext(type, info.context));
+        StaticOptions.ArgumentValuesStrategy argumentValuesStrategy = this.info.options.staticOptions.argumentValuesStrategy.apply(new TypeWithContext(type, info.context), tajsTypeTester);
 
         if (!this.info.shouldConstructType(type) && !nativesInstantiator.shouldConstructAsNative(type)) {
             Value feedbackValue = getFeedbackValue(type, info.context);
@@ -423,7 +425,7 @@ public class SpecInstantiator {
                 if (nativesInstantiator.shouldConstructAsNative(subType.getType())) {
                     return true;
                 }
-                if (getFeedbackValue(subType.getType(), subType.getTypeContext()) != null && this.info.options.staticOptions.argumentValuesStrategy.apply(subType) != ONLY_CONSTRUCTED) {
+                if (getFeedbackValue(subType.getType(), subType.getTypeContext()) != null && this.info.options.staticOptions.argumentValuesStrategy.apply(subType, tajsTypeTester) != ONLY_CONSTRUCTED) {
                     return true;
                 }
                 if (!this.info.shouldConstructType(subType.getType())) {
