@@ -1,25 +1,21 @@
 package dk.webbies.tajscheck.tajstester;
 
 import com.google.gson.Gson;
-import dk.brics.tajs.Main;
+import dk.au.cs.casa.typescript.types.ClassType;
 import dk.brics.tajs.analysis.Analysis;
-import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.FlowGraph;
 import dk.brics.tajs.flowgraph.jsnodes.ReadPropertyNode;
 import dk.brics.tajs.monitoring.*;
 import dk.brics.tajs.options.OptionValues;
-import dk.brics.tajs.options.UnsoundnessOptionValues;
-import dk.brics.tajs.solver.SolverSynchronizer;
-import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.AnalysisLimitationException;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.tajstester.data.TestCertificate;
 import dk.webbies.tajscheck.tajstester.data.Timers;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
-import dk.webbies.tajscheck.tajstester.monitors.TajsCoverageResult;
 import dk.webbies.tajscheck.testcreator.TestCreator;
 import dk.webbies.tajscheck.testcreator.test.Test;
+import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
 import dk.webbies.tajscheck.util.TajsMisc;
@@ -167,14 +163,15 @@ public class TAJSUtil {
         public final List<Test> testNot;
         public final boolean timedout;
         public final List<Test> typeCheckedTests;
-        public Set<Test> retractedTests;
-        public Set<Test> timeoutTests;
+        public final Set<Test> retractedTests;
+        public final Set<Test> timeoutTests;
         public final Map<Test, Integer> testTranfers;
         public final List<TestCertificate> certificates;
         public final Timers timers;
-        public double statementCoverage;
-        public double branchCoverage;
-        public double functionCoverage;
+        public final double statementCoverage;
+        public final double branchCoverage;
+        public final double functionCoverage;
+        public final boolean hasClassesInDec;
 
         private boolean VERBOSE = false;
         public MultiMap<Test, Exception> exceptionsEncountered;
@@ -191,7 +188,9 @@ public class TAJSUtil {
                                    Set<Test> timeoutTests,
                                    List<Test> typeCheckedTests,
                                    MultiMap<String, TypeViolation> detectedViolationsBeforeScan,
-                                   Set<ReadPropertyNode> possiblyProblematicReads) {
+                                   Set<ReadPropertyNode> possiblyProblematicReads,
+                                   double statementCoverage, double branchCoverage, double functionCoverage,
+                                   boolean hasClassesInDec) {
 
             this.detectedViolations = detectedViolations;
             this.detectedViolationsBeforeScan = detectedViolationsBeforeScan;
@@ -206,6 +205,10 @@ public class TAJSUtil {
             this.timeoutTests = timeoutTests;
             this.typeCheckedTests = typeCheckedTests;
             this.possiblyProblematicReads = possiblyProblematicReads;
+            this.statementCoverage = statementCoverage;
+            this.branchCoverage = branchCoverage;
+            this.functionCoverage = functionCoverage;
+            this.hasClassesInDec = hasClassesInDec;
         }
 
         public TajsAnalysisResults(TajsTypeTester typeTester, boolean timedout) {
@@ -248,6 +251,7 @@ public class TAJSUtil {
             this.branchCoverage = typeTester.getCoverageMonitor().branchCoverage();
             this.functionCoverage = typeTester.getCoverageMonitor().functionCoverage();
             this.possiblyProblematicReads = typeTester.getReadFromStdlibMonitor().getPossiblyProblematicReads();
+            this.hasClassesInDec = typeTester.getBenchmarkInfo().userDefinedTypes.values().stream().map(userType -> TypesUtil.collectAllTypes(userType, typeTester.getBenchmarkInfo())).flatMap(Collection::stream).anyMatch(ClassType.class::isInstance);
         }
 
         @Override
@@ -311,6 +315,9 @@ public class TAJSUtil {
 //                builder.append("Reads performed by the library that could be affected by the client: \n");
 //                this.possiblyProblematicReads.stream().map(AbstractNode::getSourceLocation).map(Object::toString).distinct().sorted().forEach(str -> builder.append(str).append("\n"));
 //            }
+            if (hasClassesInDec) {
+                builder.append("The implementation does not currently support inheritance");
+            }
             return builder.toString();
         }
 
