@@ -870,11 +870,11 @@ public class TypesUtil {
         return new Pair<>(result, newParameters);
     }
 
-    public void forAllSubTypes(Type type, TypeContext typeContext, Consumer<TypeWithContext> callback) {
-        forAllSubTypes(type, typeContext, new HashSet<>(), callback);
+    public void forAllSuperTypes(Type type, TypeContext typeContext, Consumer<TypeWithContext> callback) {
+        forAllSuperTypes(type, typeContext, new HashSet<>(), callback);
     }
 
-    private void forAllSubTypes(Type type, TypeContext typeContext, Set<TypeWithContext> seen, Consumer<TypeWithContext> callback) {
+    private void forAllSuperTypes(Type type, TypeContext typeContext, Set<TypeWithContext> seen, Consumer<TypeWithContext> callback) {
         TypeWithContext seenKey = new TypeWithContext(type, typeContext);
         if (seen.contains(seenKey)) {
             return;
@@ -884,53 +884,53 @@ public class TypesUtil {
         callback.accept(seenKey);
 
         if (typeContext.getThisType() != null) {
-            forAllSubTypes(type, typeContext.withThisType(null), seen, callback);
+            forAllSuperTypes(type, typeContext.withThisType(null), seen, callback);
         }
         if (typeContext.getThisType() == null) {
             if (info.freeGenericsFinder.hasThisTypes(type) && !(type instanceof ClassType)) {
-                forAllSubTypes(type, typeContext.withThisType(type), seen, callback);
+                forAllSuperTypes(type, typeContext.withThisType(type), seen, callback);
             }
         }
 
         {
             TypeContext newContext = typeContext.optimizeTypeParameters(type);
             if (!newContext.equals(typeContext)) {
-                forAllSubTypes(type, newContext, seen, callback);
+                forAllSuperTypes(type, newContext, seen, callback);
             }
         }
 
 
-        forAllSubTypes(type, typeContext.append(baseTypeParameters(type)), seen, callback);
+        forAllSuperTypes(type, typeContext.append(baseTypeParameters(type)), seen, callback);
 
         if (type instanceof InterfaceType) {
             List<Type> baseTypes = ((InterfaceType) type).getBaseTypes();
-            baseTypes.forEach(baseType -> forAllSubTypes(baseType, typeContext, seen, callback));
+            baseTypes.forEach(baseType -> forAllSuperTypes(baseType, typeContext, seen, callback));
         } else if (type instanceof IntersectionType) {
             List<Type> baseTypes = ((IntersectionType) type).getElements();
-            baseTypes.forEach(baseType -> forAllSubTypes(baseType, typeContext, seen, callback));
+            baseTypes.forEach(baseType -> forAllSuperTypes(baseType, typeContext, seen, callback));
         } else if (type instanceof ReferenceType) {
-            forAllSubTypes(((ReferenceType) type).getTarget(), this.generateParameterMap((ReferenceType) type, typeContext), seen, callback);
+            forAllSuperTypes(((ReferenceType) type).getTarget(), this.generateParameterMap((ReferenceType) type, typeContext), seen, callback);
         } else if (type instanceof GenericType) {
-            forAllSubTypes(((GenericType) type).toInterface(), typeContext, seen, callback);
+            forAllSuperTypes(((GenericType) type).toInterface(), typeContext, seen, callback);
         } else if (type instanceof ClassType) {
             ClassType classType = (ClassType) type;
             Pair<InterfaceType, Map<TypeParameterType, Type>> pair = info.typesUtil.classToInterface(classType);
             TypeContext newContext = typeContext.withThisType(this.createClassInstanceType(classType));
 
-            forAllSubTypes(pair.getLeft(), newContext, seen, callback);
-            forAllSubTypes(type, newContext, seen, callback);
+            forAllSuperTypes(pair.getLeft(), newContext, seen, callback);
+            forAllSuperTypes(type, newContext, seen, callback);
 
             newContext = newContext.append(pair.getRight());
 
-            forAllSubTypes(pair.getLeft(), newContext, seen, callback);
-            forAllSubTypes(type, newContext, seen, callback);
+            forAllSuperTypes(pair.getLeft(), newContext, seen, callback);
+            forAllSuperTypes(type, newContext, seen, callback);
         } else if (type instanceof ClassInstanceType) {
             ClassInstanceType instanceType = (ClassInstanceType) type;
 
             ClassType classType = (ClassType) instanceType.getClassType();
 
             Map<TypeParameterType, Type> extraParams = info.typesUtil.classToInterface(classType).getRight();
-            forAllSubTypes(type, typeContext.append(extraParams), seen, callback);
+            forAllSuperTypes(type, typeContext.append(extraParams), seen, callback);
 
             //noinspection AssertWithSideEffects
             assert instanceType == classType.getInstance();
@@ -943,14 +943,14 @@ public class TypesUtil {
                 map.keySet().removeAll(typeContext.getMap().keySet());
                 TypeContext newContext = typeContext.append(map);
                 if (!newContext.optimizeTypeParameters(instanceType).equals(typeContext)) {
-                    forAllSubTypes(instanceType, newContext, seen, callback);
+                    forAllSuperTypes(instanceType, newContext, seen, callback);
                 }
             }
 
-            forAllSubTypes(this.createClassInstanceType(classType), typeContext, seen, callback);
+            forAllSuperTypes(this.createClassInstanceType(classType), typeContext, seen, callback);
             if (info.freeGenericsFinder.hasThisTypes(instanceType.getClassType())) {
-                forAllSubTypes(type, typeContext.withThisType(instanceType), seen, callback);
-                forAllSubTypes(type, typeContext.withThisType(this.createClassInstanceType(classType)), seen, callback);
+                forAllSuperTypes(type, typeContext.withThisType(instanceType), seen, callback);
+                forAllSuperTypes(type, typeContext.withThisType(this.createClassInstanceType(classType)), seen, callback);
             }
 
             for (Type baseClass : classType.getBaseTypes()) {
@@ -966,21 +966,21 @@ public class TypesUtil {
                 } else if (!(baseClass instanceof InterfaceType || baseClass instanceof GenericType || baseClass instanceof ClassInstanceType)) {
                     throw new RuntimeException("Not sure about: " + baseClass.getClass().getSimpleName());
                 }
-                forAllSubTypes(baseClass, subTypeContext, seen, callback);
+                forAllSuperTypes(baseClass, subTypeContext, seen, callback);
             }
 
         } else if (type instanceof ThisType) {
             Type thisType = typeContext.getThisType();
-            forAllSubTypes(thisType != null ? thisType : ((ThisType) type).getConstraint(), typeContext, seen, callback);
+            forAllSuperTypes(thisType != null ? thisType : ((ThisType) type).getConstraint(), typeContext, seen, callback);
         } else if (type instanceof TypeParameterType) {
             if (typeContext.get((TypeParameterType) type) != null) {
                 TypeWithContext lookup = typeContext.get((TypeParameterType) type);
-                forAllSubTypes(lookup.getType(), lookup.getTypeContext(), seen, callback);
+                forAllSuperTypes(lookup.getType(), lookup.getTypeContext(), seen, callback);
             } else {
                 // Do nothing
             }
             if (((TypeParameterType) type).getConstraint() != null) {
-                forAllSubTypes(((TypeParameterType) type).getConstraint(), typeContext, callback);
+                forAllSuperTypes(((TypeParameterType) type).getConstraint(), typeContext, callback);
             }
         } else if (type instanceof SimpleType || type instanceof NumberLiteral || type instanceof StringLiteral || type instanceof BooleanLiteral || type instanceof UnionType || type instanceof TupleType || type instanceof IndexedAccessType) {
             // Do nothing.

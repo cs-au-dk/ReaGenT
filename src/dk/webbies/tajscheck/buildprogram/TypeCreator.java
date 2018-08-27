@@ -96,7 +96,7 @@ public class TypeCreator {
         int index = valueCounter++;
         valueVariableDeclarationList.add(variable(VALUE_VARIABLE_PREFIX + index, identifier(VARIABLE_NO_VALUE)));
 
-        info.typesUtil.forAllSubTypes(type, typeContext, subType -> valueLocations.put(subType, index));
+        info.typesUtil.forAllSuperTypes(type, typeContext, subType -> valueLocations.put(subType, index));
         return index;
     }
 

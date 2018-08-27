@@ -28,9 +28,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE;
-import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED;
-import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED;
+import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.*;
 import static dk.webbies.tajscheck.tajstester.TAJSUtil.*;
 import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
 import static dk.webbies.tajscheck.util.Util.mkString;
@@ -2123,7 +2121,29 @@ public class TAJSUnitTests {
         assertThat(run("anotherInfiniteLoop", options().setOnlyInitialize(true)).hasClassesInDec, is(false));
     }
 
-    // TODO: Sound aliasing of subtyping on client-constructed values.
+    @Test
+    public void subTypingAliasingLibraryConstructed() throws Exception {
+        TajsAnalysisResults result = run("subTypingAliasingLibraryConstructed", options().staticOptions.setArgumentValuesStrategy(FORCE_FEEDBACK));
+
+        assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("module.foo(obj)")
+                .hasViolations();
+    }
+
+    @Test
+    public void subTypingAliasingClientConstructed() throws Exception {
+        TajsAnalysisResults result = run("subTypingAliasingClientConstructed");
+
+        assertThat(result.detectedViolations.keySet(), hasSize(1));
+
+        expect(result)
+                .forPath("module.foo(obj)")
+                .hasViolations();
+
+        assertThat(result.detectedViolations.asMap().values().iterator().next().iterator().next().message, containsString("Bool"));
+    }
 
     // TODO: Should receiver of methodCall get filtered?
 }

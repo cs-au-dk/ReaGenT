@@ -14,8 +14,7 @@ import dk.webbies.tajscheck.benchmark.options.staticOptions.filter.CopyObjectIns
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.tajstester.TypeValuesHandler;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
-import dk.webbies.tajscheck.util.Pair;
-import dk.webbies.tajscheck.util.Util;
+import dk.webbies.tajscheck.util.*;
 import org.apache.log4j.Logger;
 
 import java.util.*;
@@ -273,11 +272,6 @@ public class SpecInstantiator {
     }
 
     private ObjectLabel getObjectLabel(Type type, MiscInfo info) {
-//        List<TypeWithContext> subTypes = new ArrayList<>();
-//        this.info.typesUtil.forAllSubTypes(type, info.context, subTypes::add);
-//        if (subTypes.size() > 1 && !nativesInstantiator.shouldConstructAsNative(type)) {
-//            System.out.println();
-//        }
         TypeWithContext key = new TypeWithContext(type, info.context);
         if (!labelCache.containsKey(key)) {
             ObjectLabel label;
@@ -303,6 +297,7 @@ public class SpecInstantiator {
 
     Value instantiate(Type type, MiscInfo info, String step) {
         info = info.withContext(info.context.optimizeTypeParameters(type));
+        TypeContext context = info.context;
         if (step != null) {
             info = info.apendPath(step);
         }
@@ -311,17 +306,18 @@ public class SpecInstantiator {
             MiscInfo finalInfo = info;
             return Value.join(Util.withIndex(((UnionType) type).getElements()).map(subType -> instantiate(subType.getLeft(), finalInfo, "[union" + subType.getRight() + "]")).collect(Collectors.toList()));
         }
-        StaticOptions.ArgumentValuesStrategy argumentValuesStrategy = this.info.options.staticOptions.argumentValuesStrategy.apply(new TypeWithContext(type, info.context), tajsTypeTester);
+        TypeWithContext typeWithContext = new TypeWithContext(type, context);
+        StaticOptions.ArgumentValuesStrategy argumentValuesStrategy = this.info.options.staticOptions.argumentValuesStrategy.apply(typeWithContext, tajsTypeTester);
 
         if (!this.info.shouldConstructType(type) && !nativesInstantiator.shouldConstructAsNative(type)) {
-            Value feedbackValue = getFeedbackValue(type, info.context);
+            Value feedbackValue = getFeedbackValue(type, context);
             if (feedbackValue == null || argumentValuesStrategy == ONLY_CONSTRUCTED) {
                 throw new CannotConstructType(); // this will be catched by the top-most construction method.
             }
             return feedbackValue;
         }
         if ((argumentValuesStrategy == FEEDBACK_IF_POSSIBLE || argumentValuesStrategy == FORCE_FEEDBACK) && !nativesInstantiator.shouldConstructAsNative(type) && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
-            Value feedbackValue = getFeedbackValue(type, info.context);
+            Value feedbackValue = getFeedbackValue(type, context);
             if (feedbackValue != null) {
                 return feedbackValue;
             }
@@ -330,20 +326,19 @@ public class SpecInstantiator {
             }
         }
 
-        TypeWithContext key = new TypeWithContext(type, info.context);
-        if (!valueCache.containsKey(key)) {
+        if (!valueCache.containsKey(typeWithContext)) {
             Value value;
             ObjectLabel label = getObjectLabel(type, info);
             info = info.withlabel(label);
-            if (processing.contains(key) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
+            if (processing.contains(typeWithContext) && !(type instanceof ThisType || type instanceof TypeParameterType)) { // if thisType or ParameterType, it is actually the type that is "pointed" to that counts.
                 // trying to instantiate a (recursive) type that is already being instantiated
-                assert labelCache.containsKey(new TypeWithContext(type, info.context));
+                assert labelCache.containsKey(typeWithContext);
                 if (label == null) {
                     throw new NullPointerException();
                 }
                 value = Value.makeObject(label);
             } else {
-                processing.add(key);
+                processing.add(typeWithContext);
                 try {
                     log.debug("Visiting: " + info.path.toString());
                     if (nativesInstantiator.shouldConstructAsNative(type)) {
@@ -352,7 +347,7 @@ public class SpecInstantiator {
                         value = type.accept(visitor, info);
                     }
                 } finally {
-                    processing.remove(key);
+                    processing.remove(typeWithContext);
                 }
 
                 if (value.isMaybeObject() && !this.info.options.staticOptions.createSingletonObjects) {
@@ -372,23 +367,35 @@ public class SpecInstantiator {
                 }
             }
 
-            valueCache.put(key, value);
+            valueCache.put(typeWithContext, value);
         }
 
 
-        Value result = valueCache.get(key);
+        Value result = valueCache.get(typeWithContext);
 
         assert !result.isNone();
 
         if (argumentValuesStrategy == MIX_FEEDBACK_AND_CONSTRUCTED && !nativesInstantiator.shouldConstructAsNative(type) && !(type instanceof SimpleType || type instanceof NumberLiteral || type instanceof BooleanLiteral || type instanceof StringLiteral)) {
-            Value feedbackValue = getFeedbackValue(type, info.context);
+            Value feedbackValue = getFeedbackValue(type, context);
             if (feedbackValue != null) {
                 result = result.join(feedbackValue);
             }
         }
 
+        this.info.typesUtil.forAllSuperTypes(type, context, superType -> {
+            previouslyConstructedSubTypes.put(superType, typeWithContext);
+        });
+
+        for (TypeWithContext subType : new ArrayList<>(previouslyConstructedSubTypes.get(typeWithContext))) {
+            if (!subType.equals(typeWithContext) && !(subType.getType() instanceof TypeParameterType)) { // Don't do the same type, and TypeParameters doesn't count.
+                result = result.join(instantiate(subType.getType(), info.withContext(subType.getTypeContext()), "[subType]"));
+            }
+        }
+
         return result;
     }
+
+    private final MultiMap<TypeWithContext, TypeWithContext> previouslyConstructedSubTypes = new HashSetMultiMap<>();
 
     public Value getFeedbackValue(Type type, TypeContext context) {
         try {

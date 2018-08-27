@@ -1,20 +1,11 @@
 package dk.webbies.tajscheck.benchmark.options.staticOptions.preferlibvalues;
 
 import dk.au.cs.casa.typescript.types.Type;
-import dk.au.cs.casa.typescript.types.TypeParameterType;
-import dk.brics.tajs.analysis.Analysis;
-import dk.brics.tajs.lattice.CallEdge;
-import dk.brics.tajs.lattice.Context;
-import dk.brics.tajs.lattice.State;
-import dk.brics.tajs.monitoring.IAnalysisMonitoring;
-import dk.brics.tajs.solver.GenericSolver;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpansionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
-import dk.webbies.tajscheck.testcreator.test.FunctionTest;
 import dk.webbies.tajscheck.testcreator.test.Test;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Util;
@@ -68,7 +59,7 @@ public class PreferLibValuesPolicy {
                         innerProgress = true;
                         tests.remove(test);
                         for (Type produces : test.getProduces()) {
-                            typeTester.getBenchmarkInfo().typesUtil.forAllSubTypes(produces, test.getTypeContext(), libraryConstructed::add);
+                            typeTester.getBenchmarkInfo().typesUtil.forAllSuperTypes(produces, test.getTypeContext(), libraryConstructed::add);
                         }
                     }
                 }
@@ -90,7 +81,7 @@ public class PreferLibValuesPolicy {
                 if (test.getProduces().stream().map(t -> new TypeWithContext(t, test.getTypeContext())).anyMatch(lackingDependencies::contains)) {
                     outerProgress = true;
                     for (Type dependsOn : test.getDependsOn()) {
-                        typeTester.getBenchmarkInfo().typesUtil.forAllSubTypes(dependsOn, test.getTypeContext(), subType -> {
+                        typeTester.getBenchmarkInfo().typesUtil.forAllSuperTypes(dependsOn, test.getTypeContext(), subType -> {
                             if (!initializeable(subType)) {
                                 clientConstructed.add(subType);
                             }
@@ -107,7 +98,7 @@ public class PreferLibValuesPolicy {
                         continue; // If the "base" type of the test is unavailable, it is not interesting.
                     }
                     for (Type dependsOn : test.getDependsOn()) {
-                        typeTester.getBenchmarkInfo().typesUtil.forAllSubTypes(dependsOn, test.getTypeContext(), subType -> {
+                        typeTester.getBenchmarkInfo().typesUtil.forAllSuperTypes(dependsOn, test.getTypeContext(), subType -> {
                             if (!initializeable(subType)) {
                                 clientConstructed.add(subType);
                             }

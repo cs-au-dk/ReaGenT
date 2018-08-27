@@ -3,12 +3,8 @@ package dk.webbies.tajscheck.tajstester;
 import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.Value;
-import dk.brics.tajs.solver.GenericSolver;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.buildprogram.TypeChecker;
-import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
-import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
@@ -97,7 +93,7 @@ public class TypeValuesHandler {
         AtomicBoolean valueWasAdded = new AtomicBoolean(false);
         Reference<Value> ref = new Reference<>(v);
         testValueMap.put(key, ref);
-        info.typesUtil.forAllSubTypes(type.getType(), type.getTypeContext(), (subType) -> {
+        info.typesUtil.forAllSuperTypes(type.getType(), type.getTypeContext(), (subType) -> {
             typeValueMap.put(subType, ref);
         });
         return valueWasAdded.get();
