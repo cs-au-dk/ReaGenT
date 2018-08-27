@@ -26,12 +26,12 @@ import java.util.stream.Stream;
 
 public class CompareModesEvaluation {
     static final List<String> benchmarksToEvaluate = Arrays.asList(
-//            "classnames",
-//            "component-emitter",
-//            "js-cookie",
-//            "loglevel",
-//            "mime",
-//            "pathjs",
+            "classnames",
+            "component-emitter",
+            "js-cookie",
+            "loglevel",
+            "mime",
+            "pathjs",
             "platform",
             "PleaseJS",
             "pluralize",
@@ -42,9 +42,9 @@ public class CompareModesEvaluation {
 
         put("all-assumptions", new Pair<>(Function.identity(), options -> options.staticOptions));
 //
-//        put("width-subtyping", new Pair<>(Function.identity(), options -> options.staticOptions.setProperWidthSubtyping(true).setWidthSubtpyingIncludesAllObjects(true)));
+        put("width-subtyping", new Pair<>(Function.identity(), options -> options.staticOptions.setProperWidthSubtyping(true).setWidthSubtpyingIncludesAllObjects(true)));
         put("no-safe-strings", new Pair<>(Function.identity(), options -> options.staticOptions.setBetterAnyString(false)));
-        /*put("no-prefer-lib-values", new Pair<>(Function.identity(), options -> options.staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)));
+        put("no-prefer-lib-values", new Pair<>(Function.identity(), options -> options.staticOptions.setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)));
 
 
         put("no-assumptions", new Pair<>(Function.identity(),
@@ -54,7 +54,7 @@ public class CompareModesEvaluation {
                                 .setBetterAnyString(false)
                                 .setExpansionPolicy(new ExpandImmediatelyPolicy()).setArgumentValuesStrategy(StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED)
                 )
-        );*/
+        );
         /*put("MGC", new Pair<>(Function.identity(), options ->
                 options
                         .setWriteAll(true) // this is part of required assumption. Now we break it.
