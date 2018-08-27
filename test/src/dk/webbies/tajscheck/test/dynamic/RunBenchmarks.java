@@ -184,7 +184,7 @@ public class RunBenchmarks {
 
         register(new Benchmark("minimist", ParseDeclaration.Environment.ES5Core, "test/benchmarks/minimist/minimist.js", "test/benchmarks/minimist/minimist.d.ts", NODE, options));
 
-        register(new Benchmark("classnames", ParseDeclaration.Environment.ES5Core, "test/benchmarks/classnames/classnames.js", "test/benchmarks/classnames/classnames.d.ts", BROWSER, options));
+        register(new Benchmark("classnames", ParseDeclaration.Environment.ES5Core, "test/benchmarks/classnames/classnames.js", "test/benchmarks/classnames/classnames.d.ts", NODE, options));
 
         register(new Benchmark("uuid", ParseDeclaration.Environment.ES5Core, "test/benchmarks/uuid/uuid.js", "test/benchmarks/uuid/uuid.d.ts", BROWSER, options));
 
