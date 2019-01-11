@@ -2050,8 +2050,6 @@ public class TAJSUnitTests {
         expect(result)
                 .forPath("module.useFoo")
                 .hasNoViolations();
-
-        assert result.detectedViolations.asMap().values().iterator().next().iterator().next().toString().contains("Bool");
     }
 
 
@@ -2079,8 +2077,6 @@ public class TAJSUnitTests {
         expect(result)
                 .forPath("module.useFoo")
                 .hasNoViolations();
-
-        assert result.detectedViolations.asMap().values().iterator().next().iterator().next().toString().contains("Bool");
     }
 
     @Test
@@ -2146,4 +2142,6 @@ public class TAJSUnitTests {
     }
 
     // TODO: Should receiver of methodCall get filtered?
+
+    // todo: StringIndexTest and NumberIndexTest are unsound, in that they ignore all properties on prototypes.
 }

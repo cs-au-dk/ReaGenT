@@ -22,7 +22,6 @@ import static dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator.*;
  */
 @SuppressWarnings("WeakerAccess")
 public class StaticOptions implements OptionsI {
-    public final boolean killGetters;
     public final boolean createSingletonObjects;
     public final boolean betterAnyString;
     public final boolean betterAnyStringWithoutGlobal;
@@ -51,7 +50,6 @@ public class StaticOptions implements OptionsI {
     private final Builder builder;
 
     public StaticOptions(StaticOptions.Builder builder) {
-        this.killGetters = builder.killGetters;
         this.createSingletonObjects = builder.createSingletonObjects;
         this.betterAnyString = builder.betterAnyString;
         this.betterAnyStringWithoutGlobal = builder.betterAnyStringWithoutGlobal;
@@ -81,7 +79,6 @@ public class StaticOptions implements OptionsI {
     }
 
     public static final class Builder implements OptionsI.Builder {
-        private boolean killGetters = false;
         private boolean createSingletonObjects = false;
         private boolean betterAnyString = true; // if true all string types are *not* well-known strings in Object or Function prototypes
         private boolean betterAnyStringWithoutGlobal = true;
@@ -181,11 +178,6 @@ public class StaticOptions implements OptionsI {
 
         public Builder setUseInspector(boolean useInspector) {
             this.useInspector = useInspector;
-            return this;
-        }
-
-        public Builder setKillGetters(boolean killGetters) {
-            this.killGetters = killGetters;
             return this;
         }
 

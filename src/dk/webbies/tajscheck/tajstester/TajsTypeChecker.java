@@ -53,7 +53,7 @@ public class TajsTypeChecker {
 
     public static List<Value> split(Value v) {
 
-        List<Value> vr = v.restrictToObject().getAllObjectLabels().stream().map(Value::makeObject).collect(Collectors.toList());
+        List<Value> vr = v.getAllObjectLabels().stream().filter(label -> label.getKind() != ObjectLabel.Kind.SYMBOL).map(Value::makeObject).collect(Collectors.toList());
         if(v.isMaybeUndef()) vr.add(Value.makeUndef());
 
         Value vcur;
@@ -190,7 +190,7 @@ public class TajsTypeChecker {
     }
 
     private List<TypeViolation> performSubTypeCheck(Value v, CanHaveSubTypeCheck hasSubType, String newPath, Value field) {
-        Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(v.getAllObjectLabels(), field, info.options.staticOptions.killGetters), c.getState());
+        Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(v.getAllObjectLabels(), field), c.getState());
         if(propertyValue.isMaybeAbsent()) {
             propertyValue = Value.join(propertyValue, Value.makeUndef());
         }

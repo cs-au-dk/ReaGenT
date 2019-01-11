@@ -23,11 +23,6 @@ public class SpecObjects implements HostObject {
         return HostAPIs.SPEC;
     }
 
-    @Override
-    public Collection<ObjectLabel> getRealLabels() {
-        return null;
-    }
-
     public static class TypedObject extends SpecObjects {
 
         public final List<String> path;

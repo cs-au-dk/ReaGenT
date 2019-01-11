@@ -73,12 +73,12 @@ class Effects {
 
     void writeNumberIndexer(ObjectLabel label, Value value) {
         Obj object = c.getState().getObject(label, true);
-        object.setDefaultArrayProperty(value.join(Value.makeAbsent()));
+        object.setDefaultNumericProperty(value.join(Value.makeAbsent()));
     }
 
     void writeStringIndexer(ObjectLabel label, Value value) {
         Obj object = c.getState().getObject(label, true);
-        object.setDefaultNonArrayProperty(value.join(Value.makeAbsent()));
+        object.setDefaultOtherProperty(value.join(Value.makeAbsent()));
     }
 
     private final Set<ObjectLabel> summarized = new HashSet<>();
@@ -90,7 +90,7 @@ class Effects {
             c.getState().getStore().put(label, oldObj);
             summarized.add(label);
         } else {
-            c.getState().propagateObj(label.makeSummary(), c.getState(), label.makeSingleton(), false);
+            c.getState().propagateObj(label.makeSummary(), c.getState(), label.makeSingleton(), false, false);
         }
         return label.makeSingleton().makeSummary();
     }

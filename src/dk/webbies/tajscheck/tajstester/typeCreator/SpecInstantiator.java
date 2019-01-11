@@ -90,7 +90,8 @@ public class SpecInstantiator {
             forbidden.add(PKey.StringPKey.make("prototype"));
             forbidden.add(PKey.StringPKey.__PROTO__);
 
-            defaultAnyString = Value.makeAnyStr().removeStringsAndSymbols(forbidden);
+//            defaultAnyString = Value.makeAnyStr().removeStringsAndSymbols(forbidden);
+            defaultAnyString = Value.makeAnyStr(); // TODO: Get complement string support into TAJS master.
         }
     }
 
@@ -709,7 +710,7 @@ public class SpecInstantiator {
 
         @Override
         public Value visit(StringLiteral t, MiscInfo miscInfo) {
-            return Value.makeSpecialStrings(Collections.singletonList(t.getText()));
+            return Value.makeStr(t.getText());
         }
 
         @Override

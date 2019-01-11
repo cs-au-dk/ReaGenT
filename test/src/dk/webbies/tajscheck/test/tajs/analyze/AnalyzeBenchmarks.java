@@ -150,7 +150,6 @@ public class AnalyzeBenchmarks extends TestCase {
                 .setWritePrimitives(true)
 
                 .staticOptions
-                .setKillGetters(true) // because getters currently causes the analysis to loop. // TODO: Still?
                 .setBetterAnyString(true)
                 .setRetractionPolicy(new LimitTransfersRetractionPolicy(100000, 0))
 

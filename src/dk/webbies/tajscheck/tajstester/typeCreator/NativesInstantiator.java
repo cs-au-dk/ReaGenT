@@ -250,7 +250,7 @@ public class NativesInstantiator {
         if (from.getLocalContext() != null) {
             localContext.putAll(from.getLocalContext().getQualifiers());
         }
-        localContext.put(ConstructionQualifier.instance, Value.makeSpecialStrings(singleton(name)));
+        localContext.put(ConstructionQualifier.instance, Value.makeStr(name));
 
         return Context.make(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(), LocalContext.make(localContext), from.getLocalContextAtEntry());
     }

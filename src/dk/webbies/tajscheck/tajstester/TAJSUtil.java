@@ -67,7 +67,9 @@ public class TAJSUtil {
             }
         }
 
-        additionalOpts.setNodeModuleExportsEnabled(bench.run_method == Benchmark.RUN_METHOD.NODE);
+        if (info.bench.run_method == Benchmark.RUN_METHOD.NODE) {
+            additionalOpts.enableNodeJS();
+        }
 
         additionalOpts.enableTest();
         additionalOpts.enableDeterminacy();
@@ -79,7 +81,6 @@ public class TAJSUtil {
         additionalOpts.enableConsoleModel();
         additionalOpts.enableNoHybridCollections();
         additionalOpts.enableIncludeDom();
-        additionalOpts.setMediumSeverityDisabled(true);
         additionalOpts.disableLowSeverity();
 
         additionalOpts.setTypeTestRunner(typeTester);
@@ -91,7 +92,6 @@ public class TAJSUtil {
 
         additionalOpts.getUnsoundness().setIgnoreSomePrototypesDuringDynamicPropertyReads(true);
         additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyReads(true);
-        additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyWrites(true);
         additionalOpts.getUnsoundness().setIgnoreMissingNativeModels(true);
         additionalOpts.getUnsoundness().setKeepExceptionalFlowAwayFromEvents(true);
 
@@ -106,7 +106,7 @@ public class TAJSUtil {
             optMonitors.add(timeLimiter);
         }
 
-        optMonitors.add(Monitoring.make());
+        optMonitors.add(Monitoring.make(false));
         optMonitors.add(typeTester);
         optMonitors.add(typeTester.getSuspiciousMonitor());
         optMonitors.add(typeTester.getTransferMonitor());

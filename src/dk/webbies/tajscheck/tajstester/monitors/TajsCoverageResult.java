@@ -11,7 +11,6 @@ import dk.brics.tajs.flowgraph.jsnodes.DeclareFunctionNode;
 import dk.brics.tajs.flowgraph.jsnodes.DefaultNodeVisitor;
 import dk.brics.tajs.flowgraph.jsnodes.EndForInNode;
 import dk.brics.tajs.flowgraph.jsnodes.EndLoopNode;
-import dk.brics.tajs.flowgraph.jsnodes.EndTAJSSplitBlockNode;
 import dk.brics.tajs.flowgraph.jsnodes.EndWithNode;
 import dk.brics.tajs.flowgraph.jsnodes.EventDispatcherNode;
 import dk.brics.tajs.flowgraph.jsnodes.ExceptionalReturnNode;
@@ -192,11 +191,6 @@ public class TajsCoverageResult extends DefaultAnalysisMonitoring {
 
         @Override
         public void visit(EndLoopNode n) {
-            outcome = false;
-        }
-
-        @Override
-        public void visit(EndTAJSSplitBlockNode n) {
             outcome = false;
         }
     }

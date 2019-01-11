@@ -50,16 +50,6 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
         return tagTestContext(currentContext, super.makeLoopExitContext(currentContext, node), false);
     }
 
-    @Override
-    public Context makeSplitExitContext(Context context, String id) {
-        return tagTestContext(context, super.makeSplitExitContext(context, id), false);
-    }
-
-    @Override
-    public Context makeSplitContext(Context context, String id, Value qualifier) {
-        return tagTestContext(context, super.makeSplitContext(context, id, qualifier), false);
-    }
-
     public TesterContextSensitivity(SyntacticQueries syntacticInformation) {
         super(syntacticInformation);
     }
@@ -127,7 +117,7 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
         HeapContext hc = super.makeHeapContext(location, arguments, c);
         if(isFunctionTestContext(c.getState().getContext()) || isLocalTestContext(c.getState().getContext())) {
             String tag = getTag(c.getState().getContext());
-            return hc.copyWith(tagContextArguments(hc.getFunctionArguments(), Value.makeSpecialStrings(singleton(tag))), null);
+            return hc.copyWith(tagContextArguments(hc.getFunctionArguments(), Value.makeStr(tag)), null);
         }
         return hc;
     }
@@ -142,7 +132,7 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
         if (from.getLocalContext() != null) {
             testPerformed.putAll(from.getLocalContext().getQualifiers());
         }
-        testPerformed.put(TestQualifier.instance, Value.makeSpecialStrings(singleton(testId)));
+        testPerformed.put(TestQualifier.instance, Value.makeStr(testId));
 
         Context newContext = Context.make(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(), LocalContext.make(testPerformed), from.getLocalContextAtEntry());
         contextTest.putIfAbsent(testId, test);
@@ -155,7 +145,7 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
         if (from.getLocalContext() != null) {
             testPerformed.putAll(from.getLocalContext().getQualifiers());
         }
-        testPerformed.put(WidenQualifier.instance, Value.makeSpecialStrings(singleton("yes")));
+        testPerformed.put(WidenQualifier.instance, Value.makeStr("yes"));
 
         Context newContext = Context.make(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(), LocalContext.make(testPerformed), from.getLocalContextAtEntry());
         return newContext;
@@ -174,12 +164,11 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
 
     public static boolean isTestContext(Context c) { return c != null && (isFunctionTestContext(c) || isLocalTestContext(c)); }
 
-    public static String getTag(Context c) {
-        if(isLocalTestContext(c)) {
-            return c.getLocalContext().getQualifiers().get(TestQualifier.instance).getSpecialStrings().iterator().next();
-        }
-        else if(isFunctionTestContext(c)) {
-            return c.getFunArgs().getSelectedClosureVariables().get(TEST_IDENTIFIER).getSpecialStrings().iterator().next();
+    private static String getTag(Context c) {
+        if (isLocalTestContext(c)) {
+            return c.getLocalContext().getQualifiers().get(TestQualifier.instance).getStr();
+        } else if (isFunctionTestContext(c)) {
+            return c.getFunArgs().getSelectedClosureVariables().get(TEST_IDENTIFIER).getStr();
         }
 
         throw new RuntimeException("Unable to get a test from context " + c);

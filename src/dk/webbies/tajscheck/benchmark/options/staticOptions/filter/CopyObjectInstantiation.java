@@ -176,7 +176,7 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         {
             Value originalPrototype = readSomething(orgLabels, c.getState(), (objectLabel, obj) -> obj.getInternalPrototype());
             Value internalPrototype = originalPrototype;
-            if (!originalPrototype.restrictToObject().isNone()) {
+            if (originalPrototype.getObjectLabels() != null && originalPrototype.getObjectLabels().stream().anyMatch(lbl -> lbl.getKind() != ObjectLabel.Kind.SYMBOL)) {
                 object.setInternalPrototype(Value.makeNull());
                 internalPrototype = filter(new TypeWithContext(t, context), originalPrototype, c, arg.info);
                 if (internalPrototype == null) {
@@ -191,14 +191,14 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
 
 
         {
-            Value nonArrayProperty = readSomething(orgLabels, c.getState(), (objectLabel, obj) -> obj.getDefaultNonArrayProperty());
-            Value previous = UnknownValueResolver.getDefaultNonArrayProperty(label, c.getState());
+            Value nonArrayProperty = readSomething(orgLabels, c.getState(), (objectLabel, obj) -> obj.getDefaultOtherProperty());
+            Value previous = UnknownValueResolver.getDefaultOtherProperty(label, c.getState());
             if (!hasNothingNew(nonArrayProperty, previous, c.getState())) {
-                object.setDefaultNonArrayProperty(nonArrayProperty);
+                object.setDefaultOtherProperty(nonArrayProperty);
             }
         }
 
-        assert !readSomething(orgLabels, c.getState(), (objectLabel, obj) -> obj.getDefaultArrayProperty()).isMaybePresent();
+        assert !readSomething(orgLabels, c.getState(), (objectLabel, obj) -> obj.getDefaultNumericProperty()).isMaybePresent();
         assert !readSomething(orgLabels, c.getState(), (objectLabel, obj) -> obj.getInternalValue()).isMaybePresent();
         // TODO: scope, scope_unknown
 
@@ -221,7 +221,7 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
                 newPropValue = propValue;
             }
             if (propName.equals("__proto__")) {
-                if (!newPropValue.restrictToObject().isNone()) {
+                if (newPropValue.getObjectLabels() != null && newPropValue.getObjectLabels().stream().anyMatch(lbl -> lbl.getKind() != ObjectLabel.Kind.SYMBOL)) {
                     newPropValue = filter(new TypeWithContext(t, context), newPropValue, c, arg.info);
                     if (newPropValue == null) {
                         throw new NoSuchTypePossible();
@@ -251,8 +251,7 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         }
         newValue = allLabelsToSingleton(UnknownValueResolver.getRealValue(newValue, state)).restrictToNonAttributes();
         existing = allLabelsToSingleton(UnknownValueResolver.getRealValue(existing, state)).restrictToNonAttributes();
-        existing = newValue.meet(existing);
-        return newValue.equals(existing);
+        return existing.join(newValue).equals(existing);
     }
 
     public static Value allLabelsToSingleton(Value value) {
@@ -391,11 +390,6 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
             return HostAPIs.SPEC;
         }
 
-        @Override
-        public Collection<ObjectLabel> getRealLabels() {
-            return orgLabels;
-        }
-
         private final Set<ObjectLabel> orgLabels;
         private final TypeWithContext type;
 
@@ -457,8 +451,8 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
 
         obj.setScopeChain(addToExistingScope(UnknownValueResolver.getScopeChain(objectLabel, state), oldlabels, newlabel));
 
-        obj.setDefaultArrayProperty(addToExistingLabels(obj.getDefaultArrayProperty(), oldlabels, newlabel));
-        obj.setDefaultArrayProperty(addToExistingLabels(obj.getDefaultArrayProperty(), oldlabels, newlabel));
+        obj.setDefaultNumericProperty(addToExistingLabels(obj.getDefaultNumericProperty(), oldlabels, newlabel));
+        obj.setDefaultOtherProperty(addToExistingLabels(obj.getDefaultOtherProperty(), oldlabels, newlabel));
         obj.setInternalPrototype(addToExistingLabels(obj.getInternalPrototype(), oldlabels, newlabel));
         obj.setInternalValue(addToExistingLabels(obj.getInternalValue(), oldlabels, newlabel));
     }

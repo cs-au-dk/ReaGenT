@@ -713,11 +713,7 @@ public class Util {
         List<String> prettyStrings = new ArrayList<>();
 
         if (!nonObject.isNone()) {
-            if (nonObject.toString().length() > 100 && nonObject.getComplementStrings() != null && nonObject.getComplementStrings().size() > 20) {
-                prettyStrings.add(Value.makeAnyStr().toString());
-            } else {
-                prettyStrings.add(nonObject.toString());
-            }
+            prettyStrings.add(nonObject.toString());
         }
 
         v.getAllObjectLabels().stream().map(l -> s.getObject(l, false)).map(Object::toString).forEach(prettyStrings::add);

@@ -404,16 +404,9 @@ public class BenchmarkInfo {
     }
 
     public static void fixSignatureReturn(Signature signature) {
-        if (signature.getResolvedReturnType() != null) {
-            return;
+        if (signature.getResolvedReturnType() == null && signature.getTarget() != null && signature.getTarget().getResolvedReturnType() != null) {
+            signature.setResolvedReturnType(signature.getTarget().getResolvedReturnType());
         }
-
-        if (signature.getTarget() == null) {
-            System.out.println();
-        }
-        assert signature.getTarget() != null;
-        assert signature.getTarget().getResolvedReturnType() != null;
-        signature.setResolvedReturnType(signature.getTarget().getResolvedReturnType());
     }
 
     private static List<Type> collectAllUnionElements(List<Type> elements, Set<UnionType> seenUnions) {

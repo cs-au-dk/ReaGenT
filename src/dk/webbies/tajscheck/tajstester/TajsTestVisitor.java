@@ -53,7 +53,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(),test.getTypeContext()));
         boolean result = true;
         for (ObjectLabel label : baseValue.getObjectLabels()) {
-            Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(Collections.singletonList(label), Value.makeStr(test.getProperty()), info.options.staticOptions.killGetters), c.getState());
+            Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(Collections.singletonList(label), Value.makeStr(test.getProperty())), c.getState());
             TypeWithContext closedType = new TypeWithContext(test.getPropertyType(), test.getTypeContext());
             tajsTypeTester.addCertificate(new TestCertificate(test, "Property " + test.getProperty() + " accessed on [0] has value [1]", new Value[]{baseValue, propertyValue}, c.getState()), c);
             result &= tajsTypeTester.attemptAddValue(propertyValue, closedType, test.getPath(), c, typeChecker, test);
@@ -66,12 +66,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         Value v;
         switch (info.bench.run_method) {
             case NODE:
-                ObjectLabel moduleObject = ObjectLabel.make(ECMAScriptObjects.MODULE, ObjectLabel.Kind.OBJECT);
-                v = UnknownValueResolver.getProperty(moduleObject, PKey.StringPKey.make("exports"), c.getState(), false);
-                if (v.getObjectLabels().size() > 1) {
-                    // TODO: Ugly hack, because the exports property is being written to weakly, and we therefore end up with both an empty exports, and the real one.
-                    v = Value.makeObject(v.getObjectLabels().stream().filter(label -> !label.toString().equals("@module.exports[native]")).collect(Collectors.toSet()));
-                }
+                v = UnknownValueResolver.getProperty(InitialStateBuilder.GLOBAL, PKey.StringPKey.make("TAJS_global_exports"), c.getState(), false);
                 break;
             case BROWSER:
                 ObjectLabel globalObject = InitialStateBuilder.GLOBAL;
@@ -263,6 +258,11 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
                 }
 
                 @Override
+                public boolean assumeFunction() {
+                    return false;
+                }
+
+            @Override
                 public ICallEdge.Info toEdgeInfo() {
                     return isConstructorCall ? ICallEdge.Info.makeImplicitConstructorCall() : ICallEdge.Info.makeImplicitCall();
                 }
@@ -294,7 +294,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         boolean definiteViolation = true;
         for (Value splitValue : TajsTypeChecker.split(value)) {
             List<Type> matchingTypes = test.getGetUnionType().getElements().stream().filter(subType -> {
-                boolean matched = typeChecker.typeCheck(splitValue, subType, test.getTypeContext(), test.getPath()).isEmpty();
+                boolean matched = typeChecker.typeCheck(splitValue, subType, test.getTypeContext(), test.getPath()).stream().noneMatch(violation -> violation.definite);
                 if (matched) {
                     nonMatchedTypes.remove(subType);
                 }

@@ -201,8 +201,8 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
 
     public void bipropagate(Solver.SolverInterface c) {
         State allState = c.getAnalysisLatticeElement().getState(allTestsBlock, allTestsContext);
-        allState.propagate(c.getState().clone(), true);
-        c.getState().propagate(allState.clone(), true);
+        allState.propagate(c.getState().clone(), true, false);
+        c.getState().propagate(allState.clone(), true, false);
     }
 
     private void enqueueTypeTester(Solver.SolverInterface c) {
@@ -237,7 +237,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             State previousState = c.getAnalysisLatticeElement().getState(allTestsBlock, previousTestContext == null ? c.getState().getContext() : previousTestContext);
             State prepreviousState = c.getAnalysisLatticeElement().getState(allTestsBlock, prepreviousTestContext == null ? c.getState().getContext() : prepreviousTestContext);
 
-            previousState.propagate(prepreviousState.clone(), true);
+            previousState.propagate(prepreviousState.clone(), true, false);
 
             progress |= c.withState(previousState, () -> {
                 if (test instanceof FunctionTest && !expansionPolicy.expandTo((FunctionTest) test, this)) { // placed before the propagateStateToContext, to avoid an infinite loop.
@@ -327,7 +327,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
             }
 
             for (ObjectLabel label : baseValue.getObjectLabels()) {
-                Value propertyValue = UnknownValueResolver.getRealValue(pc.readPropertyValue(Collections.singletonList(label), Value.makeStr(propertyRead.getProperty()), info.options.staticOptions.killGetters), c.getState());
+                Value propertyValue = UnknownValueResolver.getRealValue(pc.readPropertyValue(Collections.singletonList(label), Value.makeStr(propertyRead.getProperty())), c.getState());
                 TypeWithContext closedType = new TypeWithContext(propertyRead.getPropertyType(), propertyRead.getTypeContext());
                 if (propertyValue.isNone()) {
                     continue;
@@ -445,9 +445,9 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                 .collect(Collectors.toList());
     }
 
-    private Set<WorkList<Context>.Entry> entriesToSkip = new HashSet<>();
+    private Set<BlockAndContext<Context>> entriesToSkip = new HashSet<>();
     @Override
-    public boolean shouldSkipEntry(WorkList<Context>.Entry e) {
+    public boolean shouldSkipEntry(BlockAndContext<Context> e) {
         if (entriesToSkip.contains(e)) {
             return true;
         }
@@ -459,7 +459,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     }
 
     @Override
-    public boolean recoverFrom(Exception e, WorkList<Context>.Entry p) {
+    public boolean recoverFrom(Exception e, BlockAndContext<Context> p) {
         if (sensitivity != null && TesterContextSensitivity.isTestContext(p.getContext())) {
             Test test = sensitivity.getTest(p.getContext());
             assert !exceptionsEncountered.containsKey(test);
