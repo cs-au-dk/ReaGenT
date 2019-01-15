@@ -2141,6 +2141,20 @@ public class TAJSUnitTests {
         assertThat(result.detectedViolations.asMap().values().iterator().next().iterator().next().message, containsString("Bool"));
     }
 
+    @Test
+    public void anyStr() throws Exception {
+        TajsAnalysisResults resultGoodString = run("anyStr", options().staticOptions.setBetterAnyString(true));
+
+        expect(resultGoodString)
+            .performedAllTests()
+            .hasNoViolations();
+
+        TajsAnalysisResults resultFuzzyString = run("anyStr", options().staticOptions.setBetterAnyString(false));
+
+        expect(resultFuzzyString)
+            .hasViolations();
+    }
+
     // TODO: Should receiver of methodCall get filtered?
 
     // todo: StringIndexTest and NumberIndexTest are unsound, in that they ignore all properties on prototypes.

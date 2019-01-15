@@ -85,13 +85,12 @@ public class SpecInstantiator {
             if(info.options.staticOptions.betterAnyStringWithoutGlobal) lbs.add(InitialStateBuilder.GLOBAL);
             lbs.add(InitialStateBuilder.DATE_PROTOTYPE);
 
-            Set<PKey> forbidden = new HashSet<>(initial.getProperties(lbs, ObjProperties.PropertyQuery.makeQuery().includeSymbols().withoutProto())
-                    .getMaybe());
-            forbidden.add(PKey.StringPKey.make("prototype"));
-            forbidden.add(PKey.StringPKey.__PROTO__);
+            List<String> properties = initial.getProperties(lbs, ObjProperties.PropertyQuery.makeQuery().includeSymbols().withoutProto())
+                .getMaybe().stream().filter(PKey.StringPKey.class::isInstance).map(PKey.StringPKey.class::cast).map(PKey.StringPKey::getStr).collect(Collectors.toList());
+            properties.add("prototype");
+            properties.add(PKey.StringPKey.__PROTO__.toValue().getStr());
 
-//            defaultAnyString = Value.makeAnyStr().removeStringsAndSymbols(forbidden);
-            defaultAnyString = Value.makeAnyStr(); // TODO: Get complement string support into TAJS master.
+            defaultAnyString = Value.makeAnyStrExcluding(properties);
         }
     }
 
