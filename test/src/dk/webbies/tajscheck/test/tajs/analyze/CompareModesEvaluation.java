@@ -288,6 +288,8 @@ public class CompareModesEvaluation {
 
     private static BiConsumer<Benchmark, BiConsumer<String, String>> experiment(String prefix, Pair<Function<Benchmark, Benchmark>, Function<CheckOptions.Builder, StaticOptions.Builder>> optionsTransformer) {
         return (benchmark, register) -> {
+            System.gc(); // Clean Start.
+
             benchmark = optionsTransformer.getLeft().apply(benchmark);
             benchmark = benchmark.withOptions(AnalyzeBenchmarks.options().andThen(options -> optionsTransformer.getRight().apply(options.getOuterBuilder())));
 
