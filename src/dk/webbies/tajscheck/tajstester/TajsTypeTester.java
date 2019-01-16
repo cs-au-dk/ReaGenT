@@ -206,7 +206,6 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     }
 
     private void enqueueTypeTester(Solver.SolverInterface c) {
-        allTestsBlock.setOrder(Integer.MAX_VALUE);// Making sure that the TypeTester is the last to run.
         c.addToWorklist(allTestsBlock, allTestsContext); // Making sure the TypeTester runs when the worklist is otherwise empty.
     }
 
