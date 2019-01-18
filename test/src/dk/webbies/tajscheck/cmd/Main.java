@@ -75,6 +75,8 @@ public class Main {
             System.out.println("Running ReaGenT");
             TAJSUtil.TajsAnalysisResults ReaGenTResult = TAJSUtil.runNoDriver(bench, 10 * 60);
             System.out.println(ReaGenTResult);
+
+            System.out.println("Success! Everything seems to work!");
         }
     }
 
