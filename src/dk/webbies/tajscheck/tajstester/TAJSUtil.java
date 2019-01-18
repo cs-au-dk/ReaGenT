@@ -252,7 +252,7 @@ public class TAJSUtil {
             this.branchCoverage = typeTester.getCoverageMonitor().branchCoverage();
             this.functionCoverage = typeTester.getCoverageMonitor().functionCoverage();
             this.possiblyProblematicReads = typeTester.getReadFromStdlibMonitor().getPossiblyProblematicReads();
-            this.hasClassesInDec = typeTester.getBenchmarkInfo().userDefinedTypes.values().stream().map(userType -> TypesUtil.collectAllTypes(userType, typeTester.getBenchmarkInfo())).flatMap(Collection::stream).anyMatch(ClassType.class::isInstance);
+            this.hasClassesInDec = typeTester.getAllTests().stream().flatMap(test -> test.getProduces().stream()).anyMatch(ClassType.class::isInstance);
         }
 
         @Override
