@@ -1,7 +1,6 @@
 package dk.webbies.tajscheck.test.flow;
 
 import dk.webbies.tajscheck.DynamicMain;
-import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;

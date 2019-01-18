@@ -1,60 +1,24 @@
 package dk.webbies.tajscheck.test.flow;
 
-import dk.au.cs.casa.typescript.SpecReader;
-import dk.au.cs.casa.typescript.types.InterfaceType;
-import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.DynamicMain;
-import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
-import dk.webbies.tajscheck.test.tajs.TAJSUnitTests;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.Map;
 
 import static dk.webbies.tajscheck.test.tajs.TAJSUnitTests.*;
 import static dk.webbies.tajscheck.test.tajs.TAJSUnitTests.options;
 import static org.hamcrest.MatcherAssert.assertThat;
 import dk.webbies.tajscheck.OutputParser;
-import dk.webbies.tajscheck.benchmark.Benchmark;
-import dk.webbies.tajscheck.benchmark.options.CheckOptions;
-import dk.webbies.tajscheck.benchmark.options.OptionsI;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.DelayAllTestsExpansionPolicy;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandOneAtATimeWhenWorkListEmpty;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.FixedExpansionOrder;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
-import dk.webbies.tajscheck.parsespec.ParseDeclaration;
-import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.test.dynamic.UnitTests;
-import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks;
-import dk.webbies.tajscheck.util.ArrayListMultiMap;
-import dk.webbies.tajscheck.util.MultiMap;
-import dk.webbies.tajscheck.util.Util;
-import org.hamcrest.MatcherAssert;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryUsage;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.FEEDBACK_IF_POSSIBLE;
-import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.MIX_FEEDBACK_AND_CONSTRUCTED;
-import static dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions.ArgumentValuesStrategy.ONLY_CONSTRUCTED;
 import static dk.webbies.tajscheck.tajstester.TAJSUtil.*;
-import static dk.webbies.tajscheck.test.dynamic.UnitTests.ParseResultTester.ExpectType.STRING;
 import static dk.webbies.tajscheck.util.Util.mkString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
