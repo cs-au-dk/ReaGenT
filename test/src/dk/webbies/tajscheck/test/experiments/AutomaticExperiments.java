@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.test.experiments;
 
 import dk.webbies.tajscheck.CoverageResult;
-import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
@@ -58,18 +58,18 @@ public class AutomaticExperiments {
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> onlyFoundWhenConstructingClasses = new Pair<>(Arrays.asList("onlyClasses"), (Benchmark bench) -> {
         bench = bench.withOptions(options -> options.setConstructClassInstances(true).setConstructClassTypes(true));
 
-        Main.generateFullDriver(bench);
+        DynamicMain.generateFullDriver(bench);
 
         MultiMap<String, OutputParser.TypeError> mismatchCount = new ArrayListMultiMap<>();
         for (int i = 0; i < 10; i++) {
-            OutputParser.RunResult subResult = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+            OutputParser.RunResult subResult = OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
             for (OutputParser.TypeError typeError : subResult.typeErrors) {
                 mismatchCount.put(typeError.getPath(), typeError);
             }
         }
 
         bench = bench.withOptions(options -> options.setConstructClassInstances(false).setConstructClassTypes(false));
-        Main.generateFullDriver(bench);
+        DynamicMain.generateFullDriver(bench);
 
         for (Map.Entry<String, Collection<OutputParser.TypeError>> entry : new HashMap<>(mismatchCount.asMap()).entrySet()) {
             if (entry.getValue().size() < 5) {
@@ -82,7 +82,7 @@ public class AutomaticExperiments {
             if (mismatchCount.isEmpty()) {
                 break;
             }
-            OutputParser.RunResult subResult = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+            OutputParser.RunResult subResult = OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
             for (OutputParser.TypeError typeError : subResult.typeErrors) {
                 mismatchCount.remove(typeError.getPath());
             }
@@ -148,13 +148,13 @@ public class AutomaticExperiments {
         }
         return new Pair<>(names, (bench) -> {
             bench = bench.withOptions(func);
-            Main.writeFullDriver(bench);
+            DynamicMain.writeFullDriver(bench);
             List<OutputParser.RunResult> results = new ArrayList<>();
 
             long startTime = System.currentTimeMillis();
 
             for (int i = 0; i < repetitions; i++) {
-                results.add(OutputParser.parseDriverResult(Main.runBenchmark(bench)));
+                results.add(OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench)));
             }
 
             long time = System.currentTimeMillis() - startTime;
@@ -178,8 +178,8 @@ public class AutomaticExperiments {
         bench = bench.withOptions(bench.options.getBuilder().setConstructAllTypes(true).setFailOnAny(false));
 
         // Performing a soundness check of the benchmark.
-        Main.writeFullDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP));
-        String output = Main.runBenchmark(bench.withRunMethod(runMethod));
+        DynamicMain.writeFullDriver(bench.withRunMethod(Benchmark.RUN_METHOD.BOOTSTRAP));
+        String output = DynamicMain.runBenchmark(bench.withRunMethod(runMethod));
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
         return Boolean.toString(result.typeErrors.size() == 0);
     });
@@ -187,8 +187,8 @@ public class AutomaticExperiments {
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsUnlimitedIterations = new Pair<>(Arrays.asList("uniquePaths(unlimited)", "time(unlimited)", "testsCalled(unlimited)", "totalTests(unlimited)", "testCoverage(unlimited)"), (bench) -> {
         bench = bench.withOptions(bench.options.getBuilder().setMaxIterationsToRun(-1));
         long start = System.currentTimeMillis();
-        Main.writeFullDriver(bench);
-        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+        DynamicMain.writeFullDriver(bench);
+        OutputParser.RunResult result = OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
 
         List<OutputParser.TypeError> errors = result.typeErrors;
 
@@ -209,10 +209,10 @@ public class AutomaticExperiments {
 
     private static Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsTestCoverage(int runs) {
         return new Pair<>(Arrays.asList("uniquePaths(" + runs + ")", "testsRun(" + runs + ")", "totalTests(" + runs + ")", "testsCoverage(" + runs + ")"), (bench) -> {
-            Main.writeFullDriver(bench);
+            DynamicMain.writeFullDriver(bench);
             List<OutputParser.RunResult> results = new ArrayList<>();
             for (int i = 0; i < runs; i++) {
-                results.add(OutputParser.parseDriverResult(Main.runBenchmark(bench)));
+                results.add(OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench)));
             }
             OutputParser.RunResult result = OutputParser.combine(results);
             List<OutputParser.TypeError> errors = result.typeErrors;
@@ -231,8 +231,8 @@ public class AutomaticExperiments {
     ;
 
     private static final Pair<List<String>, Experiment.ExperimentMultiRunner> uniquePathsConvergence = new Pair<>(Arrays.asList("uniquePaths", "uniquePathsConvergence", "iterationsUntilConvergence"), (bench) -> {
-        Main.writeFullDriver(bench);
-        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+        DynamicMain.writeFullDriver(bench);
+        OutputParser.RunResult result = OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
         Set<String> paths = result.typeErrors.stream().map(OutputParser.TypeError::getPath).collect(Collectors.toSet());
         long firstPathCount = paths.size();
         System.out.println("Counted " + firstPathCount + " paths, trying to test again, to see if i get more");
@@ -242,7 +242,7 @@ public class AutomaticExperiments {
         int runs = 0;
         while (prevCount != count) {
             prevCount = count;
-            result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+            result = OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
             runs++;
             result.typeErrors.stream().map(OutputParser.TypeError::getPath).forEach(paths::add);
             count = paths.size();
@@ -261,7 +261,7 @@ public class AutomaticExperiments {
 
             Map<String, CoverageResult> out;
             try {
-                out = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.dynamicOptions.maxTime * 5))); // <- More timeout, instrumented code is slower.
+                out = DynamicMain.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.dynamicOptions.maxTime * 5))); // <- More timeout, instrumented code is slower.
                 if (out.isEmpty()) {
                     return Arrays.asList(null, null, null);
                 }
@@ -293,14 +293,14 @@ public class AutomaticExperiments {
 
             Map<String, CoverageResult> out = new HashMap<>();
 
-            String driver = Main.generateFullDriver(bench.withOptions(options -> options.setCheckDepthReport(options.dynamicOptions.checkDepthUseValue))).getRight();
+            String driver = DynamicMain.generateFullDriver(bench.withOptions(options -> options.setCheckDepthReport(options.dynamicOptions.checkDepthUseValue))).getRight();
 
             CoverageResult firstCoverage = null;
             for (int i = 0; i < runs; i++) {
                 try {
-                    Util.writeFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME, driver);
+                    Util.writeFile(DynamicMain.getFolderPath(bench) + DynamicMain.TEST_FILE_NAME, driver);
 
-                    Map<String, CoverageResult> subResult = Main.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.dynamicOptions.maxTime * 5)), false); // <- more timeout
+                    Map<String, CoverageResult> subResult = DynamicMain.genCoverage(bench.withOptions(bench.options.getBuilder().setMaxTime(bench.options.dynamicOptions.maxTime * 5)), false); // <- more timeout
                     out = CoverageResult.combine(out, subResult);
                     if (out.get(bench.getJSName()) == null) {
                         return Arrays.asList(uniquePaths, null, null, null, null, null, null);
@@ -348,9 +348,9 @@ public class AutomaticExperiments {
             String SUFFIX = "mb";
             int DECIMALS = 1;
 
-            String fullSize = Util.toFixed(Main.generateFullDriver(bench).getRight().length() / DIVIDE_BY, DECIMALS) + SUFFIX;
+            String fullSize = Util.toFixed(DynamicMain.generateFullDriver(bench).getRight().length() / DIVIDE_BY, DECIMALS) + SUFFIX;
 
-            double noGenerics = Main.generateFullDriver(bench.withOptions(bench.options.getBuilder().setDisableGenerics(true))).getRight().length() / DIVIDE_BY;
+            double noGenerics = DynamicMain.generateFullDriver(bench.withOptions(bench.options.getBuilder().setDisableGenerics(true))).getRight().length() / DIVIDE_BY;
 
             return Arrays.asList(fullSize, Util.toFixed(noGenerics, DECIMALS) + SUFFIX);
         });
@@ -373,7 +373,7 @@ public class AutomaticExperiments {
             return "-";
         }
         try {
-            Main.generateFullDriver(bench);
+            DynamicMain.generateFullDriver(bench);
             return "false";
         } catch (IllegalArgumentException e) {
             return "true"; // TODO: Doesn't throw this exception currently.

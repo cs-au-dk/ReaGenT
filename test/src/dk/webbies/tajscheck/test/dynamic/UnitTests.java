@@ -6,7 +6,7 @@ import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.NumberLiteral;
 import dk.webbies.tajscheck.CoverageResult;
 import dk.webbies.tajscheck.ExecutionRecording;
-import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -82,9 +82,9 @@ public class UnitTests {
 //            sanityCheck(bench);
         }
 
-        Main.writeFullDriver(bench, new ExecutionRecording(null, seed));
+        DynamicMain.writeFullDriver(bench, new ExecutionRecording(null, seed));
 
-        String out = Main.runBenchmark(bench);
+        String out = DynamicMain.runBenchmark(bench);
         System.out.println(out);
         return out;
     }
@@ -97,8 +97,8 @@ public class UnitTests {
         bench = bench.withRunMethod(BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true).setFailOnAny(false));
 
         // Performing a soundness check of the benchmark.
-        Main.writeFullDriver(bench);
-        String output = Main.runBenchmark(bench.withRunMethod(runMethod));
+        DynamicMain.writeFullDriver(bench);
+        String output = DynamicMain.runBenchmark(bench.withRunMethod(runMethod));
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 
         for (OutputParser.TypeError typeError : result.typeErrors) {
@@ -681,7 +681,7 @@ public class UnitTests {
 
     @Test
     public void testIfDriverIsTooBig() throws Exception {
-        String driver = Main.generateFullDriver(benchFromFolder("unnecessaryBigDriver")).getRight();
+        String driver = DynamicMain.generateFullDriver(benchFromFolder("unnecessaryBigDriver")).getRight();
 
         assertThat(driver, not(containsString("\"module.b2World.new().RayCastAll().<>.[numberIndexer].GetDensity()\"")));
 
@@ -738,8 +738,8 @@ public class UnitTests {
     @Test
     public void doesNotHaveUnboundGenerics() throws Exception {
         Benchmark bench = benchFromFolder("doesNotHaveUnboundGenerics").withRunMethod(BOOTSTRAP).withOptions(options -> options.setConstructAllTypes(true));
-        Main.writeFullDriver(bench);
-        String driver = Main.generateFullDriver(bench).getRight();
+        DynamicMain.writeFullDriver(bench);
+        String driver = DynamicMain.generateFullDriver(bench).getRight();
 
         assertThat(driver, not(containsString(TypeParameterIndexer.IS_UNSTRAINED_GENERIC_MARKER)));
     }
@@ -869,7 +869,7 @@ public class UnitTests {
     @Test
     public void thisTypes2() throws Exception {
         // This is just a test that it is able to generate an application, without crashing.
-        String program = Main.generateFullDriver(benchFromFolder("thisTypes2")).getRight();
+        String program = DynamicMain.generateFullDriver(benchFromFolder("thisTypes2")).getRight();
 
         assertThat(program, is(not(equalTo(""))));
     }
@@ -937,7 +937,7 @@ public class UnitTests {
 
     @Test
     public void thisTypesInInterfaces3() throws Exception {
-        Main.writeFullDriver(benchFromFolder("thisTypesInInterfaces3"));
+        DynamicMain.writeFullDriver(benchFromFolder("thisTypesInInterfaces3"));
     }
 
     @Test
@@ -990,22 +990,22 @@ public class UnitTests {
 
     @Test
     public void genericsBustStack() throws Exception {
-        Main.generateFullDriver(benchFromFolder("genericsBustStack"));
+        DynamicMain.generateFullDriver(benchFromFolder("genericsBustStack"));
     }
 
     @Test
     public void genericsBustStack2() throws Exception {
-        Main.generateFullDriver(benchFromFolder("genericsBustStack2"));
+        DynamicMain.generateFullDriver(benchFromFolder("genericsBustStack2"));
     }
 
     @Test
     public void genericsBustStack3() throws Exception {
-        Main.generateFullDriver(benchFromFolder("genericsBustStack3").withRunMethod(BOOTSTRAP));
+        DynamicMain.generateFullDriver(benchFromFolder("genericsBustStack3").withRunMethod(BOOTSTRAP));
     }
 
     @Test
     public void genericsBustStack4() throws Exception {
-        Main.generateFullDriver(benchFromFolder("genericsBustStack4").withRunMethod(BOOTSTRAP));
+        DynamicMain.generateFullDriver(benchFromFolder("genericsBustStack4").withRunMethod(BOOTSTRAP));
     }
 
     @Test
@@ -1052,7 +1052,7 @@ public class UnitTests {
 
     @Test
     public void complexGenerics() throws Exception {
-        Main.generateFullDriver(benchFromFolder("complexGenerics")); // Just a test that no null-pointer.
+        DynamicMain.generateFullDriver(benchFromFolder("complexGenerics")); // Just a test that no null-pointer.
     }
 
     @Test
@@ -1076,7 +1076,7 @@ public class UnitTests {
 
     @Test
     public void genericsAreOptimized2() throws Exception {
-        String driver = Main.generateFullDriver(benchFromFolder("genericsAreOptimized2")).getRight();
+        String driver = DynamicMain.generateFullDriver(benchFromFolder("genericsAreOptimized2")).getRight();
 
         assertThat(driver, not(containsString("module.CatmullRomCurve3.<>.getPoint().setFromSpherical().multiplyVector3Array(any)")));
         assertThat(driver, not(containsString("module.CatmullRomCurve3.<>.getPoint().setFromSpherical().multiplyVector3Array()")));
@@ -1085,24 +1085,24 @@ public class UnitTests {
 
     @Test
     public void exponentialComplexity() throws Exception {
-        Main.writeFullDriver(benchFromFolder("exponentialComplexity"));
+        DynamicMain.writeFullDriver(benchFromFolder("exponentialComplexity"));
     }
 
     @Test
     public void loopingType() throws Exception {
-        Main.writeFullDriver(benchFromFolder("loopingType"));
+        DynamicMain.writeFullDriver(benchFromFolder("loopingType"));
     }
 
     @Test
     public void veryComplexThisType() throws Exception {
-        Main.generateFullDriver(benchFromFolder("veryComplexThisType"));
+        DynamicMain.generateFullDriver(benchFromFolder("veryComplexThisType"));
     }
 
     @Test
     public void genericsAreNotTooOptimized() throws Exception {
         Benchmark bench = benchFromFolder("genericsAreNotTooOptimized", options().setCombineAllUnboundGenerics(true).build());
-        String driver = Main.generateFullDriver(bench).getRight();
-        Main.writeFullDriver(bench);
+        String driver = DynamicMain.generateFullDriver(bench).getRight();
+        DynamicMain.writeFullDriver(bench);
 
         assertThat(driver, not(containsString(TypeParameterIndexer.IS_UNSTRAINED_GENERIC_MARKER)));
     }
@@ -1116,7 +1116,7 @@ public class UnitTests {
 
     @Test
     public void typeofParsing() throws Exception {
-        String driver = Main.generateFullDriver(benchFromFolder("typeofParsing")).getRight();
+        String driver = DynamicMain.generateFullDriver(benchFromFolder("typeofParsing")).getRight();
 
         assertThat(driver, not(containsString("module.getNewLibraryCopy.prototype")));
 
@@ -1132,9 +1132,9 @@ public class UnitTests {
 
     @Test
     public void interfacesAndObjectsParsing() throws Exception {
-        String driver = Main.generateFullDriver(benchFromFolder("interfacesAndObjectsParsing")).getRight();
+        String driver = DynamicMain.generateFullDriver(benchFromFolder("interfacesAndObjectsParsing")).getRight();
 
-        Main.writeFullDriver(benchFromFolder("interfacesAndObjectsParsing"));
+        DynamicMain.writeFullDriver(benchFromFolder("interfacesAndObjectsParsing"));
 
         assertThat(driver, not(containsString("// path: module.Observable.selectMany")));
 
@@ -1273,7 +1273,7 @@ public class UnitTests {
 
     @Test
     public void canConstructUnderscoreWithUnconstrainedGenerics() throws Exception {
-        Main.generateFullDriver(RunBenchmarks.benchmarks.get("Underscore.js").withOptions(options -> options.setCombineAllUnboundGenerics(false)));
+        DynamicMain.generateFullDriver(RunBenchmarks.benchmarks.get("Underscore.js").withOptions(options -> options.setCombineAllUnboundGenerics(false)));
     }
 
     @Test
@@ -1349,7 +1349,7 @@ public class UnitTests {
 
         assertThat(result.typeErrors, is(empty()));
 
-        Map<String, CoverageResult> coverage = Main.genCoverage(bench);
+        Map<String, CoverageResult> coverage = DynamicMain.genCoverage(bench);
 
         assertThat(coverage, is(not(emptyMap())));
 
@@ -1366,7 +1366,7 @@ public class UnitTests {
 
         assertThat(result.typeErrors, is(empty()));
 
-        Map<String, CoverageResult> coverage = Main.genCoverage(bench);
+        Map<String, CoverageResult> coverage = DynamicMain.genCoverage(bench);
 
         assertThat(coverage, is(not(emptyMap())));
 
@@ -1384,7 +1384,7 @@ public class UnitTests {
 
         assertThat(result.typeErrors, is(empty()));
 
-        Map<String, CoverageResult> coverage = Main.genCoverage(bench);
+        Map<String, CoverageResult> coverage = DynamicMain.genCoverage(bench);
 
         assertThat(coverage, is(not(emptyMap())));
 
@@ -1397,7 +1397,7 @@ public class UnitTests {
     public void nodeCoverageTimeout() throws Exception {
         Benchmark bench = benchFromFolder("nodeCoverageTimeout").withOptions(options -> options.setMaxIterationsToRun(-1));
 
-        Map<String, CoverageResult> coverage = Main.genCoverage(bench);
+        Map<String, CoverageResult> coverage = DynamicMain.genCoverage(bench);
 
         assertThat(coverage, is(not(emptyMap())));
 
@@ -1409,9 +1409,9 @@ public class UnitTests {
     @Test
     public void notDuplicatedAssertTypeFunctions() throws Exception {
         CheckOptions options = options().setUseAssertTypeFunctions(true).build();
-        Main.writeFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", options));
+        DynamicMain.writeFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", options));
 
-        String driver = Main.generateFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", options)).getRight();
+        String driver = DynamicMain.generateFullDriver(benchFromFolder("notDuplicatedAssertTypeFunctions", options)).getRight();
 
         int matches = StringUtils.countMatches(driver,
                 "if (!(assert(true === exp._isUnboundGeneric, path, \"a generic type marker (._isUnboundGeneric)\", exp, i, testType))) {");
@@ -1501,7 +1501,7 @@ public class UnitTests {
 
     @Test
     public void asyncBasicExample() throws Exception {
-        Main.writeFullDriver(benchFromFolder("asyncBasicExample"));
+        DynamicMain.writeFullDriver(benchFromFolder("asyncBasicExample"));
     }
 
     @Test
@@ -1554,7 +1554,7 @@ public class UnitTests {
     public void asyncGenerator() throws Exception {
         try {
             Util.isDeltaDebugging = true; // Testing with this on, since it forces the TypeScript compiler to return with no errors.
-            Main.writeFullDriver(benchFromFolder("asyncGenerator")); // Just testing the parsing.
+            DynamicMain.writeFullDriver(benchFromFolder("asyncGenerator")); // Just testing the parsing.
         } finally {
             Util.isDeltaDebugging = false;
         }
@@ -1617,10 +1617,10 @@ public class UnitTests {
     @Test
     public void smokeUnknownFieldsAccess() throws Exception {
         Benchmark bench = benchFromFolder("unknownFieldAccess", options().setMonitorUnkownPropertyAccesses(true).build());
-        String driver = Main.generateFullDriver(bench).getRight();
-        Main.writeFullDriver(bench);
+        String driver = DynamicMain.generateFullDriver(bench).getRight();
+        DynamicMain.writeFullDriver(bench);
 
-        String res = Main.runBenchmark(bench);
+        String res = DynamicMain.runBenchmark(bench);
         List<String> lines = Arrays.asList(res.split(Pattern.quote("\n")));
         if (lines.size() > 100) {
             lines = lines.subList(0, 100);
@@ -1654,12 +1654,12 @@ public class UnitTests {
 
     @Test
     public void optionalParamsSmokeTest() throws Exception {
-        Main.writeFullDriver(benchFromFolder("optionalParamsSmokeTest").withRunMethod(BOOTSTRAP));
+        DynamicMain.writeFullDriver(benchFromFolder("optionalParamsSmokeTest").withRunMethod(BOOTSTRAP));
     }
 
     @Test
     public void optionalParamsSmokeTest2() throws Exception {
-        Main.writeFullDriver(benchFromFolder("optionalParamsSmokeTest2").withRunMethod(BOOTSTRAP));
+        DynamicMain.writeFullDriver(benchFromFolder("optionalParamsSmokeTest2").withRunMethod(BOOTSTRAP));
     }
 
     @Test
@@ -1692,7 +1692,7 @@ public class UnitTests {
 
     @Test
     public void genericSignaturesSmokeTest() throws Exception {
-        Main.generateFullDriver(benchFromFolder("genericSignaturesSmokeTest")); // smoke test
+        DynamicMain.generateFullDriver(benchFromFolder("genericSignaturesSmokeTest")); // smoke test
     }
 
     @Test
@@ -1707,7 +1707,7 @@ public class UnitTests {
 
     @Test
     public void genericSignaturesSmokeTest2() throws Exception {
-        Main.generateFullDriver(benchFromFolder("genericSignaturesSmokeTest2"));
+        DynamicMain.generateFullDriver(benchFromFolder("genericSignaturesSmokeTest2"));
     }
 
     @Test
@@ -1729,7 +1729,7 @@ public class UnitTests {
 
     @Test
     public void shouldNotBeUnbound() throws Exception {
-        String driver = Main.writeFullDriver(benchFromFolder("shouldNotBeUnbound")).getRight();
+        String driver = DynamicMain.writeFullDriver(benchFromFolder("shouldNotBeUnbound")).getRight();
 
         assertThat(driver, not(containsString(TypeParameterIndexer.IS_UNSTRAINED_GENERIC_MARKER)));
     }

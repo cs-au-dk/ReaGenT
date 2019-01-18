@@ -22,7 +22,7 @@ sourceSets {
             srcDir 'test/src'
         }
         resources {
-            srcDirs = ['test/benchmarks', 'resources/', 'unit/', 'tajsUnit/']
+            srcDirs = ['test/benchmarks', 'test/flowtyped', 'test/flowtests', 'test/unit/', 'test/tajsUnit/']
         }
     }
 }
@@ -46,7 +46,7 @@ dependencies {
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '4.3'
+    gradleVersion = '4.10'
 }
 
 subprojects {
@@ -63,7 +63,7 @@ subprojects {
         }
         test {
             java {
-                srcDir 'test/'
+                srcDir 'test/src/'
             }
             resources {
                 srcDir 'test-resources/'
@@ -72,6 +72,27 @@ subprojects {
     }
 }
 
+jar {
+    manifest {
+        attributes(
+            'Class-Path': configurations.compile,
+            'Main-Class': 'dk.webbies.tajscheck.Main'
+        )
+    }
+}
+
+task fatJar(type: Jar) {
+    manifest.from jar.manifest
+    classifier = 'all'
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    } {
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+    }
+    with jar
+}
 
 allprojects {
     repositories {
@@ -129,15 +150,6 @@ task bigBenchEval(type: JavaExec) {
     classpath sourceSets.test.runtimeClasspath
     jvmArgs = ["-Xmx30G"]
     main = 'dk.webbies.tajscheck.test.tajs.analyze.BigLibEvaluation'
-}
-
-
-// Example usage:
-// ./gradlew flowExperiment
-task flowExperiment(type: JavaExec) {
-    classpath sourceSets.test.runtimeClasspath
-    jvmArgs = ["-Xmx30G"]
-    main = 'dk.webbies.tajscheck.test.flow.FlowExperiment'
 }
 
 

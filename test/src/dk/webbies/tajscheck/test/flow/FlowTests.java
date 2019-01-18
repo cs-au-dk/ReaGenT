@@ -3,6 +3,7 @@ package dk.webbies.tajscheck.test.flow;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -84,7 +85,7 @@ public class FlowTests {
     }
     @Test
     public void parseRestArgs() throws Exception {
-        Main.generateFullDriver(benchFromFolder("parseRestArgs"));
+        DynamicMain.generateFullDriver(benchFromFolder("parseRestArgs"));
     }
 
     @Test
@@ -416,7 +417,7 @@ public class FlowTests {
     @Test
     public void genericsAndFunctions() throws IOException {
         for (int i = 0; i < 5; i++) {
-            String driver = Main.generateFullDriver(benchFromFolder("genericsAndFunctions")).getRight();
+            String driver = DynamicMain.generateFullDriver(benchFromFolder("genericsAndFunctions")).getRight();
             assertThat(driver, not(containsString("_isUnboundGeneric")));
         }
     }

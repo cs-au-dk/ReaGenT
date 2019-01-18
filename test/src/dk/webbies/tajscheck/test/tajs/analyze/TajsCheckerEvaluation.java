@@ -1,17 +1,14 @@
 package dk.webbies.tajscheck.test.tajs.analyze;
 
-import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
-import dk.webbies.tajscheck.test.dynamic.UnitTests;
 import dk.webbies.tajscheck.test.experiments.AutomaticExperiments;
 import dk.webbies.tajscheck.test.experiments.Experiment;
 import dk.webbies.tajscheck.testcreator.TestCreator;
-import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -169,11 +166,11 @@ public class TajsCheckerEvaluation {
 
         List<dk.webbies.tajscheck.testcreator.test.Test> tests = new TestCreator(info).createTests().stream().filter(test -> performedPaths.contains(test.getPath())).collect(Collectors.toList());
 
-        String programString = Main.generateFullDriver(info, tests, null);
+        String programString = DynamicMain.generateFullDriver(info, tests, null);
 
-        Util.writeFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME, programString);
+        Util.writeFile(DynamicMain.getFolderPath(bench) + DynamicMain.TEST_FILE_NAME, programString);
 
-        return OutputParser.parseDriverResult(Main.runBenchmark(bench));
+        return OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
     }
 
 

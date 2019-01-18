@@ -1,6 +1,6 @@
 package dk.webbies.tajscheck.test;
 
-import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
@@ -28,7 +28,7 @@ public class DeltaTest {
         String testPath = "jQuery().clone";
 //        String expected = "(undefined or (a non null value and Array and (arrayIndex: (null or ([any] and a non null value and a generic type marker (._isUnboundGeneric))))))";
 
-        String driver = Util.readFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME);
+        String driver = Util.readFile(DynamicMain.getFolderPath(bench) + DynamicMain.TEST_FILE_NAME);
         List<String> paths = Arrays.stream(driver.split(Pattern.quote("\n")))
                 .map(String::trim)
                 .map(str -> str.replaceAll("\r", ""))
@@ -41,7 +41,7 @@ public class DeltaTest {
 
         while (true) {
             try {
-                Main.generateSmallestDriver(bench, testHasTypeError(bench, new OutputParser.TypeError(testPath, null, null, null, null, null, null)));
+                DynamicMain.generateSmallestDriver(bench, testHasTypeError(bench, new OutputParser.TypeError(testPath, null, null, null, null, null, null)));
                 break;
             } catch (RuntimeException e) {
                 System.err.println(e.getMessage());
@@ -55,7 +55,7 @@ public class DeltaTest {
     public static Function<String, Collection<Integer>> testHasTypeError(Benchmark bench, OutputParser.TypeError typeError) {
         return (path) -> {
             try {
-                String out = Main.runBenchmark(path, bench);
+                String out = DynamicMain.runBenchmark(path, bench);
                 OutputParser.RunResult result = OutputParser.parseDriverResult(out, true, null);
                 Optional<OutputParser.TypeError> first = result.typeErrors.stream().filter(te -> {
                     if (typeError.typeof != null && !te.typeof.equals(typeError.typeof)) {

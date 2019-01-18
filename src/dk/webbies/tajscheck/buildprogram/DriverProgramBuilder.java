@@ -1,10 +1,9 @@
 package dk.webbies.tajscheck.buildprogram;
 
-import dk.au.cs.casa.typescript.types.ReferenceType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.au.cs.casa.typescript.types.UnionType;
 import dk.webbies.tajscheck.ExecutionRecording;
-import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -14,8 +13,6 @@ import dk.webbies.tajscheck.paser.AST.Operator;
 import dk.webbies.tajscheck.paser.AST.Statement;
 import dk.webbies.tajscheck.paser.AstBuilder;
 import dk.webbies.tajscheck.testcreator.test.*;
-import dk.webbies.tajscheck.testcreator.test.check.Check;
-import dk.webbies.tajscheck.testcreator.test.check.CheckToExpression;
 import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Pair;
@@ -157,7 +154,7 @@ public class DriverProgramBuilder {
 
             scripts.add(AstBuilder.stmtFromString(Util.readFile(info.bench.jsFile)));
 
-            scripts.add(comment(START_OF_FILE_MARKER + Main.TEST_FILE_NAME));
+            scripts.add(comment(START_OF_FILE_MARKER + DynamicMain.TEST_FILE_NAME));
 
             return block(
                     block(scripts),

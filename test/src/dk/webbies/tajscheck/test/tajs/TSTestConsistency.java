@@ -1,6 +1,6 @@
 package dk.webbies.tajscheck.test.tajs;
 
-import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -72,11 +72,11 @@ public class TSTestConsistency {
 
 
         {
-            String tstestDriver = Main.generateFullDriver(info, tests, null);
-            Util.writeFile(Main.getFolderPath(bench) + Main.TEST_FILE_NAME, tstestDriver);
+            String tstestDriver = DynamicMain.generateFullDriver(info, tests, null);
+            Util.writeFile(DynamicMain.getFolderPath(bench) + DynamicMain.TEST_FILE_NAME, tstestDriver);
         }
 
-        OutputParser.RunResult tsTestResult = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+        OutputParser.RunResult tsTestResult = OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
 
         Set<dk.webbies.tajscheck.testcreator.test.Test> testsCalledByTsTest = tsTestResult.getTestsCalled().stream().map(tests::get).collect(Collectors.toSet());
 

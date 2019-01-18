@@ -1,6 +1,5 @@
 package dk.webbies.tajscheck.test.tajs.analyze;
 
-import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Util;

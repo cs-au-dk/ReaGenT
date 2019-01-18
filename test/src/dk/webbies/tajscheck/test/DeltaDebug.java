@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.test;
 
 import dk.brics.tajs.util.AnalysisException;
-import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -193,7 +193,7 @@ public class DeltaDebug {
                 /*List<dk.webbies.tajscheck.testcreator.test.Test> tests = new TestCreator(info).createTests();
 
                 return new Pair<>(info, generateFullDriver(info, tests, recording));*/
-                return Main.generateFullDriver(bench).getRight().contains("_isUnboundGeneric");
+                return DynamicMain.generateFullDriver(bench).getRight().contains("_isUnboundGeneric");
             } catch (Exception e) {
                 return false;
             }
@@ -249,8 +249,8 @@ public class DeltaDebug {
 
     private static boolean testHasSomeError(Benchmark bench) throws Exception {
         bench = bench.withOptions(CheckOptions.errorFindingOptions(bench.options));
-        Main.writeFullDriver(bench);
-        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+        DynamicMain.writeFullDriver(bench);
+        OutputParser.RunResult result = OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
         for (OutputParser.TypeError typeError : result.typeErrors) {
             System.out.println(typeError);
         }
@@ -261,8 +261,8 @@ public class DeltaDebug {
 
     private static boolean testHasError(Benchmark bench, String path) throws Exception {
         bench = bench.withOptions(CheckOptions.errorFindingOptions(bench.options));
-        Main.writeFullDriver(bench);
-        OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+        DynamicMain.writeFullDriver(bench);
+        OutputParser.RunResult result = OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
 
         result.typeErrors.forEach(System.out::println);
 
@@ -287,9 +287,9 @@ public class DeltaDebug {
     private static boolean testSoundness(Benchmark bench) throws Exception {
         bench = bench.withRunMethod(BOOTSTRAP).withOptions(options -> options.setMaxIterationsToRun(5 * 1000).setConstructAllTypes(true).setCheckDepthReport(0));
 
-        Main.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
+        DynamicMain.writeFullDriver(bench); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");
-        String output = Main.runBenchmark(bench);
+        String output = DynamicMain.runBenchmark(bench);
         System.out.println(output);
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 

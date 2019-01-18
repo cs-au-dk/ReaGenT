@@ -1,7 +1,7 @@
 package dk.webbies.tajscheck.testcreator;
 
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -28,7 +28,7 @@ public class TestCreator {
     public List<Test> createTests(@SuppressWarnings("SameParameterValue") boolean concatDuplicates) {
         List<Test> loadTests = new ArrayList<>();
         for (Map.Entry<String, Type> userDefinedType : info.userDefinedTypes.entrySet()) {
-            loadTests.add(new LoadModuleTest(Main.getRequirePath(info.bench), userDefinedType.getValue(), info, userDefinedType.getKey()));
+            loadTests.add(new LoadModuleTest(DynamicMain.getRequirePath(info.bench), userDefinedType.getValue(), info, userDefinedType.getKey()));
         }
 
         if (info.bench.options.onlyInitialize) {

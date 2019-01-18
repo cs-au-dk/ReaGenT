@@ -45,7 +45,7 @@ public class RunSmall {
 
             Statement program = new DriverProgramBuilder(specificTests, info).buildDriver(null);
 
-            String filePath = Main.getFolderPath(bench) + Main.TEST_FILE_NAME;
+            String filePath = DynamicMain.getFolderPath(bench) + DynamicMain.TEST_FILE_NAME;
 
             Util.writeFile(filePath, AstToStringVisitor.toString(program, info.options.dynamicOptions.compactOutput));
 
@@ -89,7 +89,7 @@ public class RunSmall {
             paths = paths.subList(0, runsLimit);
         }
 
-        File dir = new File(Main.getFolderPath(orgBench));
+        File dir = new File(DynamicMain.getFolderPath(orgBench));
         if (!dir.exists()) {
             boolean created = dir.mkdir();
             assert created;
@@ -100,8 +100,8 @@ public class RunSmall {
     public static Function<String, CoverageResult> runCoverage(Benchmark bench) {
         return (path) -> {
             try {
-                path = path.substring(Main.getFolderPath(bench).length());
-                Map<String, CoverageResult> coverage = Main.genCoverage(bench, path);
+                path = path.substring(DynamicMain.getFolderPath(bench).length());
+                Map<String, CoverageResult> coverage = DynamicMain.genCoverage(bench, path);
                 return coverage.get(bench.getJSName());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -113,7 +113,7 @@ public class RunSmall {
     public static Function<String, OutputParser.RunResult> runDriver(Benchmark bench) {
         return (path) -> {
             try {
-                return OutputParser.parseDriverResult(Main.runBenchmark(path, bench));
+                return OutputParser.parseDriverResult(DynamicMain.runBenchmark(path, bench));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

@@ -1,6 +1,6 @@
 package dk.webbies.tajscheck.test.tajs.analyze;
 
-import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
@@ -92,7 +92,7 @@ public class CompareModesEvaluation {
 
         experiment.addExperiment(experiment("all-assumptions", modes.get("all-assumptions")));
 
-        Table table = experiment.calculate("fixed.csv");
+        Table table = experiment.calculate("all-assumptions.csv");
 
         printPaperTable(table);
     }
@@ -140,8 +140,8 @@ public class CompareModesEvaluation {
         List<Benchmark> benches = benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(bench -> bench.withOptions(options -> options.dynamicOptions.setCheckDepthReport(2).setCheckDepthUseValue(0))).collect(Collectors.toList());
 
         for (Benchmark bench : benches) {
-            Main.writeFullDriver(bench);
-            OutputParser.RunResult result = OutputParser.parseDriverResult(Main.runBenchmark(bench));
+            DynamicMain.writeFullDriver(bench);
+            OutputParser.RunResult result = OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
             RunBenchmarks.printErrors(bench, result);
             System.out.println();
         }
@@ -310,6 +310,9 @@ public class CompareModesEvaluation {
             double totalTests = result.testNot.size() + result.testPerformed.size() * 1.0;
             double finishedTests = result.testPerformed.size() - result.timeoutTests.size();
             String exhaustiveness = Util.toFixed(100 * finishedTests / totalTests, 1) + "%";
+            if (!result.retractedTests.isEmpty() && result.testPerformed.stream().anyMatch(result.retractedTests::contains)) {
+                System.out.println();
+            }
 
             register.accept(prefix + " action-coverage", exhaustiveness);
 //            register.accept(prefix + " statement-coverage", String.format("%.2f", result.statementCoverage) + "");

@@ -2,7 +2,7 @@ package dk.webbies.tajscheck.test.dynamic;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tajscheck.CoverageResult;
-import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
@@ -237,7 +237,7 @@ public class RunBenchmarks {
 
     @Test
     public void genFullDriver() throws Exception {
-        Main.writeFullDriver(benchmark);
+        DynamicMain.writeFullDriver(benchmark);
     }
 
     @Test
@@ -262,9 +262,9 @@ public class RunBenchmarks {
             b = b.patched();
         }
 
-        Main.writeFullDriver(b);
+        DynamicMain.writeFullDriver(b);
 
-        String out = Main.runBenchmark(b);
+        String out = DynamicMain.runBenchmark(b);
 //        System.out.println(out);
 
         // Parse and print the result
@@ -290,7 +290,7 @@ public class RunBenchmarks {
         if (Stream.of("underscore.d.ts", "fabric", "d3.d.ts", "backbone.d.ts", "three.d.ts").anyMatch(benchmark.dTSFile::contains)) {
             return; // Too big, node runs out of memory generating the instrumented version.
         }
-        Map<String, CoverageResult> out = Main.genCoverage(benchmark);
+        Map<String, CoverageResult> out = DynamicMain.genCoverage(benchmark);
         System.out.println("Coverage for " + benchmark.dTSFile);
 
         System.out.println(out);
@@ -320,9 +320,9 @@ public class RunBenchmarks {
             return;
         }
 
-        Main.writeFullDriver(benchmark); // No seed specified, in case of failure, the seed can be seen from the output.
+        DynamicMain.writeFullDriver(benchmark); // No seed specified, in case of failure, the seed can be seen from the output.
         System.out.println("Driver written");
-        String output = Main.runBenchmark(benchmark);
+        String output = DynamicMain.runBenchmark(benchmark);
         OutputParser.RunResult result = OutputParser.parseDriverResult(output);
 
         for (OutputParser.TypeError typeError : result.typeErrors) {

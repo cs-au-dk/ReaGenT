@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.test.flow;
 
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
@@ -180,15 +181,15 @@ public class FlowBenchmarks {
 
     @Test
     public void genTSTestDriver() throws Exception {
-        Main.writeFullDriver(benchmark);
+        DynamicMain.writeFullDriver(benchmark);
     }
 
     @Test
     public void runTSTest() throws Exception {
         Benchmark b = this.benchmark;
-        Main.writeFullDriver(b);
+        DynamicMain.writeFullDriver(b);
 
-        String out = Main.runBenchmark(this.benchmark);
+        String out = DynamicMain.runBenchmark(this.benchmark);
         System.out.println(out);
 
         // Parse and print the result

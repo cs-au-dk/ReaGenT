@@ -1,6 +1,6 @@
 package dk.webbies.tajscheck.test.experiments;
 
-import dk.webbies.tajscheck.Main;
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.RunSmall;
 import dk.webbies.tajscheck.benchmark.Benchmark;
@@ -39,7 +39,7 @@ public class ManualExperiment {
             try {
                 OutputParser.RunResult result = getSomeResult(benchmark);
                 if (!result.typeErrors.isEmpty()) {
-                    String driver = Util.readFile(Main.getFolderPath(benchmark) + Main.TEST_FILE_NAME);
+                    String driver = Util.readFile(DynamicMain.getFolderPath(benchmark) + DynamicMain.TEST_FILE_NAME);
                     List<String> paths = Arrays.stream(driver.split(Pattern.quote("\n")))
                             .map(String::trim)
                             .map(str -> str.replaceAll("\r", ""))
@@ -52,12 +52,12 @@ public class ManualExperiment {
 
                     String smallDriver;
                     try {
-                        smallDriver = Main.generateSmallestDriver(benchmark.withPathsToTest(paths), DeltaTest.testHasTypeError(benchmark, typeError));
+                        smallDriver = DynamicMain.generateSmallestDriver(benchmark.withPathsToTest(paths), DeltaTest.testHasTypeError(benchmark, typeError));
                     } catch (RuntimeException e) {
                         continue; // No point in trying any more.
                     }
 
-                    Util.writeFile(Main.getFolderPath(benchmark) + "minimizedDriver" + minimizedResultCounter++ + ".js", smallDriver);
+                    Util.writeFile(DynamicMain.getFolderPath(benchmark) + "minimizedDriver" + minimizedResultCounter++ + ".js", smallDriver);
 
                     queue.put(new Pair<>(name, typeError));
                 }
@@ -69,8 +69,8 @@ public class ManualExperiment {
 
     private static OutputParser.RunResult getSomeResult(Benchmark benchmark) throws Exception {
         if (new Random().nextBoolean()) {
-            Main.writeFullDriver(benchmark);
-            return OutputParser.parseDriverResult(Main.runBenchmark(benchmark));
+            DynamicMain.writeFullDriver(benchmark);
+            return OutputParser.parseDriverResult(DynamicMain.runBenchmark(benchmark));
         } else {
             if (true) {
                 throw new RuntimeException("The below code runs deterministically, thus ruining the experience.");

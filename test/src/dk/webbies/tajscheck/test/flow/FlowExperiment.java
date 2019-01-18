@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.test.flow;
 
+import dk.webbies.tajscheck.DynamicMain;
 import dk.webbies.tajscheck.Main;
 import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
@@ -37,10 +38,10 @@ public class FlowExperiment {
         int tstestErrors = 0;
         try { // TSTest.
             long startTime = System.currentTimeMillis();
-            Main.writeFullDriver(bench);
-            String output = Main.runBenchmark(bench);
+            DynamicMain.writeFullDriver(bench);
+            String output = DynamicMain.runBenchmark(bench);
             OutputParser.RunResult result = OutputParser.parseDriverResult(output);
-            Util.writeFile(Main.getFolderPath(bench) + prefix + "tstest.txt", output);
+            Util.writeFile(DynamicMain.getFolderPath(bench) + prefix + "tstest.txt", output);
 
             tstestErrors = result.typeErrors.size();
             registrator.accept(prefix + "TSTest-errors", result.typeErrors.size() + "");
@@ -55,7 +56,7 @@ public class FlowExperiment {
             TAJSUtil.TajsAnalysisResults result = TAJSUtil.runNoDriver(bench, TIMEOUT);
             reagentErrors = result.detectedViolations.size();
             registrator.accept(prefix + "ReaGenT-errors", result.detectedViolations.size() + "");
-            Util.writeFile(Main.getFolderPath(bench) + prefix + "reagent.txt", result.toString());
+            Util.writeFile(DynamicMain.getFolderPath(bench) + prefix + "reagent.txt", result.toString());
             registrator.accept(prefix + "ReaGenT-time", (result.timedout ? "(timeout)" : "") + ((System.currentTimeMillis() - startTime) / 1000) + "s");
 
             registrator.accept(prefix + "ReaGenT-retracted", result.retractedTests.size() + "");
