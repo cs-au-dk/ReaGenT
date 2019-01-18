@@ -94,7 +94,7 @@
 
             // Read
 
-            if (!key) {
+            if (typeof key === "undefined") {
                 result = {};
             }
 
@@ -130,7 +130,7 @@
                         break;
                     }
 
-                    if (!key) {
+                    if (typeof key === "undefined") {
                         result[name] = cookie;
                     }
                 } catch (e) {}
