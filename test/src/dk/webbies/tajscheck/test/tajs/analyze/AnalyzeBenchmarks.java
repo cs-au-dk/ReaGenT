@@ -151,7 +151,7 @@ public class AnalyzeBenchmarks extends TestCase {
 
                 .staticOptions
                 .setBetterAnyString(true)
-                .setRetractionPolicy(new LimitTransfersRetractionPolicy(100000, 0))
+                .setRetractionPolicy(new LimitTransfersRetractionPolicy(2000000, 0))
 
                 // the old strong-mode/NO-CHECK-TYPE
                 .setUseValuesWithMismatches(true)
