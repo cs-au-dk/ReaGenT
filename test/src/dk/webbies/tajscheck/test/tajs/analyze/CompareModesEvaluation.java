@@ -15,6 +15,7 @@ import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 import org.junit.Test;
 
+import javax.management.RuntimeMBeanException;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -71,7 +72,6 @@ public class CompareModesEvaluation {
         put("no-assumptions-fixed", new Pair<>(Benchmark::possilyPatched, get("no-assumptions").getRight()));
         put("MGC-fixed", new Pair<>(Benchmark::possilyPatched, get("MGC").getRight()));*/
     }};
-
 
     @Test
     public void doEvaluation() {
@@ -136,15 +136,9 @@ public class CompareModesEvaluation {
 
 
     @Test
-    public void tsTest() throws Exception {
-        List<Benchmark> benches = benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(bench -> bench.withOptions(options -> options.dynamicOptions.setCheckDepthReport(2).setCheckDepthUseValue(0))).collect(Collectors.toList());
-
-        for (Benchmark bench : benches) {
-            DynamicMain.writeFullDriver(bench);
-            OutputParser.RunResult result = OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
-            RunBenchmarks.printErrors(bench, result);
-            System.out.println();
-        }
+    public void tsTest() {
+        List<Benchmark> benchmarks = benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList());
+        doQuickTSTestEval(benchmarks);
 
 // how many of the true positives TSTest found.
 // classnames: no error
@@ -157,6 +151,37 @@ public class CompareModesEvaluation {
 // pleasejs: found 3/5
 // pluralize: no error
 // uuid: no error
+    }
+
+    @Test
+    public void tsTestFixed() {
+        List<Benchmark> benchmarks = benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(Benchmark::possilyPatched).collect(Collectors.toList());
+        doQuickTSTestEval(benchmarks);
+    }
+
+    private void doQuickTSTestEval(List<Benchmark> benchmarks) {
+        try {
+            // Combining null and undef, because noone cares, and it is what I did for ReaGenT.
+            List<Benchmark> benches = benchmarks.stream().map(bench -> bench.withOptions(options -> options.setCombineNullAndUndefined(true).dynamicOptions.setCheckDepthReport(2).setCheckDepthUseValue(0))).collect(Collectors.toList());
+            Map<Benchmark, OutputParser.RunResult> results = new HashMap<>();
+            for (Benchmark bench : benches) {
+                DynamicMain.writeFullDriver(bench);
+                OutputParser.RunResult result = OutputParser.parseDriverResult(DynamicMain.runBenchmark(bench));
+                RunBenchmarks.printErrors(bench, result);
+                System.out.println();
+                results.put(bench, result);
+            }
+
+            System.out.println("\n\n\nSummary of results");
+            results.forEach((bench, res) -> {
+                System.out.println(bench.name + ": ");
+                System.out.println("\t Type errors: " + res.typeErrors.size() +". Action coverage: " + Util.toFixed(res.getTestsCalled().size() * 100.0d / res.getTotalTests(), 2) + "%");
+            });
+
+            System.exit(0);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

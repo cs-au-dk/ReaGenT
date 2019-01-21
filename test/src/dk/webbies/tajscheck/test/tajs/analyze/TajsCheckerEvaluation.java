@@ -75,13 +75,7 @@ public class TajsCheckerEvaluation {
             // warmup.
             new Experiment("classnames").addExperiment(experiment()).calculate(null);
         }
-        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).map(bench -> {
-            if (bench.patched() != null) {
-                return bench.withName(bench.name); // TODO:
-            } else {
-                return bench;
-            }
-        }).collect(Collectors.toList()));
+        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
 
         experiment.addSingleExperiment(AutomaticExperiments.type);
         experiment.addExperiment(experiment());

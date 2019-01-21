@@ -13,14 +13,19 @@ import org.kohsuke.args4j.spi.SubCommandHandler;
 import org.kohsuke.args4j.spi.SubCommands;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
     @Argument(handler = SubCommandHandler.class)
     @SubCommands({
-            // TODO: A TSTest command, a ReaGenT command, and a quicktest command.
-            @SubCommand(name = "quicktest", impl = QuickTest.class)
+            @SubCommand(name = "quicktest", impl = QuickTest.class),
+            @SubCommand(name = "help", impl = Help.class),
+            @SubCommand(name = "experiment", impl = Experiments.class),
+            @SubCommand(name = "reagent", impl = ReaGenT.class),
+            @SubCommand(name = "tstest", impl = TSTest.class)
     })
-    Command cmd;
+    public Command cmd;
 
 
     public static void main(String[] args) throws Throwable {
@@ -29,11 +34,20 @@ public class Main {
         try {
             parser.parseArgument(args);
         } catch (CmdLineException e) {
-            parser.printUsage(System.out);
+            System.out.println(e.getMessage());
             return;
         }
         if (main.cmd == null) {
-            parser.printUsage(System.out);
+            System.out.println(
+                    "./main.sh <command> [<args>] \n" +
+                            "\n" +
+                            "The following commands are available: \n" +
+                            "    help <command>      Prints a help message for a specific command\n" +
+                            "    quicktest           Does a quick test of TSTest and ReaGenT. Should print a success message after running.\n" +
+                            "    experiment <name>   Performs a named experiment\n" +
+                            "    reagent [<args>]    Runs ReaGenT on some library\n" +
+                            "    tstest [<args>]     Runs TSTest on some library"
+            );
             return;
         }
         main.cmd.run();
@@ -44,7 +58,6 @@ public class Main {
     }
 
     public static final class QuickTest implements Command {
-
         @Override
         public void run() throws Throwable {
             System.out.println("Doing the quicktest");
@@ -80,6 +93,50 @@ public class Main {
         }
     }
 
+
+    public static class Help implements Command {
+        private String helpText =
+                "Usage: \n" +
+                        "    ./main.sh help <command>\n" +
+                        "    \n" +
+                        "E.g.\n" +
+                        "    ./main help reagent";
+
+        @Argument
+        public List<String> arguments = new ArrayList<>();
+
+
+        @Override
+        public void run() throws Throwable {
+            if (arguments.isEmpty()) {
+                System.out.println(helpText);
+                return;
+            }
+            String command = arguments.get(0);
+            switch (command.toLowerCase()) {
+                case "reagent":
+                    ReaGenT.printHelp();
+                    break;
+                case "tstest":
+                    TSTest.printHelp();
+                    break;
+                case "help":
+                    System.out.println(helpText);
+                    return;
+                case "experiment":
+                    Experiments.printHelp();
+                    break;
+                case "quicktest":
+                    System.out.println("Usage: \n" +
+                            "    ./main.sh quicktest\n" +
+                            "    \n" +
+                            "Should print a success message within a minute.");
+                    break;
+                default:
+                    System.out.println("Could not recognize command with name " + command + ".");
+            }
+        }
+    }
 
 
 }

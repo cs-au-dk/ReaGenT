@@ -5,7 +5,7 @@ A sound dynamic/static check of TypeScript declaration files.
  - Dependencies: 
     - NodeJS
     - IntelliJ
-    - TypeScript 2.2 `npm install -g typescript@2.2`
+    - TypeScript 3.0 `npm install -g typescript@2.2`
     - (istanbul, for coverage tests) `npm install -g istanbul`
  - Getting the submodules `git submodule update --init --remote`
  - Checkout the `erik-experiments` branch in the TAJS-private submodule. 
