@@ -1,2 +1,2 @@
 #!/bin/bash
-java -jar build/libs/tajscheck-all.jar "$@"
+java -Xmx8G -jar build/libs/tajscheck-all.jar "$@"
