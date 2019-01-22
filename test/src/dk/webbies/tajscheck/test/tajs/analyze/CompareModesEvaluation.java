@@ -87,6 +87,22 @@ public class CompareModesEvaluation {
     }
 
     @Test
+    public void doEvaluationQuick() {
+        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
+
+        modes.forEach((name, options) -> {
+            if (!Arrays.asList("all-assumptions", "no-safe-strings", "no-prefer-lib-values").contains(name)) {
+                return;
+            }
+            experiment.addExperiment(experiment(name, options));
+        });
+
+        Table table = experiment.calculate("compareModes.csv");
+
+        printPaperTable(table);
+    }
+
+    @Test
     public void allAssumptions() {
         Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
 

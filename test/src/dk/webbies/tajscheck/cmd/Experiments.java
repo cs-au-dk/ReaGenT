@@ -20,6 +20,13 @@ public class Experiments implements Main.Command {
                 "Reproduces the results found in Table II in the ReaGenT paper.",
                 new CompareModesEvaluation()::doEvaluation
         );
+        //language=TEXT
+        experiment(
+                "compareVariantsQuick",
+                "Compares the 3 variants of the RMGC that should not encounter timeouts. \n" +
+                "Reproduces the results found in Table II in the ReaGenT paper.",
+                new CompareModesEvaluation()::doEvaluationQuick
+        );
 
         //language=TEXT
         experiment(
