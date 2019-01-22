@@ -1,12 +1,14 @@
 package dk.webbies.tajscheck.cmd;
 
 import dk.webbies.tajscheck.DynamicMain;
+import dk.webbies.tajscheck.OutputParser;
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
 import dk.webbies.tajscheck.parsespec.ParseDeclaration;
 import dk.webbies.tajscheck.paser.AST.DynamicAccessExpression;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
+import dk.webbies.tajscheck.test.dynamic.UnitTests;
 import dk.webbies.tajscheck.test.tajs.analyze.AnalyzeBenchmarks;
 import dk.webbies.tajscheck.test.tajs.analyze.CompareModesEvaluation;
 import org.kohsuke.args4j.CmdLineParser;
@@ -87,7 +89,7 @@ public class TSTest implements Main.Command {
     private void runBench(Benchmark benchmark) throws Exception {
         DynamicMain.writeFullDriver(benchmark);
         String result = DynamicMain.runBenchmark(benchmark);
-        System.out.println(result);
+        RunBenchmarks.printErrors(benchmark, OutputParser.parseDriverResult(result));
         System.exit(0);
     }
 }
