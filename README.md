@@ -31,6 +31,6 @@ In the below I'm going to assume that a unix-like system is used, replace `main.
  - Running ReaGenT on a JavaScript implementation and TypeScript declaration
     - `./main.sh reagent -js test/benchmarks/classnames/classnames.js -ts test/benchmarks/classnames/classnames.d.ts`
  - Running TSTest on a predefined benchmark
-    - `./main.sh tstest -bench js-cookie`
+    - `./main.sh tstest -bench classnames`
  - Running TSTest on a JavaScript implementation and TypeScript declaration (in a browser environment)
     - `./main.sh tstest -js test/benchmarks/js-cookie/js-cookie.js -ts test/benchmarks/js-cookie/declaration.d.ts -env browser`
