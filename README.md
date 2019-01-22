@@ -1,5 +1,5 @@
 # ReaGenT / TSTest
-A verifying and testing the correctness of TypeScript declaration files. 
+A tool for verifying and testing the correctness of TypeScript declaration files. 
 
 ## Setting up the project
  - Dependencies: 
