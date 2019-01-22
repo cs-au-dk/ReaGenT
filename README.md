@@ -1,32 +1,41 @@
-# TAJSCheck
-A sound dynamic/static check of TypeScript declaration files. 
+# ReaGenT / TSTest
+A verifying and testing the correctness of TypeScript declaration files. 
 
 ## Setting up the project
  - Dependencies: 
-    - NodeJS
-    - IntelliJ
-    - TypeScript 3.0 `npm install -g typescript@2.2`
-    - (istanbul, for coverage tests) `npm install -g istanbul`
- - Getting the submodules `git submodule update --init --remote`
- - Checkout the `erik-experiments` branch in the TAJS-private submodule. 
- - Checkout the `v2` branch in the ts-spec-reader submodule.
+    - NodeJS `sudo apt-get install nodejs npm`
+    - JDK 9 (or higher) `sudo add-apt-repository ppa:linuxuprising/java && sudo apt-get install oracle-java11-installer`
+    - (Chrome is required to run TSTest on browser based libraries)
+    - (istanbul, only for coverage tests with TSTest) `npm install -g istanbul`
+    
+ - Getting the submodules `git submodule update --init --recursive`
  - Set up ts-spec-reader: 
     - `cd ts-spec-reader`
     - `npm install`
-    - `tsc --module commonjs src/*.ts`
+    - `npm run compile`
+    - `cd ..`
+ - Compile the project
+    - On Mac/Unix: `./gradlew fatJar`
+    - On Windows: `./gradlew.bat fatJar`
  - Set up TAJS:
     - Create a .tajsconfig file in the project root with the following informations:
     ```
     tajs = <absolute path to tajs>
     ts-spec-reader = <absolute path to ts-spec-reader>
     ```
-    
-## Tests
-To get a feeling of what TAJSCheck does, run the `UnitTests` class. 
 
-Afterwards, look in the test/unit folder, there is a lot of tests, most of which are designed to have some error in either the declaration or implementation:
+## Running ReaGenT / TSTest
+In the below I'm going to assume that a unix-like system is used, replace `main.sh` with `main.bat` for Windows. 
 
-Each test is a folder, containing 3 files: 
-- `declaration.d.ts`, containing a sample declaration for a library
-- `implementation.js`, containing the corresponding library implementation
-- `test.js` our driver, which loads `implementation.js`, and tests that it behaves correctly. 
+ - Doing a quick test that the setup worked. 
+    - `./main.sh quicktest`
+ - View a help message 
+    - `./main.sh`    
+ - Running ReaGenT on a predefined benchmark.
+    - `./main.sh reagent -bench classnames`
+ - Running ReaGenT on a JavaScript implementation and TypeScript declaration
+    - `./main.sh reagent -js test/benchmarks/classnames/classnames.js -ts test/benchmarks/classnames/classnames.d.ts`
+ - Running TSTest on a predefined benchmark
+    - `./main.sh tstest -bench js-cookie`
+ - Running TSTest on a JavaScript implementation and TypeScript declaration (in a browser environment)
+    - `./main.sh tstest -js test/benchmarks/js-cookie/js-cookie.js -ts test/benchmarks/js-cookie/declaration.d.ts -env browser`
