@@ -3,10 +3,11 @@ A verifying and testing the correctness of TypeScript declaration files.
 
 ## Setting up the project
  - Dependencies: 
+    - Git (to download submodules) `sudo apt-get install git`
     - NodeJS `sudo apt-get install nodejs npm`
     - JDK 9 (or higher) `sudo add-apt-repository ppa:linuxuprising/java && sudo apt-get install oracle-java11-installer`
-    - (Chrome is required to run TSTest on browser based libraries)
-    - (istanbul, only for coverage tests with TSTest) `npm install -g istanbul`
+    - Chrome (only to run TSTest on browser based libraries)
+    - Istanbul (only for coverage tests with TSTest) `npm install -g istanbul`
     
  - Getting the submodules `git submodule update --init --recursive`
  - Set up ts-spec-reader: 
@@ -17,12 +18,6 @@ A verifying and testing the correctness of TypeScript declaration files.
  - Compile the project
     - On Mac/Unix: `./gradlew fatJar`
     - On Windows: `./gradlew.bat fatJar`
- - Set up TAJS:
-    - Create a .tajsconfig file in the project root with the following informations:
-    ```
-    tajs = <absolute path to tajs>
-    ts-spec-reader = <absolute path to ts-spec-reader>
-    ```
 
 ## Running ReaGenT / TSTest
 In the below I'm going to assume that a unix-like system is used, replace `main.sh` with `main.bat` for Windows. 
