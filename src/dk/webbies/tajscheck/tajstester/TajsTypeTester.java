@@ -570,16 +570,6 @@ public class TajsTypeTester implements ITypeTesting<Context> {
         }
     }
 
-    /*@Override // TODO: Add a monitor.
-    public void visitPhasePost(AnalysisPhase phase) {
-        if(phase == AnalysisPhase.SCAN) {
-            if(!this.violationsOracle.isTight()) {
-                System.out.println("The violation oracle used is not tight, remove the following suppressions:\n" +
-                        new ArrayList<>(this.violationsOracle.getUnnecessarySuppressions()));
-            }
-        }
-    }*/
-
     public MultiMap<Test, Exception> getExceptionsEncountered() {
         return exceptionsEncountered;
     }

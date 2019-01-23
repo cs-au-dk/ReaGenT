@@ -102,6 +102,17 @@ public class TAJSUtil {
         if (secondsTimeout > 0) { // Timeout
             AnalysisTimeLimiter timeLimiter = new AnalysisTimeLimiter(secondsTimeout, -1, !bench.options.staticOptions.useInspector);
             optMonitors.add(timeLimiter);
+
+            optMonitors.add(new DefaultAnalysisMonitoring() {
+                public void visitPhasePost(AnalysisPhase phase) {
+                    if (phase == AnalysisPhase.SCAN) {
+                        if (!typeTester.getViolationsOracle().isTight()) {
+                            System.out.println("The violation oracle used is not tight, remove the following suppressions:\n" +
+                                    new ArrayList<>(typeTester.getViolationsOracle().getUnnecessarySuppressions()));
+                        }
+                    }
+                }
+            });
         }
 
         optMonitors.add(Monitoring.make(false));
