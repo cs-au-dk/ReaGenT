@@ -4,12 +4,14 @@ import com.google.gson.Gson;
 import dk.brics.tajs.analysis.*;
 import dk.brics.tajs.analysis.FunctionCalls.CallInfo;
 import dk.brics.tajs.flowgraph.BasicBlock;
+import dk.brics.tajs.flowgraph.FlowGraph;
+import dk.brics.tajs.flowgraph.jsnodes.EventDispatcherNode;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.AnalysisPhase;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
 import dk.brics.tajs.solver.BlockAndContext;
 import dk.brics.tajs.solver.WorkList;
-import dk.brics.tajs.type_testing.TypeTestRunner;
+import dk.brics.tajs.typetesting.ITypeTesting;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ConsistencyKeepingExpansionPolicy;
@@ -35,7 +37,7 @@ import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.newList;
 
-public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTestRunner {
+public class TajsTypeTester implements ITypeTesting<Context> {
     private static final boolean DEBUG = true;
     private static final boolean DEBUG_VALUES = false;
 
@@ -386,6 +388,39 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         return typedSymbolicFunctionEvaluator.evaluateCallToSymbolicFunction(hostObject, call, c);
     }
 
+    @Override
+    public IContextSensitivityStrategy getCustomContextSensitivityStrategy(FlowGraph fg) {
+        return new TesterContextSensitivity(fg.getSyntacticInformation());
+    }
+
+    @Override
+    public Integer compareWorkListEntries(BlockAndContext<Context> bc1, BlockAndContext<Context> bc2) {
+        final int BC1_FIRST = -1;
+        final int BC2_FIRST = 1;
+        
+        boolean thisIsTypeTest = bc1.getBlock().getFirstNode() instanceof EventDispatcherNode && ((EventDispatcherNode) bc1.getBlock().getFirstNode()).getType() == EventDispatcherNode.Type.TYPE_TESTS;
+        boolean otherIsTypeTest = bc2.getBlock().getFirstNode() instanceof EventDispatcherNode && ((EventDispatcherNode) bc2.getBlock().getFirstNode()).getType() == EventDispatcherNode.Type.TYPE_TESTS;
+
+        if (thisIsTypeTest || otherIsTypeTest) {
+            // This is ugly, but I need the typeTester to be last in the worklist. With the previous worklist algorithm that just happened, but now I need this.
+            if (thisIsTypeTest && !otherIsTypeTest) {
+                return BC2_FIRST;
+            }
+            //noinspection ConstantConditions
+            if (otherIsTypeTest && !thisIsTypeTest) {
+                return BC1_FIRST;
+            }
+
+            if (bc1.getContext().getLocalContext() != null && bc2.getContext().getLocalContext() == null) {
+                return BC1_FIRST;
+            }
+            if (bc2.getContext().getLocalContext() != null && bc1.getContext().getLocalContext() == null) {
+                return BC2_FIRST;
+            }
+        }
+        return null;
+    }
+
     /**
      *
      * @return if the value was added.
@@ -445,6 +480,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     }
 
     private Set<BlockAndContext<Context>> entriesToSkip = new HashSet<>();
+
     @Override
     public boolean shouldSkipEntry(BlockAndContext<Context> e) {
         if (entriesToSkip.contains(e)) {
@@ -458,7 +494,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
     }
 
     @Override
-    public boolean recoverFrom(Exception e, BlockAndContext<Context> p) {
+    public boolean shouldIgnoreException(Exception e, BlockAndContext<Context> p) {
         if (sensitivity != null && TesterContextSensitivity.isTestContext(p.getContext())) {
             Test test = sensitivity.getTest(p.getContext());
             assert !exceptionsEncountered.containsKey(test);
@@ -534,7 +570,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
         }
     }
 
-    @Override
+    /*@Override // TODO: Add a monitor.
     public void visitPhasePost(AnalysisPhase phase) {
         if(phase == AnalysisPhase.SCAN) {
             if(!this.violationsOracle.isTight()) {
@@ -542,7 +578,7 @@ public class TajsTypeTester extends DefaultAnalysisMonitoring implements TypeTes
                         new ArrayList<>(this.violationsOracle.getUnnecessarySuppressions()));
             }
         }
-    }
+    }*/
 
     public MultiMap<Test, Exception> getExceptionsEncountered() {
         return exceptionsEncountered;

@@ -852,7 +852,7 @@ public class TAJSUnitTests {
                 .performedAllTests();
     }
 
-    @Test
+    @Test // TODO: Fails
     public void retract() throws Exception {
         StaticOptions.Builder options = options().staticOptions.setRetractionPolicy(new LimitTransfersRetractionPolicy(100, 0)).setExpansionPolicy(new FixedExpansionOrder("module.toRetract(string)", "module.returnsBool()"));
 
@@ -1049,7 +1049,7 @@ public class TAJSUnitTests {
         );
     }
 
-    @Test
+    @Test // TODO: Fails.
     public void timeout() throws Exception {
         TajsAnalysisResults result = run("timeout", options().staticOptions
                 .setExpansionPolicy(new FixedExpansionOrder("module.foo()", "module.polute()"))

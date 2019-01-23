@@ -48,7 +48,6 @@ public class TAJSUtil {
 
         OptionValues additionalOpts = new OptionValues();
         CmdLineParser parser = new CmdLineParser(additionalOpts);
-        OptionValues.ContextStrategyConstructor contextStrategy = (FlowGraph fg) -> new TesterContextSensitivity(fg.getSyntacticInformation());
         TajsTypeTester typeTester = new TajsTypeTester(tests, info);
 
         if (info.bench.run_method == Benchmark.RUN_METHOD.BOOTSTRAP) {
@@ -83,8 +82,6 @@ public class TAJSUtil {
         additionalOpts.enableIncludeDom();
         additionalOpts.disableLowSeverity();
 
-        additionalOpts.setTypeTestRunner(typeTester);
-        additionalOpts.setCustomContextSensitivityStrategy(contextStrategy);
         additionalOpts.enableTypeChecks();
 
         additionalOpts.getSoundnessTesterOptions().setTest(false);
@@ -93,9 +90,9 @@ public class TAJSUtil {
         additionalOpts.getUnsoundness().setIgnoreSomePrototypesDuringDynamicPropertyReads(true);
         additionalOpts.getUnsoundness().setIgnoreUnlikelyPropertyReads(true);
         additionalOpts.getUnsoundness().setIgnoreMissingNativeModels(true);
-        additionalOpts.getUnsoundness().setKeepExceptionalFlowAwayFromEvents(true);
-        additionalOpts.getUnsoundness().setIgnoreScanExceptionsIfEarlyTermination(true);
-
+        additionalOpts.getUnsoundness().setIgnoreEventsAfterExceptions(true);
+//        additionalOpts.getUnsoundness().setIgnoreScanExceptionsIfEarlyTermination(true);
+        additionalOpts.enableAnalysisLimitationWarnOnly();
 
         additionalOpts.enableUnevalizer();
         if (bench.options.staticOptions.useInspector) additionalOpts.enableInspector();
@@ -108,7 +105,6 @@ public class TAJSUtil {
         }
 
         optMonitors.add(Monitoring.make(false));
-        optMonitors.add(typeTester);
         optMonitors.add(typeTester.getSuspiciousMonitor());
         optMonitors.add(typeTester.getTransferMonitor());
         optMonitors.add(typeTester.getCoverageMonitor());
@@ -117,7 +113,7 @@ public class TAJSUtil {
         IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(optMonitors);
         initLogging();
 
-        Analysis a = dk.brics.tajs.Main.init(additionalOpts, monitoring, null, new TesterTransfer());
+        Analysis a = dk.brics.tajs.Main.init(additionalOpts, monitoring, null, new TesterTransfer(), typeTester);
         boolean timedout = false;
         try {
             dk.brics.tajs.Main.run(a);

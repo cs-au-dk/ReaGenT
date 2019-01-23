@@ -5,7 +5,6 @@ import dk.au.cs.casa.typescript.types.SimpleTypeKind;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.brics.tajs.analysis.*;
 import dk.brics.tajs.analysis.js.UserFunctionCalls;
-import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects;
 import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.BasicBlock;
 import dk.brics.tajs.lattice.*;
@@ -50,7 +49,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     @Override
     public Boolean visit(PropertyReadTest test) {
-        Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(),test.getTypeContext()));
+        Value baseValue = attemptGetValue(new TypeWithContext(test.getBaseType(), test.getTypeContext()));
         boolean result = true;
         for (ObjectLabel label : baseValue.getObjectLabels()) {
             Value propertyValue = UnknownValueResolver.getRealValue(pv.readPropertyValue(Collections.singletonList(label), Value.makeStr(test.getProperty())), c.getState());
@@ -194,79 +193,74 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
 
     public static FunctionCalls.CallInfo createCallInfo(Value receiver, boolean isConstructorCall, List<Value> arguments, boolean restArgs, Value restArgType, AbstractNode node) {
         return new FunctionCalls.CallInfo() {
-                @Override
-                public AbstractNode getSourceNode() {
-                    return node;
-                }
-
-                @Override
-                public AbstractNode getJSSourceNode() {
-                    return node;
-                }
-
-                @Override
-                public boolean isConstructorCall() {
-                    return isConstructorCall;
-                }
-
-                @Override
-                public Value getFunctionValue() {
-                    throw new AnalysisException();
-                }
-
-                @Override
-                public Value getThis() {
-                    return receiver;
-                }
-
-                @Override
-                public Value getArg(int i) {
-                    if (i >= arguments.size()) {
-                        if (restArgs) {
-                            return restArgType;
-                        } else {
-                            return Value.makeUndef();
-                        }
-                    }
-                    return arguments.get(i);
-                }
-
-                @Override
-                public int getNumberOfArgs() {
-                    return arguments.size();
-                }
-
-                @Override
-                public Value getUnknownArg() {
-                    assert restArgs;
-                    return restArgType.join(Value.makeUndef());
-                }
-
-                @Override
-                public boolean isUnknownNumberOfArgs() {
-                    return restArgs;
-                }
-
-                @Override
-                public int getResultRegister() {
-                    throw new AnalysisException();
-                }
-
-                @Override
-                public ExecutionContext getExecutionContext() {
-                    throw new AnalysisException();
-                }
-
-                @Override
-                public boolean assumeFunction() {
-                    return false;
-                }
+            @Override
+            public AbstractNode getSourceNode() {
+                return node;
+            }
 
             @Override
-                public ICallEdge.Info toEdgeInfo() {
-                    return isConstructorCall ? ICallEdge.Info.makeImplicitConstructorCall() : ICallEdge.Info.makeImplicitCall();
+            public AbstractNode getJSSourceNode() {
+                return node;
+            }
+
+            @Override
+            public boolean isConstructorCall() {
+                return isConstructorCall;
+            }
+
+            @Override
+            public Value getFunctionValue() {
+                throw new AnalysisException();
+            }
+
+            @Override
+            public Value getThis() {
+                return receiver;
+            }
+
+            @Override
+            public Value getArg(int i) {
+                if (i >= arguments.size()) {
+                    if (restArgs) {
+                        return restArgType;
+                    } else {
+                        return Value.makeUndef();
+                    }
                 }
-            };
+                return arguments.get(i);
+            }
+
+            @Override
+            public int getNumberOfArgs() {
+                return arguments.size();
+            }
+
+            @Override
+            public Value getUnknownArg() {
+                assert restArgs;
+                return restArgType.join(Value.makeUndef());
+            }
+
+            @Override
+            public boolean isUnknownNumberOfArgs() {
+                return restArgs;
+            }
+
+            @Override
+            public int getResultRegister() {
+                throw new AnalysisException();
+            }
+
+            @Override
+            public ExecutionContext getExecutionContext() {
+                throw new AnalysisException();
+            }
+
+            @Override
+            public boolean assumeFunction() {
+                return false;
+            }
+        };
     }
 
     @Override
@@ -349,7 +343,7 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
         for (ObjectLabel label : baseValue.getObjectLabels()) {
             Value previous = UnknownValueResolver.getProperty(label, PKey.StringPKey.make(test.getProperty()), c.getState(), false);
             Value newValue = valueHandler.createValue(test.getToWrite(), test.getTypeContext());
-            if (!CopyObjectInstantiation.hasNothingNew(newValue, previous, c.getState())) {
+            if (CopyObjectInstantiation.hasSomethingNew(newValue, previous, c.getState())) {
                 pv.writeProperty(label, test.getProperty(), newValue);
             }
         }

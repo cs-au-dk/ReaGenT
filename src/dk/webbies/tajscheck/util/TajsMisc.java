@@ -11,6 +11,7 @@ import dk.brics.tajs.options.Options;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Collectors;
 import dk.brics.tajs.util.PathAndURLUtils;
+import dk.webbies.tajscheck.tajstester.TajsTypeTester;
 import dk.webbies.tajscheck.tajstester.TesterTransfer;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
@@ -111,7 +112,7 @@ public class TajsMisc {
         start(suffix);
         try {
             Options.get().getArguments().addAll(Arrays.stream(args).map(Paths::get).collect(Collectors.toList()));
-            Analysis a = Main.init(Options.get(), monitoring, null, new TesterTransfer());
+            Analysis a = Main.init(Options.get(), monitoring, null, new TesterTransfer(), null);
             if (a == null)
                 throw new AnalysisException("Error during initialization");
             Main.run(a);
