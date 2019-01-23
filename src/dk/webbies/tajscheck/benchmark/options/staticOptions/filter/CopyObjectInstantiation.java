@@ -3,12 +3,10 @@ package dk.webbies.tajscheck.benchmark.options.staticOptions.filter;
 import dk.au.cs.casa.typescript.types.*;
 import dk.brics.tajs.analysis.Analysis;
 import dk.brics.tajs.analysis.HostAPIs;
-import dk.brics.tajs.analysis.PropVarOperations;
 import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.lattice.*;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
 import dk.brics.tajs.solver.GenericSolver;
-import dk.brics.tajs.util.Pair;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.buildprogram.TypeChecker;
@@ -16,13 +14,11 @@ import dk.webbies.tajscheck.buildprogram.typechecks.TypeCheck;
 import dk.webbies.tajscheck.tajstester.TajsTypeChecker;
 import dk.webbies.tajscheck.tajstester.data.TypeViolation;
 import dk.webbies.tajscheck.tajstester.typeCreator.SpecInstantiator;
-import dk.webbies.tajscheck.typeutil.TypesUtil;
 import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.newList;
@@ -113,7 +109,7 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
 
     @Override
     public Value visit(GenericType t, Arg arg) {
-        throw new RuntimeException();
+        return visit(t.toInterface(), arg);
     }
 
     @Override
@@ -121,7 +117,6 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         Value value = arg.value;
         TypeContext context = arg.context;
         Solver.SolverInterface c = arg.c;
-        PropVarOperations pv = c.getAnalysis().getPropVarOperations();
 
         if (!value.isMaybeObject()) {
             throw new NoSuchTypePossible();
@@ -159,7 +154,6 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         }
 
 
-        Pair<Set<ObjectLabel>, TypeWithContext> labelKey = Pair.make(orgLabels, new TypeWithContext(t, arg.context));
         ObjectLabel label = ObjectLabel.make(new CopiedObjectLabel(orgLabels, new TypeWithContext(t, arg.context)), orgLabels.iterator().next().getKind());
         if (!c.getState().getStore().containsKey(label)) {
             c.getState().newObject(label); // this takes care of summarizing old objects (of which there are always none...)
@@ -184,7 +178,7 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
                 }
             }
             Value previous = UnknownValueResolver.getInternalPrototype(label, c.getState(), false);
-            if (!hasNothingNew(internalPrototype, previous, c.getState())) {
+            if (hasSomethingNew(internalPrototype, previous, c.getState())) {
                 object.setInternalPrototype(internalPrototype);
             }
         }
@@ -193,7 +187,7 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         {
             Value nonArrayProperty = readSomething(orgLabels, c.getState(), (objectLabel, obj) -> obj.getDefaultOtherProperty());
             Value previous = UnknownValueResolver.getDefaultOtherProperty(label, c.getState());
-            if (!hasNothingNew(nonArrayProperty, previous, c.getState())) {
+            if (hasSomethingNew(nonArrayProperty, previous, c.getState())) {
                 object.setDefaultOtherProperty(nonArrayProperty);
             }
         }
@@ -229,7 +223,7 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
                 }
             }
             existingPropValue = existingPropValue == null ? null : UnknownValueResolver.getRealValue(existingPropValue, c.getState());
-            if (!hasNothingNew(newPropValue, existingPropValue, c.getState())) {
+            if (hasSomethingNew(newPropValue, existingPropValue, c.getState())) {
                 object.setProperty(propKey, newPropValue.setAttributes(propValue));
             }
         }
@@ -245,13 +239,13 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         return Value.join(labels.stream().map(label -> foo.apply(label, state.getObject(label, false))).collect(Collectors.toList()));
     }
 
-    public static boolean hasNothingNew(Value newValue, Value existing, State state) {
+    public static boolean hasSomethingNew(Value newValue, Value existing, State state) {
         if (newValue == null || existing == null) {
-            return newValue == null && existing == null;
+            return newValue != null || existing != null;
         }
         newValue = allLabelsToSingleton(UnknownValueResolver.getRealValue(newValue, state)).restrictToNonAttributes();
         existing = allLabelsToSingleton(UnknownValueResolver.getRealValue(existing, state)).restrictToNonAttributes();
-        return existing.join(newValue).equals(existing);
+        return !existing.join(newValue).equals(existing);
     }
 
     public static Value allLabelsToSingleton(Value value) {
@@ -306,6 +300,15 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
     }
 
     @Override
+    public Value visit(IntersectionType t, Arg arg) {
+        Value value = arg.value;
+        for (Type type : t.getElements()) {
+            value = filter(new TypeWithContext(type, arg.context), value, arg.c, arg.info);
+        }
+        return value;
+    }
+
+    @Override
     public Value visit(TypeParameterType t, Arg arg) {
         if (arg.context.get(t) == null) {
             return arg.value;
@@ -315,7 +318,11 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
 
     @Override
     public Value visit(StringLiteral t, Arg arg) {
-        throw new RuntimeException();
+        if (arg.value.isMaybeStr(t.getText())) {
+            return Value.makeStr(t.getText());
+        } else {
+            throw new NoSuchTypePossible();
+        }
     }
 
     @Override
@@ -324,13 +331,13 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
             if (arg.value.isMaybeTrue()) {
                 return Value.makeBool(true);
             } else {
-                return null;
+                throw new NoSuchTypePossible();
             }
         } else {
             if (arg.value.isMaybeFalse()) {
                 return Value.makeBool(false);
             } else {
-                return null;
+                throw new NoSuchTypePossible();
             }
         }
     }
@@ -342,11 +349,6 @@ public class CopyObjectInstantiation implements SpecInstantiator.InstantiationFi
         } else {
             throw new NoSuchTypePossible();
         }
-    }
-
-    @Override
-    public Value visit(IntersectionType t, Arg arg) {
-        throw new RuntimeException();
     }
 
     @Override
