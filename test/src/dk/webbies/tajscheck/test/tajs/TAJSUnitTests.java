@@ -2155,6 +2155,11 @@ public class TAJSUnitTests {
             .hasViolations();
     }
 
+    @Test
+    public void continueOnAnalysisLimitation() throws Exception {
+        run("continueOnAnalysisLimitation"); // smoke test.
+    }
+
     // TODO: Should receiver of methodCall get filtered?
 
     // todo: StringIndexTest and NumberIndexTest are unsound, in that they ignore all properties on prototypes.
