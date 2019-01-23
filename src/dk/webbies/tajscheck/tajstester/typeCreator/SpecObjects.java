@@ -13,8 +13,7 @@ import static dk.brics.tajs.util.Collections.newList;
 
 public class SpecObjects implements HostObject {
 
-    // FIXME ensure proper linking: the actual use of this class is based on *where* the abstraction is needed, and *not* where it is defined!
-    public static SpecObjects getObjectAbstraction(List<String> path, TypeWithContext type) {
+    static SpecObjects getObjectAbstraction(List<String> path, TypeWithContext type) {
         return new TypedObject(newList(path), type);
     }
 
@@ -28,7 +27,7 @@ public class SpecObjects implements HostObject {
         public final List<String> path;
         private TypeWithContext type;
 
-        public TypedObject(List<String> path, TypeWithContext type) {
+        TypedObject(List<String> path, TypeWithContext type) {
             this.type = new TypeWithContext(type.getType(), type.getTypeContext().optimizeTypeParameters(type.getType()));
             this.path = path;
         }
