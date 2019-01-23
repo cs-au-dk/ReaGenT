@@ -9,7 +9,8 @@ A tool for verifying and testing the correctness of TypeScript declaration files
     - Chrome (only to run TSTest on browser based libraries)
     - Istanbul (only for coverage tests with TSTest) `npm install -g istanbul`
     
- - Getting the submodules `git submodule update --init --recursive`
+ - Getting the submodules `git submodule update --init --recursive`   
+   (this can take several minutes, look if there is network activity if you think it might be stuck)
  - Set up ts-spec-reader: 
     - `cd ts-spec-reader`
     - `npm install`
