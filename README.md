@@ -23,7 +23,7 @@ A tool for verifying and testing the correctness of TypeScript declaration files
 
 Running some TSTest benchmark requires installing Chrome.  
 Follow the instructions on this page to install Chrome: https://www.google.com/chrome/  
-An additional package is needed on Ubuntu for the Chrome integration: sudo apt -y install libgconf2-4
+An additional package is needed on Ubuntu for the Chrome integration: `sudo apt -y install libgconf2-4`
 
 ## Running ReaGenT / TSTest
 In the below I'm going to assume that a unix-like system is used, replace `main.sh` with `main.bat` for Windows. 
