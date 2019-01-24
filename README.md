@@ -6,7 +6,7 @@ A tool for verifying and testing the correctness of TypeScript declaration files
     - Git (to download submodules) `sudo apt-get install git`
     - NodeJS `sudo apt-get install nodejs npm`
     - JDK 9 (or higher) `sudo add-apt-repository ppa:linuxuprising/java && sudo apt-get install oracle-java11-installer`
-    - Chrome (only to run TSTest on browser based libraries)
+    - Chrome (see below)
     - Istanbul (only for coverage tests with TSTest) `npm install -g istanbul`
     
  - Getting the submodules `git submodule update --init --recursive`   
@@ -21,8 +21,7 @@ A tool for verifying and testing the correctness of TypeScript declaration files
     - On Windows: `./gradlew.bat fatJar`
 
 
-Running some TSTest benchmark requires installing Chrome.  
-Follow the instructions on this page to install Chrome: https://www.google.com/chrome/  
+Running some TSTest benchmarks requires installing Chrome: https://www.google.com/chrome/  
 An additional package is needed on Ubuntu for the Chrome integration: `sudo apt -y install libgconf2-4`
 
 ## Running ReaGenT / TSTest
