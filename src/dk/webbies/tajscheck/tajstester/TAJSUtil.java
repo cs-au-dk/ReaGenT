@@ -43,7 +43,7 @@ public class TAJSUtil {
             Benchmark bench,
             int secondsTimeout,
             BenchmarkInfo info,
-            List<Test> tests) throws TimeoutException {
+            List<Test> tests) {
         dk.brics.tajs.Main.reset();
 
         OptionValues additionalOpts = new OptionValues();
@@ -82,7 +82,7 @@ public class TAJSUtil {
         additionalOpts.enableIncludeDom();
         additionalOpts.disableLowSeverity();
 
-        additionalOpts.enableTypeChecks();
+        additionalOpts.enableTypeCheck();
 
         additionalOpts.getSoundnessTesterOptions().setTest(false);
 //        additionalOpts.enableTypeFilters();

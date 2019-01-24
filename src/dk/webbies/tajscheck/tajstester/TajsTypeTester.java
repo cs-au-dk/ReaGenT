@@ -11,7 +11,7 @@ import dk.brics.tajs.monitoring.AnalysisPhase;
 import dk.brics.tajs.monitoring.DefaultAnalysisMonitoring;
 import dk.brics.tajs.solver.BlockAndContext;
 import dk.brics.tajs.solver.WorkList;
-import dk.brics.tajs.typetesting.ITypeTesting;
+import dk.brics.tajs.typetesting.ITypeTester;
 import dk.webbies.tajscheck.TypeWithContext;
 import dk.webbies.tajscheck.benchmark.BenchmarkInfo;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ConsistencyKeepingExpansionPolicy;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 
 import static dk.brics.tajs.util.Collections.newList;
 
-public class TajsTypeTester implements ITypeTesting<Context> {
+public class TajsTypeTester implements ITypeTester<Context> {
     private static final boolean DEBUG = true;
     private static final boolean DEBUG_VALUES = false;
 
