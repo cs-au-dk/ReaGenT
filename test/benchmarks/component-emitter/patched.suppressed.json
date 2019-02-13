@@ -209,10 +209,6 @@
       "comment": "Spurious undef"
     },
     {
-      "path": "Emitter(object).emit",
-      "comment": "Spurious undef"
-    },
-    {
       "path": "Emitter().off(undefined,undefined).once",
       "comment": "Spurious undef"
     },
