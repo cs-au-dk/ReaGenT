@@ -87,7 +87,7 @@ declare namespace Cookies {
          * will run the converter first for each cookie. The returned
          * string will be used as the cookie value.
          */
-        withConverter(converter: CookieConverter | { write: (value: any, name: string) => string; read: CookieConverter; }): CookiesStatic;
+        withConverter(converter: CookieConverter | { write: (value: string | object, name: string) => string; read: CookieConverter; }): CookiesStatic;
     }
 
     type CookieConverter = (value: string, name: string) => string;
