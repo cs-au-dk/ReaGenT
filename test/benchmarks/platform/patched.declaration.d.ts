@@ -4,15 +4,15 @@
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 declare interface Platform {
-    description?: string | false;
-    layout?: string | false;
+    description?: string;
+    layout?: string;
     manufacturer?: string;
     name?: string;
     prerelease?: string;
     product?: string;
     ua?: string;
     version?: string;
-    os?: string | {
+    os?: {
         architecture?: number;
         family?: string;
         version?: string;
@@ -27,3 +27,4 @@ declare var platform: Platform;
 declare module "platform" {
     export = platform;
 }
+

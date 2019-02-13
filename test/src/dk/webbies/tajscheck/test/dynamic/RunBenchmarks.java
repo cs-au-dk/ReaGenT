@@ -212,7 +212,7 @@ public class RunBenchmarks {
         register(new Benchmark("component-emitter", ParseDeclaration.Environment.ES5Core, "test/benchmarks/component-emitter/component-emitter.js", "test/benchmarks/component-emitter/declaration.d.ts", BROWSER, options)); // TSTest clean. Some "maybe undef" false positives in ReaGenT. (When maybe undefs are removed, only thing left is a method that ReaGenT thinks returns exceptionally).
         register(new Benchmark("pluralize", ParseDeclaration.Environment.ES5Core, "test/benchmarks/pluralize/pluralize.js", "test/benchmarks/pluralize/declaration.d.ts", BROWSER, options)); // TSTest clean. ReaGenT has a bug in detecting where the value for the initialized library is.
         register(new Benchmark("js-cookie", ParseDeclaration.Environment.ES5Core, "test/benchmarks/js-cookie/js-cookie.js", "test/benchmarks/js-cookie/declaration.d.ts", BROWSER, options)); // Had small errors. 1 Benign error left with TSTest. ReaGenT has a single false positive after patch.
-        register(new Benchmark("platform", ParseDeclaration.Environment.ES5Core, "test/benchmarks/platform/platform.js", "test/benchmarks/platform/declaration.d.ts", NODE, options)); // ReaGenT found an error that TSTest missed (the library is platform detection, TSTest only tests on Node, ReaGenT is abstract).
+        register(new Benchmark("platform", ParseDeclaration.Environment.ES5Core, "test/benchmarks/platform/platform.js", "test/benchmarks/platform/declaration.d.ts", BROWSER, options)); // ReaGenT found an error that TSTest missed (the library is platform detection, TSTest only tests on Node, ReaGenT is abstract).
 
 
         // TODO: Add an "ignore function arg-types" option in StaticOptions.

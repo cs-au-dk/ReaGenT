@@ -1,49 +1,32 @@
 {
   "suppressions": [
     {
-      "path": "\"platform\".version",
-      "comment": "Cannot possibly be UInt, as TAJS claims. "
-    },
-    {
-      "path": "\"platform\".[union1].parse(string).version",
-      "comment": "Cannot possibly be UInt, as TAJS claims. "
-    },
-    {
-      "path": "\"platform\".parse(string).version",
-      "comment": "Cannot possibly be UInt, as TAJS claims. "
-    },
-    {
-      "path": "\"platform\".manufacturer",
-      "comment": "Cannot possibly be UInt, as TAJS claims. "
-    },
-    {
-      "path": "\"platform\".product",
-      "comment": "Some false positive, seems related to RegExp."
-    },
-    {
-      "path": "\"platform\".parse(string).product",
-      "comment": "Some false positive, seems related to RegExp."
-    },
-    {
-      "path": "\"platform\".[union1].parse(string).product",
-      "comment": "Some false positive, seems related to RegExp."
-    },
-    {
-      "path": "\"platform\".os",
+      "path": "platform.os",
       "comment": "False positive related to the family field."
     },
     {
-      "path": "\"platform\".parse(string).os",
+      "path": "platform.parse(string).os",
       "comment": "False positive related to the family field."
     },
     {
-      "path": "\"platform\".[union1].parse(string).os",
+      "path": "platform.version",
+      "comment": "Cannot possibly be UInt, as TAJS claims. "
+    },
+    {
+      "path": "platform.parse(string).version",
+      "comment": "Cannot possibly be UInt, as TAJS claims. "
+    },
+    {
+      "path": "platform.description",
+      "comment": "Cannot possibly be UInt, as TAJS claims. "
+    },
+    {
+      "path": "platform.os.family",
       "comment": "False positive related to the family field."
     },
     {
-      "path": "\"platform\".description",
-      "comment": "Clearly false positive."
+      "path": "platform.os.[union1].family",
+      "comment": "False positive related to the family field."
     }
-
   ]
 }
