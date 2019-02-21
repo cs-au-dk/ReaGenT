@@ -100,7 +100,7 @@ public class Experiments implements Main.Command {
         }
         String command = arguments.get(0);
         Optional<Experiment> experiment = experiments.stream().filter(exp -> exp.name.equalsIgnoreCase(command)).findAny();
-        if (experiment.isEmpty()) {
+        if (!experiment.isPresent()) {
             printHelp();
             return;
         }
