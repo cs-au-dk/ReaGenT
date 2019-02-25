@@ -2,6 +2,7 @@
 A tool for verifying and testing the correctness of TypeScript declaration files. 
 
 ## Setting up the project
+ - The project and have been tested on Windows/Mac/Linux and should run on all platforms where the dependencies can be installed.
  - Dependencies: 
     - Git (to download submodules) `sudo apt-get install git`
     - NodeJS `sudo apt-get install nodejs npm`
