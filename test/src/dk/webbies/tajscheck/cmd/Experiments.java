@@ -27,6 +27,12 @@ public class Experiments implements Main.Command {
                 "Reproduces the results found in Table II in the ReaGenT paper.",
                 new CompareModesEvaluation()::doEvaluationQuick
         );
+        //language=TEXT
+        experiment(
+                "compareVariantsAll",
+                "Compares the RMGC variants on ALL relevant ReaGenT benchmarks",
+                new CompareModesEvaluation()::doEvaluationBig
+        );
 
         //language=TEXT
         experiment(
