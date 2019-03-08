@@ -22,14 +22,17 @@ public class PreferLibValuesPolicy {
     private final Set<TypeWithContext> libraryConstructed = new HashSet<>();
     private final Set<TypeWithContext> clientConstructed = new HashSet<>();
 
+    private final Map<TypeWithContext, Boolean> initializeableCache = new HashMap<>();
     private boolean initializeable(TypeWithContext type) {
-        if (libraryConstructed.contains(type)) {
-            return true;
-        }
-        if (clientConstructed.contains(type)) {
-            return true;
-        }
-        return isEasilyConstructType(type.getType(), type.getTypeContext(), libraryConstructed);
+        return initializeableCache.computeIfAbsent(type, t -> {
+            if (libraryConstructed.contains(type)) {
+                return true;
+            }
+            if (clientConstructed.contains(type)) {
+                return true;
+            }
+            return isEasilyConstructType(t.getType(), t.getTypeContext(), libraryConstructed);
+        });
     }
 
     private boolean isEasilyConstructType(Type type, TypeContext typeContext, Set<TypeWithContext> isConstructable) {
@@ -50,6 +53,7 @@ public class PreferLibValuesPolicy {
 
         while (outerProgress) {
             outerProgress = false;
+            initializeableCache.clear();
 
             boolean innerProgress = true;
             while (innerProgress) {
@@ -74,43 +78,52 @@ public class PreferLibValuesPolicy {
                     .collect(Collectors.toSet());
 
             for (Test test : tests) {
-                if (!test.getTypeToTest().stream().allMatch(typeToTest -> initializeable(new TypeWithContext(typeToTest, test.getTypeContext())))) {
+                if (test.getTypeToTest().stream().noneMatch(typeToTest -> initializeable(new TypeWithContext(typeToTest, test.getTypeContext())))) {
                     continue; // If the "base" type of the test is unavailable, it is not interesting.
                 }
                 // if it produces a value I need, all arguments are hereby client-constructed.
                 if (test.getProduces().stream().map(t -> new TypeWithContext(t, test.getTypeContext())).anyMatch(lackingDependencies::contains)) {
                     outerProgress = true;
-                    for (Type dependsOn : test.getDependsOn()) {
-                        typeTester.getBenchmarkInfo().typesUtil.forAllSuperTypes(dependsOn, test.getTypeContext(), subType -> {
-                            if (!initializeable(subType)) {
-                                clientConstructed.add(subType);
-                            }
-                        });
-                    }
+                    constructTestProducts(test);
                 }
             }
 
             if (!outerProgress && !tests.isEmpty()) {
                 outerProgress = true;
+                // This happens when we have a higher order function with some dependencies that are called by the library. There exists no test that can statisfy the dependency.
+                if (lastSeenProgressTests.equals(tests) && !lackingDependencies.isEmpty()) {
+                    libraryConstructed.addAll(lackingDependencies);
+                    continue;
+                }
+                lastSeenProgressTests = new HashSet<>(tests);
+
+                initializeableCache.clear();
                 // all arguments in all remaining tests are client-constructed!
                 for (Test test : tests) {
-                    if (!test.getTypeToTest().stream().allMatch(typeToTest -> initializeable(new TypeWithContext(typeToTest, test.getTypeContext())))) {
+                    if (test.getTypeToTest().stream().noneMatch(typeToTest -> initializeable(new TypeWithContext(typeToTest, test.getTypeContext())))) {
                         continue; // If the "base" type of the test is unavailable, it is not interesting.
                     }
-                    for (Type dependsOn : test.getDependsOn()) {
-                        typeTester.getBenchmarkInfo().typesUtil.forAllSuperTypes(dependsOn, test.getTypeContext(), subType -> {
-                            if (!initializeable(subType)) {
-                                clientConstructed.add(subType);
-                            }
-                        });
-                    }
+                    constructTestProducts(test);
                 }
             }
         }
+        //noinspection ConstantConditions
         assert tests.isEmpty();
     }
 
-    public StaticOptions.ArgumentValuesStrategy getArgumentStrategy(TypeWithContext type, TajsTypeTester typeTester) {
+    private Set<Test> lastSeenProgressTests = new HashSet<>();
+
+    private void constructTestProducts(Test test) {
+        for (Type dependsOn : test.getDependsOn()) {
+            typeTester.getBenchmarkInfo().typesUtil.forAllSuperTypes(dependsOn, test.getTypeContext(), subType -> {
+                if (!initializeable(subType)) {
+                    clientConstructed.add(subType);
+                }
+            });
+        }
+    }
+
+    public StaticOptions.ArgumentValuesStrategy decideArgumentStrategy(TypeWithContext type, TajsTypeTester typeTester) {
         if (!initialized) {
             this.typeTester = typeTester;
             initialize();
