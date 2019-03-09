@@ -131,7 +131,7 @@ public class SpecInstantiator {
         info.typeNames.put(anyObj, "any-obj");
         info.typeNames.put(anyType, "any");
 
-        this.any = instantiate(anyType, new MiscInfo("any", TypeContext.create(info), null), "theAny");
+        this.any = instantiate(anyType, new MiscInfo("any", TypeContext.create(info), null, Collections.emptySet()), "theAny");
     }
 
 
@@ -387,8 +387,8 @@ public class SpecInstantiator {
         });
 
         for (TypeWithContext subType : new ArrayList<>(previouslyConstructedSubTypes.get(typeWithContext))) {
-            if (!subType.equals(typeWithContext) && !(subType.getType() instanceof TypeParameterType)) { // Don't do the same type, and TypeParameters doesn't count.
-                result = result.join(instantiate(subType.getType(), info.withContext(subType.getTypeContext()), "[subType]"));
+            if (!info.superTypes.contains(subType) && !subType.equals(typeWithContext) && !(subType.getType() instanceof TypeParameterType)) { // Don't do the same type, and TypeParameters doesn't count.
+                result = result.join(instantiate(subType.getType(), info.withSuperType(subType).withContext(subType.getTypeContext()), "[subType]"));
             }
         }
 
@@ -411,7 +411,7 @@ public class SpecInstantiator {
             return Value.makeNone();
         }
         try {
-            MiscInfo misc = new MiscInfo(path, type.getTypeContext(), null);
+            MiscInfo misc = new MiscInfo(path, type.getTypeContext(), null, Collections.emptySet());
             return instantiate(type.getType(), misc, null);
         } catch (CannotConstructType e) {
             return Value.makeNone();
@@ -773,27 +773,33 @@ public class SpecInstantiator {
         public final List<String> path;
         public final TypeContext context;
         public final ObjectLabel labelToUse;
+        public final Set<TypeWithContext> superTypes;
 
-        MiscInfo(String initialPath, TypeContext context, ObjectLabel labelToUse) {
-            this(Arrays.asList(initialPath.split("\\.")), context, labelToUse);
+        MiscInfo(String initialPath, TypeContext context, ObjectLabel labelToUse, Set<TypeWithContext> superTypes) {
+            this(Arrays.asList(initialPath.split("\\.")), context, labelToUse, superTypes);
         }
 
-        MiscInfo(List<String> path, TypeContext context, ObjectLabel labelToUse) {
+        MiscInfo(List<String> path, TypeContext context, ObjectLabel labelToUse, Set<TypeWithContext> superTypes) {
             this.context = context;
             this.labelToUse = labelToUse;
             this.path = path;
+            this.superTypes = superTypes;
         }
 
         public MiscInfo withContext(TypeContext typeContext) {
-            return new MiscInfo(path, typeContext, labelToUse);
+            return new MiscInfo(path, typeContext, labelToUse, superTypes);
         }
 
         public MiscInfo apendPath(String path) {
-            return new MiscInfo(Util.concat(this.path, Collections.singletonList(path)), context, labelToUse);
+            return new MiscInfo(Util.concat(this.path, Collections.singletonList(path)), context, labelToUse, superTypes);
         }
 
         public MiscInfo withlabel(ObjectLabel label) {
-            return new MiscInfo(path, context, label);
+            return new MiscInfo(path, context, label, superTypes);
+        }
+
+        public MiscInfo withSuperType(TypeWithContext type) {
+            return new MiscInfo(path, context, labelToUse, Util.concatSet(this.superTypes, Collections.singleton(type)));
         }
     }
 

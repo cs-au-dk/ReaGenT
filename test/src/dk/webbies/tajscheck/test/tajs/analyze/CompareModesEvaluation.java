@@ -75,28 +75,24 @@ public class CompareModesEvaluation {
 
     @Test
     public void doEvaluation() {
-        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
+        compareModes(CompareModesEvaluation.benchmarksToEvaluate, "compareModes.csv");
+    }
+
+    public void compareModes(List<String> benchmarks, String outputFile) {
+        Experiment experiment = new Experiment(benchmarks.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
 
         modes.forEach((name, options) -> {
             experiment.addExperiment(experiment(name, options));
         });
 
-        Table table = experiment.calculate("compareModes.csv");
+        Table table = experiment.calculate(outputFile);
 
         printPaperTable(table);
     }
 
     @Test
     public void doEvaluationBig() {
-        Experiment experiment = new Experiment(BigLibEvaluation.benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
-
-        modes.forEach((name, options) -> {
-            experiment.addExperiment(experiment(name, options));
-        });
-
-        Table table = experiment.calculate("compareModesBig.csv");
-
-        printPaperTable(table);
+        compareModes(BigLibEvaluation.benchmarksToEvaluate, "compareModesBig.csv");
     }
 
     @Test

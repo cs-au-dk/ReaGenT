@@ -3,9 +3,7 @@ package dk.webbies.tajscheck.cmd;
 import dk.webbies.tajscheck.test.tajs.analyze.CompareModesEvaluation;
 import org.kohsuke.args4j.Argument;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class Experiments implements Main.Command {
     private static List<Experiment> experiments = new ArrayList<>();
@@ -32,6 +30,13 @@ public class Experiments implements Main.Command {
                 "compareVariantsAll",
                 "Compares the RMGC variants on ALL relevant ReaGenT benchmarks",
                 new CompareModesEvaluation()::doEvaluationBig
+        );
+
+        //language=TEXT
+        experiment(
+                "compareAsync",
+                "Does the compare variants evaluation, but only on async.",
+                () -> new CompareModesEvaluation().compareModes(Collections.singletonList("async"), "compareasync.csv")
         );
 
         //language=TEXT
