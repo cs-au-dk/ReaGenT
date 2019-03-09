@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import javax.management.RuntimeMBeanException;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -87,7 +88,16 @@ public class CompareModesEvaluation {
 
         Table table = experiment.calculate(outputFile);
 
-        printPaperTable(table);
+        String paperTable = printPaperTable(table);
+
+        try {
+            File file = new File(outputFile + ".textable");
+            FileWriter writer = new FileWriter(file);
+            writer.write(paperTable);
+            writer.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -232,7 +242,7 @@ public class CompareModesEvaluation {
         printPaperTable(table);
     }
 
-    private void printPaperTable(Table table) {
+    private String printPaperTable(Table table) {
         List<List<String>> result = new ArrayList<>();
 
         writeColumn(result, getColumn(table.getRaw(), 0), 0);
@@ -303,15 +313,15 @@ public class CompareModesEvaluation {
         }
         System.out.println("Comparison of RMGC variants. Each column contains: " + String.join(" / ", metrics));
 
-        System.out.println(
-                String.join("\n", result.stream()
-                    .filter(Objects::nonNull)
-                    .map(row -> String.join("|", Util.replaceNulls(row, "-")))
-                    .collect(Collectors.toList())
-                )
+        String tableString = String.join("\n", result.stream()
+                .filter(Objects::nonNull)
+                .map(row -> String.join("|", Util.replaceNulls(row, "-")))
+                .collect(Collectors.toList())
         );
+        System.out.println(tableString);
 
         System.out.println();
+        return tableString;
     }
 
     public void writeColumn(List<List<String>> table, List<String> column, int columnIndex) {
