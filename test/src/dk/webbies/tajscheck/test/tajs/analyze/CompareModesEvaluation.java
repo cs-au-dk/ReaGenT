@@ -75,8 +75,11 @@ public class CompareModesEvaluation {
     }};
 
     @Test
-    public void doEvaluation() {
-        compareModes(CompareModesEvaluation.benchmarksToEvaluate, "compareModes.csv");
+    public void doEvaluation(String... benchmarks) {
+        if (benchmarks.length == 0) {
+            benchmarks = CompareModesEvaluation.benchmarksToEvaluate.toArray(new String[0]);
+        }
+        compareModes(Arrays.asList(benchmarks), "compareModes.csv");
     }
 
     public void compareModes(List<String> benchmarks, String outputFile) {

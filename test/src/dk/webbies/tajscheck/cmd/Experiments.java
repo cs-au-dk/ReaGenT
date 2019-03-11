@@ -4,10 +4,15 @@ import dk.webbies.tajscheck.test.tajs.analyze.CompareModesEvaluation;
 import org.kohsuke.args4j.Argument;
 
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 public class Experiments implements Main.Command {
     private static List<Experiment> experiments = new ArrayList<>();
     private static void experiment(String name, String description, Runnable doExperiment) {
+        experiments.add(new Experiment(name, description, doExperiment));
+    }
+    private static void experiment(String name, String description, Consumer<String[]> doExperiment) {
         experiments.add(new Experiment(name, description, doExperiment));
     }
     static {
@@ -15,8 +20,9 @@ public class Experiments implements Main.Command {
         experiment(
                 "compareVariants",
                 "Compares different variants of RMGC. \n" +
-                "Reproduces the results found in Table II in the ReaGenT paper.",
-                new CompareModesEvaluation()::doEvaluation
+                "Reproduces the results found in Table II in the ReaGenT paper. \n" +
+                "Optionally pass extra arguments to define which benchmarks the evaluation should run on",
+                (args) -> new CompareModesEvaluation().doEvaluation(args)
         );
         //language=TEXT
         experiment(
@@ -30,13 +36,6 @@ public class Experiments implements Main.Command {
                 "compareVariantsAll",
                 "Compares the RMGC variants on ALL relevant ReaGenT benchmarks",
                 new CompareModesEvaluation()::doEvaluationBig
-        );
-
-        //language=TEXT
-        experiment(
-                "compareAsync",
-                "Does the compare variants evaluation, but only on async.",
-                () -> new CompareModesEvaluation().compareModes(Collections.singletonList("async"), "compareasync.csv")
         );
 
         //language=TEXT
@@ -76,9 +75,15 @@ public class Experiments implements Main.Command {
     public static final class Experiment {
         private final String name;
         private final String description;
-        private final Runnable doExperiment;
+        private final Consumer<String[]> doExperiment;
 
         public Experiment(String name, String description, Runnable doExperiment) {
+            this.name = name;
+            this.description = description;
+            this.doExperiment = args -> doExperiment.run();
+        }
+
+        public Experiment(String name, String description, Consumer<String[]> doExperiment) {
             this.name = name;
             this.description = description;
             this.doExperiment = doExperiment;
@@ -115,6 +120,7 @@ public class Experiments implements Main.Command {
             printHelp();
             return;
         }
-        experiment.get().doExperiment.run();
+        String[] args = arguments.subList(1, arguments.size()).toArray(new String[0]);
+        experiment.get().doExperiment.accept(args);
     }
 }
