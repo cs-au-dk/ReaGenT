@@ -115,13 +115,13 @@ public class TAJSUtil {
             });
         }
 
-        optMonitors.add(Monitoring.make(false));
+        optMonitors.add(new AnalysisMonitor());
         optMonitors.add(typeTester.getSuspiciousMonitor());
         optMonitors.add(typeTester.getTransferMonitor());
         optMonitors.add(typeTester.getCoverageMonitor());
         optMonitors.add(typeTester.getReadFromStdlibMonitor());
 
-        IAnalysisMonitoring monitoring = CompositeMonitoring.buildFromList(optMonitors);
+        IAnalysisMonitoring monitoring = CompositeMonitor.make(optMonitors);
         initLogging();
 
         Analysis a = dk.brics.tajs.Main.init(additionalOpts, monitoring, null, new TesterTransfer(), typeTester);

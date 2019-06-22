@@ -246,20 +246,23 @@ public class NativesInstantiator {
     }
 
     public Context makeConstructionContext(Context from, String name) {
-        Map<LocalContext.Qualifier, Value> localContext = newMap();
-        if (from.getLocalContext() != null) {
-            localContext.putAll(from.getLocalContext().getQualifiers());
+        Map<Context.Qualifier, Value> extraAllocationContexts = newMap();
+        if (from.getExtraAllocationContexts() != null) {
+            from.getExtraAllocationContexts().entrySet().forEach(e -> extraAllocationContexts.put(e.getKey(), e.getValue()));
         }
-        localContext.put(ConstructionQualifier.instance, Value.makeStr(name));
-
-        return Context.make(from.getThisVal(), from.getFunArgs(), from.getSpecialRegisters(), LocalContext.make(localContext), from.getLocalContextAtEntry());
+        extraAllocationContexts.put(ConstructionQualifier.instance, Value.makeStr(name));
+        return Context.make(from.getThisVal(), from.getSpecialRegisters(), from.getContextAtEntry(), extraAllocationContexts, from.getLoopUnrolling(), from.getUnknownArg(), from.getParameterNames(), from.getArguments(), from.getFreeVariables(), from.getFreeVariablePartitioning());
     }
 
-    public static class ConstructionQualifier implements LocalContext.Qualifier {
+    public static class ConstructionQualifier implements Context.Qualifier {
 
         private static ConstructionQualifier instance = new ConstructionQualifier();
 
         private ConstructionQualifier() {
+        }
+
+        public static ConstructionQualifier getInstance() {
+            return instance;
         }
 
         @Override

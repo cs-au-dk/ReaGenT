@@ -1,5 +1,6 @@
 package dk.webbies.tajscheck.tajstester;
 
+import com.google.common.base.Predicate;
 import com.google.gson.Gson;
 import dk.brics.tajs.analysis.*;
 import dk.brics.tajs.analysis.FunctionCalls.CallInfo;
@@ -24,6 +25,7 @@ import dk.webbies.tajscheck.tajstester.monitors.ReadFromStdlibMonitor;
 import dk.webbies.tajscheck.tajstester.monitors.SuspiciousnessMonitor;
 import dk.webbies.tajscheck.tajstester.monitors.TajsCoverageResult;
 import dk.webbies.tajscheck.tajstester.monitors.TestTransfersMonitor;
+import dk.webbies.tajscheck.tajstester.typeCreator.NativesInstantiator;
 import dk.webbies.tajscheck.testcreator.test.*;
 import dk.webbies.tajscheck.util.ArrayListMultiMap;
 import dk.webbies.tajscheck.util.MultiMap;
@@ -410,11 +412,15 @@ public class TajsTypeTester implements ITypeTester<Context> {
             if (otherIsTypeTest && !thisIsTypeTest) {
                 return BC1_FIRST;
             }
-
-            if (bc1.getContext().getLocalContext() != null && bc2.getContext().getLocalContext() == null) {
+            Predicate<Context> hasTypeTestContext = ctx ->
+                    ctx.getExtraAllocationContexts() != null &&
+                    (ctx.getExtraAllocationContexts().containsKey(NativesInstantiator.ConstructionQualifier.getInstance()) || ctx.getExtraAllocationContexts().containsKey(TesterContextSensitivity.TestQualifier.getInstance()));
+            boolean b1HasTypeTestContext = hasTypeTestContext.apply(bc1.getContext());
+            boolean b2HasTypeTesterContext = hasTypeTestContext.apply(bc2.getContext());
+            if (b1HasTypeTestContext && !b2HasTypeTesterContext) {
                 return BC1_FIRST;
             }
-            if (bc2.getContext().getLocalContext() != null && bc1.getContext().getLocalContext() == null) {
+            if (b2HasTypeTesterContext && !b1HasTypeTestContext) {
                 return BC2_FIRST;
             }
         }

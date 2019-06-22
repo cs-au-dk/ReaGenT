@@ -6,7 +6,7 @@ import dk.brics.tajs.flowgraph.FlowGraph;
 import dk.brics.tajs.flowgraph.SourceLocation;
 import dk.brics.tajs.js2flowgraph.FlowGraphBuilder;
 import dk.brics.tajs.monitoring.IAnalysisMonitoring;
-import dk.brics.tajs.monitoring.Monitoring;
+import dk.brics.tajs.monitoring.AnalysisMonitor;
 import dk.brics.tajs.options.Options;
 import dk.brics.tajs.util.AnalysisException;
 import dk.brics.tajs.util.Collectors;
@@ -101,7 +101,7 @@ public class TajsMisc {
     }
 
     public static void run(String... args) throws AnalysisException {
-        runPart(null, Monitoring.make(), args);
+        runPart(null, new AnalysisMonitor(), args);
     }
 
     public static void run(String arg, IAnalysisMonitoring monitoring) throws AnalysisException {
@@ -213,7 +213,7 @@ public class TajsMisc {
         File file = makeTempSourceFile(suffix, src);
         String[] args = {file.getPath()};
         if (monitoring == null) {
-            TajsMisc.runPart(suffix, Monitoring.make(), args);
+            TajsMisc.runPart(suffix, new AnalysisMonitor(), args);
         } else {
             TajsMisc.runPart(suffix, monitoring, args);
         }

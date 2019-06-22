@@ -260,6 +260,11 @@ public class TajsTestVisitor implements TestVisitor<Boolean> {
             public boolean assumeFunction() {
                 return false;
             }
+
+            @Override
+            public FreeVariablePartitioning getFreeVariablePartitioning() {
+                return null;
+            }
         };
     }
 
