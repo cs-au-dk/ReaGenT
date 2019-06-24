@@ -2,7 +2,10 @@ package dk.webbies.tajscheck.tajstester;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import dk.brics.tajs.analysis.FunctionCalls;
+import dk.brics.tajs.analysis.Solver;
 import dk.brics.tajs.analysis.StaticDeterminacyContextSensitivityStrategy;
+import dk.brics.tajs.flowgraph.AbstractNode;
 import dk.brics.tajs.flowgraph.jsnodes.BeginForInNode;
 import dk.brics.tajs.flowgraph.jsnodes.BeginLoopNode;
 import dk.brics.tajs.flowgraph.jsnodes.EndLoopNode;
@@ -40,10 +43,14 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
         return tagTestContext(currentContext, super.makeLoopExitContext(currentContext, node), false);
     }
 
+    @Override
+    public Context makeFunctionEntryContext(State state, ObjectLabel function, FunctionCalls.CallInfo callInfo, Solver.SolverInterface c) {
+        return tagTestContext(state.getContext(), super.makeFunctionEntryContext(state, function, callInfo, c), true);
+    }
+
     public TesterContextSensitivity(SyntacticQueries syntacticInformation) {
         super(syntacticInformation);
     }
-
 
     private static Context tagTestContext(Context sourceContext, Context destinationContext, boolean overwrite) {
         if (isLocalTestContext(sourceContext) || isFunctionTestContext(sourceContext)) {
@@ -88,22 +95,27 @@ public class TesterContextSensitivity extends StaticDeterminacyContextSensitivit
     private static Context tagContext(Context args, Value tag) {
         Map<String, Value> newCVars = args == null || args.getFreeVariables() == null ? newMap() : new HashMap<>(args.getFreeVariables());
         newCVars.putIfAbsent(testSpecialLocation, tag);
-        if(args != null) {
-            return Context.make(args.getThisVal(), args.getSpecialRegisters(), args.getContextAtEntry(), args.getExtraAllocationContexts(), args.getLoopUnrolling(), args.getUnknownArg(), args.getParameterNames(), args.getArguments(), newCVars, args.getFreeVariablePartitioning());
-        } else {
-            return Context.make(null, null, null, newCVars);
-        }
+        return args == null ?
+            Context.make(null, null, null, newCVars) :
+            Context.make(args.getThisVal(), args.getSpecialRegisters(), tagContextAtEntry(args, newCVars), args.getExtraAllocationContexts(), args.getLoopUnrolling(), args.getUnknownArg(), args.getParameterNames(), args.getArguments(), newCVars, args.getFreeVariablePartitioning());
     }
 
-//    @Override
-//    public HeapContext makeHeapContext(AbstractNode location, ContextArguments arguments, Solver.SolverInterface c) {
-//        HeapContext hc = super.makeHeapContext(location, arguments, c);
-//        if(isFunctionTestContext(c.getState().getContext()) || isLocalTestContext(c.getState().getContext())) {
-//            String tag = getTag(c.getState().getContext());
-//            return hc.copyWith(tagContextArguments(hc.getFunctionArguments(), Value.makeStr(tag)), null);
-//        }
-//        return hc;
-//    }
+    private static Context tagContextAtEntry(Context ctx, Map<String, Value> newCVars) {
+        if (ctx == ctx.getContextAtEntry())
+            return null;
+        Context oldContextAtEntry = ctx.getContextAtEntry();
+        return Context.make(oldContextAtEntry.getThisVal(), oldContextAtEntry.getSpecialRegisters(), tagContextAtEntry(oldContextAtEntry, newCVars), oldContextAtEntry.getExtraAllocationContexts(), oldContextAtEntry.getLoopUnrolling(), oldContextAtEntry.getUnknownArg(), oldContextAtEntry.getParameterNames(), oldContextAtEntry.getArguments(), newCVars, oldContextAtEntry.getFreeVariablePartitioning());
+    }
+
+    @Override
+    public Context makeHeapContext(AbstractNode location, Context arguments, Solver.SolverInterface c) {
+        Context hc = super.makeHeapContext(location, arguments, c);
+        if(isFunctionTestContext(c.getState().getContext()) || isLocalTestContext(c.getState().getContext())) {
+            String tag = getTag(c.getState().getContext());
+            return tagContext(hc, Value.makeStr(tag));
+        }
+        return hc;
+    }
 
     public Context makeLocalTestContext(Context from, Test test) {
         if(!contextTest.containsValue(test)) {
