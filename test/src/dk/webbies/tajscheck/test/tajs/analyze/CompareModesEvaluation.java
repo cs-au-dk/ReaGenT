@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import javax.management.RuntimeMBeanException;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -74,16 +75,37 @@ public class CompareModesEvaluation {
     }};
 
     @Test
-    public void doEvaluation() {
-        Experiment experiment = new Experiment(benchmarksToEvaluate.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
+    public void doEvaluation(String... benchmarks) {
+        if (benchmarks.length == 0) {
+            benchmarks = CompareModesEvaluation.benchmarksToEvaluate.toArray(new String[0]);
+        }
+        compareModes(Arrays.asList(benchmarks), "compareModes.csv");
+    }
+
+    public void compareModes(List<String> benchmarks, String outputFile) {
+        Experiment experiment = new Experiment(benchmarks.stream().map(RunBenchmarks.benchmarks::get).collect(Collectors.toList()));
 
         modes.forEach((name, options) -> {
             experiment.addExperiment(experiment(name, options));
         });
 
-        Table table = experiment.calculate("compareModes.csv");
+        Table table = experiment.calculate(outputFile);
 
-        printPaperTable(table);
+        String paperTable = printPaperTable(table);
+
+        try {
+            File file = new File(outputFile + ".textable");
+            FileWriter writer = new FileWriter(file);
+            writer.write(paperTable);
+            writer.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void doEvaluationBig() {
+        compareModes(BigLibEvaluation.benchmarksToEvaluate, "compareModesBig.csv");
     }
 
     @Test
@@ -223,7 +245,7 @@ public class CompareModesEvaluation {
         printPaperTable(table);
     }
 
-    private void printPaperTable(Table table) {
+    private String printPaperTable(Table table) {
         List<List<String>> result = new ArrayList<>();
 
         writeColumn(result, getColumn(table.getRaw(), 0), 0);
@@ -294,15 +316,15 @@ public class CompareModesEvaluation {
         }
         System.out.println("Comparison of RMGC variants. Each column contains: " + String.join(" / ", metrics));
 
-        System.out.println(
-                String.join("\n", result.stream()
-                    .filter(Objects::nonNull)
-                    .map(row -> String.join("|", Util.replaceNulls(row, "-")))
-                    .collect(Collectors.toList())
-                )
+        String tableString = String.join("\n", result.stream()
+                .filter(Objects::nonNull)
+                .map(row -> String.join("|", Util.replaceNulls(row, "-")))
+                .collect(Collectors.toList())
         );
+        System.out.println(tableString);
 
         System.out.println();
+        return tableString;
     }
 
     public void writeColumn(List<List<String>> table, List<String> column, int columnIndex) {

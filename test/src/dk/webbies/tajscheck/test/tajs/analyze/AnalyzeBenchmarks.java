@@ -2,16 +2,13 @@ package dk.webbies.tajscheck.test.tajs.analyze;
 
 import dk.webbies.tajscheck.benchmark.Benchmark;
 import dk.webbies.tajscheck.benchmark.options.CheckOptions;
-import dk.webbies.tajscheck.benchmark.options.OptionsI;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.LimitTransfersRetractionPolicy;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.StaticOptions;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.ExpandImmediatelyPolicy;
-import dk.webbies.tajscheck.benchmark.options.staticOptions.expansionPolicy.LateExpansionToFunctionsWithConstructedArguments;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.filter.CopyObjectInstantiation;
 import dk.webbies.tajscheck.benchmark.options.staticOptions.preferlibvalues.PreferLibValuesPolicy;
 import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.tajstester.TAJSUtil;
-import dk.webbies.tajscheck.testcreator.test.check.Check;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -158,7 +155,7 @@ public class AnalyzeBenchmarks extends TestCase {
                 .setPropagateStateFromFailingTest(true)
 
                 // The new prefer lib values thinghy. That determines only based on types.
-                .setArgumentValuesStrategy(new PreferLibValuesPolicy()::getArgumentStrategy)
+                .setArgumentValuesStrategy(new PreferLibValuesPolicy()::decideArgumentStrategy)
                 .setExpansionPolicy(new ExpandImmediatelyPolicy())
 
 

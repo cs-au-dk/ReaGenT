@@ -5,6 +5,7 @@ import dk.webbies.tajscheck.test.dynamic.RunBenchmarks;
 import dk.webbies.tajscheck.util.Pair;
 import dk.webbies.tajscheck.util.Util;
 
+import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -152,6 +153,7 @@ public class Experiment {
                                 } else {
                                     tries++;
                                     System.out.println("Had an exception while running a benchmark (for the " + tries + ". time)");
+                                    e.printStackTrace(new PrintWriter(System.out));
                                     e.printStackTrace();
                                     System.out.println("Trying again");
                                 }

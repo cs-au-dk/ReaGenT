@@ -2090,7 +2090,7 @@ public class TAJSUnitTests {
 
     @Test
     public void newDecidingLibraryConstructedAlgo() throws Exception {
-        TajsAnalysisResults result = run("newDecidingLibraryConstructedAlgo", options().staticOptions.setArgumentValuesStrategy(new PreferLibValuesPolicy()::getArgumentStrategy));
+        TajsAnalysisResults result = run("newDecidingLibraryConstructedAlgo", options().staticOptions.setArgumentValuesStrategy(new PreferLibValuesPolicy()::decideArgumentStrategy));
 
         expect(result)
                 .performedAllTests()
@@ -2099,7 +2099,7 @@ public class TAJSUnitTests {
 
     @Test
     public void preferLibValuesInWaves() throws Exception {
-        TajsAnalysisResults result = run("preferLibValuesInWaves", options().staticOptions.setArgumentValuesStrategy(new PreferLibValuesPolicy()::getArgumentStrategy));
+        TajsAnalysisResults result = run("preferLibValuesInWaves", options().staticOptions.setArgumentValuesStrategy(new PreferLibValuesPolicy()::decideArgumentStrategy));
 
         expect(result)
                 .performedAllTests()
@@ -2158,6 +2158,11 @@ public class TAJSUnitTests {
     @Test
     public void continueOnAnalysisLimitation() throws Exception {
         run("continueOnAnalysisLimitation"); // smoke test.
+    }
+
+    @Test
+    public void preferLibInfiniteLoop() throws Exception {
+        run("preferLibInfiniteLoop", options().staticOptions.setArgumentValuesStrategy(new PreferLibValuesPolicy()::decideArgumentStrategy));
     }
 
     // TODO: Should receiver of methodCall get filtered?
