@@ -94,10 +94,7 @@ public class CompareModesEvaluation {
         String paperTable = printPaperTable(table);
 
         try {
-            File file = new File(outputFile + ".textable");
-            FileWriter writer = new FileWriter(file);
-            writer.write(paperTable);
-            writer.close();
+            Util.writeFile(outputFile + ".textable", paperTable);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
