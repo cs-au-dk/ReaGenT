@@ -81,6 +81,7 @@ public class TAJSUtil {
         additionalOpts.enableNoHybridCollections();
         additionalOpts.enableIncludeDom();
         additionalOpts.disableLowSeverity();
+        additionalOpts.enablePropNamePartitioning();
 
         additionalOpts.enableTypeCheck();
 

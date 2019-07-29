@@ -11,6 +11,7 @@ import dk.webbies.tajscheck.typeutil.typeContext.TypeContext;
 import dk.webbies.tajscheck.util.Util;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -53,12 +54,15 @@ public class PreferLibValuesPolicy {
 
         while (outerProgress) {
             outerProgress = false;
-            initializeableCache.clear();
 
             boolean innerProgress = true;
             while (innerProgress) {
+                initializeableCache.clear();
                 innerProgress = false;
                 for (Test test : new ArrayList<>(tests)) {
+                    if (test.getPath().equals("module.createBar")) {
+                        System.out.println();
+                    }
                     if (Util.concat(test.getTypeToTest(), test.getDependsOn()).stream().map(type -> new TypeWithContext(type, test.getTypeContext())).allMatch(this::initializeable)) {
                         innerProgress = true;
                         tests.remove(test);
@@ -78,13 +82,12 @@ public class PreferLibValuesPolicy {
                     .collect(Collectors.toSet());
 
             for (Test test : tests) {
-                if (test.getTypeToTest().stream().noneMatch(typeToTest -> initializeable(new TypeWithContext(typeToTest, test.getTypeContext())))) {
+                if (!test.getTypeToTest().stream().allMatch(typeToTest -> initializeable(new TypeWithContext(typeToTest, test.getTypeContext())))) {
                     continue; // If the "base" type of the test is unavailable, it is not interesting.
                 }
                 // if it produces a value I need, all arguments are hereby client-constructed.
                 if (test.getProduces().stream().map(t -> new TypeWithContext(t, test.getTypeContext())).anyMatch(lackingDependencies::contains)) {
-                    outerProgress = true;
-                    constructTestProducts(test);
+                    outerProgress |= constructTestProducts(test);
                 }
             }
 
@@ -113,14 +116,17 @@ public class PreferLibValuesPolicy {
 
     private Set<Test> lastSeenProgressTests = new HashSet<>();
 
-    private void constructTestProducts(Test test) {
+    private boolean constructTestProducts(Test test) {
+        AtomicBoolean progress = new AtomicBoolean(false);
         for (Type dependsOn : test.getDependsOn()) {
             typeTester.getBenchmarkInfo().typesUtil.forAllSuperTypes(dependsOn, test.getTypeContext(), subType -> {
                 if (!initializeable(subType)) {
                     clientConstructed.add(subType);
+                    progress.set(true);
                 }
             });
         }
+        return progress.get();
     }
 
     public StaticOptions.ArgumentValuesStrategy decideArgumentStrategy(TypeWithContext type, TajsTypeTester typeTester) {

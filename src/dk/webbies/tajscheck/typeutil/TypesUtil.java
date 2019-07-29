@@ -25,11 +25,9 @@ public class TypesUtil {
 
     public TypesUtil(BenchmarkInfo info) {
         this.info = info;
-        this.classToInterfaceCache = info.getAttribute(OptimizingTypeContext.class, "classToInterfaceCache", HashMap::new);
-        this.classInstanceCache = info.getAttribute(OptimizingTypeContext.class, "classInstanceCache", HashMap::new);
     }
 
-    private final Map<ClassType, Pair<InterfaceType, Map<TypeParameterType, Type>>> classToInterfaceCache;
+    private final Map<ClassType, Pair<InterfaceType, Map<TypeParameterType, Type>>> classToInterfaceCache = new HashMap<>();
 
     public static ClassType emptyClassType() {
         ClassType clazz = new ClassType();
@@ -143,7 +141,7 @@ public class TypesUtil {
         return result;
     }
 
-    private final Map<ClassType, InterfaceType> classInstanceCache;
+    private final Map<ClassType, InterfaceType> classInstanceCache = new HashMap<>();
     public InterfaceType createClassInstanceType(ClassType type) {
         if (classInstanceCache.containsKey(type)) {
             return classInstanceCache.get(type);
