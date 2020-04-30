@@ -27,7 +27,7 @@
     "@types/lodash": "^4.14.79",
     "bootstrap": "^3.0.0",
     "core-js": "^2.4.1",
-    "jquery": "^3.2.1",
+    "jquery": "^3.5.0",
     "rxjs": "^5.4.2",
     "systemjs": "0.19.39",
     "tether": "^1.4.0",
